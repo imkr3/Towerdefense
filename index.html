@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#f4a4bd">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="description" content="달콤 방어전 - 디저트 부대와 채소 군단의 라인 배틀 타워디펜스">
+<title>달콤 방어전</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ===================== 타이틀 ===================== -->
+<section id="scr-title" class="screen active">
+  <div class="title-art">
+    <div class="title-emoji">🍮🍩🍦</div>
+    <h1>달콤 방어전</h1>
+    <p class="sub">디저트 부대 <b>vs</b> 채소 군단</p>
+  </div>
+  <div class="title-btns">
+    <button class="btn big" id="btn-start">전투 시작</button>
+    <button class="btn ghost" id="btn-howto">플레이 방법</button>
+    <button class="btn ghost danger" id="btn-reset">기록 초기화</button>
+  </div>
+  <p class="ver">달콤 왕국 1번 맵 · 전 20 스테이지</p>
+</section>
+
+<!-- ===================== 스테이지 선택 ===================== -->
+<section id="scr-map" class="screen">
+  <header class="bar">
+    <button class="icon-btn" data-goto="scr-title">◀</button>
+    <div class="bar-title">달콤 왕국 · 1번 맵</div>
+    <div class="coin-chip">🍯 <span id="map-coins">0</span></div>
+  </header>
+  <div class="progress-wrap">
+    <div class="progress"><div class="progress-fill" id="map-progress"></div></div>
+    <span id="map-progress-txt">0 / 20</span>
+  </div>
+  <div class="stage-list" id="stage-list"></div>
+  <nav class="tabbar">
+    <button class="tab" id="btn-shop">🍯 강화</button>
+    <button class="tab" id="btn-units">📖 도감</button>
+  </nav>
+</section>
+
+<!-- ===================== 강화 상점 ===================== -->
+<section id="scr-shop" class="screen">
+  <header class="bar">
+    <button class="icon-btn" data-goto="scr-map">◀</button>
+    <div class="bar-title">부대 강화</div>
+    <div class="coin-chip">🍯 <span id="shop-coins">0</span></div>
+  </header>
+  <div class="scroll" id="shop-list"></div>
+</section>
+
+<!-- ===================== 도감 ===================== -->
+<section id="scr-units" class="screen">
+  <header class="bar">
+    <button class="icon-btn" data-goto="scr-map">◀</button>
+    <div class="bar-title">부대 도감</div>
+    <div></div>
+  </header>
+  <div class="scroll" id="units-list"></div>
+</section>
+
+<!-- ===================== 전투 ===================== -->
+<section id="scr-battle" class="screen battle">
+  <canvas id="cv"></canvas>
+
+  <div class="hud-top">
+    <button class="icon-btn small" id="btn-quit">✕</button>
+    <div class="stage-tag" id="battle-stage">1-1</div>
+    <button class="icon-btn small" id="btn-speed">▶▶ 1x</button>
+  </div>
+
+  <div class="hud-bottom">
+    <div class="wallet">
+      <div class="wallet-bar"><div class="wallet-fill" id="wallet-fill"></div></div>
+      <div class="wallet-txt"><span id="money-txt">0</span> / <span id="wallet-txt">0</span></div>
+    </div>
+    <div class="cards" id="cards"></div>
+  </div>
+
+  <div class="result" id="result">
+    <div class="result-card">
+      <h2 id="result-title">승리!</h2>
+      <p id="result-desc"></p>
+      <div class="result-btns">
+        <button class="btn" id="btn-retry">다시 하기</button>
+        <button class="btn primary" id="btn-next">다음 스테이지</button>
+        <button class="btn ghost" id="btn-tomap">지도로</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 도움말 ===================== -->
+<div class="modal" id="modal-howto">
+  <div class="modal-card">
+    <h3>플레이 방법</h3>
+    <ul>
+      <li>자금(🍬)은 시간이 지나면 자동으로 찬다.</li>
+      <li>아래 카드를 눌러 디저트 부대를 내보낸다. 카드마다 비용과 재사용 대기시간이 있다.</li>
+      <li>유닛은 자동으로 전진해 적을 공격한다. 적 본진을 부수면 승리.</li>
+      <li>아군 본진이 부서지면 패배. 화면을 좌우로 밀면 전장을 둘러볼 수 있다.</li>
+      <li>전투에서 얻은 꿀(🍯)로 지갑·공격력·체력을 강화하자.</li>
+      <li>스테이지를 깰수록 새로운 유닛이 해금된다.</li>
+    </ul>
+    <button class="btn primary" data-close>알겠어</button>
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/game.js"></script>
+<script src="js/render.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
