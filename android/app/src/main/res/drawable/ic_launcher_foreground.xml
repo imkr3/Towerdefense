@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 졸라맨 기사: 방패를 든 막대 병사 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 몸통 -->
+    <path
+        android:strokeColor="#E8DCC0"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:pathData="M54,46 L54,66" />
+    <!-- 다리 -->
+    <path
+        android:strokeColor="#E8DCC0"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:pathData="M54,66 L45,80 M54,66 L63,80" />
+    <!-- 창을 든 팔 -->
+    <path
+        android:strokeColor="#E8DCC0"
+        android:strokeWidth="4.5"
+        android:strokeLineCap="round"
+        android:pathData="M54,50 L66,46" />
+    <!-- 창 -->
+    <path
+        android:strokeColor="#C9A227"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M60,58 L78,32" />
+    <path
+        android:fillColor="#C9A227"
+        android:pathData="M79,28 L84,38 L74,36 z" />
+    <!-- 머리 -->
+    <path
+        android:fillColor="#E8DCC0"
+        android:pathData="M54,28 m-9,0 a9,9 0 1,0 18,0 a9,9 0 1,0 -18,0" />
+    <!-- 투구 -->
+    <path
+        android:fillColor="#C9A227"
+        android:pathData="M43,28 a11,11 0 0,1 22,0 z" />
+    <!-- 방패 -->
+    <path
+        android:fillColor="#8D6A3F"
+        android:pathData="M28,42 L44,45 L44,64 L36,72 L28,64 z" />
+</vector>

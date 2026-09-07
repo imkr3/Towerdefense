@@ -10,8 +10,25 @@ function defaultSave() {
   return {
     cleared: 0, coins: 0,
     upgrades: { wallet: 0, income: 0, power: 0, vitality: 0, castle: 0 },
-    levels: lv
+    levels: lv, loadout: ['spear']
   };
+}
+
+/* 해금된 병종 목록 */
+function unlockedUnits() {
+  return ROSTER_UNITS.filter(u => u.unlockStage <= save.cleared + 1);
+}
+
+/* 새로 해금된 병종을 자리가 있으면 편성에 자동 추가 */
+function syncLoadout() {
+  const unlocked = unlockedUnits();
+  save.loadout = (save.loadout || []).filter(id => unlocked.some(u => u.id === id));
+  unlocked.forEach(u => {
+    if (save.loadout.length < LOADOUT_MAX && save.loadout.indexOf(u.id) < 0) {
+      save.loadout.push(u.id);
+    }
+  });
+  save.loadout = save.loadout.slice(0, LOADOUT_MAX);
 }
 
 function loadGame() {
@@ -28,6 +45,7 @@ function loadGame() {
     UNITS.forEach(u => {
       s.levels[u.id] = Math.max(1, Math.min(cap, s.levels[u.id] | 0 || 1));
     });
+    if (!Array.isArray(s.loadout)) s.loadout = [];
     return s;
   } catch (e) { return defaultSave(); }
 }
@@ -46,7 +64,10 @@ const $ = sel => document.querySelector(sel);
 const $$ = sel => Array.prototype.slice.call(document.querySelectorAll(sel));
 
 function show(id) {
+  syncLoadout();
   $$('.screen').forEach(s => s.classList.toggle('active', s.id === id));
+  titleAnim.on = (id === 'scr-title');
+  if (id === 'scr-title') { resizeTitle(); refreshTitleBadges(); }
   if (id === 'scr-map') renderMap();
   if (id === 'scr-shop') renderShop();
   if (id === 'scr-units') renderTraining();
@@ -134,45 +155,56 @@ function renderShop() {
 function renderTraining() {
   $('#train-coins').textContent = save.coins;
   const cap = unitLevelCap(save.cleared);
-  $('#train-cap').textContent = 'Lv 상한 ' + cap +
-    (cap < UNIT_LEVEL_HARD_CAP ? ' (전장을 돌파하면 상승)' : ' (최대)');
+  $('#train-cap').innerHTML =
+    'Lv 상한 <b>' + cap + '</b>' +
+    (cap < UNIT_LEVEL_HARD_CAP ? ' (전장을 돌파하면 상승)' : ' (최대)') +
+    ' · 편성 <b>' + save.loadout.length + ' / ' + LOADOUT_MAX + '</b>' +
+    ' <span class="hint">카드는 편성한 병종만 나온다</span>';
 
   const box = $('#units-list');
   box.innerHTML = '';
-  UNITS.forEach(u => {
+  ROSTER_UNITS.forEach(u => {
     const unlocked = u.unlockStage <= save.cleared + 1;
     const lv = save.levels[u.id] || 1;
     const mul = unitLevelMul(lv);
     const cost = unitTrainCost(u, lv);
     const atCap = lv >= cap;
+    const inTeam = save.loadout.indexOf(u.id) >= 0;
+    const teamFull = save.loadout.length >= LOADOUT_MAX;
+
     const el = document.createElement('div');
-    el.className = 'unit-card' + (unlocked ? '' : ' dim');
+    el.className = 'unit-card' + (unlocked ? '' : ' dim') + (inTeam ? ' teamed' : '');
     el.innerHTML =
       '<div class="unit-ico">' + (unlocked ? '<canvas></canvas>' : '<span>?</span>') + '</div>' +
       '<div class="unit-body">' +
         '<div class="unit-name">' + (unlocked ? u.name : '미합류 병종') +
           '<span class="unit-tag' + (unlocked ? '' : ' lock') + '">' +
           (unlocked ? u.role : u.unlockStage + '전장') + '</span>' +
-          (unlocked ? '<span class="lv-tag">Lv.' + lv + '</span>' : '') + '</div>' +
+          (unlocked ? '<span class="lv-tag">Lv.' + lv + '</span>' : '') +
+          (unlocked && inTeam ? '<span class="team-tag">편성</span>' : '') + '</div>' +
+        (unlocked && u.abText ? '<div class="ab-text">◆ ' + u.abText + '</div>' : '') +
         '<div class="unit-desc">' +
           (unlocked ? u.desc : '전장 ' + u.unlockStage + '을(를) 돌파하면 합류한다.') + '</div>' +
         (unlocked ?
           '<div class="stat-row">' +
             '<span class="stat">비용 ' + u.cost + '</span>' +
             '<span class="stat hl">체력 ' + Math.round(u.hp * mul) + '</span>' +
-            '<span class="stat hl">공격 ' + Math.round(u.atk * mul) + '</span>' +
-            '<span class="stat">사거리 ' + u.range + '</span>' +
+            (u.atk ? '<span class="stat hl">공격 ' + Math.round(u.atk * mul) + '</span>' : '') +
+            (u.range ? '<span class="stat">사거리 ' + u.range + '</span>' : '') +
             '<span class="stat">속도 ' + u.speed + '</span>' +
             '<span class="stat">대기 ' + u.cooldown + '초</span>' +
-            (u.area ? '<span class="stat">범위</span>' : '') +
-            (u.ranged ? '<span class="stat">원거리</span>' : '') +
           '</div>' +
-          '<button class="btn train-btn"' + (atCap ? ' disabled' : '') + '>' +
-            (atCap ? (lv >= UNIT_LEVEL_HARD_CAP ? '최대 레벨' : '상한 도달 · 전장을 돌파하라')
-                   : '💰 ' + cost + ' → Lv.' + (lv + 1)) +
-          '</button>'
+          '<div class="btn-row">' +
+            '<button class="btn train-btn"' + (atCap ? ' disabled' : '') + '>' +
+              (atCap ? (lv >= UNIT_LEVEL_HARD_CAP ? '최대 레벨' : '상한 도달')
+                     : '💰 ' + cost + ' → Lv.' + (lv + 1)) + '</button>' +
+            '<button class="btn team-btn' + (inTeam ? ' on' : '') + '"' +
+              (!inTeam && teamFull ? ' disabled' : '') + '>' +
+              (inTeam ? '편성 해제' : (teamFull ? '자리 없음' : '편성')) + '</button>' +
+          '</div>'
         : '') +
       '</div>';
+
     if (unlocked) {
       drawUnitIcon(el.querySelector('.unit-ico canvas'), u, 54);
       if (!atCap) {
@@ -185,18 +217,49 @@ function renderTraining() {
           toast(u.name + ' Lv.' + (lv + 1) + ' 훈련 완료');
         });
       }
+      const tb = el.querySelector('.team-btn');
+      if (tb && !(!inTeam && teamFull)) {
+        tb.addEventListener('click', () => {
+          if (inTeam) {
+            if (save.loadout.length <= 1) { toast('최소 한 병종은 편성해야 한다'); return; }
+            save.loadout = save.loadout.filter(id => id !== u.id);
+          } else {
+            save.loadout.push(u.id);
+          }
+          saveGame(save);
+          renderTraining();
+        });
+      }
     }
     box.appendChild(el);
   });
 
-  const head = document.createElement('div');
-  head.className = 'unit-card';
-  head.innerHTML = '<div class="unit-ico"><canvas></canvas></div><div class="unit-body">' +
-    '<div class="unit-name">오크 군단</div>' +
-    '<div class="unit-desc">왕국을 노리는 침략자들. 고블린 졸개부터 오크 대군주까지 ' +
-    Object.keys(ENEMIES).length + '종이 확인되었다.</div></div>';
-  box.appendChild(head);
-  drawUnitIcon(head.querySelector('canvas'), ENEMIES.warlord, 54);
+  // 적 도감
+  Object.keys(ENEMIES).forEach(key => {
+    const e = ENEMIES[key];
+    const el = document.createElement('div');
+    el.className = 'unit-card foe';
+    el.innerHTML =
+      '<div class="unit-ico"><canvas></canvas></div>' +
+      '<div class="unit-body">' +
+        '<div class="unit-name">' + e.name +
+          '<span class="unit-tag foe-tag">' + (e.boss ? '보스' : '적') + '</span></div>' +
+        '<div class="stat-row">' +
+          '<span class="stat">체력 ' + e.hp.toLocaleString() + '</span>' +
+          '<span class="stat">공격 ' + e.atk + '</span>' +
+          '<span class="stat">사거리 ' + e.range + '</span>' +
+          (e.ab && e.ab.heal ? '<span class="stat hl">아군 회복</span>' : '') +
+          (e.ab && e.ab.poison ? '<span class="stat hl">중독</span>' : '') +
+          (e.ab && e.ab.slow ? '<span class="stat hl">둔화</span>' : '') +
+          (e.ab && e.ab.kbImmune ? '<span class="stat hl">넉백 면역</span>' : '') +
+          (e.ab && e.ab.deathBomb ? '<span class="stat hl">사망 시 폭발</span>' : '') +
+          (e.ab && e.ab.summon ? '<span class="stat hl">소환</span>' : '') +
+          (e.area ? '<span class="stat">범위</span>' : '') +
+        '</div>' +
+      '</div>';
+    drawUnitIcon(el.querySelector('canvas'), e, 54);
+    box.appendChild(el);
+  });
 }
 
 /* ------------------------------ 전투 ------------------------------ */
@@ -215,7 +278,7 @@ function startBattle(index) {
 function buildCards() {
   const box = $('#cards');
   box.innerHTML = '';
-  battle.unlockedUnits().forEach(u => {
+  battle.roster.forEach(u => {
     const b = document.createElement('button');
     b.className = 'card';
     b.dataset.id = u.id;
@@ -275,11 +338,13 @@ function showResult() {
 /* ------------------------------ 루프 ------------------------------ */
 function loop(ts) {
   requestAnimationFrame(loop);
-  if (!battle || !$('#scr-battle').classList.contains('active')) { lastTs = ts; return; }
   if (!lastTs) lastTs = ts;
   let dt = (ts - lastTs) / 1000;
   lastTs = ts;
   if (dt > 0.1) dt = 0.1;
+
+  if (titleAnim.on) { drawTitle(dt); return; }
+  if (!battle || !$('#scr-battle').classList.contains('active')) return;
 
   const before = battle.state;
   battle.update(dt);
@@ -333,43 +398,154 @@ function toggleFullscreen() {
   }
 }
 
-function drawTitleScene() {
-  const cv = $('#title-canvas');
+/* --------------------- 타이틀 연출 --------------------- */
+const titleAnim = { on: true, t: 0, cast: null, cv: null, ctx: null, w: 0, h: 0 };
+
+function titleCast() {
+  const allies = ['spear', 'shield', 'knight', 'archer', 'berserk', 'priest', 'duelist'];
+  const foes = ['goblin', 'orcspear', 'ogre', 'wolf', 'dark', 'shaman', 'warlord'];
+  const cast = [];
+  allies.forEach((id, i) => {
+    cast.push({ st: UNIT_BY_ID[id], dir: 1, base: -70 - i * 52, sc: 1, ph: i * 1.3,
+                rate: 0.9 + (i % 3) * 0.25 });
+  });
+  foes.forEach((id, i) => {
+    const e = ENEMIES[id];
+    cast.push({ st: e, dir: -1, base: 70 + i * 54, sc: e.scale || 1, ph: 0.6 + i * 1.1,
+                rate: 0.85 + (i % 3) * 0.3 });
+  });
+  return cast;
+}
+
+function resizeTitle() {
+  const cv = titleAnim.cv;
   if (!cv) return;
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const w = 320, h = 120;
-  cv.width = w * dpr; cv.height = h * dpr;
-  cv.style.width = w + 'px'; cv.style.height = h + 'px';
-  const ctx = cv.getContext('2d');
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.clearRect(0, 0, w, h);
+  const r = cv.getBoundingClientRect();
+  titleAnim.w = Math.max(320, r.width);
+  titleAnim.h = Math.max(240, r.height);
+  cv.width = Math.round(titleAnim.w * dpr);
+  cv.height = Math.round(titleAnim.h * dpr);
+  titleAnim.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
 
-  ctx.strokeStyle = 'rgba(60,45,30,.35)';
-  ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(10, h - 12); ctx.lineTo(w - 10, h - 12); ctx.stroke();
+function drawTitle(dt) {
+  const A = titleAnim;
+  if (!A.cv) return;
+  const ctx = A.ctx, w = A.w, h = A.h;
+  if (!w || !h) return;
+  A.t += dt;
+  const t = A.t;
+  const groundY = h * 0.86;
 
-  const cast = [
-    [58, UNIT_BY_ID.knight, 1, 1.15],
-    [110, UNIT_BY_ID.archer, 1, 1.0],
-    [16, UNIT_BY_ID.spear, 1, 0.95],
-    [252, ENEMIES.warlord, -1, 0.9],
-    [206, ENEMIES.goblin, -1, 1.0],
-    [290, ENEMIES.ogre, -1, 0.8]
-  ];
-  cast.forEach(c => {
+  const sky = ctx.createLinearGradient(0, 0, 0, groundY);
+  sky.addColorStop(0, '#2f3f57');
+  sky.addColorStop(0.55, '#8d7f8e');
+  sky.addColorStop(1, '#e3b988');
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, w, h);
+
+  // 저무는 해
+  ctx.fillStyle = 'rgba(255,214,150,.35)';
+  ctx.beginPath(); ctx.arc(w * 0.5, groundY - 40, 92, 0, 7); ctx.fill();
+  ctx.fillStyle = 'rgba(255,236,196,.85)';
+  ctx.beginPath(); ctx.arc(w * 0.5, groundY - 40, 58, 0, 7); ctx.fill();
+
+  // 구름
+  ctx.fillStyle = 'rgba(40,36,50,.35)';
+  for (let i = 0; i < 6; i++) {
+    const cx = ((i * 300 - t * 8) % (w + 600) + w + 600) % (w + 600) - 300;
+    const cy = 40 + ((i * 37) % 4) * 26;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 30, 0, 7);
+    ctx.arc(cx + 28, cy + 6, 22, 0, 7);
+    ctx.arc(cx - 28, cy + 7, 19, 0, 7);
+    ctx.fill();
+  }
+
+  // 산맥
+  const ridge = (color, amp, step, base) => {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(-10, groundY + 10);
+    for (let x = -step; x < w + step * 2; x += step) {
+      ctx.lineTo(x, groundY - base);
+      ctx.lineTo(x + step / 2, groundY - base - amp);
+    }
+    ctx.lineTo(w + 20, groundY + 10);
+    ctx.closePath(); ctx.fill();
+  };
+  ridge('rgba(60,58,80,.75)', 120, 210, 30);
+  ridge('rgba(40,40,56,.9)', 76, 140, 6);
+
+  // 성채 실루엣
+  ctx.fillStyle = 'rgba(28,28,38,.95)';
+  const cw = 90, ch = 120;
+  ctx.fillRect(18, groundY - ch, cw, ch);
+  for (let i = 0; i < 4; i++) ctx.fillRect(18 + i * 24, groundY - ch - 14, 15, 16);
+  ctx.fillRect(w - 18 - cw, groundY - ch, cw, ch);
+  for (let i = 0; i < 5; i++) {
+    ctx.beginPath();
+    ctx.moveTo(w - 18 - cw + i * 19, groundY - ch);
+    ctx.lineTo(w - 18 - cw + i * 19 + 9, groundY - ch - 20);
+    ctx.lineTo(w - 18 - cw + i * 19 + 18, groundY - ch);
+    ctx.closePath(); ctx.fill();
+  }
+
+  // 땅
+  ctx.fillStyle = '#3a3040';
+  ctx.fillRect(0, groundY, w, h - groundY);
+  ctx.fillStyle = '#2b2431';
+  ctx.fillRect(0, groundY, w, 4);
+
+  // 부대
+  if (!A.cast) A.cast = titleCast();
+  const cx = w / 2;
+  const sc = Math.max(0.55, Math.min(1.0, h / 560));
+  A.cast.forEach(c => {
+    const push = Math.sin(t * 0.7 + c.ph) * 7;
+    const x = cx + (c.base + push * c.dir) * sc * 1.25;
+    if (x < -60 || x > w + 60) return;
+    const swing = 0.5 + 0.5 * Math.sin(t * c.rate * 3 + c.ph);
     ctx.save();
-    ctx.translate(c[0], h - 12);
-    ctx.scale(c[2], 1);
-    ctx.fillStyle = 'rgba(0,0,0,.15)';
-    ctx.beginPath(); ctx.ellipse(0, 0, 14 * c[3], 4, 0, 0, 7); ctx.fill();
-    drawBody(ctx, c[1].shape, c[1].body, c[1].accent, c[3], false, false, 0, false, 0.35);
+    ctx.translate(x, groundY + 4);
+    ctx.scale(c.dir, 1);
+    ctx.fillStyle = 'rgba(0,0,0,.28)';
+    ctx.beginPath(); ctx.ellipse(0, 0, 16 * sc * c.sc, 4 * sc, 0, 0, 7); ctx.fill();
+    drawBody(ctx, c.st, sc * c.sc, false, false, t * 3 + c.ph, false, swing);
     ctx.restore();
   });
+
+  // 불티
+  ctx.fillStyle = 'rgba(255,200,120,.75)';
+  for (let i = 0; i < 22; i++) {
+    const sp = 14 + (i % 5) * 6;
+    const ex = ((i * 137 + t * sp) % (w + 80)) - 40;
+    const ey = groundY - ((t * (18 + (i % 4) * 7) + i * 91) % (groundY * 0.8));
+    ctx.globalAlpha = 0.15 + 0.5 * (ey / groundY);
+    ctx.fillRect(ex, ey, 2.4, 2.4);
+  }
+  ctx.globalAlpha = 1;
+
+  // 아래쪽 어둡게
+  const vg = ctx.createLinearGradient(0, h * 0.55, 0, h);
+  vg.addColorStop(0, 'rgba(20,16,22,0)');
+  vg.addColorStop(1, 'rgba(20,16,22,.55)');
+  ctx.fillStyle = vg;
+  ctx.fillRect(0, h * 0.55, w, h * 0.45);
+}
+
+function refreshTitleBadges() {
+  $('#badge-progress').textContent = '돌파 ' + save.cleared + ' / ' + STAGES.length;
+  $('#badge-gold').textContent = '💰 ' + save.coins;
 }
 
 function init() {
   renderer = new Renderer($('#cv'));
-  drawTitleScene();
+  titleAnim.cv = $('#title-bg');
+  titleAnim.ctx = titleAnim.cv.getContext('2d');
+  resizeTitle();
+  refreshTitleBadges();
   bindCanvasDrag($('#cv'));
 
   $('#btn-start').addEventListener('click', () => show('scr-map'));
@@ -401,14 +577,36 @@ function init() {
   $('#btn-tomap').addEventListener('click', () => show('scr-map'));
 
   $('#btn-full').addEventListener('click', toggleFullscreen);
-  window.addEventListener('resize', () => { if (renderer) renderer.resize(); });
+  window.addEventListener('resize', () => {
+    if (renderer) renderer.resize();
+    resizeTitle();
+  });
   window.addEventListener('orientationchange', () => {
-    setTimeout(() => { if (renderer) renderer.resize(); }, 250);
+    setTimeout(() => { if (renderer) renderer.resize(); resizeTitle(); }, 250);
   });
   requestAnimationFrame(loop);
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
+/* 안드로이드 뒤로 가기 처리. true 를 돌려주면 앱이 닫히지 않는다. */
+window.__androidBack = function () {
+  const open = document.querySelector('.modal.show');
+  if (open) { open.classList.remove('show'); return true; }
+  const active = document.querySelector('.screen.active');
+  if (!active) return false;
+  if (active.id === 'scr-battle') {
+    if (battle && battle.state === 'play' && !$('#result').classList.contains('show')) {
+      show('scr-map');
+    } else {
+      show('scr-map');
+    }
+    return true;
+  }
+  if (active.id === 'scr-shop' || active.id === 'scr-units') { show('scr-map'); return true; }
+  if (active.id === 'scr-map') { show('scr-title'); return true; }
+  return false;   // 타이틀에서는 앱 종료
+};
 
 // 오프라인 지원 (http/https 로 열었을 때만)
 if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {

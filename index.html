@@ -17,16 +17,23 @@
 
 <!-- ===================== 타이틀 ===================== -->
 <section id="scr-title" class="screen active">
-  <div class="title-art">
-    <canvas id="title-canvas" width="320" height="120"></canvas>
-    <h1>막대 왕국 전쟁</h1>
-    <p class="sub">왕국군 <b>vs</b> 오크 군단</p>
-  </div>
-  <div class="title-btns">
-    <button class="btn big" id="btn-start">출 진</button>
-    <button class="btn ghost" id="btn-howto">교전 수칙</button>
-    <button class="btn ghost" id="btn-full">전체화면 · 가로 고정</button>
-    <button class="btn ghost danger" id="btn-reset">기록 초기화</button>
+  <canvas id="title-bg"></canvas>
+  <div class="title-inner">
+    <div class="title-art">
+      <div class="crest">⚔</div>
+      <h1>막대 왕국 전쟁</h1>
+      <p class="sub">왕국군 <b>vs</b> 오크 군단</p>
+      <div class="title-badges">
+        <span class="badge" id="badge-progress">돌파 0 / 20</span>
+        <span class="badge gold" id="badge-gold">💰 0</span>
+      </div>
+    </div>
+    <div class="title-btns">
+      <button class="btn big" id="btn-start">출 진</button>
+      <button class="btn ghost" id="btn-howto">교전 수칙</button>
+      <button class="btn ghost" id="btn-full">전체화면 · 가로 고정</button>
+      <button class="btn ghost danger" id="btn-reset">기록 초기화</button>
+    </div>
   </div>
   <p class="ver">왕국 방어선 · 전 20 전장</p>
 </section>
