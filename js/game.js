@@ -211,7 +211,9 @@ class Battle {
   /* 해금된 병종 */
   unlockedUnits() {
     const cleared = this.save.cleared;
-    return UNITS.filter(u => u.unlockStage <= cleared + 1);
+    const owned = this.save.owned || {};
+    return UNITS.filter(u =>
+      u.unlockStage <= cleared + 1 || (u.gacha && owned[u.id]));
   }
 
   /* 실제 출진 편성 (최대 LOADOUT_MAX) */
@@ -351,7 +353,13 @@ class Battle {
       if (!this.save.stars) this.save.stars = {};
       if (this.stars > prev) this.save.stars[this.stageIndex] = this.stars;
 
-      if (this.stageIndex >= this.save.cleared) this.save.cleared = this.stageIndex + 1;
+      // 소환석: 첫 돌파 2개 + 새로 딴 별 1개당 1개
+      this.stoneGain = this.newStars;
+      if (this.stageIndex >= this.save.cleared) {
+        this.save.cleared = this.stageIndex + 1;
+        this.stoneGain += 2;
+      }
+      this.save.stones = (this.save.stones || 0) + this.stoneGain;
       this.save.coins += this.coins;
       this.save.totalKills = (this.save.totalKills || 0) + this.kills;
       saveGame(this.save);

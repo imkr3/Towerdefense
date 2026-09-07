@@ -226,7 +226,241 @@ const UNITS = [
 const UNIT_BY_ID = {};
 UNITS.forEach(u => { UNIT_BY_ID[u.id] = u; });
 // 카드로 뽑을 수 있는 병종만
-const ROSTER_UNITS = UNITS.filter(u => u.unlockStage <= 100);
+const ROSTER_UNITS = UNITS.filter(u => u.unlockStage <= 100);   // 전장 진행으로 얻는 병종
+
+
+/* =======================================================================
+ *  시즌 소환 병종 (뽑기로만 얻는다)
+ * ======================================================================= */
+const RARITY = {
+  N:   { name: '일반', color: '#8b8477', weight: 52, refund: 120 },
+  R:   { name: '희귀', color: '#3f8ed0', weight: 30, refund: 320 },
+  SR:  { name: '영웅', color: '#a05fd0', weight: 14, refund: 900 },
+  SSR: { name: '전설', color: '#e8a020', weight: 4,  refund: 2400 }
+};
+const RARITY_ORDER = ['N', 'R', 'SR', 'SSR'];
+
+const GACHA = {
+  stonePerPull: 1,
+  tenPull: 9,          // 10회 소환에 필요한 소환석
+  pity: 40,            // 이 횟수 안에 전설 확정
+  goldPerStone: 2000,  // 골드로 소환석 구매
+  tenMinRarity: 'SR'   // 10회 소환은 영웅 이상 1개 확정
+};
+
+const SEASON_UNITS = [
+  /* ---------------- 시즌 1 · 올림포스 ---------------- */
+  mk({
+    id: 'zeus', name: '제우스', short: '제우스', role: '뇌신', shape: 'zeus',
+    season: 'olympus', rarity: 'SSR', gacha: true, unlockStage: 999,
+    body: '#e8cfa4', accent: '#ffe14a', tunic: '#f7f2e4',
+    hp: 2600, atk: 470, range: 380, speed: 24, interval: 2.6,
+    cost: 600, cooldown: 45, kb: 1, ranged: true, area: true, areaRadius: 150, scale: 1.35,
+    ab: { stun: { chance: 0.35, dur: 1.4 } },
+    abText: '초장거리 번개 광역 · 35% 기절',
+    desc: '하늘에서 번개를 내리꽂는다. 맞은 자리의 모든 것이 멈춘다.'
+  }),
+  mk({
+    id: 'ares', name: '아레스', short: '아레스', role: '전신', shape: 'ares',
+    season: 'olympus', rarity: 'SR', gacha: true, unlockStage: 999,
+    body: '#2b3038', accent: '#c0392b', tunic: '#8e2f3a',
+    hp: 2600, atk: 240, range: 88, speed: 34, interval: 1.7,
+    cost: 400, cooldown: 18, kb: 1, area: true, areaRadius: 95, scale: 1.15,
+    ab: { enrage: 1.8, lifesteal: 0.2 },
+    abText: '범위 · 피가 깎일수록 가속 · 흡혈 20%',
+    desc: '전쟁 그 자체. 상처가 깊어질수록 창은 더 빨라진다.'
+  }),
+  mk({
+    id: 'artemis', name: '아르테미스', short: '아르테미스', role: '사냥', shape: 'artemis',
+    season: 'olympus', rarity: 'SR', gacha: true, unlockStage: 999,
+    body: '#2b3038', accent: '#cfe8b0', tunic: '#4a7c4e',
+    hp: 430, atk: 150, range: 420, speed: 44, interval: 0.9,
+    cost: 360, cooldown: 14, kb: 2, ranged: true,
+    ab: { pierce: true },
+    abText: '일직선 관통 · 초당 1회 이상 연사',
+    desc: '달의 사냥꾼. 화살 한 발이 줄지어 선 적을 전부 꿰뚫는다.'
+  }),
+  mk({
+    id: 'medusa', name: '메두사', short: '메두사', role: '석화', shape: 'medusa',
+    season: 'olympus', rarity: 'R', gacha: true, unlockStage: 999,
+    body: '#6b8f5f', accent: '#9de08e', tunic: '#4a6b46',
+    hp: 760, atk: 92, range: 240, speed: 28, interval: 1.8,
+    cost: 260, cooldown: 10, kb: 2, ranged: true,
+    ab: { stun: { chance: 0.5, dur: 1.6 }, slow: 2 },
+    abText: '50% 석화(기절) · 둔화',
+    desc: '눈을 마주친 자는 돌이 된다. 전선을 통째로 굳혀 버린다.'
+  }),
+  mk({
+    id: 'spartan', name: '스파르타 전사', short: '스파르타', role: '밀집', shape: 'spartan',
+    season: 'olympus', rarity: 'R', gacha: true, unlockStage: 999,
+    body: '#2b3038', accent: '#c9a227', tunic: '#a83a2e',
+    hp: 2700, atk: 92, range: 66, speed: 30, interval: 1.4,
+    cost: 230, cooldown: 9, kb: 1, scale: 1.1,
+    ab: { kbImmune: true },
+    abText: '넉백 면역 · 밀리지 않는 방진',
+    desc: '한 발도 물러서지 않는다. 방패를 맞대고 버티는 것이 임무다.'
+  }),
+
+  /* ---------------- 시즌 2 · 라그나로크 ---------------- */
+  mk({
+    id: 'thor', name: '토르', short: '토르', role: '뇌신', shape: 'thor',
+    season: 'ragnarok', rarity: 'SSR', gacha: true, unlockStage: 999,
+    body: '#2b3038', accent: '#b9c2cc', tunic: '#8e2f3a',
+    hp: 3900, atk: 600, range: 120, speed: 30, interval: 2.2,
+    cost: 620, cooldown: 45, kb: 1, area: true, areaRadius: 130, scale: 1.4,
+    ab: { stun: { chance: 0.4, dur: 1.2 }, push: 50 },
+    abText: '광역 망치 · 40% 기절 · 밀쳐내기',
+    desc: '묠니르가 떨어질 때마다 전선이 통째로 뒤로 밀린다.'
+  }),
+  mk({
+    id: 'valkyrie', name: '발키리', short: '발키리', role: '전선', shape: 'valkyrie',
+    season: 'ragnarok', rarity: 'SR', gacha: true, unlockStage: 999,
+    body: '#2b3038', accent: '#f0e6c8', tunic: '#3f6bb5',
+    hp: 1500, atk: 210, range: 82, speed: 58, interval: 1.3,
+    cost: 380, cooldown: 16, kb: 2,
+    ab: { revive: 0.5, heal: 60, radius: 160, interval: 4 },
+    abText: '1회 부활 · 주변 아군 회복',
+    desc: '쓰러진 자를 거두는 전장의 처녀. 자기 자신도 한 번은 일어난다.'
+  }),
+  mk({
+    id: 'fenrir', name: '펜리르', short: '펜리르', role: '맹수', shape: 'fenrir',
+    season: 'ragnarok', rarity: 'SR', gacha: true, unlockStage: 999,
+    body: '#3a3f48', accent: '#7fd8ff', tunic: '#2a2e36',
+    hp: 1900, atk: 185, range: 66, speed: 130, interval: 0.7,
+    cost: 370, cooldown: 15, kb: 2, scale: 1.25,
+    ab: { lifesteal: 0.4 },
+    abText: '초고속 돌진 · 흡혈 40%',
+    desc: '사슬을 끊고 나온 늑대. 물어뜯은 만큼 스스로 회복한다.'
+  }),
+  mk({
+    id: 'viking', name: '바이킹 전사', short: '바이킹', role: '광전', shape: 'viking',
+    season: 'ragnarok', rarity: 'R', gacha: true, unlockStage: 999,
+    body: '#2b3038', accent: '#c8ced6', tunic: '#6b4b2a',
+    hp: 950, atk: 110, range: 70, speed: 80, interval: 0.7,
+    cost: 250, cooldown: 8, kb: 3,
+    ab: { enrage: 1.7, crit: { chance: 0.25, mul: 2.2 } },
+    abText: '광폭화 · 25% 치명타',
+    desc: '피를 볼수록 웃는다. 죽기 직전이 가장 강하다.'
+  }),
+  mk({
+    id: 'runeseer', name: '룬 주술사', short: '룬술사', role: '지원', shape: 'runeseer',
+    season: 'ragnarok', rarity: 'R', gacha: true, unlockStage: 999,
+    body: '#2b3038', accent: '#7fd8ff', tunic: '#3a4e6b',
+    hp: 640, atk: 0, range: 0, speed: 30, interval: 4,
+    cost: 240, cooldown: 12, kb: 1,
+    ab: { haste: { mul: 0.78, dur: 4 }, barrier: 190, radius: 210, interval: 4, noAttack: true },
+    abText: '주변 아군 가속 + 보호막 190',
+    desc: '룬을 새겨 아군을 감싼다. 싸우지 않지만 없으면 아쉽다.'
+  }),
+
+  /* ---------------- 시즌 3 · 나일의 왕가 ---------------- */
+  mk({
+    id: 'anubis', name: '아누비스', short: '아누비스', role: '사자', shape: 'anubis',
+    season: 'nile', rarity: 'SSR', gacha: true, unlockStage: 999,
+    body: '#2a2a30', accent: '#e8c65a', tunic: '#1e1e24',
+    hp: 3300, atk: 430, range: 110, speed: 26, interval: 2.2,
+    cost: 580, cooldown: 42, kb: 1, area: true, areaRadius: 120, scale: 1.35,
+    ab: { summon: { id: 'mummy', n: 2 }, interval: 7 },
+    abText: '광역 · 7초마다 미라 2기 소환',
+    desc: '죽은 자를 세어 보내는 자. 쓰러진 자리마다 미라가 일어선다.'
+  }),
+  mk({
+    id: 'rapriest', name: '라의 사제', short: '라사제', role: '태양', shape: 'rapriest',
+    season: 'nile', rarity: 'SR', gacha: true, unlockStage: 999,
+    body: '#2b3038', accent: '#ffb03c', tunic: '#e8c65a',
+    hp: 720, atk: 180, range: 300, speed: 30, interval: 2.0,
+    cost: 350, cooldown: 14, kb: 2, ranged: true, area: true, areaRadius: 105,
+    ab: { burn: { dps: 95, dur: 5 } },
+    abText: '태양광 범위 · 화상 95/초 5초',
+    desc: '태양을 조각내 던진다. 맞은 자리는 한참을 탄다.'
+  }),
+  mk({
+    id: 'scarab', name: '황금 스카라베', short: '스카라베', role: '보물', shape: 'scarab',
+    season: 'nile', rarity: 'R', gacha: true, unlockStage: 999,
+    body: '#c9a227', accent: '#6b5417', tunic: '#e8c65a',
+    hp: 520, atk: 70, range: 62, speed: 110, interval: 0.8,
+    cost: 220, cooldown: 8, kb: 3,
+    ab: { gold: 8 },
+    abText: '빠름 · 살아 있는 동안 군자금 +8/초',
+    desc: '황금 껍질을 두른 풍뎅이. 굴러다니며 금화를 흘린다.'
+  }),
+  mk({
+    id: 'desertarcher', name: '사막 궁수', short: '사막궁수', role: '원거리', shape: 'desertarcher',
+    season: 'nile', rarity: 'N', gacha: true, unlockStage: 999,
+    body: '#2b3038', accent: '#e8d9a8', tunic: '#b98a52',
+    hp: 270, atk: 80, range: 285, speed: 40, interval: 1.2,
+    cost: 150, cooldown: 5, kb: 2, ranged: true,
+    abText: '값싼 원거리',
+    desc: '모래바람 속에서 자란 궁수. 싸고 빠르게 자리를 채운다.'
+  }),
+  mk({
+    id: 'hoplite', name: '아테네 창병', short: '아테네창', role: '방진', shape: 'hoplite',
+    season: 'olympus', rarity: 'N', gacha: true, unlockStage: 999,
+    body: '#2b3038', accent: '#c8ced6', tunic: '#3f6bb5',
+    hp: 620, atk: 58, range: 72, speed: 44, interval: 1.0,
+    cost: 140, cooldown: 4.5, kb: 2,
+    abText: '값싼 창방패 보병',
+    desc: '도시국가의 시민병. 싸고 빠르게 전열을 채운다.'
+  }),
+  mk({
+    id: 'northarcher', name: '북방 궁수', short: '북방궁수', role: '원거리', shape: 'northarcher',
+    season: 'ragnarok', rarity: 'N', gacha: true, unlockStage: 999,
+    body: '#2b3038', accent: '#9fc6d8', tunic: '#4a5c6b',
+    hp: 300, atk: 88, range: 300, speed: 38, interval: 1.15,
+    cost: 155, cooldown: 5, kb: 2, ranged: true,
+    abText: '값싼 원거리',
+    desc: '얼음 바람 속에서 활을 당기는 사냥꾼.'
+  }),
+  mk({
+    id: 'pharaoh', name: '파라오 근위대', short: '근위대', role: '수호', shape: 'pharaoh',
+    season: 'nile', rarity: 'SR', gacha: true, unlockStage: 999,
+    body: '#2b3038', accent: '#e8c65a', tunic: '#2b6b8e',
+    hp: 2900, atk: 165, range: 78, speed: 28, interval: 1.6,
+    cost: 370, cooldown: 16, kb: 1, scale: 1.15,
+    ab: { kbImmune: true, barrier: 200, radius: 180, interval: 6 },
+    abText: '넉백 면역 · 주변 아군 보호막 200',
+    desc: '왕의 무덤을 지키던 창병. 한 걸음도 밀리지 않는다.'
+  }),
+  // 소환 전용
+  mk({
+    id: 'mummy', name: '미라', role: '소환수', shape: 'mummy',
+    body: '#cfc09a', accent: '#7a7263', tunic: '#bdae88',
+    hp: 720, atk: 62, range: 62, speed: 26, interval: 1.4,
+    cost: 0, cooldown: 0, kb: 1, unlockStage: 999,
+    ab: { kbImmune: true },
+    desc: '아누비스가 일으킨 미라. 느리지만 밀리지 않는다.'
+  })
+];
+
+UNITS.push.apply(UNITS, SEASON_UNITS);
+SEASON_UNITS.forEach(u => { UNIT_BY_ID[u.id] = u; });
+
+const SEASONS = [
+  { id: 'olympus', name: '올림포스', sub: '그리스 신화',
+    color: '#d8c47a', accent: '#8e6b1f',
+    desc: '번개와 창의 신들이 왕국의 부름에 응했다.',
+    units: ['zeus', 'ares', 'artemis', 'medusa', 'spartan', 'hoplite'] },
+  { id: 'ragnarok', name: '라그나로크', sub: '북유럽 신화',
+    color: '#8fb6d8', accent: '#2f5f8e',
+    desc: '최후의 전투를 앞둔 북방의 전사들이 내려왔다.',
+    units: ['thor', 'valkyrie', 'fenrir', 'viking', 'runeseer', 'northarcher'] },
+  { id: 'nile', name: '나일의 왕가', sub: '이집트 신화',
+    color: '#e8c65a', accent: '#8a6a1f',
+    desc: '모래 아래 잠들어 있던 사자의 신과 사제들이 깨어났다.',
+    units: ['anubis', 'rapriest', 'pharaoh', 'scarab', 'desertarcher'] }
+];
+
+/* 소환 풀: 시즌 병종 + (다른 시즌은 낮은 확률로) */
+function seasonById(id) {
+  for (const s of SEASONS) if (s.id === id) return s;
+  return SEASONS[0];
+}
+function gachaPool(seasonId) {
+  const pick = seasonById(seasonId);
+  const inSeason = pick.units.map(id => UNIT_BY_ID[id]);
+  const others = SEASON_UNITS.filter(u => u.gacha && u.season !== seasonId);
+  return { inSeason: inSeason, others: others };
+}
 
 /* -------------------- 적: 오크 군단 -------------------- */
 const ENEMIES = {

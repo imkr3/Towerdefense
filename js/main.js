@@ -11,13 +11,16 @@ function defaultSave() {
     cleared: 0, coins: 0,
     upgrades: { wallet: 0, income: 0, power: 0, vitality: 0, castle: 0 },
     levels: lv, loadout: ['spear'],
-    stars: {}, totalKills: 0, sound: true
+    stars: {}, totalKills: 0, sound: true,
+    owned: {}, stones: 3, pity: 0, season: 'olympus', pulls: 0
   };
 }
 
 /* 해금된 병종 목록 */
 function unlockedUnits() {
-  return ROSTER_UNITS.filter(u => u.unlockStage <= save.cleared + 1);
+  const base = ROSTER_UNITS.filter(u => u.unlockStage <= save.cleared + 1);
+  const summoned = SEASON_UNITS.filter(u => u.gacha && save.owned[u.id]);
+  return base.concat(summoned);
 }
 
 /* 새로 해금된 병종을 자리가 있으면 편성에 자동 추가 */
@@ -49,6 +52,11 @@ function loadGame() {
     if (!Array.isArray(s.loadout)) s.loadout = [];
     if (!s.stars || typeof s.stars !== 'object') s.stars = {};
     if (typeof s.sound !== 'boolean') s.sound = true;
+    if (!s.owned || typeof s.owned !== 'object') s.owned = {};
+    if (typeof s.stones !== 'number') s.stones = 3;
+    if (typeof s.pity !== 'number') s.pity = 0;
+    if (typeof s.pulls !== 'number') s.pulls = 0;
+    if (!seasonById(s.season)) s.season = 'olympus';
     return s;
   } catch (e) { return defaultSave(); }
 }
@@ -74,6 +82,7 @@ function show(id) {
   if (id === 'scr-map') renderMap();
   if (id === 'scr-shop') renderShop();
   if (id === 'scr-units') renderTraining();
+  if (id === 'scr-gacha') renderGacha();
   if (id === 'scr-battle' && renderer) renderer.resize();
 }
 
@@ -179,8 +188,9 @@ function renderTraining() {
 
   const box = $('#units-list');
   box.innerHTML = '';
-  ROSTER_UNITS.forEach(u => {
-    const unlocked = u.unlockStage <= save.cleared + 1;
+  const ownedSeason = SEASON_UNITS.filter(u => u.gacha && save.owned[u.id]);
+  ROSTER_UNITS.concat(ownedSeason).forEach(u => {
+    const unlocked = u.gacha ? true : (u.unlockStage <= save.cleared + 1);
     const lv = save.levels[u.id] || 1;
     const mul = unitLevelMul(lv);
     const cost = unitTrainCost(u, lv);
@@ -189,13 +199,16 @@ function renderTraining() {
     const teamFull = save.loadout.length >= LOADOUT_MAX;
 
     const el = document.createElement('div');
-    el.className = 'unit-card' + (unlocked ? '' : ' dim') + (inTeam ? ' teamed' : '');
+    el.className = 'unit-card' + (unlocked ? '' : ' dim') + (inTeam ? ' teamed' : '') +
+                   (u.gacha ? ' summoned r-' + rarityOf(u) : '');
     el.innerHTML =
       '<div class="unit-ico">' + (unlocked ? '<canvas></canvas>' : '<span>?</span>') + '</div>' +
       '<div class="unit-body">' +
         '<div class="unit-name">' + (unlocked ? u.name : '미합류 병종') +
           '<span class="unit-tag' + (unlocked ? '' : ' lock') + '">' +
           (unlocked ? u.role : u.unlockStage + '전장') + '</span>' +
+          (u.gacha ? '<span class="rare-tag r-' + rarityOf(u) + '">' +
+                     RARITY[rarityOf(u)].name + '</span>' : '') +
           (unlocked ? '<span class="lv-tag">Lv.' + lv + '</span>' : '') +
           (unlocked && inTeam ? '<span class="team-tag">편성</span>' : '') + '</div>' +
         (unlocked && u.abText ? '<div class="ab-text">◆ ' + u.abText + '</div>' : '') +
@@ -279,6 +292,226 @@ function renderTraining() {
   });
 }
 
+
+/* ============================ 소환의 제단 ============================ */
+function rarityOf(u) { return u.rarity || 'N'; }
+
+function rollRarity() {
+  let total = 0;
+  for (const k of RARITY_ORDER) total += RARITY[k].weight;
+  let r = Math.random() * total;
+  for (const k of RARITY_ORDER) {
+    r -= RARITY[k].weight;
+    if (r <= 0) return k;
+  }
+  return 'N';
+}
+
+/* 한 번 뽑기: 픽업 시즌 80%, 나머지 시즌 20% */
+function pullOne(forceRarity) {
+  const pool = gachaPool(save.season);
+  let rarity = forceRarity || rollRarity();
+  for (let guard = 0; guard < 8; guard++) {
+    const useSeason = Math.random() < 0.8 || pool.others.length === 0;
+    const src = useSeason ? pool.inSeason : pool.others;
+    const list = src.filter(u => rarityOf(u) === rarity);
+    if (list.length) return list[Math.floor(Math.random() * list.length)];
+    const any = pool.inSeason.concat(pool.others).filter(u => rarityOf(u) === rarity);
+    if (any.length) return any[Math.floor(Math.random() * any.length)];
+    // 해당 등급이 풀에 없으면 한 단계 낮춘다
+    const idx = RARITY_ORDER.indexOf(rarity);
+    rarity = RARITY_ORDER[Math.max(0, idx - 1)];
+  }
+  return pool.inSeason[0];
+}
+
+/* 중복이면 레벨 +1 과 골드 환급 */
+function grantUnit(u) {
+  const cap = unitLevelCap(save.cleared, save.upgrades.academy);
+  const dup = !!save.owned[u.id];
+  let levelUp = false, gold = 0;
+  if (dup) {
+    const lv = save.levels[u.id] || 1;
+    if (lv < cap) { save.levels[u.id] = lv + 1; levelUp = true; }
+    gold = RARITY[rarityOf(u)].refund;
+    save.coins += gold;
+  } else {
+    save.owned[u.id] = true;
+    if (!save.levels[u.id]) save.levels[u.id] = 1;
+  }
+  return { unit: u, dup: dup, levelUp: levelUp, gold: gold };
+}
+
+function doPull(count) {
+  const cost = count === 10 ? GACHA.tenPull : GACHA.stonePerPull * count;
+  if (save.stones < cost) { toast('소환석이 부족하다'); return; }
+  save.stones -= cost;
+
+  const got = [];
+  let bestIdx = -1, bestRank = -1;
+  for (let i = 0; i < count; i++) {
+    save.pity++;
+    save.pulls++;
+    let u;
+    if (save.pity >= GACHA.pity) { u = pullOne('SSR'); save.pity = 0; }
+    else {
+      u = pullOne();
+      if (rarityOf(u) === 'SSR') save.pity = 0;
+    }
+    got.push(u);
+    const rank = RARITY_ORDER.indexOf(rarityOf(u));
+    if (rank > bestRank) { bestRank = rank; bestIdx = i; }
+  }
+  // 10회는 영웅 이상 1개 확정
+  if (count === 10 && bestRank < RARITY_ORDER.indexOf(GACHA.tenMinRarity)) {
+    got[bestIdx] = pullOne(GACHA.tenMinRarity);
+    bestRank = RARITY_ORDER.indexOf(GACHA.tenMinRarity);
+  }
+
+  const results = got.map(grantUnit);
+  syncLoadout();
+  saveGame(save);
+
+  if (bestRank >= 3) SFX.command();
+  else if (bestRank >= 2) SFX.levelUp();
+  else SFX.gold();
+
+  showPullResult(results);
+  renderGacha();
+}
+
+function showPullResult(results) {
+  const box = $('#pull-result');
+  const grid = $('#pull-grid');
+  grid.innerHTML = '';
+  let best = 0;
+  results.forEach((r, i) => {
+    const rk = rarityOf(r.unit);
+    best = Math.max(best, RARITY_ORDER.indexOf(rk));
+    const el = document.createElement('div');
+    el.className = 'pull-card r-' + rk + (r.dup ? ' dup' : ' fresh');
+    el.style.animationDelay = (i * 0.09) + 's';
+    el.innerHTML =
+      '<div class="pull-rarity">' + RARITY[rk].name + '</div>' +
+      '<canvas></canvas>' +
+      '<div class="pull-name">' + r.unit.name + '</div>' +
+      '<div class="pull-note">' +
+        (r.dup ? (r.levelUp ? 'Lv +1 · 💰' + r.gold : '💰' + r.gold)
+               : '<b>NEW</b>') + '</div>';
+    grid.appendChild(el);
+    drawUnitIcon(el.querySelector('canvas'), r.unit, 60);
+  });
+  $('#pull-head').textContent =
+    best >= 3 ? '전설 강림!' : (best >= 2 ? '영웅 등장' : '소환 결과');
+  $('#pull-head').className = 'pull-head r-' + RARITY_ORDER[best];
+  box.classList.add('show');
+}
+
+function renderGacha() {
+  $('#gacha-stones').textContent = save.stones;
+  $('#gacha-gold').textContent = save.coins;
+  $('#tab-stones').textContent = save.stones;
+  $('#pity-left').textContent = Math.max(0, GACHA.pity - save.pity);
+
+  // 시즌 탭
+  const tabs = $('#season-tabs');
+  tabs.innerHTML = '';
+  SEASONS.forEach(sn => {
+    const b = document.createElement('button');
+    b.className = 'season-tab' + (sn.id === save.season ? ' on' : '');
+    b.innerHTML = '<span class="s-name">' + sn.name + '</span>' +
+                  '<span class="s-sub">' + sn.sub + '</span>';
+    b.addEventListener('click', () => {
+      save.season = sn.id;
+      saveGame(save);
+      renderGacha();
+      SFX.ui();
+    });
+    tabs.appendChild(b);
+  });
+
+  const sn = seasonById(save.season);
+  $('#banner-title').textContent = sn.name;
+  $('#banner-sub').textContent = sn.sub;
+  $('#banner-desc').textContent = sn.desc;
+  $('#banner').style.setProperty('--season', sn.color);
+  $('#banner').style.setProperty('--season-dark', sn.accent);
+
+  // 픽업 목록
+  const list = $('#banner-list');
+  list.innerHTML = '';
+  sn.units.forEach(id => {
+    const u = UNIT_BY_ID[id];
+    const owned = !!save.owned[id];
+    const el = document.createElement('div');
+    el.className = 'pick r-' + rarityOf(u) + (owned ? ' owned' : '');
+    el.innerHTML = '<canvas></canvas>' +
+      '<div class="pick-name">' + u.name + '</div>' +
+      '<div class="pick-rarity">' + RARITY[rarityOf(u)].name +
+      (owned ? ' · 보유' : '') + '</div>';
+    list.appendChild(el);
+    drawUnitIcon(el.querySelector('canvas'), u, 44);
+  });
+
+  // 확률표
+  const rate = $('#rate-box');
+  let total = 0;
+  RARITY_ORDER.forEach(k => { total += RARITY[k].weight; });
+  rate.innerHTML = '<div class="rate-title">등급 확률</div>' +
+    RARITY_ORDER.slice().reverse().map(k =>
+      '<div class="rate-row r-' + k + '"><span>' + RARITY[k].name + '</span><span>' +
+      (RARITY[k].weight / total * 100).toFixed(1) + '%</span></div>').join('');
+
+  drawBanner(sn);
+}
+
+/* 배너 아트: 시즌 대표 병종을 나란히 세운다 */
+function drawBanner(sn) {
+  const cv = $('#banner-canvas');
+  if (!cv) return;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const r = cv.getBoundingClientRect();
+  const w = Math.max(200, r.width), h = Math.max(120, r.height);
+  cv.width = w * dpr; cv.height = h * dpr;
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+
+  const g = ctx.createLinearGradient(0, 0, 0, h);
+  g.addColorStop(0, 'rgba(20,16,22,.15)');
+  g.addColorStop(1, 'rgba(20,16,22,.55)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, w, h);
+
+  // 소환진
+  const cx = w / 2, cy = h * 0.9;
+  ctx.strokeStyle = sn.accent;
+  ctx.globalAlpha = 0.5;
+  for (let i = 0; i < 3; i++) {
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, w * (0.2 + i * 0.12), 12 + i * 7, 0, 0, 7);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  const units = sn.units.map(id => UNIT_BY_ID[id]);
+  const sc = Math.max(0.7, Math.min(1.5, h / 200));
+  units.forEach((u, i) => {
+    const n = units.length;
+    const x = cx + (i - (n - 1) / 2) * (w / (n + 0.5));
+    const own = !!save.owned[u.id];
+    ctx.save();
+    ctx.translate(x, cy - 6);
+    ctx.globalAlpha = own ? 1 : 0.55;
+    ctx.fillStyle = 'rgba(0,0,0,.25)';
+    ctx.beginPath(); ctx.ellipse(0, 0, 15 * sc, 4 * sc, 0, 0, 7); ctx.fill();
+    drawBody(ctx, u, sc * (u.scale || 1) * 0.85, false, false, i * 1.3, false, 0.3);
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  });
+}
+
 /* ------------------------------ 전투 ------------------------------ */
 function startBattle(index) {
   battle = new Battle(index, save);
@@ -358,6 +591,7 @@ function showResult() {
     const nextUnit = ROSTER_UNITS.find(u => u.unlockStage === battle.stageIndex + 2);
     if (nextUnit) lines.push('새 병종 해금: ' + nextUnit.name);
     if (battle.stars < 3) lines.push('성채를 더 지키면 별 3개를 받는다.');
+    if (battle.stoneGain) lines.push('소환석 🔮 +' + battle.stoneGain);
     if (battle.stageIndex + 1 >= STAGES.length) lines.push('왕국 방어전 전 전장 제패!');
   } else {
     lines.push('강화를 올리거나 편성을 바꿔 보자.');
@@ -603,6 +837,22 @@ function init() {
   $$('[data-goto]').forEach(b => b.addEventListener('click', () => show(b.dataset.goto)));
   $('#btn-shop').addEventListener('click', () => show('scr-shop'));
   $('#btn-units').addEventListener('click', () => show('scr-units'));
+  $('#btn-gacha').addEventListener('click', () => show('scr-gacha'));
+  $('#btn-pull1').addEventListener('click', () => doPull(1));
+  $('#btn-pull10').addEventListener('click', () => doPull(10));
+  $('#btn-buy-stone').addEventListener('click', () => {
+    if (save.coins < GACHA.goldPerStone) { toast('골드가 부족하다'); return; }
+    save.coins -= GACHA.goldPerStone;
+    save.stones++;
+    saveGame(save);
+    renderGacha();
+    SFX.gold();
+    toast('소환석을 하나 얻었다');
+  });
+  $('#btn-pull-close').addEventListener('click', () => {
+    $('#pull-result').classList.remove('show');
+    SFX.ui();
+  });
 
   $('#btn-quit').addEventListener('click', () => {
     if (battle && battle.state === 'play' && !confirm('전투를 포기하고 진군도로 돌아갈까?')) return;

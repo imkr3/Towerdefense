@@ -348,3 +348,107 @@ body{
   .stage{padding:6px 9px;}
   .stage-no{width:32px; height:32px; font-size:14px;}
 }
+
+/* ---------- 소환의 제단 ---------- */
+.gacha-tab{position:relative;}
+.stone-badge{
+  display:inline-block; background:#5b3f8e; color:#fff; border:1px solid var(--ink);
+  padding:0 6px; font-size:11px; margin-left:4px;
+}
+.season-tabs{display:flex; gap:6px; padding:8px 12px 0;}
+.season-tab{
+  flex:1; border:2px solid var(--ink); background:#d9cdb0; color:var(--ink);
+  padding:6px 4px; cursor:pointer; font-family:inherit; box-shadow:var(--shadow);
+  display:flex; flex-direction:column; align-items:center; line-height:1.2;
+}
+.season-tab.on{background:var(--gold); border-color:#6b5417;}
+.season-tab .s-name{font-size:13px; font-weight:900;}
+.season-tab .s-sub{font-size:10px; opacity:.7; font-weight:800;}
+
+.gacha-body{flex:1; display:flex; gap:10px; padding:10px 12px calc(10px + var(--sb)); min-height:0;}
+.banner{
+  flex:1; position:relative; border:2px solid var(--ink); overflow:hidden;
+  background:linear-gradient(160deg, var(--season,#d8c47a), var(--season-dark,#8e6b1f));
+  box-shadow:var(--shadow); display:flex; flex-direction:column;
+}
+#banner-canvas{position:absolute; inset:0; width:100%; height:100%;}
+.banner-info{position:relative; z-index:1; padding:10px 12px;}
+.banner-title{font-size:22px; font-weight:900; color:#fff8e6; text-shadow:0 2px 6px rgba(0,0,0,.6);}
+.banner-sub{font-size:11px; font-weight:900; color:#fff2d0; opacity:.9; letter-spacing:.06em;}
+.banner-desc{font-size:11.5px; color:#fff8e6; opacity:.9; margin-top:4px; text-shadow:0 1px 4px rgba(0,0,0,.6);}
+.banner-list{display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;}
+.pick{
+  background:rgba(20,16,22,.55); border:1px solid rgba(255,255,255,.3);
+  padding:3px 5px; text-align:center; width:66px; opacity:.75;
+}
+.pick.owned{opacity:1; border-color:#fff;}
+.pick canvas{display:block; margin:0 auto;}
+.pick-name{font-size:9.5px; font-weight:900; color:#fff; line-height:1.1;}
+.pick-rarity{font-size:8.5px; font-weight:800; color:#ffe9a8;}
+.pick.r-SSR{border-color:#e8a020;}
+.pick.r-SR{border-color:#c99ae8;}
+.pick.r-R{border-color:#8fc8f0;}
+
+.gacha-side{width:210px; display:flex; flex-direction:column; gap:7px;}
+.rate-box{background:var(--parch); border:2px solid var(--ink); padding:7px 9px; box-shadow:var(--shadow);}
+.rate-title{font-size:11px; font-weight:900; margin-bottom:3px;}
+.rate-row{display:flex; justify-content:space-between; font-size:11px; font-weight:800;}
+.rate-row.r-SSR{color:#a06a10;}
+.rate-row.r-SR{color:#7b3fa8;}
+.rate-row.r-R{color:#2f6b9e;}
+.pity-box{
+  background:#2f3540; color:var(--parch); border:2px solid var(--ink);
+  padding:5px 9px; font-size:11px; font-weight:800; text-align:center;
+}
+.pity-box b{color:var(--gold-l);}
+.pull-btn{width:100%; padding:9px; font-size:13.5px;}
+
+.pull-result{
+  position:fixed; inset:0; z-index:30; display:none;
+  flex-direction:column; align-items:center; justify-content:center; gap:10px;
+  background:rgba(14,11,8,.88); padding:14px;
+}
+.pull-result.show{display:flex;}
+.pull-head{font-size:22px; font-weight:900; color:var(--parch); letter-spacing:.1em;}
+.pull-head.r-SSR{color:#ffd166; text-shadow:0 0 16px rgba(255,209,102,.8);}
+.pull-head.r-SR{color:#d7a8f0;}
+.pull-grid{display:flex; flex-wrap:wrap; gap:7px; justify-content:center; max-width:100%;}
+.pull-card{
+  width:84px; background:var(--parch); border:2px solid var(--ink);
+  padding:3px 2px 4px; text-align:center;
+  animation:pullin .35s cubic-bezier(.2,1.4,.4,1) both;
+}
+.pull-card canvas{display:block; margin:0 auto;}
+.pull-card.r-R{border-color:#3f8ed0; box-shadow:0 0 8px rgba(63,142,208,.6);}
+.pull-card.r-SR{border-color:#a05fd0; box-shadow:0 0 12px rgba(160,95,208,.75);}
+.pull-card.r-SSR{
+  border-color:#e8a020; box-shadow:0 0 18px rgba(232,160,32,.95);
+  background:linear-gradient(180deg,#fff4d8,#f0dca8);
+}
+.pull-rarity{font-size:9.5px; font-weight:900; opacity:.7;}
+.pull-card.r-SSR .pull-rarity{color:#a06a10; opacity:1;}
+.pull-card.r-SR .pull-rarity{color:#7b3fa8; opacity:1;}
+.pull-name{font-size:10.5px; font-weight:900; line-height:1.1;}
+.pull-note{font-size:9.5px; font-weight:800; opacity:.75;}
+.pull-note b{color:var(--blood);}
+@keyframes pullin{
+  from{transform:scale(.4) rotate(-8deg); opacity:0;}
+  to{transform:none; opacity:1;}
+}
+
+/* 훈련소의 소환 병종 */
+.unit-card.summoned{border-left-width:6px;}
+.unit-card.summoned.r-N{border-left-color:#8b8477;}
+.unit-card.summoned.r-R{border-left-color:#3f8ed0;}
+.unit-card.summoned.r-SR{border-left-color:#a05fd0;}
+.unit-card.summoned.r-SSR{border-left-color:#e8a020; background:linear-gradient(90deg,var(--parch) 60%,#f3e6c4);}
+.rare-tag{font-size:10.5px; font-weight:900; color:#fff; padding:1px 6px; border:1px solid var(--ink);}
+.rare-tag.r-N{background:#8b8477;}
+.rare-tag.r-R{background:#3f8ed0;}
+.rare-tag.r-SR{background:#a05fd0;}
+.rare-tag.r-SSR{background:#e8a020; color:#3a2c0c;}
+
+@media (max-height:400px){
+  .gacha-side{width:180px;}
+  .pull-card{width:74px;}
+}

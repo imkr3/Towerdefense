@@ -54,6 +54,7 @@
   <nav class="tabbar">
     <button class="tab" id="btn-shop">강화 병영</button>
     <button class="tab" id="btn-units">훈련소</button>
+    <button class="tab gacha-tab" id="btn-gacha">소환의 제단 <span class="stone-badge" id="tab-stones">0</span></button>
   </nav>
 </section>
 
@@ -76,6 +77,44 @@
   </header>
   <div class="cap-line"><span id="train-cap"></span></div>
   <div class="scroll grid" id="units-list"></div>
+</section>
+
+<!-- ===================== 소환의 제단 ===================== -->
+<section id="scr-gacha" class="screen">
+  <header class="bar">
+    <button class="icon-btn" data-goto="scr-map">◀</button>
+    <div class="bar-title">소환의 제단</div>
+    <div class="coin-chip">🔮 <span id="gacha-stones">0</span></div>
+    <div class="coin-chip">💰 <span id="gacha-gold">0</span></div>
+  </header>
+
+  <div class="season-tabs" id="season-tabs"></div>
+
+  <div class="gacha-body">
+    <div class="banner" id="banner">
+      <canvas id="banner-canvas"></canvas>
+      <div class="banner-info">
+        <div class="banner-title" id="banner-title"></div>
+        <div class="banner-sub" id="banner-sub"></div>
+        <div class="banner-desc" id="banner-desc"></div>
+        <div class="banner-list" id="banner-list"></div>
+      </div>
+    </div>
+
+    <div class="gacha-side">
+      <div class="rate-box" id="rate-box"></div>
+      <div class="pity-box">전설 확정까지 <b id="pity-left">40</b>회</div>
+      <button class="btn primary pull-btn" id="btn-pull1">1회 소환 · 🔮 1</button>
+      <button class="btn primary pull-btn" id="btn-pull10">10회 소환 · 🔮 9</button>
+      <button class="btn ghost pull-btn" id="btn-buy-stone">💰 2000 → 소환석 1</button>
+    </div>
+  </div>
+
+  <div class="pull-result" id="pull-result">
+    <div class="pull-head" id="pull-head">소환 결과</div>
+    <div class="pull-grid" id="pull-grid"></div>
+    <button class="btn primary" id="btn-pull-close">확인</button>
+  </div>
 </section>
 
 <!-- ===================== 전투 ===================== -->
