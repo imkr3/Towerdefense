@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#f4a4bd">
+<meta name="theme-color" content="#2b2119">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="description" content="달콤 방어전 - 디저트 부대와 채소 군단의 라인 배틀 타워디펜스">
-<title>달콤 방어전</title>
+<meta name="description" content="막대 왕국 전쟁 - 왕국군과 오크 군단의 중세 라인 배틀 타워디펜스">
+<title>막대 왕국 전쟁</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg">
 <link rel="apple-touch-icon" href="icon.svg">
@@ -18,24 +18,24 @@
 <!-- ===================== 타이틀 ===================== -->
 <section id="scr-title" class="screen active">
   <div class="title-art">
-    <div class="title-emoji">🍮🍩🍦</div>
-    <h1>달콤 방어전</h1>
-    <p class="sub">디저트 부대 <b>vs</b> 채소 군단</p>
+    <canvas id="title-canvas" width="320" height="120"></canvas>
+    <h1>막대 왕국 전쟁</h1>
+    <p class="sub">왕국군 <b>vs</b> 오크 군단</p>
   </div>
   <div class="title-btns">
-    <button class="btn big" id="btn-start">전투 시작</button>
-    <button class="btn ghost" id="btn-howto">플레이 방법</button>
+    <button class="btn big" id="btn-start">출 진</button>
+    <button class="btn ghost" id="btn-howto">교전 수칙</button>
     <button class="btn ghost danger" id="btn-reset">기록 초기화</button>
   </div>
-  <p class="ver">달콤 왕국 1번 맵 · 전 20 스테이지</p>
+  <p class="ver">왕국 방어선 · 전 20 전장</p>
 </section>
 
 <!-- ===================== 스테이지 선택 ===================== -->
 <section id="scr-map" class="screen">
   <header class="bar">
     <button class="icon-btn" data-goto="scr-title">◀</button>
-    <div class="bar-title">달콤 왕국 · 1번 맵</div>
-    <div class="coin-chip">🍯 <span id="map-coins">0</span></div>
+    <div class="bar-title">왕국 진군도</div>
+    <div class="coin-chip">💰 <span id="map-coins">0</span></div>
   </header>
   <div class="progress-wrap">
     <div class="progress"><div class="progress-fill" id="map-progress"></div></div>
@@ -43,8 +43,8 @@
   </div>
   <div class="stage-list" id="stage-list"></div>
   <nav class="tabbar">
-    <button class="tab" id="btn-shop">🍯 강화</button>
-    <button class="tab" id="btn-units">📖 도감</button>
+    <button class="tab" id="btn-shop">강화 병영</button>
+    <button class="tab" id="btn-units">병종 도감</button>
   </nav>
 </section>
 
@@ -52,8 +52,8 @@
 <section id="scr-shop" class="screen">
   <header class="bar">
     <button class="icon-btn" data-goto="scr-map">◀</button>
-    <div class="bar-title">부대 강화</div>
-    <div class="coin-chip">🍯 <span id="shop-coins">0</span></div>
+    <div class="bar-title">강화 병영</div>
+    <div class="coin-chip">💰 <span id="shop-coins">0</span></div>
   </header>
   <div class="scroll" id="shop-list"></div>
 </section>
@@ -62,7 +62,7 @@
 <section id="scr-units" class="screen">
   <header class="bar">
     <button class="icon-btn" data-goto="scr-map">◀</button>
-    <div class="bar-title">부대 도감</div>
+    <div class="bar-title">병종 도감</div>
     <div></div>
   </header>
   <div class="scroll" id="units-list"></div>
@@ -74,7 +74,7 @@
 
   <div class="hud-top">
     <button class="icon-btn small" id="btn-quit">✕</button>
-    <div class="stage-tag" id="battle-stage">1-1</div>
+    <div class="stage-tag" id="battle-stage">1. 국경 초소</div>
     <button class="icon-btn small" id="btn-speed">▶▶ 1x</button>
   </div>
 
@@ -88,12 +88,12 @@
 
   <div class="result" id="result">
     <div class="result-card">
-      <h2 id="result-title">승리!</h2>
+      <h2 id="result-title">승 리</h2>
       <p id="result-desc"></p>
       <div class="result-btns">
-        <button class="btn" id="btn-retry">다시 하기</button>
-        <button class="btn primary" id="btn-next">다음 스테이지</button>
-        <button class="btn ghost" id="btn-tomap">지도로</button>
+        <button class="btn" id="btn-retry">다시 싸운다</button>
+        <button class="btn primary" id="btn-next">다음 전장으로</button>
+        <button class="btn ghost" id="btn-tomap">진군도로</button>
       </div>
     </div>
   </div>
@@ -102,16 +102,17 @@
 <!-- ===================== 도움말 ===================== -->
 <div class="modal" id="modal-howto">
   <div class="modal-card">
-    <h3>플레이 방법</h3>
+    <h3>교전 수칙</h3>
     <ul>
-      <li>자금(🍬)은 시간이 지나면 자동으로 찬다.</li>
-      <li>아래 카드를 눌러 디저트 부대를 내보낸다. 카드마다 비용과 재사용 대기시간이 있다.</li>
-      <li>유닛은 자동으로 전진해 적을 공격한다. 적 본진을 부수면 승리.</li>
-      <li>아군 본진이 부서지면 패배. 화면을 좌우로 밀면 전장을 둘러볼 수 있다.</li>
-      <li>전투에서 얻은 꿀(🍯)로 지갑·공격력·체력을 강화하자.</li>
-      <li>스테이지를 깰수록 새로운 유닛이 해금된다.</li>
+      <li>군자금은 시간이 지나면 저절로 찬다. 위쪽 막대가 현재 보유량이다.</li>
+      <li>아래 카드를 눌러 병사를 출진시킨다. 카드마다 비용과 재정비 시간이 있다.</li>
+      <li>병사는 알아서 전진해 적과 싸운다. <b>적 요새를 무너뜨리면 승리</b>.</li>
+      <li>아군 성채가 무너지면 패배. 화면을 좌우로 밀어 전장을 살필 수 있다.</li>
+      <li>맞을 때마다 병사는 뒤로 밀린다. 방패병으로 버티고 뒤에서 화살을 퍼부어라.</li>
+      <li>전투로 얻은 골드로 병영에서 무기·갑옷·성벽을 강화한다.</li>
+      <li>전장을 돌파할수록 새로운 병종이 합류한다.</li>
     </ul>
-    <button class="btn primary" data-close>알겠어</button>
+    <button class="btn primary" data-close>알겠다</button>
   </div>
 </div>
 

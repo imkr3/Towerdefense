@@ -1,12 +1,12 @@
 {
-  "name": "달콤 방어전",
-  "short_name": "달콤방어전",
-  "description": "디저트 부대와 채소 군단의 라인 배틀 타워디펜스",
+  "name": "막대 왕국 전쟁",
+  "short_name": "왕국전쟁",
+  "description": "왕국군과 오크 군단의 중세 라인 배틀 타워디펜스",
   "start_url": "./index.html",
   "display": "fullscreen",
   "orientation": "portrait",
-  "background_color": "#fff7ec",
-  "theme_color": "#f4a4bd",
+  "background_color": "#e8dcc0",
+  "theme_color": "#2b2119",
   "icons": [
     { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
   ]

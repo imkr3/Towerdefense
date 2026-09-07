@@ -2,7 +2,7 @@
  *  달콤 방어전 - 화면 전환 / 저장 / 메인 루프
  * ======================================================================= */
 
-const SAVE_KEY = 'sweet-defense-save-v1';
+const SAVE_KEY = 'stick-kingdom-save-v1';
 
 function defaultSave() {
   return { cleared: 0, coins: 0, upgrades: { wallet: 0, income: 0, power: 0, vitality: 0, castle: 0 } };
@@ -70,7 +70,7 @@ function renderMap() {
       '<div class="stage-info">' +
         '<div class="stage-name">' + (locked ? '???' : st.name) + '</div>' +
         '<div class="stage-meta">' + (locked ? '이전 스테이지를 먼저 클리어' :
-            ('적 본진 ' + st.baseHp.toLocaleString() + ' · 보상 🍯' + st.reward)) + '</div>' +
+            ('적 요새 ' + st.baseHp.toLocaleString() + ' · 보상 💰' + st.reward)) + '</div>' +
       '</div>' +
       '<div class="stage-mark">' + (cleared ? '⭐' : (locked ? '' : '▶')) + '</div>';
     if (!locked) el.addEventListener('click', () => startBattle(i));
@@ -102,15 +102,15 @@ function renderShop() {
       '<div class="up-desc">' + u.desc + '</div>' +
       '<div class="pips">' + pips + '</div>' +
       '<button class="btn primary up-buy"' + (maxed ? ' disabled' : '') + '>' +
-        (maxed ? '최대 강화 완료' : '🍯 ' + cost + ' 사용해 강화') + '</button>';
+        (maxed ? '최대 강화 완료' : '💰 ' + cost + ' 골드로 강화') + '</button>';
     if (!maxed) {
       card.querySelector('.up-buy').addEventListener('click', () => {
-        if (save.coins < cost) { toast('꿀이 부족해!'); return; }
+        if (save.coins < cost) { toast('골드가 부족하다'); return; }
         save.coins -= cost;
         save.upgrades[key] = lv + 1;
         saveGame(save);
         renderShop();
-        toast(u.name + ' Lv.' + (lv + 1) + ' 달성!');
+        toast(u.name + ' Lv.' + (lv + 1) + ' 완료');
       });
     }
     box.appendChild(card);
@@ -126,11 +126,11 @@ function renderUnitBook() {
     const el = document.createElement('div');
     el.className = 'unit-card';
     el.innerHTML =
-      '<div class="unit-ico">' + (unlocked ? u.emoji : '❔') + '</div>' +
+      '<div class="unit-ico">' + (unlocked ? '<canvas></canvas>' : '<span>?</span>') + '</div>' +
       '<div class="unit-body">' +
         '<div class="unit-name">' + (unlocked ? u.name : '미해금 유닛') +
           '<span class="unit-tag' + (unlocked ? '' : ' lock') + '">' +
-          (unlocked ? '보유' : u.unlockStage + '스테이지') + '</span></div>' +
+          (unlocked ? u.role : u.unlockStage + '스테이지') + '</span></div>' +
         '<div class="unit-desc">' + (unlocked ? u.desc : '스테이지 ' + u.unlockStage + '에 도달하면 합류한다.') + '</div>' +
         (unlocked ? '<div class="stat-row">' +
           '<span class="stat">비용 ' + u.cost + '</span>' +
@@ -143,22 +143,24 @@ function renderUnitBook() {
           (u.ranged ? '<span class="stat">원거리</span>' : '') +
         '</div>' : '') +
       '</div>';
+    if (unlocked) drawUnitIcon(el.querySelector('.unit-ico canvas'), u, 54);
     box.appendChild(el);
   });
 
   const head = document.createElement('div');
   head.className = 'unit-card';
-  head.innerHTML = '<div class="unit-ico">🥦</div><div class="unit-body">' +
-    '<div class="unit-name">채소 군단</div>' +
-    '<div class="unit-desc">달콤 왕국을 노리는 침략자들. 콩알 졸병부터 마늘 대군주까지 ' +
+  head.innerHTML = '<div class="unit-ico"><canvas></canvas></div><div class="unit-body">' +
+    '<div class="unit-name">오크 군단</div>' +
+    '<div class="unit-desc">왕국을 노리는 침략자들. 고블린 졸개부터 오크 대군주까지 ' +
     Object.keys(ENEMIES).length + '종이 확인되었다.</div></div>';
+  drawUnitIcon(head.querySelector('canvas'), ENEMIES.warlord, 54);
   box.appendChild(head);
 }
 
 /* ------------------------------ 전투 ------------------------------ */
 function startBattle(index) {
   battle = new Battle(index, save);
-  $('#battle-stage').textContent = '1-' + (index + 1) + '  ' + battle.stage.name;
+  $('#battle-stage').textContent = (index + 1) + '. ' + battle.stage.name;
   $('#result').classList.remove('show');
   $('#btn-speed').textContent = '▶▶ 1x';
   buildCards();
@@ -176,14 +178,15 @@ function buildCards() {
     b.className = 'card';
     b.dataset.id = u.id;
     b.innerHTML =
-      '<div class="c-emoji">' + u.emoji + '</div>' +
+      '<canvas class="c-ico"></canvas>' +
       '<div class="c-name">' + u.name + '</div>' +
       '<div class="c-cost">' + u.cost + '</div>' +
       '<div class="cool hide"></div>';
+    drawUnitIcon(b.querySelector('.c-ico'), u, 44);
     b.addEventListener('click', () => {
       if (battle.state !== 'play') return;
-      if (battle.cooldowns[u.id] > 0) { toast('준비 중이야'); return; }
-      if (battle.money < u.cost) { toast('자금이 부족해'); return; }
+      if (battle.cooldowns[u.id] > 0) { toast('아직 재정비 중'); return; }
+      if (battle.money < u.cost) { toast('군자금이 부족하다'); return; }
       battle.deploy(u.id);
     });
     box.appendChild(b);
@@ -210,15 +213,15 @@ function updateHud() {
 
 function showResult() {
   const win = battle.state === 'win';
-  $('#result-title').textContent = win ? '승리!' : '패배...';
+  $('#result-title').textContent = win ? '승 리' : '패 배';
   const lines = [];
-  lines.push('획득 꿀 🍯 ' + battle.coins);
+  lines.push('획득 골드 💰 ' + battle.coins);
   if (win) {
     const nextUnit = UNITS.find(u => u.unlockStage === battle.stageIndex + 2);
-    if (nextUnit) lines.push('새 유닛 해금: ' + nextUnit.emoji + ' ' + nextUnit.name);
-    if (battle.stageIndex + 1 >= STAGES.length) lines.push('1번 맵 전 스테이지 제패!');
+    if (nextUnit) lines.push('새 병종 해금: ' + nextUnit.name);
+    if (battle.stageIndex + 1 >= STAGES.length) lines.push('왕국 방어전 전 스테이지 제패!');
   } else {
-    lines.push('강화를 올리거나 배치 순서를 바꿔 보자.');
+    lines.push('강화를 올리거나 병종 배치 순서를 바꿔 보자.');
   }
   $('#result-desc').textContent = lines.join('\n');
   const hasNext = win && battle.stageIndex + 1 < STAGES.length;
@@ -264,8 +267,43 @@ function bindCanvasDrag(cv) {
 }
 
 /* ------------------------------ 초기화 ------------------------------ */
+function drawTitleScene() {
+  const cv = $('#title-canvas');
+  if (!cv) return;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = 320, h = 120;
+  cv.width = w * dpr; cv.height = h * dpr;
+  cv.style.width = w + 'px'; cv.style.height = h + 'px';
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+
+  ctx.strokeStyle = 'rgba(60,45,30,.35)';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(10, h - 12); ctx.lineTo(w - 10, h - 12); ctx.stroke();
+
+  const cast = [
+    [58, UNIT_BY_ID.knight, 1, 1.15],
+    [110, UNIT_BY_ID.archer, 1, 1.0],
+    [16, UNIT_BY_ID.spear, 1, 0.95],
+    [252, ENEMIES.warlord, -1, 0.9],
+    [206, ENEMIES.goblin, -1, 1.0],
+    [290, ENEMIES.ogre, -1, 0.8]
+  ];
+  cast.forEach(c => {
+    ctx.save();
+    ctx.translate(c[0], h - 12);
+    ctx.scale(c[2], 1);
+    ctx.fillStyle = 'rgba(0,0,0,.15)';
+    ctx.beginPath(); ctx.ellipse(0, 0, 14 * c[3], 4, 0, 0, 7); ctx.fill();
+    drawBody(ctx, c[1].shape, c[1].body, c[1].accent, c[3], false, false, 0, false, 0.35);
+    ctx.restore();
+  });
+}
+
 function init() {
   renderer = new Renderer($('#cv'));
+  drawTitleScene();
   bindCanvasDrag($('#cv'));
 
   $('#btn-start').addEventListener('click', () => show('scr-map'));
@@ -277,7 +315,7 @@ function init() {
   });
   $('#btn-reset').addEventListener('click', () => {
     if (confirm('모든 진행 기록을 지울까?')) {
-      save = defaultSave(); saveGame(save); toast('기록을 초기화했어');
+      save = defaultSave(); saveGame(save); toast('기록을 초기화했다');
     }
   });
   $$('[data-goto]').forEach(b => b.addEventListener('click', () => show(b.dataset.goto)));
@@ -285,7 +323,7 @@ function init() {
   $('#btn-units').addEventListener('click', () => show('scr-units'));
 
   $('#btn-quit').addEventListener('click', () => {
-    if (battle && battle.state === 'play' && !confirm('전투를 포기하고 지도로 돌아갈까?')) return;
+    if (battle && battle.state === 'play' && !confirm('전투를 포기하고 진군도로 돌아갈까?')) return;
     show('scr-map');
   });
   $('#btn-speed').addEventListener('click', () => {

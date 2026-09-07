@@ -1,5 +1,5 @@
-/* 달콤 방어전 - 오프라인 캐시 */
-const CACHE = 'sweet-defense-v1';
+/* 막대 왕국 전쟁 - 오프라인 캐시 */
+const CACHE = 'stick-kingdom-v1';
 const ASSETS = [
   './', './index.html', './css/style.css',
   './js/data.js', './js/game.js', './js/render.js', './js/main.js',
