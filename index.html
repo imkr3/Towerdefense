@@ -31,7 +31,8 @@
     <div class="title-btns">
       <button class="btn big" id="btn-start">출 진</button>
       <button class="btn ghost" id="btn-howto">교전 수칙</button>
-      <button class="btn ghost" id="btn-full">전체화면 · 가로 고정</button>
+      <button class="btn ghost" id="btn-sound">🔊 효과음 켜짐</button>
+    <button class="btn ghost" id="btn-full">전체화면 · 가로 고정</button>
       <button class="btn ghost danger" id="btn-reset">기록 초기화</button>
     </div>
   </div>
@@ -86,7 +87,11 @@
       <button class="icon-btn small" id="btn-quit">✕</button>
       <div class="stage-tag" id="battle-stage">1. 국경 초소</div>
     </div>
-    <button class="icon-btn small" id="btn-speed">▶▶ 1x</button>
+    <div class="hud-right">
+      <div class="kill-chip">처치 <span id="kill-count">0</span></div>
+      <button class="icon-btn small" id="btn-pause">⏸</button>
+      <button class="icon-btn small" id="btn-speed">▶▶ 1x</button>
+    </div>
   </div>
 
   <div class="hud-bottom">
@@ -94,12 +99,19 @@
       <div class="wallet-bar"><div class="wallet-fill" id="wallet-fill"></div></div>
       <div class="wallet-txt"><span id="money-txt">0</span> / <span id="wallet-txt">0</span></div>
     </div>
-    <div class="cards" id="cards"></div>
+    <div class="card-row">
+      <div class="cards" id="cards"></div>
+      <button class="cmd-btn" id="btn-command">
+        <span class="cmd-title">왕의<br>명령</span>
+        <span class="cmd-cd" id="cmd-cd">75</span>
+      </button>
+    </div>
   </div>
 
   <div class="result" id="result">
     <div class="result-card">
       <h2 id="result-title">승 리</h2>
+      <div class="stars" id="result-stars"></div>
       <p id="result-desc"></p>
       <div class="result-btns">
         <button class="btn" id="btn-retry">다시 싸운다</button>
@@ -124,6 +136,8 @@
       <li>훈련소에서 병종별로 레벨을 올린다. 레벨당 체력과 공격력이 10%씩 오른다.</li>
       <li>레벨 상한은 돌파한 전장 수만큼 올라간다. 최대 15레벨.</li>
       <li>전장을 돌파할수록 새로운 병종이 합류한다.</li>
+      <li>우측 하단 <b>왕의 명령</b>은 전군을 회복시키고 공격 속도를 끌어올린다.</li>
+      <li>성채 체력을 많이 남길수록 별을 더 받는다. 별은 처음 딸 때 골드를 준다.</li>
     </ul>
     <button class="btn primary" data-close>알겠다</button>
   </div>
@@ -140,6 +154,7 @@
   </div>
 </div>
 
+<script src="js/audio.js"></script>
 <script src="js/data.js"></script>
 <script src="js/game.js"></script>
 <script src="js/render.js"></script>

@@ -10,7 +10,8 @@ function defaultSave() {
   return {
     cleared: 0, coins: 0,
     upgrades: { wallet: 0, income: 0, power: 0, vitality: 0, castle: 0 },
-    levels: lv, loadout: ['spear']
+    levels: lv, loadout: ['spear'],
+    stars: {}, totalKills: 0, sound: true
   };
 }
 
@@ -41,11 +42,13 @@ function loadGame() {
     s.levels = Object.assign(d.levels, s.levels || {});
     s.cleared = Math.max(0, Math.min(STAGES.length, s.cleared | 0));
     // 상한을 넘긴 레벨은 잘라낸다
-    const cap = unitLevelCap(s.cleared);
+    const cap = unitLevelCap(s.cleared, s.upgrades.academy);
     UNITS.forEach(u => {
       s.levels[u.id] = Math.max(1, Math.min(cap, s.levels[u.id] | 0 || 1));
     });
     if (!Array.isArray(s.loadout)) s.loadout = [];
+    if (!s.stars || typeof s.stars !== 'object') s.stars = {};
+    if (typeof s.sound !== 'boolean') s.sound = true;
     return s;
   } catch (e) { return defaultSave(); }
 }
@@ -89,7 +92,11 @@ function renderMap() {
   $('#map-coins').textContent = save.coins;
   const pct = (save.cleared / STAGES.length) * 100;
   $('#map-progress').style.width = pct + '%';
-  $('#map-progress-txt').textContent = save.cleared + ' / ' + STAGES.length;
+  let totalStars = 0;
+  for (const k in save.stars) totalStars += save.stars[k];
+  $('#map-progress-txt').innerHTML =
+    save.cleared + ' / ' + STAGES.length + ' <span class="gold-txt">★ ' +
+    totalStars + ' / ' + (STAGES.length * 3) + '</span>';
 
   const list = $('#stage-list');
   list.innerHTML = '';
@@ -106,7 +113,9 @@ function renderMap() {
         '<div class="stage-meta">' + (locked ? '이전 전장을 먼저 돌파해야 한다' :
             ('적 요새 ' + st.baseHp.toLocaleString() + ' · 보상 💰' + st.reward)) + '</div>' +
       '</div>' +
-      '<div class="stage-mark">' + (cleared ? '⭐' : (locked ? '' : '▶')) + '</div>';
+      '<div class="stage-mark">' +
+        (locked ? '' : (cleared || i < save.cleared
+          ? starMarks(save.stars[i] || 0) : '▶')) + '</div>';
     if (!locked) el.addEventListener('click', () => startBattle(i));
     list.appendChild(el);
   });
@@ -114,6 +123,12 @@ function renderMap() {
   // 처음 도전할 스테이지가 보이도록 스크롤
   const next = list.children[Math.min(save.cleared, STAGES.length - 1)];
   if (next) setTimeout(() => next.scrollIntoView({ block: 'center' }), 30);
+}
+
+function starMarks(n) {
+  let out = '';
+  for (let i = 0; i < 3; i++) out += (i < n ? '★' : '☆');
+  return '<span class="star-row">' + out + '</span>';
 }
 
 /* ------------------------------ 강화 ------------------------------ */
@@ -144,6 +159,7 @@ function renderShop() {
         save.upgrades[key] = lv + 1;
         saveGame(save);
         renderShop();
+        SFX.levelUp();
         toast(u.name + ' Lv.' + (lv + 1) + ' 완료');
       });
     }
@@ -154,7 +170,7 @@ function renderShop() {
 /* ------------------------------ 훈련소 ------------------------------ */
 function renderTraining() {
   $('#train-coins').textContent = save.coins;
-  const cap = unitLevelCap(save.cleared);
+  const cap = unitLevelCap(save.cleared, save.upgrades.academy);
   $('#train-cap').innerHTML =
     'Lv 상한 <b>' + cap + '</b>' +
     (cap < UNIT_LEVEL_HARD_CAP ? ' (전장을 돌파하면 상승)' : ' (최대)') +
@@ -214,6 +230,7 @@ function renderTraining() {
           save.levels[u.id] = lv + 1;
           saveGame(save);
           renderTraining();
+          SFX.levelUp();
           toast(u.name + ' Lv.' + (lv + 1) + ' 훈련 완료');
         });
       }
@@ -268,6 +285,8 @@ function startBattle(index) {
   $('#battle-stage').textContent = (index + 1) + '. ' + battle.stage.name;
   $('#result').classList.remove('show');
   $('#btn-speed').textContent = '▶▶ 1x';
+  $('#btn-pause').textContent = '⏸';
+  paused = false;
   buildCards();
   show('scr-battle');
   renderer.cam = renderer.camTarget = renderer.clampCam(ALLY_SPAWN_X + 200);
@@ -302,8 +321,15 @@ function buildCards() {
 
 let cardEls = [];
 
+let paused = false;
+
 function updateHud() {
   const money = Math.floor(battle.money);
+  $('#kill-count').textContent = battle.kills;
+  const cmdBtn = $('#btn-command');
+  const ready = battle.cmdCd <= 0;
+  cmdBtn.classList.toggle('ready', ready);
+  $('#cmd-cd').textContent = ready ? '준비' : Math.ceil(battle.cmdCd);
   $('#money-txt').textContent = money;
   $('#wallet-txt').textContent = battle.walletMax;
   $('#wallet-fill').style.width = (battle.money / battle.walletMax * 100) + '%';
@@ -320,14 +346,21 @@ function updateHud() {
 function showResult() {
   const win = battle.state === 'win';
   $('#result-title').textContent = win ? '승 리' : '패 배';
+  $('#result-stars').innerHTML = win
+    ? starMarks(battle.stars) + (battle.newStars ? '<span class="new-star">NEW</span>' : '')
+    : '';
   const lines = [];
-  lines.push('획득 골드 💰 ' + battle.coins);
+  lines.push('획득 골드 💰 ' + battle.coins +
+             (battle.starBonus ? '  (별 보너스 ' + battle.starBonus + ')' : ''));
+  lines.push('처치 ' + battle.kills + '  ·  남은 성채 ' +
+             Math.round(battle.allyCastle.hp / battle.allyCastle.maxHp * 100) + '%');
   if (win) {
-    const nextUnit = UNITS.find(u => u.unlockStage === battle.stageIndex + 2);
+    const nextUnit = ROSTER_UNITS.find(u => u.unlockStage === battle.stageIndex + 2);
     if (nextUnit) lines.push('새 병종 해금: ' + nextUnit.name);
-    if (battle.stageIndex + 1 >= STAGES.length) lines.push('왕국 방어전 전 스테이지 제패!');
+    if (battle.stars < 3) lines.push('성채를 더 지키면 별 3개를 받는다.');
+    if (battle.stageIndex + 1 >= STAGES.length) lines.push('왕국 방어전 전 전장 제패!');
   } else {
-    lines.push('강화를 올리거나 병종 배치 순서를 바꿔 보자.');
+    lines.push('강화를 올리거나 편성을 바꿔 보자.');
   }
   $('#result-desc').textContent = lines.join('\n');
   const hasNext = win && battle.stageIndex + 1 < STAGES.length;
@@ -347,7 +380,8 @@ function loop(ts) {
   if (!battle || !$('#scr-battle').classList.contains('active')) return;
 
   const before = battle.state;
-  battle.update(dt);
+  if (!paused) battle.update(dt);
+  else battle.updateFx(dt * 0.4);
   renderer.render(battle, dt);
   updateHud();
   if (before === 'play' && battle.state !== 'play') setTimeout(showResult, 700);
@@ -542,6 +576,12 @@ function refreshTitleBadges() {
 
 function init() {
   renderer = new Renderer($('#cv'));
+  SFX.init();
+  SFX.on = save.sound !== false;
+  $('#btn-sound').textContent = save.sound !== false ? '🔊 효과음 켜짐' : '🔇 효과음 꺼짐';
+  // 모바일은 사용자 조작이 있어야 오디오가 열린다
+  ['pointerdown', 'touchstart', 'keydown'].forEach(ev =>
+    window.addEventListener(ev, () => { SFX.init(); SFX.resume(); }, { once: false }));
   titleAnim.cv = $('#title-bg');
   titleAnim.ctx = titleAnim.cv.getContext('2d');
   resizeTitle();
@@ -569,8 +609,27 @@ function init() {
     show('scr-map');
   });
   $('#btn-speed').addEventListener('click', () => {
-    battle.speed = battle.speed === 1 ? 2 : 1;
+    battle.speed = battle.speed === 1 ? 2 : (battle.speed === 2 ? 3 : 1);
     $('#btn-speed').textContent = '▶▶ ' + battle.speed + 'x';
+    SFX.ui();
+  });
+  $('#btn-pause').addEventListener('click', () => {
+    paused = !paused;
+    $('#btn-pause').textContent = paused ? '▶' : '⏸';
+    toast(paused ? '일시정지' : '재개');
+    SFX.ui();
+  });
+  $('#btn-command').addEventListener('click', () => {
+    if (!battle || battle.state !== 'play') return;
+    if (!battle.canCommand()) { toast('왕명은 아직 준비되지 않았다'); return; }
+    battle.useCommand();
+  });
+  $('#btn-sound').addEventListener('click', () => {
+    save.sound = !save.sound;
+    SFX.on = save.sound;
+    saveGame(save);
+    $('#btn-sound').textContent = save.sound ? '🔊 효과음 켜짐' : '🔇 효과음 꺼짐';
+    if (save.sound) SFX.ui();
   });
   $('#btn-retry').addEventListener('click', () => startBattle(battle.stageIndex));
   $('#btn-next').addEventListener('click', () => startBattle(battle.stageIndex + 1));

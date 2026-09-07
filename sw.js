@@ -1,8 +1,8 @@
 /* 막대 왕국 전쟁 - 오프라인 캐시 */
-const CACHE = 'stick-kingdom-v1';
+const CACHE = 'stick-kingdom-v2';
 const ASSETS = [
   './', './index.html', './css/style.css',
-  './js/data.js', './js/game.js', './js/render.js', './js/main.js',
+  './js/audio.js', './js/data.js', './js/game.js', './js/render.js', './js/main.js',
   './manifest.json', './icon.svg'
 ];
 self.addEventListener('install', e => {

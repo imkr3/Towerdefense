@@ -150,6 +150,69 @@ const UNITS = [
     abText: '6초마다 해골 병사 2기 소환',
     desc: '쓰러진 병사를 다시 세운다. 소환된 해골은 공짜로 전선을 채운다.'
   }),
+  mk({
+    id: 'herald', name: '나팔수', role: '지휘', shape: 'herald',
+    body: '#2b3038', accent: '#e8c65a', tunic: '#c9a227',
+    hp: 520, atk: 0, range: 0, speed: 34, interval: 3.0,
+    cost: 195, cooldown: 14, kb: 2, unlockStage: 6,
+    ab: { haste: { mul: 0.7, dur: 4 }, radius: 240, interval: 3.5, noAttack: true },
+    abText: '주변 아군 공격 속도 30% 상승',
+    desc: '진군 나팔을 분다. 싸우지 않지만 주변 아군이 훨씬 빨리 때린다.'
+  }),
+  mk({
+    id: 'longbow', name: '대궁병', role: '장거리', shape: 'longbow',
+    body: '#2b3038', accent: '#6b8f3f', tunic: '#3f5a2f',
+    hp: 280, atk: 96, range: 400, speed: 30, interval: 2.0,
+    cost: 225, cooldown: 7.0, kb: 2, ranged: true, unlockStage: 9,
+    abText: '사거리 400 · 뒤에서 안전하게',
+    desc: '장궁으로 전선 훨씬 뒤에서 쏜다. 사거리 하나로 먹고산다.'
+  }),
+  mk({
+    id: 'pyro', name: '불꽃술사', role: '화염', shape: 'pyro',
+    body: '#2b3038', accent: '#ff8a3c', tunic: '#8e3a1f',
+    hp: 340, atk: 70, range: 235, speed: 32, interval: 1.8,
+    cost: 255, cooldown: 9.0, kb: 2, ranged: true, area: true, areaRadius: 90,
+    unlockStage: 12,
+    ab: { burn: { dps: 70, dur: 4 } },
+    abText: '범위 화염 · 화상 70/초 4초',
+    desc: '불덩이를 던져 넓게 태운다. 몰려 있을수록 잘 듣는다.'
+  }),
+  mk({
+    id: 'paladin', name: '성기사', role: '불굴', shape: 'paladin',
+    body: '#2b3038', accent: '#f0e6c8', tunic: '#c9a227',
+    hp: 2100, atk: 175, range: 84, speed: 26, interval: 2.0,
+    cost: 380, cooldown: 18, kb: 1, scale: 1.15, unlockStage: 15,
+    ab: { revive: 0.6, heal: 70, radius: 170, interval: 4 },
+    abText: '쓰러져도 1회 부활 · 주변 아군 회복',
+    desc: '한 번 쓰러져도 다시 일어난다. 버티면서 주변을 치유하는 전선의 기둥.'
+  }),
+  mk({
+    id: 'engineer', name: '공병', role: '축성', shape: 'engineer',
+    body: '#2b3038', accent: '#8a6a3a', tunic: '#6b5a3f',
+    hp: 420, atk: 25, range: 70, speed: 40, interval: 2.0,
+    cost: 210, cooldown: 16, kb: 2, unlockStage: 17,
+    ab: { summon: { id: 'barricade', n: 1 }, interval: 9 },
+    abText: '9초마다 방벽 설치',
+    desc: '전진하며 나무 방벽을 세운다. 방벽은 움직이지 않고 얻어맞아 준다.'
+  }),
+  mk({
+    id: 'rogue', name: '쌍검 도적', role: '연타', shape: 'rogue',
+    body: '#2b3038', accent: '#c8ced6', tunic: '#3a3f4a',
+    hp: 700, atk: 62, range: 68, speed: 86, interval: 0.35,
+    cost: 300, cooldown: 11, kb: 3, unlockStage: 19,
+    ab: { crit: { chance: 0.22, mul: 2.2 }, lifesteal: 0.2 },
+    abText: '초당 3회 연타 · 치명타 22%',
+    desc: '눈에 안 보일 속도로 두 자루를 번갈아 찌른다.'
+  }),
+  // 소환 전용
+  mk({
+    id: 'barricade', name: '나무 방벽', role: '구조물', shape: 'barricade',
+    body: '#7a5a34', accent: '#5c4326', tunic: '#7a5a34',
+    hp: 1600, atk: 0, range: 0, speed: 0, interval: 3,
+    cost: 0, cooldown: 0, kb: 1, unlockStage: 999,
+    ab: { hold: true, noAttack: true, kbImmune: true },
+    desc: '공병이 세운 방벽. 때리지는 못해도 오래 버틴다.'
+  }),
   // 소환 전용 (카드에는 나오지 않는다)
   mk({
     id: 'skeleton', name: '해골 병사', role: '소환수', shape: 'skeleton',
@@ -203,6 +266,22 @@ const ENEMIES = {
   frostgiant:{ name: '서리 거인', body: '#9fc6d8', accent: '#ffffff', tunic: '#7fa8bd', shape: 'frostgiant',
               hp: 12500, atk: 520, range: 165, speed: 18, interval: 2.6, kb: 1, gold: 300,
               area: true, areaRadius: 145, scale: 1.8, boss: true, ab: { slow: 3 } },
+  orcberserk:{ name: '오크 광전사', body: '#5a7a44', accent: '#c0392b', tunic: '#46603a', shape: 'orcberserk',
+              hp: 1500, atk: 130, range: 66, speed: 78, interval: 0.9, kb: 2, gold: 52,
+              ab: { enrage: 1.6 } },
+  bat:      { name: '흡혈박쥐', body: '#4a3a52', accent: '#e04b6a', tunic: '#3a2c42', shape: 'bat',
+              hp: 260, atk: 46, range: 60, speed: 120, interval: 0.6, kb: 3, gold: 20, scale: .8,
+              ab: { lifesteal: 0.5 } },
+  golem:    { name: '돌 골렘', body: '#8a8880', accent: '#5f5d56', tunic: '#767469', shape: 'golem',
+              hp: 6800, atk: 260, range: 78, speed: 17, interval: 2.6, kb: 1, gold: 120, scale: 1.5,
+              ab: { kbImmune: true, push: 30 } },
+  totem:    { name: '저주 토템', body: '#6b4b2a', accent: '#c98ae0', tunic: '#4a3520', shape: 'totem',
+              hp: 1400, atk: 0, range: 0, speed: 0, interval: 3, kb: 1, gold: 70,
+              ab: { haste: { mul: 0.75, dur: 4 }, radius: 260, interval: 4, hold: true, noAttack: true } },
+  drake:    { name: '화룡', body: '#a8382c', accent: '#ffb03c', tunic: '#7e2a20', shape: 'drake',
+              hp: 16000, atk: 600, range: 200, speed: 22, interval: 2.4, kb: 1, gold: 420,
+              area: true, areaRadius: 160, scale: 1.9, boss: true,
+              ab: { burn: { dps: 90, dur: 5 } } },
   warlord:  { name: '오크 대군주', body: '#3f5a3c', accent: '#c0392b', tunic: '#2f4a2c', shape: 'warlord',
               hp: 22000, atk: 700, range: 180, speed: 17, interval: 2.6, kb: 1, gold: 600,
               area: true, areaRadius: 170, scale: 2.0, boss: true,
@@ -232,45 +311,48 @@ const STAGES = [
       W(2,'goblin',4,1.4), W(12,'ballista',2,2.4), W(24,'orcspear',4,1.4), W(38,'ballista',3,2.0),
       W(54,'wolf',4,1.2) ] },
   { name: '주술사의 야영지', baseHp: 6600, money: 245, rate: 33, reward: 155, waves: [
-      W(2,'wolf',3,1.5), W(12,'shaman',1), W(24,'ogre',2,3.0), W(38,'orcspear',5,1.2),
-      W(52,'shaman',2,4.0), W(66,'spider',4,1.4) ] },
+      W(2,'wolf',3,1.5), W(12,'shaman',1), W(24,'bat',5,1.0), W(38,'orcspear',5,1.2),
+      W(52,'shaman',2,4.0), W(66,'spider',4,1.4), W(80,'ogre',2,3.0) ] },
   { name: '화약 골짜기', baseHp: 7200, money: 250, rate: 34, reward: 170, waves: [
       W(2,'goblin',5,1.3), W(12,'powder',2,3.0), W(26,'ballista',3,1.8), W(42,'powder',3,2.4),
       W(58,'wolf',5,1.1) ] },
   { name: '★ 트롤 대장의 요새', baseHp: 8600, money: 280, rate: 36, reward: 300, boss: true, waves: [
       W(2,'goblin',5,1.3), W(14,'ogre',2,2.6), W(28,'troll',1), W(34,'orcspear',5,1.3),
       W(50,'wolf',5,1.2), W(66,'shaman',2,3.5) ] },
-  { name: '흑기사의 숲', baseHp: 9200, money: 270, rate: 36, reward: 210, waves: [
-      W(2,'orcspear',5,1.2), W(14,'dark',1), W(28,'spider',5,1.2), W(44,'dark',2,3.5),
-      W(60,'ballista',4,1.6) ] },
-  { name: '망령의 폐허', baseHp: 10000, money: 280, rate: 37, reward: 230, waves: [
-      W(2,'wolf',5,1.0), W(14,'wraith',2,2.6), W(28,'powder',3,2.2), W(44,'wraith',3,2.4),
-      W(60,'ballista',4,1.6), W(76,'ogre',3,2.2) ] },
+  { name: '흑기사의 숲', baseHp: 9800, money: 270, rate: 36, reward: 210, waves: [
+      W(2,'orcspear',5,1.2), W(14,'dark',1), W(28,'orcberserk',2,2.6), W(44,'dark',2,3.5),
+      W(60,'ballista',4,1.6), W(76,'bat',7,0.8) ] },
+  { name: '망령의 폐허', baseHp: 10800, money: 280, rate: 37, reward: 230, waves: [
+      W(2,'wolf',5,1.0), W(14,'wraith',2,2.6), W(24,'totem',1), W(34,'powder',3,2.2),
+      W(48,'wraith',3,2.4), W(64,'ballista',4,1.6), W(80,'orcberserk',3,2.2) ] },
   { name: '리치의 재림', baseHp: 11000, money: 300, rate: 38, reward: 260, boss: true, waves: [
       W(2,'goblin',6,1.1), W(14,'lich',1), W(20,'orcspear',5,1.2), W(36,'lich',1),
       W(50,'powder',4,2.0), W(68,'dark',3,3.0) ] },
   { name: '방패벽 관문', baseHp: 12000, money: 300, rate: 39, reward: 285, waves: [
-      W(2,'orcshield',2,3.0), W(16,'ballista',4,1.5), W(32,'orcshield',3,2.6), W(50,'wolf',7,0.9),
-      W(66,'shaman',3,3.0), W(84,'dark',3,2.6) ] },
+      W(2,'orcshield',2,3.0), W(16,'ballista',4,1.5), W(30,'golem',1), W(44,'orcshield',3,2.6),
+      W(60,'wolf',7,0.9), W(76,'shaman',3,3.0), W(94,'dark',3,2.6) ] },
   { name: '★ 두 트롤의 문', baseHp: 13000, money: 320, rate: 40, reward: 420, boss: true, waves: [
       W(2,'goblin',6,1.1), W(14,'troll',1), W(24,'orcspear',6,1.1), W(40,'troll',1),
       W(52,'dark',3,2.6), W(70,'powder',5,1.8) ] },
-  { name: '역병의 늪', baseHp: 14500, money: 320, rate: 41, reward: 330, waves: [
-      W(2,'spider',7,0.9), W(16,'wraith',4,2.2), W(34,'shaman',3,2.6), W(52,'orcshield',4,2.0),
-      W(70,'powder',6,1.8), W(90,'lich',1) ] },
-  { name: '★ 서리 거인의 고개', baseHp: 15500, money: 340, rate: 42, reward: 480, boss: true, waves: [
+  { name: '역병의 늪', baseHp: 20000, money: 320, rate: 41, reward: 330, waves: [
+      W(2,'spider',7,0.9), W(14,'totem',2,6.0), W(24,'wraith',4,2.2), W(42,'shaman',3,2.6),
+      W(58,'bat',9,0.7), W(74,'orcshield',4,2.0), W(92,'powder',6,1.8), W(108,'golem',1), W(124,'lich',1) ] },
+  { name: '★ 서리 거인의 고개', baseHp: 22500, money: 340, rate: 42, reward: 480, boss: true, waves: [
       W(2,'orcspear',6,1.1), W(16,'ballista',4,1.5), W(30,'frostgiant',1), W(44,'wolf',7,0.9),
-      W(62,'orcshield',3,2.4), W(82,'dark',4,2.4) ] },
-  { name: '대군의 진격', baseHp: 18000, money: 340, rate: 43, reward: 420, waves: [
-      W(2,'goblin',8,0.9), W(14,'troll',1), W(26,'dark',4,2.2), W(44,'orcshield',4,1.8),
-      W(62,'ballista',7,1.2), W(82,'lich',2,5.0), W(104,'wraith',6,1.2) ] },
-  { name: '대군주의 전조', baseHp: 20000, money: 360, rate: 45, reward: 470, boss: true, waves: [
-      W(2,'wolf',7,0.9), W(16,'frostgiant',1), W(30,'dark',5,2.0), W(50,'troll',1),
-      W(64,'shaman',4,2.4), W(84,'orcshield',4,2.2), W(104,'powder',7,1.5) ] },
-  { name: '★ 오크 대군주의 왕좌', baseHp: 24000, money: 400, rate: 48, reward: 900, boss: true, waves: [
+      W(62,'orcshield',3,2.4), W(82,'dark',4,2.4), W(100,'frostgiant',1),
+      W(116,'orcberserk',5,1.4) ] },
+  { name: '★ 화룡의 둥지', baseHp: 27000, money: 340, rate: 43, reward: 520, boss: true, waves: [
+      W(2,'goblin',8,0.9), W(14,'orcberserk',3,2.0), W(30,'drake',1), W(46,'orcshield',4,1.8),
+      W(62,'ballista',7,1.2), W(82,'golem',1), W(100,'wraith',6,1.2), W(120,'drake',1),
+      W(140,'dark',5,1.8) ] },
+  { name: '대군주의 전조', baseHp: 26000, money: 360, rate: 45, reward: 470, boss: true, waves: [
+      W(2,'wolf',7,0.9), W(16,'frostgiant',1), W(30,'orcberserk',4,1.8), W(48,'troll',1),
+      W(62,'golem',1), W(78,'shaman',4,2.4), W(96,'orcshield',4,2.2), W(116,'powder',7,1.5),
+      W(136,'golem',1), W(152,'drake',1) ] },
+  { name: '★ 오크 대군주의 왕좌', baseHp: 32000, money: 400, rate: 48, reward: 900, boss: true, waves: [
       W(2,'goblin',8,0.9), W(14,'orcshield',4,1.8), W(28,'troll',1), W(40,'dark',5,2.0),
       W(58,'warlord',1), W(70,'lich',2,4.0), W(88,'frostgiant',1), W(104,'ballista',8,1.1),
-      W(126,'wraith',8,0.9) ] }
+      W(120,'drake',1), W(136,'orcberserk',6,1.2), W(156,'wraith',8,0.9) ] }
 ];
 
 /* -------------------- 병영 강화 -------------------- */
@@ -284,7 +366,27 @@ const UPGRADES = {
   vitality:{ name: '갑옷 강화', max: 10, base: 130, step: 1.55,
              desc: '모든 아군 병사의 체력 +8%/레벨' },
   castle:  { name: '성벽 보수', max: 10, base: 120, step: 1.52,
-             desc: '아군 성채 체력 +10%/레벨' }
+             desc: '아군 성채 체력 +10%/레벨' },
+  logistics:{ name: '병참', max: 10, base: 150, step: 1.55,
+             desc: '모든 병종의 재정비 시간 -3%/레벨' },
+  treasury:{ name: '전시 국고', max: 10, base: 130, step: 1.5,
+             desc: '전투 시작 군자금 +60/레벨' },
+  spoils:  { name: '전리품 수거', max: 10, base: 140, step: 1.5,
+             desc: '적 처치 골드 +8%/레벨' },
+  academy: { name: '사관학교', max: 5, base: 900, step: 1.9,
+             desc: '병종 레벨 상한 +1/레벨 (최대 20레벨까지)' },
+  command: { name: '왕의 명령', max: 5, base: 700, step: 1.8,
+             desc: '왕명 재사용 -8초, 회복량 +8%/레벨' }
+};
+
+/* -------------------- 왕의 명령 (액티브) -------------------- */
+const COMMAND = {
+  baseCooldown: 75,      // 기본 재사용 대기
+  cooldownPerLv: 8,      // 강화 레벨당 감소
+  healRatio: 0.25,       // 전군 최대 체력 대비 회복
+  healPerLv: 0.08,
+  hasteMul: 0.6,         // 공격 간격 배율
+  hasteDur: 8
 };
 
 /* -------------------- 병종 레벨 -------------------- */
@@ -292,8 +394,9 @@ const UNIT_LEVEL_HARD_CAP = 15;
 const UNIT_LEVEL_BASE_CAP = 5;
 const UNIT_LEVEL_GAIN = 0.10;
 
-function unitLevelCap(cleared) {
-  return Math.min(UNIT_LEVEL_HARD_CAP, UNIT_LEVEL_BASE_CAP + (cleared || 0));
+function unitLevelCap(cleared, academy) {
+  const a = academy || 0;
+  return Math.min(UNIT_LEVEL_HARD_CAP + a, UNIT_LEVEL_BASE_CAP + (cleared || 0) + a);
 }
 function unitLevelMul(level) {
   return 1 + UNIT_LEVEL_GAIN * ((level || 1) - 1);
