@@ -1,0 +1,139 @@
+#!/usr/bin/env node
+/* =======================================================================
+ *  막대 왕국 전쟁 - 브라우저 스모크 테스트
+ *
+ *  실제 브라우저에서 게임을 띄워 주요 화면과 전투를 한 바퀴 돌린다.
+ *  콘솔 오류가 하나라도 나면 실패로 끝난다.
+ *
+ *    node tools/smoke.js                 기본 (헤드리스)
+ *    node tools/smoke.js --shots out/    화면 캡처도 남긴다
+ *
+ *  playwright 가 필요하다:  npm i -D playwright
+ * ======================================================================= */
+
+const path = require('path');
+const fs = require('fs');
+
+let chromium;
+try {
+  chromium = require('playwright').chromium;
+} catch (e) {
+  console.error('playwright 가 없다. npm i -D playwright 후 다시 실행하라.');
+  process.exit(2);
+}
+
+const ROOT = path.join(__dirname, '..');
+const PAGE = 'file://' + path.join(ROOT, 'index.html');
+const shotDir = process.argv.indexOf('--shots') >= 0
+  ? process.argv[process.argv.indexOf('--shots') + 1] : null;
+if (shotDir && !fs.existsSync(shotDir)) fs.mkdirSync(shotDir, { recursive: true });
+
+const SIZES = [
+  { w: 844, h: 390, name: '아이폰 가로' },
+  { w: 740, h: 360, name: '소형폰 가로' },
+  { w: 1180, h: 820, name: '태블릿 가로' }
+];
+
+const failures = [];
+
+async function shot(page, name) {
+  if (shotDir) await page.screenshot({ path: path.join(shotDir, name + '.png') });
+}
+
+async function runSize(browser, size) {
+  const page = await browser.newPage({
+    viewport: { width: size.w, height: size.h }, deviceScaleFactor: 1
+  });
+  const errors = [];
+  page.on('pageerror', e => errors.push('pageerror: ' + e.message));
+  page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
+
+  await page.goto(PAGE);
+  // 어느 정도 진행한 저장 상태를 심어 모든 화면을 확인한다
+  await page.evaluate(() => localStorage.setItem('stick-kingdom-save-v1', JSON.stringify({
+    cleared: 13, coins: 60000, stones: 30, tutorial: true,
+    upgrades: { wallet: 3, income: 3, power: 3, vitality: 3, castle: 3 },
+    levels: {}, loadout: [], stars: { 0: 3, 1: 2 }, owned: {}
+  })));
+  await page.reload();
+  await page.waitForTimeout(350);
+  await shot(page, 'title-' + size.w);
+
+  await page.click('#btn-start');
+  await page.waitForTimeout(250);
+  await shot(page, 'map-' + size.w);
+
+  // 병영
+  await page.click('#btn-shop');
+  await page.waitForTimeout(250);
+  const upgrades = await page.$$eval('#shop-list .up-card', e => e.length);
+  if (upgrades < 5) failures.push(size.name + ': 강화 항목이 부족하다 (' + upgrades + ')');
+  await page.click('#scr-shop [data-goto]');
+
+  // 훈련소
+  await page.click('#btn-units');
+  await page.waitForTimeout(350);
+  const cards = await page.$$eval('#units-list .unit-card', e => e.length);
+  if (cards < 20) failures.push(size.name + ': 훈련소 목록이 부족하다 (' + cards + ')');
+  await page.click('#scr-units [data-goto]');
+
+  // 소환
+  await page.click('#btn-gacha');
+  await page.waitForTimeout(350);
+  await shot(page, 'gacha-' + size.w);
+  await page.click('#btn-pull10');
+  await page.waitForTimeout(450);
+  const pulled = await page.$$eval('#pull-grid .pull-card', e => e.length);
+  if (pulled !== 10) failures.push(size.name + ': 10회 소환 결과가 ' + pulled + '개다');
+  const owned = await page.evaluate(() => Object.keys(save.owned).length);
+  if (owned < 1) failures.push(size.name + ': 소환했는데 보유 병종이 없다');
+  await page.click('#btn-pull-close');
+  await page.click('#scr-gacha [data-goto]');
+  await page.waitForTimeout(150);
+
+  // 전투
+  await page.click('#stage-list .stage:nth-child(14)');
+  await page.waitForTimeout(300);
+  await page.click('#btn-speed');
+  await page.click('#btn-speed');
+  let usedCommand = false;
+  for (let i = 0; i < 90; i++) {
+    for (const c of await page.$$('#cards .card')) {
+      try { await c.click({ timeout: 60 }); } catch (e) { /* 재정비 중 */ }
+    }
+    if (!usedCommand && await page.evaluate(() => battle.canCommand())) {
+      await page.click('#btn-command');
+      usedCommand = true;
+    }
+    await page.waitForTimeout(90);
+    if (i === 30) await shot(page, 'battle-' + size.w);
+    if (await page.$eval('#result', e => e.classList.contains('show'))) break;
+  }
+  const st = await page.evaluate(() => ({
+    state: battle.state, allies: battle.allies.length, kills: battle.kills
+  }));
+  if (st.kills < 1) failures.push(size.name + ': 전투에서 처치가 0이다');
+
+  errors.forEach(e => failures.push(size.name + ': ' + e));
+  console.log('  ' + (errors.length ? '✗' : '✓') + ' ' + size.name +
+              ' (' + size.w + 'x' + size.h + ')  상태 ' + st.state +
+              ' · 처치 ' + st.kills + ' · 소환 ' + owned + '종' +
+              (usedCommand ? ' · 왕명 사용' : ''));
+  await page.close();
+}
+
+(async () => {
+  const exe = process.env.CHROMIUM_PATH;
+  const browser = await chromium.launch(exe ? { executablePath: exe } : {});
+  console.log('\n  브라우저 스모크 테스트');
+  console.log('  ' + '-'.repeat(58));
+  for (const s of SIZES) await runSize(browser, s);
+  await browser.close();
+  console.log('  ' + '-'.repeat(58));
+  if (failures.length) {
+    console.error('\n실패 ' + failures.length + '건');
+    failures.forEach(f => console.error('  - ' + f));
+    process.exit(1);
+  }
+  console.log('\n스모크 테스트 통과\n');
+})();

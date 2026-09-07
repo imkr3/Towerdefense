@@ -1,0 +1,61 @@
+name: 검사
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'js/**'
+      - 'css/**'
+      - 'tools/**'
+      - 'index.html'
+      - 'sw.js'
+      - 'package.json'
+      - '.github/workflows/check.yml'
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  static:
+    name: 문법 · 정적 · 밸런스
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 문법 검사
+        run: npm run lint
+
+      - name: 정적 점검 (참조 파일 · 데이터 정합성 · 그리기 코드)
+        run: npm run assets
+
+      - name: 전장 밸런스 검사
+        run: npm run balance
+
+  smoke:
+    name: 브라우저 스모크
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: playwright 설치
+        run: |
+          npm install --no-audit --no-fund playwright
+          npx playwright install --with-deps chromium
+
+      - name: 스모크 테스트
+        run: node tools/smoke.js --shots artifacts
+
+      - name: 화면 캡처 업로드
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-screenshots
+          path: artifacts
+          if-no-files-found: ignore

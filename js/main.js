@@ -12,7 +12,7 @@ function defaultSave() {
     upgrades: { wallet: 0, income: 0, power: 0, vitality: 0, castle: 0 },
     levels: lv, loadout: ['spear'],
     stars: {}, totalKills: 0, sound: true,
-    owned: {}, stones: 3, pity: 0, season: 'olympus', pulls: 0
+    owned: {}, stones: 3, pity: 0, season: 'olympus', pulls: 0, tutorial: false
   };
 }
 
@@ -84,6 +84,16 @@ function show(id) {
   if (id === 'scr-units') renderTraining();
   if (id === 'scr-gacha') renderGacha();
   if (id === 'scr-battle' && renderer) renderer.resize();
+}
+
+/* 브라우저 기본 confirm 대신 게임 톤에 맞춘 확인창 */
+let confirmYes = null;
+function askConfirm(title, text, onYes) {
+  $('#confirm-title').textContent = title;
+  $('#confirm-text').textContent = text;
+  confirmYes = onYes;
+  $('#modal-confirm').classList.add('show');
+  SFX.ui();
 }
 
 let toastTimer = null;
@@ -522,6 +532,12 @@ function startBattle(index) {
   paused = false;
   buildCards();
   show('scr-battle');
+  if (!save.tutorial) {
+    save.tutorial = true;
+    saveGame(save);
+    $('#modal-tutorial').classList.add('show');
+    paused = true;
+  }
   renderer.cam = renderer.camTarget = renderer.clampCam(ALLY_SPAWN_X + 200);
   renderer.dragUntil = 0;
   lastTs = 0;
@@ -559,6 +575,7 @@ let paused = false;
 function updateHud() {
   const money = Math.floor(battle.money);
   $('#kill-count').textContent = battle.kills;
+  $('#foe-left').textContent = battle.foesLeft();
   const cmdBtn = $('#btn-command');
   const ready = battle.cmdCd <= 0;
   cmdBtn.classList.toggle('ready', ready);
@@ -806,6 +823,7 @@ function drawTitle(dt) {
 function refreshTitleBadges() {
   $('#badge-progress').textContent = '돌파 ' + save.cleared + ' / ' + STAGES.length;
   $('#badge-gold').textContent = '💰 ' + save.coins;
+  $('#badge-stones').textContent = '🔮 ' + save.stones;
 }
 
 function init() {
@@ -813,9 +831,10 @@ function init() {
   SFX.init();
   SFX.on = save.sound !== false;
   $('#btn-sound').textContent = save.sound !== false ? '🔊 효과음 켜짐' : '🔇 효과음 꺼짐';
-  // 모바일은 사용자 조작이 있어야 오디오가 열린다
+  // 모바일은 사용자 조작이 한 번 있어야 오디오가 열린다
+  const wake = () => { SFX.init(); SFX.resume(); };
   ['pointerdown', 'touchstart', 'keydown'].forEach(ev =>
-    window.addEventListener(ev, () => { SFX.init(); SFX.resume(); }, { once: false }));
+    window.addEventListener(ev, wake, { once: true, passive: true }));
   titleAnim.cv = $('#title-bg');
   titleAnim.ctx = titleAnim.cv.getContext('2d');
   resizeTitle();
@@ -830,9 +849,29 @@ function init() {
     if (e.target.id === 'modal-howto') e.target.classList.remove('show');
   });
   $('#btn-reset').addEventListener('click', () => {
-    if (confirm('모든 진행 기록을 지울까?')) {
-      save = defaultSave(); saveGame(save); toast('기록을 초기화했다');
-    }
+    askConfirm('기록 초기화',
+      '진행도와 소환한 병종까지 전부 사라진다. 정말 지울까?', () => {
+        save = defaultSave();
+        saveGame(save);
+        refreshTitleBadges();
+        toast('기록을 초기화했다');
+      });
+  });
+  $('#confirm-yes').addEventListener('click', () => {
+    $('#modal-confirm').classList.remove('show');
+    const fn = confirmYes; confirmYes = null;
+    if (fn) fn();
+  });
+  $('#confirm-no').addEventListener('click', () => {
+    $('#modal-confirm').classList.remove('show');
+    confirmYes = null;
+    SFX.ui();
+  });
+  $('#btn-tutorial-close').addEventListener('click', () => {
+    $('#modal-tutorial').classList.remove('show');
+    paused = false;
+    $('#btn-pause').textContent = '⏸';
+    SFX.ui();
   });
   $$('[data-goto]').forEach(b => b.addEventListener('click', () => show(b.dataset.goto)));
   $('#btn-shop').addEventListener('click', () => show('scr-shop'));
@@ -855,7 +894,11 @@ function init() {
   });
 
   $('#btn-quit').addEventListener('click', () => {
-    if (battle && battle.state === 'play' && !confirm('전투를 포기하고 진군도로 돌아갈까?')) return;
+    if (battle && battle.state === 'play') {
+      askConfirm('전투 포기', '지금까지의 전과를 버리고 진군도로 돌아갈까?',
+                 () => show('scr-map'));
+      return;
+    }
     show('scr-map');
   });
   $('#btn-speed').addEventListener('click', () => {

@@ -27,6 +27,7 @@ class Renderer {
     const hud = document.querySelector('.hud-bottom');
     const hudH = (hud && hud.offsetHeight) ? hud.offsetHeight : Math.round(this.h * 0.24);
     // 뒷줄(row 오프셋)까지 HUD 위에 오도록 여유를 둔다
+    this._skyKey = null;
     this.groundY = Math.round(Math.max(this.h * 0.45,
                      Math.min(this.h * 0.86, this.h - hudH - 26)));
     // cs: 지면 위 여유 높이에 맞춘 캐릭터 배율
@@ -60,10 +61,16 @@ class Renderer {
     const ctx = this.ctx, w = this.w, h = this.h;
     const pal = FIELD_PALETTES[stageIndex % FIELD_PALETTES.length];
 
-    const sky = ctx.createLinearGradient(0, 0, 0, this.groundY);
-    sky.addColorStop(0, pal.sky0);
-    sky.addColorStop(1, pal.sky1);
-    ctx.fillStyle = sky;
+    // 하늘 그라디언트는 매 프레임 새로 만들 필요가 없다
+    const key = pal.sky0 + this.groundY;
+    if (this._skyKey !== key) {
+      const g = ctx.createLinearGradient(0, 0, 0, this.groundY);
+      g.addColorStop(0, pal.sky0);
+      g.addColorStop(1, pal.sky1);
+      this._sky = g;
+      this._skyKey = key;
+    }
+    ctx.fillStyle = this._sky;
     ctx.fillRect(0, 0, w, h);
 
     // 해 / 달

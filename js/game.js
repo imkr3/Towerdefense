@@ -22,6 +22,7 @@ function sfx(name) {
   if (fn) fn.call(SFX);
 }
 
+const FX_LIMIT = 260;        // 이펙트가 무한정 쌓이지 않게
 const SLOW_SPEED_MUL = 0.45; // 둔화 시 이동
 const SLOW_RATE_MUL = 1.7;   // 둔화 시 공격 간격
 
@@ -417,11 +418,23 @@ class Battle {
           f.swing = 0.22;
           this.attack(f, target, foes, foeCastle);
         }
-      } else if (!f.ab.hold) {
+      } else if (!f.ab.hold && this.canAdvance(f, foes)) {
         f.x += f.dir * f.speedNow * dt;
         f.x = Math.max(60, Math.min(WORLD - 60, f.x));
       }
     }
+  }
+
+  /* 사제·나팔수처럼 공격하지 않는 병종은 적과 일정 거리를 두고 멈춘다.
+   * 그대로 두면 혼자 적진까지 걸어 들어가 죽는다. */
+  canAdvance(f, foes) {
+    if (!f.ab.noAttack) return true;
+    const keep = f.ab.standoff || 200;
+    for (const e of foes) {
+      if (e.dead) continue;
+      if ((e.x - f.x) * f.dir < keep) return false;
+    }
+    return true;
   }
 
   supportTick(f, mates, dt, isAlly) {
@@ -488,6 +501,11 @@ class Battle {
     }
   }
 
+  /* 진영 기준으로 지금 살아 있는 적 목록과 성채를 돌려준다.
+   * 발사체가 배열 참조를 들고 있으면 그 사이에 갈린 목록을 놓치게 된다. */
+  foesOf(side) { return side === 'ally' ? this.enemies : this.allies; }
+  castleOf(side) { return side === 'ally' ? this.enemyCastle : this.allyCastle; }
+
   findTarget(f, foes, foeCastle) {
     if (f.ab.noAttack) return null;
     const reach = f.attackRange + f.radius;
@@ -524,8 +542,7 @@ class Battle {
         x: f.x, y0: f.row, tx: target.x, side: f.side, t: 0,
         dur: Math.max(0.18, Math.abs(target.x - f.x) / 900),
         color: f.s.accent, dmg: r.dmg, crit: r.crit, src: f,
-        area: f.s.area, areaRadius: f.s.areaRadius,
-        foes: foes, castle: foeCastle, dir: f.dir
+        area: f.s.area, areaRadius: f.s.areaRadius, dir: f.dir
       });
     } else {
       const cx = f.x + f.dir * f.attackRange * 0.6;
@@ -590,13 +607,16 @@ class Battle {
   /* 관통: 사수와 착탄점 사이의 모든 적을 꿰뚫는다 */
   pierceHit(shot) {
     const from = Math.min(shot.x, shot.tx), to = Math.max(shot.x, shot.tx);
+    const foes = this.foesOf(shot.side);
+    const castle = this.castleOf(shot.side);
     let hits = 0;
-    for (const e of shot.foes) {
+    for (const e of foes) {
       if (e.dead) continue;
       if (e.x >= from - 30 && e.x <= to + 30) { this.hitOne(shot.dmg, e, shot.src, shot.crit); hits++; }
     }
-    if (shot.castle && !shot.castle.dead &&
-        shot.castle.x >= from - 40 && shot.castle.x <= to + 40) shot.castle.takeDamage(shot.dmg);
+    if (!castle.dead && castle.x >= from - 40 && castle.x <= to + 40) {
+      castle.takeDamage(shot.dmg);
+    }
     this.fx.push({ type: 'beam', x: shot.x, x2: shot.tx, row: shot.y0, t: 0.22, life: 0.22,
                    color: shot.color });
     return hits;
@@ -608,18 +628,20 @@ class Battle {
       if (s.t < s.dur) continue;
       s.done = true;
       const ab = (s.src && s.src.ab) || {};
+      const foes = this.foesOf(s.side);
+      const castle = this.castleOf(s.side);
       if (ab.pierce) { this.pierceHit(s); continue; }
       if (s.area) {
-        this.areaHit(s.dmg, s.tx, s.areaRadius, s.foes, s.castle, s.src, s.crit);
+        this.areaHit(s.dmg, s.tx, s.areaRadius, foes, castle, s.src, s.crit);
         continue;
       }
       let hit = null, bd = Infinity;
-      for (const e of s.foes) {
+      for (const e of foes) {
         if (e.dead) continue;
         const d = Math.abs(e.x - s.tx);
         if (d < bd && d < 90) { bd = d; hit = e; }
       }
-      if (!hit && s.castle && !s.castle.dead && Math.abs(s.castle.x - s.tx) < 110) hit = s.castle;
+      if (!hit && !castle.dead && Math.abs(castle.x - s.tx) < 110) hit = castle;
       if (hit) this.hitOne(s.dmg, hit, s.src, s.crit);
       this.fx.push({ type: s.crit ? 'crit' : 'hit', x: s.tx, row: s.y0, t: 0.22, life: 0.22 });
     }
@@ -629,10 +651,15 @@ class Battle {
   updateFx(dt) {
     for (const e of this.fx) e.t -= dt;
     this.fx = this.fx.filter(e => e.t > 0);
+    if (this.fx.length > FX_LIMIT) this.fx.splice(0, this.fx.length - FX_LIMIT);
     this.dmgFxCount = 0;
     for (const e of this.fx) if (e.type === 'dmg') this.dmgFxCount++;
     if (this.state !== 'play') this.resultTime = (this.resultTime || 0) + dt;
   }
+
+  /* 남은 적 = 아직 등장하지 않은 적 + 전장에 있는 적 */
+  foesLeft() { return (this.queue.length - this.qi) + this.enemies.length; }
+  foesTotal() { return this.queue.length; }
 
   aliveBoss() {
     let best = null;

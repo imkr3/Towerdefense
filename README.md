@@ -165,6 +165,33 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 네트워크 없이 완전히 오프라인으로 동작한다. 뒤로 가기 버튼은 이전 화면으로 가고,
 타이틀에서 한 번 더 누르면 앱이 닫힌다.
 
+## 개발 도구
+
+빌드는 없지만 검사 도구는 있다. `npm test` 하나로 전부 돈다.
+
+```bash
+npm run lint      # 모든 js 문법 검사
+npm run assets    # 참조 파일, 오프라인 캐시 목록, 데이터 정합성, 그리기 코드 유무
+npm run balance   # 20개 전장 자동 전투로 난이도 곡선 검사
+npm test          # 위 셋을 한 번에
+
+npm run sim 2 3   # 병영 강화 2 / 병종 레벨 3 으로 20전장 결과표 출력
+npm run smoke     # 실제 브라우저로 전 화면 + 전투 한 바퀴 (playwright 필요)
+```
+
+`tools/sim.js`는 난수를 고정해 돌리므로 같은 입력이면 항상 같은 결과가 나온다.
+밸런스를 건드린 뒤 `npm run balance`가 통과하는지 보면 곡선이 깨졌는지 바로 알 수 있다.
+
+| 성장 수준 | 기대 클리어 |
+|---|---|
+| 강화 0 / 병종 Lv1 | 8 ~ 17 전장 |
+| 강화 2 / 병종 Lv3 | 15 ~ 20 전장 |
+| 강화 3 / 병종 Lv5 | 20 전장 전부 |
+
+`tools/smoke.js`는 세 가지 가로 해상도에서 타이틀, 진군도, 병영, 훈련소, 소환,
+전투를 차례로 거치며 콘솔 오류가 하나라도 나면 실패한다.
+GitHub Actions의 `검사` 워크플로가 푸시마다 이 둘을 모두 돌린다.
+
 ## 구조
 
 ```
@@ -177,7 +204,9 @@ js/render.js      캔버스 렌더러 (졸라맨 드로잉, 배경, 성채, 이�
 js/main.js        화면 전환, 저장/불러오기, 편성, 소환 로직, 타이틀 연출, 메인 루프
 sw.js             오프라인 캐시
 android/          WebView 래퍼 (APK 빌드용)
+tools/            밸런스 시뮬레이터, 정적 점검, 브라우저 스모크 테스트
 .github/workflows/android.yml   APK 빌드 파이프라인
+.github/workflows/check.yml     문법·정적·밸런스·스모크 검사
 ```
 
 캐릭터는 `js/render.js`의 `drawBody`에서 그린다. `legs` / `torso` / `arm` / `head`
