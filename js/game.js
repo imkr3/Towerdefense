@@ -83,6 +83,7 @@ class Battle {
       hp: 1 + 0.08 * (up.vitality || 0),
       atk: 1 + 0.06 * (up.power || 0)
     };
+    this.levels = save.levels || {};
 
     this.walletMax = 900 + 260 * (up.wallet || 0);
     this.income = this.stage.rate * (1 + 0.12 * (up.income || 0));
@@ -129,7 +130,9 @@ class Battle {
     const u = UNIT_BY_ID[id];
     this.money -= u.cost;
     this.cooldowns[id] = u.cooldown;
-    const f = new Fighter(u, 'ally', ALLY_SPAWN_X + Math.random() * 40, this.buff);
+    const lm = unitLevelMul(this.levels[id] || 1);
+    const buff = { hp: this.buff.hp * lm, atk: this.buff.atk * lm };
+    const f = new Fighter(u, 'ally', ALLY_SPAWN_X + Math.random() * 40, buff);
     this.allies.push(f);
     this.fx.push({ type: 'spawn', x: f.x, row: f.row, t: 0.4, life: 0.4 });
     return true;

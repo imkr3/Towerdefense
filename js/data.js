@@ -182,6 +182,27 @@ const UPGRADES = {
              desc: '아군 성채 체력 +10%/레벨' }
 };
 
+/* -------------------- 병종 레벨 -------------------- */
+const UNIT_LEVEL_HARD_CAP = 15;      // 절대 상한
+const UNIT_LEVEL_BASE_CAP = 5;       // 시작 상한 (돌파한 전장 수만큼 상승)
+const UNIT_LEVEL_GAIN = 0.10;        // 레벨당 체력/공격력 증가율
+
+// 돌파 진행도에 따른 현재 레벨 상한
+function unitLevelCap(cleared) {
+  return Math.min(UNIT_LEVEL_HARD_CAP, UNIT_LEVEL_BASE_CAP + (cleared || 0));
+}
+
+// 레벨 1 = 기본 성능. 레벨당 +10%
+function unitLevelMul(level) {
+  return 1 + UNIT_LEVEL_GAIN * ((level || 1) - 1);
+}
+
+// level -> level+1 훈련 비용
+function unitTrainCost(unit, level) {
+  const base = 40 + unit.cost * 0.6;
+  return Math.round(base * (0.6 + 0.4 * (level || 1)));
+}
+
 function upgradeCost(key, level) {
   const u = UPGRADES[key];
   return Math.round(u.base * Math.pow(u.step, level));

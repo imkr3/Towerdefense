@@ -21,11 +21,16 @@ class Renderer {
     this.cv.width = Math.round(this.w * dpr);
     this.cv.height = Math.round(this.h * dpr);
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    // zoom: 월드 -> 화면 가로 배율 (한 화면에 약 720 월드유닛)
-    this.zoom = Math.max(0.40, Math.min(0.95, this.w / 720));
-    // cs: 캐릭터 크기 배율
-    this.cs = Math.max(0.8, Math.min(1.45, this.h / 640));
-    this.groundY = Math.round(Math.min(this.h * 0.76, this.h - 185));
+    // zoom: 월드 -> 화면 가로 배율 (한 화면에 약 760 월드유닛)
+    this.zoom = Math.max(0.40, Math.min(1.0, this.w / 760));
+    // 지면: 하단 HUD 바로 위에 오도록
+    const hud = document.querySelector('.hud-bottom');
+    const hudH = (hud && hud.offsetHeight) ? hud.offsetHeight : Math.round(this.h * 0.24);
+    // 뒷줄(row 오프셋)까지 HUD 위에 오도록 여유를 둔다
+    this.groundY = Math.round(Math.max(this.h * 0.45,
+                     Math.min(this.h * 0.86, this.h - hudH - 26)));
+    // cs: 지면 위 여유 높이에 맞춘 캐릭터 배율
+    this.cs = Math.max(0.70, Math.min(1.45, this.groundY / 350));
   }
 
   viewWidth() { return this.w / this.zoom; }

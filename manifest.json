@@ -4,7 +4,7 @@
   "description": "왕국군과 오크 군단의 중세 라인 배틀 타워디펜스",
   "start_url": "./index.html",
   "display": "fullscreen",
-  "orientation": "portrait",
+  "orientation": "landscape",
   "background_color": "#e8dcc0",
   "theme_color": "#2b2119",
   "icons": [

@@ -25,6 +25,7 @@
   <div class="title-btns">
     <button class="btn big" id="btn-start">출 진</button>
     <button class="btn ghost" id="btn-howto">교전 수칙</button>
+    <button class="btn ghost" id="btn-full">전체화면 · 가로 고정</button>
     <button class="btn ghost danger" id="btn-reset">기록 초기화</button>
   </div>
   <p class="ver">왕국 방어선 · 전 20 전장</p>
@@ -44,7 +45,7 @@
   <div class="stage-list" id="stage-list"></div>
   <nav class="tabbar">
     <button class="tab" id="btn-shop">강화 병영</button>
-    <button class="tab" id="btn-units">병종 도감</button>
+    <button class="tab" id="btn-units">훈련소</button>
   </nav>
 </section>
 
@@ -55,17 +56,18 @@
     <div class="bar-title">강화 병영</div>
     <div class="coin-chip">💰 <span id="shop-coins">0</span></div>
   </header>
-  <div class="scroll" id="shop-list"></div>
+  <div class="scroll grid" id="shop-list"></div>
 </section>
 
 <!-- ===================== 도감 ===================== -->
 <section id="scr-units" class="screen">
   <header class="bar">
     <button class="icon-btn" data-goto="scr-map">◀</button>
-    <div class="bar-title">병종 도감</div>
-    <div></div>
+    <div class="bar-title">훈련소</div>
+    <div class="coin-chip">💰 <span id="train-coins">0</span></div>
   </header>
-  <div class="scroll" id="units-list"></div>
+  <div class="cap-line"><span id="train-cap"></span></div>
+  <div class="scroll grid" id="units-list"></div>
 </section>
 
 <!-- ===================== 전투 ===================== -->
@@ -73,8 +75,10 @@
   <canvas id="cv"></canvas>
 
   <div class="hud-top">
-    <button class="icon-btn small" id="btn-quit">✕</button>
-    <div class="stage-tag" id="battle-stage">1. 국경 초소</div>
+    <div class="hud-left">
+      <button class="icon-btn small" id="btn-quit">✕</button>
+      <div class="stage-tag" id="battle-stage">1. 국경 초소</div>
+    </div>
     <button class="icon-btn small" id="btn-speed">▶▶ 1x</button>
   </div>
 
@@ -110,9 +114,22 @@
       <li>아군 성채가 무너지면 패배. 화면을 좌우로 밀어 전장을 살필 수 있다.</li>
       <li>맞을 때마다 병사는 뒤로 밀린다. 방패병으로 버티고 뒤에서 화살을 퍼부어라.</li>
       <li>전투로 얻은 골드로 병영에서 무기·갑옷·성벽을 강화한다.</li>
+      <li>훈련소에서 병종별로 레벨을 올린다. 레벨당 체력과 공격력이 10%씩 오른다.</li>
+      <li>레벨 상한은 돌파한 전장 수만큼 올라간다. 최대 15레벨.</li>
       <li>전장을 돌파할수록 새로운 병종이 합류한다.</li>
     </ul>
     <button class="btn primary" data-close>알겠다</button>
+  </div>
+</div>
+
+<div id="rotate-hint">
+  <div class="rot-box">
+    <div class="rot-icon">
+      <div class="rot-phone"></div>
+      <div class="rot-arrow">↻</div>
+    </div>
+    <h3>가로로 돌려주세요</h3>
+    <p>이 전장은 가로 화면 전용이다.<br>기기를 눕히면 바로 시작한다.</p>
   </div>
 </div>
 
