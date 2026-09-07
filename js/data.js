@@ -8,7 +8,7 @@ const LOADOUT_MAX = 10;      // 전투에 들고 갈 수 있는 병종 수
 const UNIT_DEFAULTS = {
   hp: 100, atk: 10, range: 60, speed: 40, interval: 1.0,
   cost: 50, cooldown: 3, kb: 2, area: false, areaRadius: 0,
-  ranged: false, scale: 1, unlockStage: 1, desc: '', abText: '', ab: null,
+  ranged: false, scale: 1, unlockStage: 1, desc: '', abText: '', ab: null, short: '',
   tunic: '#5b6572'
 };
 
@@ -54,7 +54,7 @@ const UNITS = [
     desc: '쌍도끼를 미친 듯이 휘두른다. 방패병 뒤에 세워야 산다.'
   }),
   mk({
-    id: 'venom', name: '독침 궁수', role: '중독', shape: 'venom',
+    id: 'venom', name: '독침 궁수', short: '독침궁수', role: '중독', shape: 'venom',
     body: '#2b3038', accent: '#7fbf3f', tunic: '#3f6b4a',
     hp: 250, atk: 32, range: 250, speed: 38, interval: 1.4,
     cost: 190, cooldown: 6.5, kb: 2, ranged: true, unlockStage: 6,
@@ -71,7 +71,7 @@ const UNITS = [
     desc: '적진까지 달려가 화약통을 터뜨린다. 한 방이 아주 아프다.'
   }),
   mk({
-    id: 'merchant', name: '종군 상인', role: '보급', shape: 'merchant',
+    id: 'merchant', name: '종군 상인', short: '상인', role: '보급', shape: 'merchant',
     body: '#2b3038', accent: '#c9a227', tunic: '#8a5a2a',
     hp: 620, atk: 0, range: 0, speed: 0, interval: 3.0,
     cost: 150, cooldown: 20, kb: 1, unlockStage: 8,
@@ -88,7 +88,7 @@ const UNITS = [
     desc: '대검을 휘둘러 앞의 여럿을 함께 벤다. 왕국군의 중핵.'
   }),
   mk({
-    id: 'frost', name: '서리 마도사', role: '둔화', shape: 'frost',
+    id: 'frost', name: '서리 마도사', short: '마도사', role: '둔화', shape: 'frost',
     body: '#2b3038', accent: '#8fd8ff', tunic: '#2f5f8e',
     hp: 320, atk: 58, range: 285, speed: 30, interval: 1.6,
     cost: 240, cooldown: 8.5, kb: 2, ranged: true, area: true, areaRadius: 75, unlockStage: 10,
@@ -115,7 +115,7 @@ const UNITS = [
     desc: '급소만 노리고 벤 만큼 회복한다. 오래 살아남을수록 무서워진다.'
   }),
   mk({
-    id: 'sniper', name: '석궁 저격수', role: '관통', shape: 'sniper',
+    id: 'sniper', name: '석궁 저격수', short: '저격수', role: '관통', shape: 'sniper',
     body: '#2b3038', accent: '#9aa3ad', tunic: '#3a4450',
     hp: 300, atk: 205, range: 520, speed: 16, interval: 3.4,
     cost: 310, cooldown: 13, kb: 1, ranged: true, unlockStage: 13,
@@ -133,7 +133,7 @@ const UNITS = [
     desc: '왕국의 최종 카드. 폭발에 휘말린 적은 종종 얼어붙는다.'
   }),
   mk({
-    id: 'colossus', name: '강철 거인', role: '불굴', shape: 'colossus',
+    id: 'colossus', name: '강철 거인', short: '거인', role: '불굴', shape: 'colossus',
     body: '#4a5560', accent: '#c8ced6', tunic: '#7a8894',
     hp: 4400, atk: 190, range: 92, speed: 16, interval: 2.4,
     cost: 470, cooldown: 30, kb: 1, scale: 1.45, unlockStage: 16,

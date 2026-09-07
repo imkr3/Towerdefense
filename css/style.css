@@ -225,7 +225,11 @@ body{
   position:absolute; top:1px; left:2px; font-size:9px; font-weight:900;
   color:#4a3a12; background:var(--gold-l); border:1px solid rgba(0,0,0,.5); padding:0 3px;
 }
-.card .c-name{font-size:9.5px; font-weight:900; text-align:center; line-height:1.1; padding:0 2px 2px;}
+.card .c-name{
+  font-size:9px; font-weight:900; text-align:center; line-height:1.1;
+  padding:0 1px; word-break:keep-all; letter-spacing:-.03em;
+  max-height:22px; overflow:hidden;
+}
 .card .c-cost{
   position:absolute; bottom:0; left:0; right:0; background:var(--gold);
   border-top:1px solid var(--ink); font-size:11px; font-weight:900; padding:0 0 1px; text-align:center;

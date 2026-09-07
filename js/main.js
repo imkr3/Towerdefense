@@ -285,10 +285,10 @@ function buildCards() {
     b.innerHTML =
       '<canvas class="c-ico"></canvas>' +
       '<div class="c-lv">Lv.' + (save.levels[u.id] || 1) + '</div>' +
-      '<div class="c-name">' + u.name + '</div>' +
+      '<div class="c-name">' + (u.short || u.name) + '</div>' +
       '<div class="c-cost">' + u.cost + '</div>' +
       '<div class="cool hide"></div>';
-    drawUnitIcon(b.querySelector('.c-ico'), u, 44);
+    drawUnitIcon(b.querySelector('.c-ico'), u, 38);
     b.addEventListener('click', () => {
       if (battle.state !== 'play') return;
       if (battle.cooldowns[u.id] > 0) { toast('아직 재정비 중'); return; }
