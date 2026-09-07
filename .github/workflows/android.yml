@@ -41,6 +41,23 @@ jobs:
       - name: 릴리스 APK 빌드
         run: gradle -p android assembleRelease --no-daemon --stacktrace
 
+      - name: APK 내용 검증
+        run: |
+          set -e
+          DBG=android/app/build/outputs/apk/debug/app-debug.apk
+          REL=android/app/build/outputs/apk/release/app-release.apk
+          for f in "$DBG" "$REL"; do
+            echo "== $f ($(du -h "$f" | cut -f1)) =="
+            unzip -l "$f" | grep -E 'assets/www/(index.html|js/|css/)' || {
+              echo "게임 파일이 APK 에 들어 있지 않다"; exit 1; }
+          done
+          echo "### APK 빌드 완료" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| 파일 | 크기 |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| app-debug.apk | $(du -h "$DBG" | cut -f1) |" >> $GITHUB_STEP_SUMMARY
+          echo "| app-release.apk | $(du -h "$REL" | cut -f1) |" >> $GITHUB_STEP_SUMMARY
+
       - name: APK 업로드
         uses: actions/upload-artifact@v4
         with:
