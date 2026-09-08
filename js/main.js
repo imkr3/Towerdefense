@@ -12,7 +12,9 @@ function defaultSave() {
     upgrades: { wallet: 0, income: 0, power: 0, vitality: 0, castle: 0 },
     levels: lv, loadout: ['spear'],
     stars: {}, totalKills: 0, sound: true,
-    owned: {}, stones: 3, pity: 0, season: 'olympus', pulls: 0, tutorial: false
+    owned: {}, stones: 3, pity: 0, season: 'olympus', pulls: 0, tutorial: false,
+    endlessBest: 0, achv: {}, daily: null, auto: false,
+    stats: { battles: 0, wins: 0, bossKills: 0, trains: 0, playSec: 0 }
   };
 }
 
@@ -53,6 +55,11 @@ function loadGame() {
     if (!s.stars || typeof s.stars !== 'object') s.stars = {};
     if (typeof s.sound !== 'boolean') s.sound = true;
     if (!s.owned || typeof s.owned !== 'object') s.owned = {};
+    if (!s.achv || typeof s.achv !== 'object') s.achv = {};
+    if (typeof s.endlessBest !== 'number') s.endlessBest = 0;
+    if (typeof s.auto !== 'boolean') s.auto = false;
+    s.stats = Object.assign({ battles: 0, wins: 0, bossKills: 0, trains: 0, playSec: 0 },
+                            s.stats || {});
     if (typeof s.stones !== 'number') s.stones = 3;
     if (typeof s.pity !== 'number') s.pity = 0;
     if (typeof s.pulls !== 'number') s.pulls = 0;
@@ -83,6 +90,7 @@ function show(id) {
   if (id === 'scr-shop') renderShop();
   if (id === 'scr-units') renderTraining();
   if (id === 'scr-gacha') renderGacha();
+  if (id === 'scr-quest') { checkAchievements(); renderQuest(); }
   if (id === 'scr-battle' && renderer) renderer.resize();
 }
 
@@ -106,9 +114,163 @@ function toast(msg) {
   toastTimer = setTimeout(() => t.classList.remove('show'), 1400);
 }
 
+/* ------------------------ 일일 임무 / 업적 ------------------------ */
+function todayKey() {
+  const d = new Date();
+  return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+}
+
+/* 날짜가 바뀌면 임무를 새로 뽑는다 */
+function refreshDaily() {
+  const key = todayKey();
+  if (save.daily && save.daily.date === key) return;
+  save.daily = {
+    date: key,
+    list: dailyMissionIds(key).map(id => ({ id: id, got: 0, claimed: false }))
+  };
+  saveGame(save);
+}
+
+function missionProgress(m) {
+  const def = missionById(m.id);
+  return Math.min(def.need, m.got);
+}
+function missionDone(m) {
+  return missionProgress(m) >= missionById(m.id).need;
+}
+
+/* 전투/소환/훈련 결과를 임무 진행도에 반영한다 */
+function addStat(stat, n) {
+  refreshDaily();
+  let changed = false;
+  save.daily.list.forEach(m => {
+    if (missionById(m.id).stat === stat && !m.claimed) { m.got += n; changed = true; }
+  });
+  if (changed) saveGame(save);
+  updateQuestBadge();
+}
+
+/* 조건을 만족한 업적을 즉시 지급한다 */
+function checkAchievements() {
+  let earned = [];
+  ACHIEVEMENTS.forEach(a => {
+    if (save.achv[a.id]) return;
+    if (!a.test(save)) return;
+    save.achv[a.id] = true;
+    save.coins += a.gold;
+    save.stones += a.stone;
+    earned.push(a);
+  });
+  if (earned.length) {
+    saveGame(save);
+    SFX.levelUp();
+    toast('업적 달성: ' + earned.map(a => a.name).join(', '));
+  }
+  updateQuestBadge();
+  return earned;
+}
+
+/* 받을 수 있는 보상 개수를 탭에 표시 */
+function claimableCount() {
+  refreshDaily();
+  return save.daily.list.filter(m => !m.claimed && missionDone(m)).length;
+}
+function updateQuestBadge() {
+  const n = claimableCount();
+  const el = $('#tab-quest');
+  if (!el) return;
+  el.textContent = n;
+  el.classList.toggle('on', n > 0);
+}
+
+function renderQuest(tab) {
+  refreshDaily();
+  questTab = tab || questTab || 'daily';
+  $('#quest-stones').textContent = save.stones;
+  $('#quest-gold').textContent = save.coins;
+  $$('#quest-tabs .season-tab').forEach(b =>
+    b.classList.toggle('on', b.dataset.qtab === questTab));
+
+  const box = $('#quest-list');
+  box.innerHTML = '';
+
+  if (questTab === 'daily') {
+    save.daily.list.forEach(m => {
+      const def = missionById(m.id);
+      const done = missionDone(m);
+      const el = document.createElement('div');
+      el.className = 'quest-card' + (m.claimed ? ' claimed' : (done ? ' done' : ''));
+      el.innerHTML =
+        '<div class="q-head"><span class="q-name">' + def.text + '</span>' +
+        '<span class="q-prog">' + missionProgress(m) + ' / ' + def.need + '</span></div>' +
+        '<div class="q-bar"><div style="width:' +
+          (missionProgress(m) / def.need * 100) + '%"></div></div>' +
+        '<div class="q-reward">💰 ' + def.gold + '  🔮 ' + def.stone + '</div>' +
+        '<button class="btn q-btn"' + (done && !m.claimed ? ' ' : ' disabled') + '>' +
+          (m.claimed ? '수령 완료' : (done ? '보상 받기' : '진행 중')) + '</button>';
+      if (done && !m.claimed) {
+        el.querySelector('.q-btn').addEventListener('click', () => {
+          m.claimed = true;
+          save.coins += def.gold;
+          save.stones += def.stone;
+          saveGame(save);
+          SFX.gold();
+          toast('보상을 받았다');
+          renderQuest('daily');
+          checkAchievements();
+        });
+      }
+      box.appendChild(el);
+    });
+    const note = document.createElement('div');
+    note.className = 'quest-card note';
+    note.innerHTML = '<div class="q-name">임무는 날짜가 바뀌면 새로 뽑힌다.</div>';
+    box.appendChild(note);
+
+  } else if (questTab === 'achv') {
+    ACHIEVEMENTS.forEach(a => {
+      const got = !!save.achv[a.id];
+      const el = document.createElement('div');
+      el.className = 'quest-card achv' + (got ? ' claimed' : '');
+      el.innerHTML =
+        '<div class="q-head"><span class="q-name">' + (got ? '🏅 ' : '') + a.name + '</span>' +
+        '<span class="q-prog">' + (got ? '달성' : '미달성') + '</span></div>' +
+        '<div class="q-desc">' + a.desc + '</div>' +
+        '<div class="q-reward">💰 ' + a.gold + '  🔮 ' + a.stone + '</div>';
+      box.appendChild(el);
+    });
+
+  } else {
+    const st = save.stats;
+    const rows = [
+      ['돌파한 전장', save.cleared + ' / ' + STAGES.length],
+      ['모은 별', totalStars(save) + ' / ' + (STAGES.length * 3)],
+      ['치른 전투', st.battles + '회'],
+      ['승리', st.wins + '회'],
+      ['누적 처치', (save.totalKills || 0) + '명'],
+      ['보스 처치', st.bossKills + '체'],
+      ['무한 전장 최고 기록', (save.endlessBest || 0) + '파도'],
+      ['소환 횟수', (save.pulls || 0) + '회'],
+      ['보유 소환 병종', Object.keys(save.owned).length + ' / ' + SEASON_UNITS.filter(u => u.gacha).length],
+      ['훈련 횟수', st.trains + '회'],
+      ['달성 업적', Object.keys(save.achv).length + ' / ' + ACHIEVEMENTS.length],
+      ['총 전투 시간', Math.floor(st.playSec / 60) + '분 ' + Math.floor(st.playSec % 60) + '초']
+    ];
+    rows.forEach(r => {
+      const el = document.createElement('div');
+      el.className = 'quest-card stat-card';
+      el.innerHTML = '<span class="q-name">' + r[0] + '</span><span class="q-val">' + r[1] + '</span>';
+      box.appendChild(el);
+    });
+  }
+}
+let questTab = 'daily';
+
 /* ------------------------------ 지도 ------------------------------ */
 function renderMap() {
   $('#map-coins').textContent = save.coins;
+  renderEndlessSlot();
+  updateQuestBadge();
   const pct = (save.cleared / STAGES.length) * 100;
   $('#map-progress').style.width = pct + '%';
   let totalStars = 0;
@@ -142,6 +304,26 @@ function renderMap() {
   // 처음 도전할 스테이지가 보이도록 스크롤
   const next = list.children[Math.min(save.cleared, STAGES.length - 1)];
   if (next) setTimeout(() => next.scrollIntoView({ block: 'center' }), 30);
+}
+
+function renderEndlessSlot() {
+  const slot = $('#endless-slot');
+  if (!slot) return;
+  const open = save.cleared >= STAGES.length;
+  slot.innerHTML = '';
+  if (!open) {
+    slot.innerHTML = '<div class="endless-card locked">🔒 무한 전장은 20전장을 모두 돌파하면 열린다</div>';
+    return;
+  }
+  const el = document.createElement('div');
+  el.className = 'endless-card';
+  el.innerHTML =
+    '<div class="e-title">무한 전장</div>' +
+    '<div class="e-sub">끝없이 밀려오는 파도. 성채가 무너질 때까지 버틴다.</div>' +
+    '<div class="e-best">최고 기록 <b>' + (save.endlessBest || 0) + '</b> 파도</div>' +
+    '<button class="btn primary e-btn">도전</button>';
+  el.querySelector('.e-btn').addEventListener('click', () => startEndless());
+  slot.appendChild(el);
 }
 
 function starMarks(n) {
@@ -252,6 +434,8 @@ function renderTraining() {
           save.coins -= cost;
           save.levels[u.id] = lv + 1;
           saveGame(save);
+          save.stats.trains++;
+          addStat('trains', 1);
           renderTraining();
           SFX.levelUp();
           toast(u.name + ' Lv.' + (lv + 1) + ' 훈련 완료');
@@ -380,7 +564,9 @@ function doPull(count) {
 
   const results = got.map(grantUnit);
   syncLoadout();
+  addStat('pulls', count);
   saveGame(save);
+  checkAchievements();
 
   if (bestRank >= 3) SFX.command();
   else if (bestRank >= 2) SFX.levelUp();
@@ -523,13 +709,26 @@ function drawBanner(sn) {
 }
 
 /* ------------------------------ 전투 ------------------------------ */
+function startEndless() {
+  battle = new Battle(0, save, makeEndlessStage(45));
+  $('#battle-stage').textContent = '무한 전장 · 최고 ' + (save.endlessBest || 0) + '파도';
+  beginBattle();
+}
+
 function startBattle(index) {
   battle = new Battle(index, save);
   $('#battle-stage').textContent = (index + 1) + '. ' + battle.stage.name;
+  beginBattle();
+}
+
+function beginBattle() {
   $('#result').classList.remove('show');
   $('#btn-speed').textContent = '▶▶ 1x';
   $('#btn-pause').textContent = '⏸';
   paused = false;
+  autoTimer = 0;
+  refreshAutoBtn();
+  save.stats.battles++;
   buildCards();
   show('scr-battle');
   if (!save.tutorial) {
@@ -571,6 +770,27 @@ function buildCards() {
 let cardEls = [];
 
 let paused = false;
+let autoTimer = 0;
+let playAccum = 0;
+
+function refreshAutoBtn() {
+  const b = $('#btn-auto');
+  if (!b) return;
+  b.textContent = save.auto ? '자동 켜짐' : '자동 꺼짐';
+  b.classList.toggle('on', !!save.auto);
+}
+
+/* 자동 출진: 낼 수 있는 카드 중 비싼 순으로 하나씩 내보낸다 */
+function autoDeploy(dt) {
+  if (!save.auto || !battle || battle.state !== 'play') return;
+  autoTimer -= dt;
+  if (autoTimer > 0) return;
+  autoTimer = 0.35;
+  const ready = battle.roster
+    .filter(u => battle.canDeploy(u.id))
+    .sort((a, b) => b.cost - a.cost);
+  if (ready.length) battle.deploy(ready[0].id);
+}
 
 function updateHud() {
   const money = Math.floor(battle.money);
@@ -594,6 +814,23 @@ function updateHud() {
 }
 
 function showResult() {
+  // 누적 기록과 임무 진행
+  save.stats.playSec += Math.round(playAccum);
+  playAccum = 0;
+  save.stats.bossKills += battle.bossKills || 0;
+  addStat('kills', battle.kills);
+  addStat('bosses', battle.bossKills || 0);
+  if (battle.endless) addStat('endless', battle.wavesCleared || 0);
+  if (battle.state === 'win') {
+    save.stats.wins++;
+    addStat('wins', 1);
+    if (battle.stars >= 3) addStat('perfect', 1);
+  }
+  saveGame(save);
+  checkAchievements();
+
+  if (battle.endless) { showEndlessResult(); return; }
+
   const win = battle.state === 'win';
   $('#result-title').textContent = win ? '승 리' : '패 배';
   $('#result-stars').innerHTML = win
@@ -619,6 +856,21 @@ function showResult() {
   $('#result').classList.add('show');
 }
 
+function showEndlessResult() {
+  $('#result-title').textContent = battle.newRecord ? '신기록!' : '전투 종료';
+  $('#result-stars').innerHTML =
+    '<span class="wave-count">' + (battle.wavesCleared || 0) + '</span> 파도';
+  const lines = [];
+  lines.push('최고 기록 ' + (save.endlessBest || 0) + ' 파도');
+  lines.push('획득 골드 💰 ' + battle.coins +
+             (battle.stoneGain ? '  ·  소환석 🔮 ' + battle.stoneGain : ''));
+  lines.push('처치 ' + battle.kills);
+  $('#result-desc').textContent = lines.join('\n');
+  $('#btn-next').style.display = 'none';
+  $('#btn-retry').textContent = '다시 도전';
+  $('#result').classList.add('show');
+}
+
 /* ------------------------------ 루프 ------------------------------ */
 function loop(ts) {
   requestAnimationFrame(loop);
@@ -631,7 +883,11 @@ function loop(ts) {
   if (!battle || !$('#scr-battle').classList.contains('active')) return;
 
   const before = battle.state;
-  if (!paused) battle.update(dt);
+  if (!paused) {
+    autoDeploy(dt * battle.speed);
+    battle.update(dt);
+    if (battle.state === 'play') playAccum += dt;
+  }
   else battle.updateFx(dt * 0.4);
   renderer.render(battle, dt);
   updateHud();
@@ -877,6 +1133,16 @@ function init() {
   $('#btn-shop').addEventListener('click', () => show('scr-shop'));
   $('#btn-units').addEventListener('click', () => show('scr-units'));
   $('#btn-gacha').addEventListener('click', () => show('scr-gacha'));
+  $('#btn-quest').addEventListener('click', () => show('scr-quest'));
+  $$('#quest-tabs .season-tab').forEach(b =>
+    b.addEventListener('click', () => { renderQuest(b.dataset.qtab); SFX.ui(); }));
+  $('#btn-auto').addEventListener('click', () => {
+    save.auto = !save.auto;
+    saveGame(save);
+    refreshAutoBtn();
+    toast(save.auto ? '자동 출진을 켰다' : '자동 출진을 껐다');
+    SFX.ui();
+  });
   $('#btn-pull1').addEventListener('click', () => doPull(1));
   $('#btn-pull10').addEventListener('click', () => doPull(10));
   $('#btn-buy-stone').addEventListener('click', () => {
@@ -924,9 +1190,18 @@ function init() {
     $('#btn-sound').textContent = save.sound ? '🔊 효과음 켜짐' : '🔇 효과음 꺼짐';
     if (save.sound) SFX.ui();
   });
-  $('#btn-retry').addEventListener('click', () => startBattle(battle.stageIndex));
-  $('#btn-next').addEventListener('click', () => startBattle(battle.stageIndex + 1));
-  $('#btn-tomap').addEventListener('click', () => show('scr-map'));
+  $('#btn-retry').addEventListener('click', () => {
+    if (battle && battle.endless) startEndless();
+    else startBattle(battle.stageIndex);
+  });
+  $('#btn-next').addEventListener('click', () => {
+    $('#btn-retry').textContent = '다시 싸운다';
+    startBattle(battle.stageIndex + 1);
+  });
+  $('#btn-tomap').addEventListener('click', () => {
+    $('#btn-retry').textContent = '다시 싸운다';
+    show('scr-map');
+  });
 
   $('#btn-full').addEventListener('click', toggleFullscreen);
   window.addEventListener('resize', () => {

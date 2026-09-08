@@ -51,11 +51,13 @@
     <div class="progress"><div class="progress-fill" id="map-progress"></div></div>
     <span id="map-progress-txt">0 / 20</span>
   </div>
+  <div class="endless-slot" id="endless-slot"></div>
   <div class="stage-list" id="stage-list"></div>
   <nav class="tabbar">
     <button class="tab" id="btn-shop">강화 병영</button>
     <button class="tab" id="btn-units">훈련소</button>
     <button class="tab gacha-tab" id="btn-gacha">소환의 제단 <span class="stone-badge" id="tab-stones">0</span></button>
+    <button class="tab" id="btn-quest">임무 · 업적 <span class="quest-badge" id="tab-quest">0</span></button>
   </nav>
 </section>
 
@@ -78,6 +80,22 @@
   </header>
   <div class="cap-line"><span id="train-cap"></span></div>
   <div class="scroll grid" id="units-list"></div>
+</section>
+
+<!-- ===================== 임무 · 업적 · 기록 ===================== -->
+<section id="scr-quest" class="screen">
+  <header class="bar">
+    <button class="icon-btn" data-goto="scr-map">◀</button>
+    <div class="bar-title">임무 · 업적</div>
+    <div class="coin-chip">🔮 <span id="quest-stones">0</span></div>
+    <div class="coin-chip">💰 <span id="quest-gold">0</span></div>
+  </header>
+  <div class="season-tabs" id="quest-tabs">
+    <button class="season-tab on" data-qtab="daily"><span class="s-name">일일 임무</span><span class="s-sub">매일 갱신</span></button>
+    <button class="season-tab" data-qtab="achv"><span class="s-name">업적</span><span class="s-sub">한 번만</span></button>
+    <button class="season-tab" data-qtab="stat"><span class="s-name">기록</span><span class="s-sub">누적 전과</span></button>
+  </div>
+  <div class="scroll grid" id="quest-list"></div>
 </section>
 
 <!-- ===================== 소환의 제단 ===================== -->
@@ -130,6 +148,7 @@
     <div class="hud-right">
       <div class="kill-chip">처치 <span id="kill-count">0</span></div>
       <div class="kill-chip foe-chip">남은 적 <span id="foe-left">0</span></div>
+      <button class="icon-btn small" id="btn-auto">자동 꺼짐</button>
       <button class="icon-btn small" id="btn-pause">⏸</button>
       <button class="icon-btn small" id="btn-speed">▶▶ 1x</button>
     </div>

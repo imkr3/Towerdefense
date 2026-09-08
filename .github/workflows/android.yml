@@ -3,6 +3,8 @@ name: Android APK
 on:
   workflow_dispatch:
   push:
+    tags:
+      - 'v*'
     paths:
       - 'android/**'
       - 'js/**'
@@ -11,7 +13,7 @@ on:
       - '.github/workflows/android.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -58,11 +60,30 @@ jobs:
           echo "| app-debug.apk | $(du -h "$DBG" | cut -f1) |" >> $GITHUB_STEP_SUMMARY
           echo "| app-release.apk | $(du -h "$REL" | cut -f1) |" >> $GITHUB_STEP_SUMMARY
 
+      - name: 버전 이름 붙이기
+        id: rename
+        run: |
+          VER="${GITHUB_REF_NAME}"
+          case "$VER" in v*) VER="${VER#v}";; *) VER="$(date +%Y%m%d)-${GITHUB_SHA::7}";; esac
+          mkdir -p dist
+          cp android/app/build/outputs/apk/release/app-release.apk "dist/stick-kingdom-war-${VER}.apk"
+          cp android/app/build/outputs/apk/debug/app-debug.apk "dist/stick-kingdom-war-${VER}-debug.apk"
+          echo "version=$VER" >> $GITHUB_OUTPUT
+          ls -lh dist
+
       - name: APK 업로드
         uses: actions/upload-artifact@v4
         with:
           name: stick-kingdom-war-apk
           if-no-files-found: error
-          path: |
-            android/app/build/outputs/apk/debug/app-debug.apk
-            android/app/build/outputs/apk/release/app-release.apk
+          path: dist/*.apk
+
+      - name: 릴리스에 APK 첨부
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" dist/*.apk \
+            --title "막대 왕국 전쟁 ${{ steps.rename.outputs.version }}" \
+            --notes-file .github/release-notes.md \
+            || gh release upload "${GITHUB_REF_NAME}" dist/*.apk --clobber

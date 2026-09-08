@@ -589,6 +589,124 @@ const STAGES = [
       W(120,'drake',1), W(136,'orcberserk',6,1.2), W(156,'wraith',8,0.9) ] }
 ];
 
+
+/* =======================================================================
+ *  무한 전장 - 끝없이 밀려오는 파도
+ * ======================================================================= */
+const ENDLESS_POOL = [
+  { id: 'goblin',   from: 0 },  { id: 'orcspear', from: 0 },
+  { id: 'wolf',     from: 2 },  { id: 'spider',   from: 3 },
+  { id: 'bat',      from: 4 },  { id: 'ogre',     from: 4 },
+  { id: 'ballista', from: 5 },  { id: 'shaman',   from: 6 },
+  { id: 'powder',   from: 7 },  { id: 'orcshield',from: 8 },
+  { id: 'orcberserk', from: 9 },{ id: 'wraith',   from: 10 },
+  { id: 'dark',     from: 11 }, { id: 'golem',    from: 13 },
+  { id: 'totem',    from: 14 }
+];
+const ENDLESS_BOSSES = ['lich', 'troll', 'frostgiant', 'drake', 'warlord'];
+
+/* round 번째 무한 전장을 만든다. 파도가 갈수록 촘촘하고 강해진다. */
+function makeEndlessStage(waveCount) {
+  const waves = [];
+  let t = 2;
+  for (let w = 0; w < (waveCount || 40); w++) {
+    const tier = Math.floor(w / 2);
+    const pool = ENDLESS_POOL.filter(e => e.from <= tier);
+    const pick = pool[(w * 7 + 3) % pool.length].id;
+    const n = 3 + Math.min(9, Math.floor(w / 2));
+    const gap = Math.max(0.55, 1.6 - w * 0.03);
+    waves.push(W(t, pick, n, gap));
+    // 5 파도마다 보스
+    if (w > 0 && w % 5 === 0) {
+      const bi = Math.min(ENDLESS_BOSSES.length - 1, Math.floor(w / 5) - 1);
+      waves.push(W(t + 4, ENDLESS_BOSSES[bi], 1));
+    }
+    t += Math.max(7, 16 - w * 0.25);
+  }
+  return {
+    name: '무한 전장', endless: true,
+    baseHp: 99999999,          // 적 요새는 부술 수 없다. 버티는 것이 전부다
+    money: 320, rate: 40, reward: 0,
+    waves: waves
+  };
+}
+
+/* =======================================================================
+ *  일일 임무 / 업적
+ * ======================================================================= */
+const MISSION_DEFS = [
+  { id: 'kill60',  text: '적 60명 처치',        need: 60, stat: 'kills',   gold: 400, stone: 1 },
+  { id: 'kill150', text: '적 150명 처치',       need: 150, stat: 'kills',  gold: 900, stone: 1 },
+  { id: 'win2',    text: '전장 2회 승리',       need: 2,  stat: 'wins',    gold: 500, stone: 1 },
+  { id: 'win4',    text: '전장 4회 승리',       need: 4,  stat: 'wins',    gold: 1100, stone: 1 },
+  { id: 'star3',   text: '별 3개로 승리 1회',   need: 1,  stat: 'perfect', gold: 700, stone: 1 },
+  { id: 'pull3',   text: '소환 3회',            need: 3,  stat: 'pulls',   gold: 300, stone: 1 },
+  { id: 'cmd2',    text: '왕의 명령 2회 사용',  need: 2,  stat: 'commands',gold: 400, stone: 1 },
+  { id: 'train2',  text: '병종 훈련 2회',       need: 2,  stat: 'trains',  gold: 350, stone: 1 },
+  { id: 'boss1',   text: '보스 1체 처치',       need: 1,  stat: 'bosses',  gold: 600, stone: 1 },
+  { id: 'endless5',text: '무한 전장 5파도 돌파', need: 5,  stat: 'endless', gold: 800, stone: 1 }
+];
+const DAILY_COUNT = 3;
+
+/* 날짜로 고정된 3개를 고른다. 같은 날이면 항상 같은 임무가 나온다. */
+function dailyMissionIds(dateKey) {
+  let h = 0;
+  for (let i = 0; i < dateKey.length; i++) h = (h * 31 + dateKey.charCodeAt(i)) >>> 0;
+  const ids = [];
+  const pool = MISSION_DEFS.slice();
+  for (let i = 0; i < DAILY_COUNT && pool.length; i++) {
+    h = (h * 1103515245 + 12345) >>> 0;
+    ids.push(pool.splice(h % pool.length, 1)[0].id);
+  }
+  return ids;
+}
+function missionById(id) {
+  for (const m of MISSION_DEFS) if (m.id === id) return m;
+  return null;
+}
+
+const ACHIEVEMENTS = [
+  { id: 'first',    name: '첫 승리',      desc: '전장을 하나 돌파한다',        gold: 200,  stone: 1,
+    test: s => s.cleared >= 1 },
+  { id: 'clear5',   name: '국경 수호',    desc: '5전장 돌파',                  gold: 500,  stone: 1,
+    test: s => s.cleared >= 5 },
+  { id: 'clear10',  name: '왕국의 방패',  desc: '10전장 돌파',                 gold: 1200, stone: 2,
+    test: s => s.cleared >= 10 },
+  { id: 'clear20',  name: '대군주 토벌',  desc: '20전장 전부 돌파',            gold: 4000, stone: 5,
+    test: s => s.cleared >= 20 },
+  { id: 'star30',   name: '별 수집가',    desc: '별 30개 획득',                gold: 1500, stone: 2,
+    test: s => totalStars(s) >= 30 },
+  { id: 'star60',   name: '완전 제압',    desc: '모든 전장 별 3개',            gold: 6000, stone: 8,
+    test: s => totalStars(s) >= 60 },
+  { id: 'kill1000', name: '천 명의 적',   desc: '누적 1000 처치',              gold: 1000, stone: 1,
+    test: s => (s.totalKills || 0) >= 1000 },
+  { id: 'kill5000', name: '전장의 주인',  desc: '누적 5000 처치',              gold: 3000, stone: 3,
+    test: s => (s.totalKills || 0) >= 5000 },
+  { id: 'summon10', name: '제단의 손님',  desc: '소환 10회',                   gold: 500,  stone: 1,
+    test: s => (s.pulls || 0) >= 10 },
+  { id: 'summon100',name: '제단의 단골',  desc: '소환 100회',                  gold: 3000, stone: 3,
+    test: s => (s.pulls || 0) >= 100 },
+  { id: 'legend',   name: '신화의 계약',  desc: '전설 병종 보유',              gold: 2000, stone: 2,
+    test: s => SEASON_UNITS.some(u => u.rarity === 'SSR' && s.owned && s.owned[u.id]) },
+  { id: 'allseason',name: '세 신화',      desc: '세 시즌 전설을 모두 보유',    gold: 8000, stone: 10,
+    test: s => SEASONS.every(sn => sn.units.some(id => {
+      const u = UNIT_BY_ID[id];
+      return u && u.rarity === 'SSR' && s.owned && s.owned[id];
+    })) },
+  { id: 'maxlv',    name: '정예 조련',    desc: '병종 하나를 15레벨로',        gold: 2500, stone: 3,
+    test: s => Object.keys(s.levels || {}).some(k => s.levels[k] >= 15) },
+  { id: 'endless10',name: '끝없는 전장',  desc: '무한 전장 10파도 돌파',       gold: 2000, stone: 3,
+    test: s => (s.endlessBest || 0) >= 10 },
+  { id: 'endless25',name: '불굴의 성채',  desc: '무한 전장 25파도 돌파',       gold: 7000, stone: 8,
+    test: s => (s.endlessBest || 0) >= 25 }
+];
+
+function totalStars(s) {
+  let n = 0;
+  for (const k in (s.stars || {})) n += s.stars[k];
+  return n;
+}
+
 /* -------------------- 병영 강화 -------------------- */
 const UPGRADES = {
   wallet:  { name: '군자금 금고', max: 10, base: 100, step: 1.5,

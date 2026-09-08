@@ -153,9 +153,10 @@ class Castle {
 
 /* ------------------------------ 전투 ------------------------------ */
 class Battle {
-  constructor(stageIndex, save) {
+  constructor(stageIndex, save, customStage) {
     this.stageIndex = stageIndex;
-    this.stage = STAGES[stageIndex];
+    this.stage = customStage || STAGES[stageIndex];
+    this.endless = !!this.stage.endless;
     this.save = save;
 
     const up = save.upgrades;
@@ -192,6 +193,7 @@ class Battle {
     this.state = 'play';
     this.coins = 0;
     this.kills = 0;
+    this.bossKills = 0;
     this.dmgFxCount = 0;
     this.shake = 0;
     this.bossAlert = 0;
@@ -298,8 +300,12 @@ class Battle {
     this.updateShots(dt);
     this.updateFx(dtRaw);
 
-    if (this.enemyCastle.dead) { this.shake = 16; this.finish('win'); }
-    else if (this.allyCastle.dead) { this.shake = 16; this.finish('lose'); }
+    if (!this.endless && this.enemyCastle.dead) { this.shake = 16; this.finish('win'); }
+    else if (this.allyCastle.dead) { this.shake = 16; this.finish(this.endless ? 'over' : 'lose'); }
+    // 무한 전장은 모든 파도를 버텨내면 그것으로 끝
+    else if (this.endless && this.qi >= this.queue.length && this.enemies.length === 0) {
+      this.finish('over');
+    }
   }
 
   spawnEnemy(id, atX) {
@@ -331,7 +337,11 @@ class Battle {
                      scale: f.scale, t: 0.9, life: 0.9 });
       this.fx.push({ type: 'poof', x: f.x, row: f.row, t: 0.4, life: 0.4,
                      color: f.s.body, big: f.boss });
-      if (f.boss) { this.shake = Math.max(this.shake, 12); sfx('bossDie'); }
+      if (f.boss) {
+        this.shake = Math.max(this.shake, 12);
+        sfx('bossDie');
+        if (isEnemySide) this.bossKills = (this.bossKills || 0) + 1;
+      }
       else sfx('die');
     }
   }
@@ -341,6 +351,21 @@ class Battle {
     this.resultTime = 0;
     this.stars = 0;
     sfx(result === 'win' ? 'win' : 'lose');
+
+    if (this.endless) {
+      this.wavesCleared = this.wavesDone();
+      const best = this.save.endlessBest || 0;
+      this.newRecord = this.wavesCleared > best;
+      if (this.newRecord) this.save.endlessBest = this.wavesCleared;
+      // 파도 수에 따른 보상
+      this.coins += this.wavesCleared * 120;
+      this.stoneGain = Math.floor(this.wavesCleared / 5);
+      this.save.stones = (this.save.stones || 0) + this.stoneGain;
+      this.save.coins += this.coins;
+      this.save.totalKills = (this.save.totalKills || 0) + this.kills;
+      saveGame(this.save);
+      return;
+    }
     if (result === 'win') {
       const ratio = this.allyCastle.hp / this.allyCastle.maxHp;
       this.stars = ratio >= 0.9 ? 3 : (ratio >= 0.5 ? 2 : 1);
@@ -655,6 +680,20 @@ class Battle {
     this.dmgFxCount = 0;
     for (const e of this.fx) if (e.type === 'dmg') this.dmgFxCount++;
     if (this.state !== 'play') this.resultTime = (this.resultTime || 0) + dt;
+  }
+
+  /* 무한 전장에서 지금까지 넘긴 파도 수 */
+  wavesDone() {
+    if (!this.endless) return 0;
+    let n = 0, lastT = -1;
+    for (let i = 0; i < this.qi; i++) {
+      if (this.queue[i].t !== lastT) { lastT = this.queue[i].t; }
+    }
+    // 파도 = 등장 시각 묶음. 대략 등장 완료한 그룹 수를 센다
+    const seen = {};
+    for (let i = 0; i < this.qi; i++) seen[Math.round(this.queue[i].t)] = true;
+    n = Object.keys(seen).length;
+    return n;
   }
 
   /* 남은 적 = 아직 등장하지 않은 적 + 전장에 있는 적 */
