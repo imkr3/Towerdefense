@@ -2,6 +2,11 @@ name: Android APK
 
 on:
   workflow_dispatch:
+    inputs:
+      release:
+        description: '릴리스로 배포할 버전 (예: 1.1.0). 비우면 아티팩트만 만든다'
+        required: false
+        default: ''
   push:
     tags:
       - 'v*'
@@ -63,8 +68,11 @@ jobs:
       - name: 버전 이름 붙이기
         id: rename
         run: |
-          VER="${GITHUB_REF_NAME}"
-          case "$VER" in v*) VER="${VER#v}";; *) VER="$(date +%Y%m%d)-${GITHUB_SHA::7}";; esac
+          VER="${{ github.event.inputs.release }}"
+          if [ -z "$VER" ]; then
+            VER="${GITHUB_REF_NAME}"
+            case "$VER" in v*) VER="${VER#v}";; *) VER="$(date +%Y%m%d)-${GITHUB_SHA::7}";; esac
+          fi
           mkdir -p dist
           cp android/app/build/outputs/apk/release/app-release.apk "dist/stick-kingdom-war-${VER}.apk"
           cp android/app/build/outputs/apk/debug/app-debug.apk "dist/stick-kingdom-war-${VER}-debug.apk"
@@ -79,11 +87,21 @@ jobs:
           path: dist/*.apk
 
       - name: 릴리스에 APK 첨부
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.release != ''
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${GITHUB_REF_NAME}" dist/*.apk \
+          if [ -n "${{ github.event.inputs.release }}" ]; then
+            TAG="v${{ github.event.inputs.release }}"
+            TARGET="--target ${GITHUB_REF_NAME}"
+          else
+            TAG="${GITHUB_REF_NAME}"
+            TARGET=""
+          fi
+          echo "릴리스 태그: $TAG"
+          gh release create "$TAG" dist/*.apk $TARGET \
             --title "막대 왕국 전쟁 ${{ steps.rename.outputs.version }}" \
             --notes-file .github/release-notes.md \
-            || gh release upload "${GITHUB_REF_NAME}" dist/*.apk --clobber
+            || gh release upload "$TAG" dist/*.apk --clobber
+          gh release view "$TAG" --json tagName,assets \
+            --jq '"릴리스 " + .tagName + " 자산: " + ([.assets[].name] | join(", "))'
