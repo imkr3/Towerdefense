@@ -98,6 +98,7 @@ class Fighter {
 
   takeDamage(dmg) {
     if (this.dead) return;
+    if (this.ab.armor) dmg *= (1 - Math.min(0.75, this.ab.armor));   // 두꺼운 갑주
     if (this.barrier > 0) {
       const absorbed = Math.min(this.barrier, dmg);
       this.barrier -= absorbed;
@@ -196,6 +197,8 @@ class Battle {
     this.bossKills = 0;
     this.dmgFxCount = 0;
     this.shake = 0;
+    this.flash = 0;
+    this.flashColor = '#ffffff';
     this.bossAlert = 0;
     this.cooldowns = {};
     this.speed = 1;
@@ -276,9 +279,12 @@ class Battle {
     const dt = dtRaw * this.speed;
     this.time += dt;
 
-    this.money = Math.min(this.walletMax, this.money + this.income * dt);
+    // 전투가 길어지면 자금이 더 빨리 찬다. 교착을 풀어 주는 장치.
+    const ramp = 1 + Math.min(0.6, Math.max(0, (this.time - 90) / 150) * 0.6);
+    this.money = Math.min(this.walletMax, this.money + this.income * ramp * dt);
     if (this.cmdCd > 0) this.cmdCd = Math.max(0, this.cmdCd - dt);
     if (this.shake > 0) this.shake = Math.max(0, this.shake - dt * 26);
+    if (this.flash > 0) this.flash = Math.max(0, this.flash - dt * 1.4);
     if (this.bossAlert > 0) this.bossAlert -= dt;
     for (const k in this.cooldowns) {
       if (this.cooldowns[k] > 0) this.cooldowns[k] = Math.max(0, this.cooldowns[k] - dt);
@@ -559,6 +565,25 @@ class Battle {
     return { dmg: dmg, crit: crit };
   }
 
+  /* 병종별 필살 연출. 전설 병종은 화면 섬광까지 터진다. */
+  castFx(f, x, row, crit) {
+    const kind = f.s.castFx;
+    if (!kind) return;
+    const big = f.s.rarity === 'SSR';
+    this.fx.push({
+      type: 'cast', kind: kind, x: x, row: row || 0,
+      color: f.s.accent, r: f.s.areaRadius || 90, big: big, dir: f.dir,
+      t: big ? 0.7 : 0.45, life: big ? 0.7 : 0.45
+    });
+    if (big) {
+      this.flash = Math.max(this.flash || 0, 0.28);
+      this.flashColor = f.s.accent;
+      this.shake = Math.max(this.shake, 10);
+    } else if (crit) {
+      this.shake = Math.max(this.shake, 4);
+    }
+  }
+
   attack(f, target, foes, foeCastle) {
     const r = this.rollDamage(f);
     if (f.s.ranged) {
@@ -573,6 +598,7 @@ class Battle {
       const cx = f.x + f.dir * f.attackRange * 0.6;
       if (f.s.area) this.areaHit(r.dmg, cx, f.s.areaRadius, foes, foeCastle, f, r.crit);
       else this.hitOne(r.dmg, target, f, r.crit);
+      this.castFx(f, target.x !== undefined ? target.x : cx, target.row, r.crit);
       this.fx.push({ type: r.crit ? 'crit' : 'hit', x: target.x, row: target.row || 1,
                      t: 0.22, life: 0.22 });
       sfx(f.s.area ? 'hit' : 'slash');
@@ -655,6 +681,7 @@ class Battle {
       const ab = (s.src && s.src.ab) || {};
       const foes = this.foesOf(s.side);
       const castle = this.castleOf(s.side);
+      if (s.src) this.castFx(s.src, s.tx, s.y0, s.crit);
       if (ab.pierce) { this.pierceHit(s); continue; }
       if (s.area) {
         this.areaHit(s.dmg, s.tx, s.areaRadius, foes, castle, s.src, s.crit);

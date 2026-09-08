@@ -116,9 +116,10 @@ function printTable(rows, upLv, unitLv) {
 
 /* 기대하는 난이도 곡선. 크게 벗어나면 밸런스가 깨진 것으로 본다. */
 const EXPECT = [
-  { up: 0, lv: 1, min: 8,  max: 17, label: '무강화' },
-  { up: 2, lv: 3, min: 15, max: 20, label: '중반 강화' },
-  { up: 3, lv: 5, min: 20, max: 20, label: '충분한 강화' }
+  { up: 0, lv: 1, min: 6,  max: 13, label: '무강화' },
+  { up: 2, lv: 3, min: 12, max: 18, label: '중반 강화' },
+  { up: 3, lv: 5, min: 17, max: 20, label: '후반 강화' },
+  { up: 5, lv: 8, min: 20, max: 20, label: '완전 강화' }
 ];
 
 function check() {

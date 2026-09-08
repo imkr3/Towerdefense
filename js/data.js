@@ -9,6 +9,7 @@ const UNIT_DEFAULTS = {
   hp: 100, atk: 10, range: 60, speed: 40, interval: 1.0,
   cost: 50, cooldown: 3, kb: 2, area: false, areaRadius: 0,
   ranged: false, scale: 1, unlockStage: 1, desc: '', abText: '', ab: null, short: '',
+  castFx: null, rarity: null,
   tunic: '#5b6572'
 };
 
@@ -47,7 +48,7 @@ const UNITS = [
     desc: '싸우지 않는 대신 2.4초마다 주변 아군의 상처를 꿰맨다.'
   }),
   mk({
-    id: 'berserk', name: '광전사', role: '돌격', shape: 'berserk',
+    id: 'berserk', castFx: 'slash', name: '광전사', role: '돌격', shape: 'berserk',
     body: '#2b3038', accent: '#b0b6bd', tunic: '#a63a2e',
     hp: 470, atk: 42, range: 70, speed: 74, interval: 0.45,
     cost: 200, cooldown: 6.0, kb: 3, unlockStage: 5,
@@ -63,7 +64,7 @@ const UNITS = [
     desc: '독을 바른 화살을 쏜다. 체력 큰 적일수록 독이 잘 듣는다.'
   }),
   mk({
-    id: 'bomber', name: '화약병', role: '자폭형', shape: 'bomber',
+    id: 'bomber', castFx: 'firestorm', name: '화약병', role: '자폭형', shape: 'bomber',
     body: '#2b3038', accent: '#6b4b2a', tunic: '#8a6a3a',
     hp: 300, atk: 260, range: 78, speed: 96, interval: 3.0,
     cost: 165, cooldown: 8.0, kb: 1, area: true, areaRadius: 95, unlockStage: 7,
@@ -80,7 +81,7 @@ const UNITS = [
     desc: '성문 앞에 자리를 잡고 물자를 판다. 살아 있는 동안 군자금이 더 빨리 찬다.'
   }),
   mk({
-    id: 'knight', name: '기사', role: '주력', shape: 'knight',
+    id: 'knight', castFx: 'slash', name: '기사', role: '주력', shape: 'knight',
     body: '#2b3038', accent: '#c8ced6', tunic: '#8e2f3a',
     hp: 1250, atk: 135, range: 76, speed: 32, interval: 1.9,
     cost: 245, cooldown: 9.5, kb: 2, area: true, areaRadius: 80, scale: 1.1, unlockStage: 9,
@@ -88,7 +89,7 @@ const UNITS = [
     desc: '대검을 휘둘러 앞의 여럿을 함께 벤다. 왕국군의 중핵.'
   }),
   mk({
-    id: 'frost', name: '서리 마도사', short: '마도사', role: '둔화', shape: 'frost',
+    id: 'frost', castFx: 'iceburst', name: '서리 마도사', short: '마도사', role: '둔화', shape: 'frost',
     body: '#2b3038', accent: '#8fd8ff', tunic: '#2f5f8e',
     hp: 320, atk: 58, range: 285, speed: 30, interval: 1.6,
     cost: 240, cooldown: 8.5, kb: 2, ranged: true, area: true, areaRadius: 75, unlockStage: 10,
@@ -97,7 +98,7 @@ const UNITS = [
     desc: '서리를 흩뿌려 적 무리의 발과 공격을 함께 늦춘다.'
   }),
   mk({
-    id: 'catapult', name: '투석기', role: '공성', shape: 'catapult',
+    id: 'catapult', castFx: 'shockwave', name: '투석기', role: '공성', shape: 'catapult',
     body: '#6b4b2a', accent: '#3d2b18', tunic: '#6b4b2a',
     hp: 760, atk: 340, range: 440, speed: 18, interval: 3.2,
     cost: 340, cooldown: 15, kb: 1, ranged: true, area: true, areaRadius: 110,
@@ -106,7 +107,7 @@ const UNITS = [
     desc: '전장 반대편까지 바위를 던진다. 몰려오는 적을 통째로 정리.'
   }),
   mk({
-    id: 'duelist', name: '결투가', role: '암살', shape: 'duelist',
+    id: 'duelist', castFx: 'slash', name: '결투가', role: '암살', shape: 'duelist',
     body: '#2b3038', accent: '#d8dde3', tunic: '#4a3a6b',
     hp: 640, atk: 95, range: 72, speed: 62, interval: 0.9,
     cost: 265, cooldown: 9.0, kb: 2, unlockStage: 12,
@@ -115,7 +116,7 @@ const UNITS = [
     desc: '급소만 노리고 벤 만큼 회복한다. 오래 살아남을수록 무서워진다.'
   }),
   mk({
-    id: 'sniper', name: '석궁 저격수', short: '저격수', role: '관통', shape: 'sniper',
+    id: 'sniper', castFx: 'holy', name: '석궁 저격수', short: '저격수', role: '관통', shape: 'sniper',
     body: '#2b3038', accent: '#9aa3ad', tunic: '#3a4450',
     hp: 300, atk: 205, range: 520, speed: 16, interval: 3.4,
     cost: 310, cooldown: 13, kb: 1, ranged: true, unlockStage: 13,
@@ -124,7 +125,7 @@ const UNITS = [
     desc: '거대 석궁으로 전선을 꿰뚫는다. 한 발이 줄 서 있는 적 전부를 관통한다.'
   }),
   mk({
-    id: 'mage', name: '대마법사', role: '섬멸', shape: 'mage',
+    id: 'mage', castFx: 'runes', name: '대마법사', role: '섬멸', shape: 'mage',
     body: '#3a2d6b', accent: '#8fd8ff', tunic: '#3a2d6b',
     hp: 3400, atk: 430, range: 140, speed: 25, interval: 2.0,
     cost: 520, cooldown: 42, kb: 1, area: true, areaRadius: 130, scale: 1.3, unlockStage: 14,
@@ -133,7 +134,7 @@ const UNITS = [
     desc: '왕국의 최종 카드. 폭발에 휘말린 적은 종종 얼어붙는다.'
   }),
   mk({
-    id: 'colossus', name: '강철 거인', short: '거인', role: '불굴', shape: 'colossus',
+    id: 'colossus', castFx: 'shockwave', name: '강철 거인', short: '거인', role: '불굴', shape: 'colossus',
     body: '#4a5560', accent: '#c8ced6', tunic: '#7a8894',
     hp: 4400, atk: 190, range: 92, speed: 16, interval: 2.4,
     cost: 470, cooldown: 30, kb: 1, scale: 1.45, unlockStage: 16,
@@ -142,7 +143,7 @@ const UNITS = [
     desc: '밀리지 않는 강철 덩어리. 6초마다 주변 아군에게 보호막을 씌운다.'
   }),
   mk({
-    id: 'necro', name: '사령술사', role: '소환', shape: 'necro',
+    id: 'necro', castFx: 'pillar', name: '사령술사', role: '소환', shape: 'necro',
     body: '#2b3038', accent: '#9de08e', tunic: '#2f3f2f',
     hp: 760, atk: 45, range: 210, speed: 24, interval: 2.0,
     cost: 395, cooldown: 22, kb: 1, ranged: true, unlockStage: 18,
@@ -168,7 +169,7 @@ const UNITS = [
     desc: '장궁으로 전선 훨씬 뒤에서 쏜다. 사거리 하나로 먹고산다.'
   }),
   mk({
-    id: 'pyro', name: '불꽃술사', role: '화염', shape: 'pyro',
+    id: 'pyro', castFx: 'firestorm', name: '불꽃술사', role: '화염', shape: 'pyro',
     body: '#2b3038', accent: '#ff8a3c', tunic: '#8e3a1f',
     hp: 340, atk: 70, range: 235, speed: 32, interval: 1.8,
     cost: 255, cooldown: 9.0, kb: 2, ranged: true, area: true, areaRadius: 90,
@@ -178,7 +179,7 @@ const UNITS = [
     desc: '불덩이를 던져 넓게 태운다. 몰려 있을수록 잘 듣는다.'
   }),
   mk({
-    id: 'paladin', name: '성기사', role: '불굴', shape: 'paladin',
+    id: 'paladin', castFx: 'holy', name: '성기사', role: '불굴', shape: 'paladin',
     body: '#2b3038', accent: '#f0e6c8', tunic: '#c9a227',
     hp: 2100, atk: 175, range: 84, speed: 26, interval: 2.0,
     cost: 380, cooldown: 18, kb: 1, scale: 1.15, unlockStage: 15,
@@ -196,7 +197,7 @@ const UNITS = [
     desc: '전진하며 나무 방벽을 세운다. 방벽은 움직이지 않고 얻어맞아 준다.'
   }),
   mk({
-    id: 'rogue', name: '쌍검 도적', role: '연타', shape: 'rogue',
+    id: 'rogue', castFx: 'slash', name: '쌍검 도적', role: '연타', shape: 'rogue',
     body: '#2b3038', accent: '#c8ced6', tunic: '#3a3f4a',
     hp: 700, atk: 62, range: 68, speed: 86, interval: 0.35,
     cost: 300, cooldown: 11, kb: 3, unlockStage: 19,
@@ -251,7 +252,7 @@ const GACHA = {
 const SEASON_UNITS = [
   /* ---------------- 시즌 1 · 올림포스 ---------------- */
   mk({
-    id: 'zeus', name: '제우스', short: '제우스', role: '뇌신', shape: 'zeus',
+    id: 'zeus', castFx: 'lightning', name: '제우스', short: '제우스', role: '뇌신', shape: 'zeus',
     season: 'olympus', rarity: 'SSR', gacha: true, unlockStage: 999,
     body: '#e8cfa4', accent: '#ffe14a', tunic: '#f7f2e4',
     hp: 2600, atk: 470, range: 380, speed: 24, interval: 2.6,
@@ -261,7 +262,7 @@ const SEASON_UNITS = [
     desc: '하늘에서 번개를 내리꽂는다. 맞은 자리의 모든 것이 멈춘다.'
   }),
   mk({
-    id: 'ares', name: '아레스', short: '아레스', role: '전신', shape: 'ares',
+    id: 'ares', castFx: 'slash', name: '아레스', short: '아레스', role: '전신', shape: 'ares',
     season: 'olympus', rarity: 'SR', gacha: true, unlockStage: 999,
     body: '#2b3038', accent: '#c0392b', tunic: '#8e2f3a',
     hp: 2600, atk: 240, range: 88, speed: 34, interval: 1.7,
@@ -271,7 +272,7 @@ const SEASON_UNITS = [
     desc: '전쟁 그 자체. 상처가 깊어질수록 창은 더 빨라진다.'
   }),
   mk({
-    id: 'artemis', name: '아르테미스', short: '아르테미스', role: '사냥', shape: 'artemis',
+    id: 'artemis', castFx: 'holy', name: '아르테미스', short: '아르테미스', role: '사냥', shape: 'artemis',
     season: 'olympus', rarity: 'SR', gacha: true, unlockStage: 999,
     body: '#2b3038', accent: '#cfe8b0', tunic: '#4a7c4e',
     hp: 430, atk: 150, range: 420, speed: 44, interval: 0.9,
@@ -281,7 +282,7 @@ const SEASON_UNITS = [
     desc: '달의 사냥꾼. 화살 한 발이 줄지어 선 적을 전부 꿰뚫는다.'
   }),
   mk({
-    id: 'medusa', name: '메두사', short: '메두사', role: '석화', shape: 'medusa',
+    id: 'medusa', castFx: 'iceburst', name: '메두사', short: '메두사', role: '석화', shape: 'medusa',
     season: 'olympus', rarity: 'R', gacha: true, unlockStage: 999,
     body: '#6b8f5f', accent: '#9de08e', tunic: '#4a6b46',
     hp: 760, atk: 92, range: 240, speed: 28, interval: 1.8,
@@ -303,7 +304,7 @@ const SEASON_UNITS = [
 
   /* ---------------- 시즌 2 · 라그나로크 ---------------- */
   mk({
-    id: 'thor', name: '토르', short: '토르', role: '뇌신', shape: 'thor',
+    id: 'thor', castFx: 'shockwave', name: '토르', short: '토르', role: '뇌신', shape: 'thor',
     season: 'ragnarok', rarity: 'SSR', gacha: true, unlockStage: 999,
     body: '#2b3038', accent: '#b9c2cc', tunic: '#8e2f3a',
     hp: 3900, atk: 600, range: 120, speed: 30, interval: 2.2,
@@ -313,7 +314,7 @@ const SEASON_UNITS = [
     desc: '묠니르가 떨어질 때마다 전선이 통째로 뒤로 밀린다.'
   }),
   mk({
-    id: 'valkyrie', name: '발키리', short: '발키리', role: '전선', shape: 'valkyrie',
+    id: 'valkyrie', castFx: 'holy', name: '발키리', short: '발키리', role: '전선', shape: 'valkyrie',
     season: 'ragnarok', rarity: 'SR', gacha: true, unlockStage: 999,
     body: '#2b3038', accent: '#f0e6c8', tunic: '#3f6bb5',
     hp: 1500, atk: 210, range: 82, speed: 58, interval: 1.3,
@@ -323,7 +324,7 @@ const SEASON_UNITS = [
     desc: '쓰러진 자를 거두는 전장의 처녀. 자기 자신도 한 번은 일어난다.'
   }),
   mk({
-    id: 'fenrir', name: '펜리르', short: '펜리르', role: '맹수', shape: 'fenrir',
+    id: 'fenrir', castFx: 'slash', name: '펜리르', short: '펜리르', role: '맹수', shape: 'fenrir',
     season: 'ragnarok', rarity: 'SR', gacha: true, unlockStage: 999,
     body: '#3a3f48', accent: '#7fd8ff', tunic: '#2a2e36',
     hp: 1900, atk: 185, range: 66, speed: 130, interval: 0.7,
@@ -355,7 +356,7 @@ const SEASON_UNITS = [
 
   /* ---------------- 시즌 3 · 나일의 왕가 ---------------- */
   mk({
-    id: 'anubis', name: '아누비스', short: '아누비스', role: '사자', shape: 'anubis',
+    id: 'anubis', castFx: 'pillar', name: '아누비스', short: '아누비스', role: '사자', shape: 'anubis',
     season: 'nile', rarity: 'SSR', gacha: true, unlockStage: 999,
     body: '#2a2a30', accent: '#e8c65a', tunic: '#1e1e24',
     hp: 3300, atk: 430, range: 110, speed: 26, interval: 2.2,
@@ -365,7 +366,7 @@ const SEASON_UNITS = [
     desc: '죽은 자를 세어 보내는 자. 쓰러진 자리마다 미라가 일어선다.'
   }),
   mk({
-    id: 'rapriest', name: '라의 사제', short: '라사제', role: '태양', shape: 'rapriest',
+    id: 'rapriest', castFx: 'firestorm', name: '라의 사제', short: '라사제', role: '태양', shape: 'rapriest',
     season: 'nile', rarity: 'SR', gacha: true, unlockStage: 999,
     body: '#2b3038', accent: '#ffb03c', tunic: '#e8c65a',
     hp: 720, atk: 180, range: 300, speed: 30, interval: 2.0,
@@ -469,7 +470,7 @@ const ENEMIES = {
   orcspear: { name: '오크 창병', body: '#4a6b46', accent: '#b0b6bd', tunic: '#3d5a3a', shape: 'orcspear',
               hp: 340, atk: 55, range: 120, speed: 40, interval: 1.4, kb: 2, gold: 18 },
   ogre:     { name: '오우거', body: '#6b7a52', accent: '#4a3520', tunic: '#5a6a44', shape: 'ogre',
-              hp: 2400, atk: 30, range: 62, speed: 24, interval: 1.6, kb: 1, gold: 34, scale: 1.2 },
+              hp: 2900, atk: 38, range: 62, speed: 24, interval: 1.6, kb: 1, gold: 34, scale: 1.2 },
   wolf:     { name: '늑대 기수', body: '#5a5f66', accent: '#7a4a2a', tunic: '#4a6b46', shape: 'wolf',
               hp: 380, atk: 70, range: 62, speed: 92, interval: 0.7, kb: 3, gold: 22 },
   ballista: { name: '석궁 사수', body: '#4a6b46', accent: '#6b4b2a', tunic: '#3d5a3a', shape: 'ballista',
@@ -484,42 +485,61 @@ const ENEMIES = {
               hp: 700, atk: 230, range: 80, speed: 62, interval: 3.0, kb: 1, gold: 38,
               area: true, areaRadius: 100 },
   orcshield:{ name: '방패 오크', body: '#4a6b46', accent: '#7a5a3a', tunic: '#3d5a3a', shape: 'orcshield',
-              hp: 3300, atk: 62, range: 62, speed: 22, interval: 1.6, kb: 1, gold: 48, scale: 1.15,
-              ab: { kbImmune: true } },
+              hp: 4200, atk: 78, range: 62, speed: 22, interval: 1.6, kb: 1, gold: 48, scale: 1.15,
+              ab: { kbImmune: true, armor: 0.2 } },
   wraith:   { name: '망령', body: '#8fa0b5', accent: '#5de0d0', tunic: '#6a7c92', shape: 'wraith',
               hp: 820, atk: 92, range: 70, speed: 66, interval: 1.2, kb: 1, gold: 45,
               ab: { deathBomb: { dmg: 190, radius: 115 } } },
   dark:     { name: '흑기사', body: '#22242c', accent: '#8e2f3a', tunic: '#2f3038', shape: 'dark',
-              hp: 2100, atk: 210, range: 90, speed: 34, interval: 1.9, kb: 1, gold: 60, scale: 1.1 },
+              hp: 2600, atk: 255, range: 90, speed: 34, interval: 1.9, kb: 1, gold: 60, scale: 1.1 },
   troll:    { name: '트롤 대장', body: '#5c7040', accent: '#3a2418', tunic: '#4a5c34', shape: 'troll',
-              hp: 9000, atk: 480, range: 150, speed: 20, interval: 2.4, kb: 1, gold: 220,
+              hp: 11000, atk: 540, range: 150, speed: 20, interval: 2.4, kb: 1, gold: 220,
               area: true, areaRadius: 130, scale: 1.7, boss: true },
   lich:     { name: '리치', body: '#d9d4c4', accent: '#6f4bb5', tunic: '#c4bfae', shape: 'lich',
-              hp: 5200, atk: 330, range: 100, speed: 28, interval: 2.0, kb: 1, gold: 130,
+              hp: 6400, atk: 380, range: 100, speed: 28, interval: 2.0, kb: 1, gold: 130,
               scale: 1.3, boss: true, ab: { summon: { id: 'goblin', n: 1 }, interval: 7 } },
   frostgiant:{ name: '서리 거인', body: '#9fc6d8', accent: '#ffffff', tunic: '#7fa8bd', shape: 'frostgiant',
-              hp: 12500, atk: 520, range: 165, speed: 18, interval: 2.6, kb: 1, gold: 300,
+              hp: 15000, atk: 580, range: 165, speed: 18, interval: 2.6, kb: 1, gold: 300,
               area: true, areaRadius: 145, scale: 1.8, boss: true, ab: { slow: 3 } },
   orcberserk:{ name: '오크 광전사', body: '#5a7a44', accent: '#c0392b', tunic: '#46603a', shape: 'orcberserk',
-              hp: 1500, atk: 130, range: 66, speed: 78, interval: 0.9, kb: 2, gold: 52,
-              ab: { enrage: 1.6 } },
+              hp: 1800, atk: 155, range: 66, speed: 78, interval: 0.9, kb: 2, gold: 52,
+              ab: { enrage: 1.7 } },
   bat:      { name: '흡혈박쥐', body: '#4a3a52', accent: '#e04b6a', tunic: '#3a2c42', shape: 'bat',
               hp: 260, atk: 46, range: 60, speed: 120, interval: 0.6, kb: 3, gold: 20, scale: .8,
               ab: { lifesteal: 0.5 } },
   golem:    { name: '돌 골렘', body: '#8a8880', accent: '#5f5d56', tunic: '#767469', shape: 'golem',
-              hp: 6800, atk: 260, range: 78, speed: 17, interval: 2.6, kb: 1, gold: 120, scale: 1.5,
-              ab: { kbImmune: true, push: 30 } },
+              hp: 8200, atk: 310, range: 78, speed: 17, interval: 2.6, kb: 1, gold: 120, scale: 1.5,
+              ab: { kbImmune: true, push: 30, armor: 0.25 } },
   totem:    { name: '저주 토템', body: '#6b4b2a', accent: '#c98ae0', tunic: '#4a3520', shape: 'totem',
               hp: 1400, atk: 0, range: 0, speed: 0, interval: 3, kb: 1, gold: 70,
               ab: { haste: { mul: 0.75, dur: 4 }, radius: 260, interval: 4, hold: true, noAttack: true } },
   drake:    { name: '화룡', body: '#a8382c', accent: '#ffb03c', tunic: '#7e2a20', shape: 'drake',
-              hp: 16000, atk: 600, range: 200, speed: 22, interval: 2.4, kb: 1, gold: 420,
+              hp: 19000, atk: 660, range: 200, speed: 22, interval: 2.4, kb: 1, gold: 420,
               area: true, areaRadius: 160, scale: 1.9, boss: true,
               ab: { burn: { dps: 90, dur: 5 } } },
+  orccatapult:{ name: '오크 투석기', body: '#5c4326', accent: '#3d2b18', tunic: '#6b4b2a', shape: 'orccatapult',
+              hp: 950, atk: 310, range: 430, speed: 14, interval: 3.4, kb: 1, gold: 90, ranged: true,
+              area: true, areaRadius: 120, scale: 1.15 },
+  warchief: { name: '오크 사령관', body: '#4a6b46', accent: '#c9a227', tunic: '#3d5a3a', shape: 'warchief',
+              hp: 3600, atk: 250, range: 84, speed: 30, interval: 1.7, kb: 1, gold: 115, scale: 1.2,
+              ab: { haste: { mul: 0.75, dur: 4 }, radius: 240, interval: 4 } },
+  plaguer:  { name: '역병 술사', body: '#5a6b3a', accent: '#9de08e', tunic: '#3f4a2a', shape: 'plaguer',
+              hp: 1150, atk: 95, range: 265, speed: 28, interval: 2.2, kb: 2, gold: 78, ranged: true,
+              area: true, areaRadius: 95, ab: { poison: { dps: 72, dur: 5 } } },
+  hellhound:{ name: '지옥견', body: '#3a2a2a', accent: '#ff8a3c', tunic: '#2a1e1e', shape: 'hellhound',
+              hp: 920, atk: 135, range: 64, speed: 115, interval: 0.8, kb: 3, gold: 62,
+              ab: { burn: { dps: 62, dur: 3 } } },
+  siegeram: { name: '파성추', body: '#6b4b2a', accent: '#8a8880', tunic: '#4a3520', shape: 'siegeram',
+              hp: 9500, atk: 430, range: 74, speed: 16, interval: 2.4, kb: 1, gold: 155, scale: 1.5,
+              ab: { kbImmune: true, armor: 0.35, push: 45 } },
+  spiderqueen:{ name: '거미 여왕', body: '#3f2f4a', accent: '#c98ae0', tunic: '#2c2434', shape: 'spiderqueen',
+              hp: 15000, atk: 410, range: 125, speed: 22, interval: 2.2, kb: 1, gold: 360,
+              area: true, areaRadius: 115, scale: 1.75, boss: true,
+              ab: { summon: { id: 'spider', n: 2 }, interval: 6, poison: { dps: 80, dur: 5 } } },
   warlord:  { name: '오크 대군주', body: '#3f5a3c', accent: '#c0392b', tunic: '#2f4a2c', shape: 'warlord',
-              hp: 22000, atk: 700, range: 180, speed: 17, interval: 2.6, kb: 1, gold: 600,
+              hp: 27000, atk: 780, range: 180, speed: 17, interval: 2.6, kb: 1, gold: 600,
               area: true, areaRadius: 170, scale: 2.0, boss: true,
-              ab: { push: 40, summon: { id: 'orcspear', n: 2 }, interval: 8 } }
+              ab: { push: 40, summon: { id: 'orcspear', n: 2 }, interval: 8, armor: 0.2 } }
 };
 
 /* -------------------- 전장 20개 -------------------- */
@@ -548,45 +568,48 @@ const STAGES = [
       W(2,'wolf',3,1.5), W(12,'shaman',1), W(24,'bat',5,1.0), W(38,'orcspear',5,1.2),
       W(52,'shaman',2,4.0), W(66,'spider',4,1.4), W(80,'ogre',2,3.0) ] },
   { name: '화약 골짜기', baseHp: 7200, money: 250, rate: 34, reward: 170, waves: [
-      W(2,'goblin',5,1.3), W(12,'powder',2,3.0), W(26,'ballista',3,1.8), W(42,'powder',3,2.4),
-      W(58,'wolf',5,1.1) ] },
+      W(2,'goblin',5,1.3), W(12,'powder',2,3.0), W(26,'hellhound',3,1.6), W(42,'powder',3,2.4),
+      W(58,'wolf',5,1.1), W(72,'ballista',3,1.8) ] },
   { name: '★ 트롤 대장의 요새', baseHp: 8600, money: 280, rate: 36, reward: 300, boss: true, waves: [
       W(2,'goblin',5,1.3), W(14,'ogre',2,2.6), W(28,'troll',1), W(34,'orcspear',5,1.3),
       W(50,'wolf',5,1.2), W(66,'shaman',2,3.5) ] },
   { name: '흑기사의 숲', baseHp: 9800, money: 270, rate: 36, reward: 210, waves: [
-      W(2,'orcspear',5,1.2), W(14,'dark',1), W(28,'orcberserk',2,2.6), W(44,'dark',2,3.5),
-      W(60,'ballista',4,1.6), W(76,'bat',7,0.8) ] },
+      W(2,'orcspear',5,1.2), W(14,'dark',1), W(28,'orcberserk',2,2.6), W(44,'plaguer',2,3.0),
+      W(60,'dark',2,3.5), W(76,'ballista',4,1.6), W(92,'bat',7,0.8) ] },
   { name: '망령의 폐허', baseHp: 10800, money: 280, rate: 37, reward: 230, waves: [
-      W(2,'wolf',5,1.0), W(14,'wraith',2,2.6), W(24,'totem',1), W(34,'powder',3,2.2),
-      W(48,'wraith',3,2.4), W(64,'ballista',4,1.6), W(80,'orcberserk',3,2.2) ] },
+      W(2,'wolf',5,1.0), W(14,'wraith',2,2.6), W(24,'totem',1), W(34,'orccatapult',1),
+      W(48,'wraith',3,2.4), W(64,'plaguer',3,2.2), W(80,'orcberserk',3,2.2),
+      W(96,'hellhound',5,1.2) ] },
   { name: '리치의 재림', baseHp: 11000, money: 300, rate: 38, reward: 260, boss: true, waves: [
       W(2,'goblin',6,1.1), W(14,'lich',1), W(20,'orcspear',5,1.2), W(36,'lich',1),
-      W(50,'powder',4,2.0), W(68,'dark',3,3.0) ] },
+      W(50,'warchief',1), W(64,'powder',4,2.0), W(82,'dark',3,3.0) ] },
   { name: '방패벽 관문', baseHp: 12000, money: 300, rate: 39, reward: 285, waves: [
-      W(2,'orcshield',2,3.0), W(16,'ballista',4,1.5), W(30,'golem',1), W(44,'orcshield',3,2.6),
-      W(60,'wolf',7,0.9), W(76,'shaman',3,3.0), W(94,'dark',3,2.6) ] },
+      W(2,'orcshield',2,3.0), W(16,'ballista',4,1.5), W(30,'golem',1), W(44,'siegeram',1),
+      W(60,'orcshield',3,2.6), W(76,'wolf',7,0.9), W(92,'shaman',3,3.0), W(110,'dark',3,2.6) ] },
   { name: '★ 두 트롤의 문', baseHp: 13000, money: 320, rate: 40, reward: 420, boss: true, waves: [
       W(2,'goblin',6,1.1), W(14,'troll',1), W(24,'orcspear',6,1.1), W(40,'troll',1),
-      W(52,'dark',3,2.6), W(70,'powder',5,1.8) ] },
+      W(52,'warchief',1), W(66,'dark',3,2.6), W(84,'orccatapult',2,4.0), W(102,'powder',5,1.8) ] },
   { name: '역병의 늪', baseHp: 20000, money: 320, rate: 41, reward: 330, waves: [
-      W(2,'spider',7,0.9), W(14,'totem',2,6.0), W(24,'wraith',4,2.2), W(42,'shaman',3,2.6),
-      W(58,'bat',9,0.7), W(74,'orcshield',4,2.0), W(92,'powder',6,1.8), W(108,'golem',1), W(124,'lich',1) ] },
+      W(2,'spider',7,0.9), W(14,'totem',2,6.0), W(24,'spiderqueen',1), W(42,'plaguer',4,2.2),
+      W(58,'bat',9,0.7), W(74,'orcshield',4,2.0), W(92,'wraith',5,1.8), W(108,'golem',1),
+      W(124,'lich',1) ] },
   { name: '★ 서리 거인의 고개', baseHp: 22500, money: 340, rate: 42, reward: 480, boss: true, waves: [
-      W(2,'orcspear',6,1.1), W(16,'ballista',4,1.5), W(30,'frostgiant',1), W(44,'wolf',7,0.9),
-      W(62,'orcshield',3,2.4), W(82,'dark',4,2.4), W(100,'frostgiant',1),
-      W(116,'orcberserk',5,1.4) ] },
+      W(2,'orcspear',6,1.1), W(16,'orccatapult',2,4.0), W(32,'frostgiant',1), W(46,'wolf',7,0.9),
+      W(62,'siegeram',1), W(78,'orcshield',3,2.4), W(96,'dark',4,2.4), W(114,'frostgiant',1),
+      W(130,'orcberserk',5,1.4) ] },
   { name: '★ 화룡의 둥지', baseHp: 27000, money: 340, rate: 43, reward: 520, boss: true, waves: [
-      W(2,'goblin',8,0.9), W(14,'orcberserk',3,2.0), W(30,'drake',1), W(46,'orcshield',4,1.8),
-      W(62,'ballista',7,1.2), W(82,'golem',1), W(100,'wraith',6,1.2), W(120,'drake',1),
-      W(140,'dark',5,1.8) ] },
+      W(2,'goblin',8,0.9), W(14,'orcberserk',3,2.0), W(30,'drake',1), W(46,'warchief',1),
+      W(60,'orcshield',4,1.8), W(76,'orccatapult',2,3.5), W(94,'golem',1), W(112,'hellhound',7,1.0),
+      W(130,'drake',1), W(150,'dark',5,1.8) ] },
   { name: '대군주의 전조', baseHp: 26000, money: 360, rate: 45, reward: 470, boss: true, waves: [
-      W(2,'wolf',7,0.9), W(16,'frostgiant',1), W(30,'orcberserk',4,1.8), W(48,'troll',1),
-      W(62,'golem',1), W(78,'shaman',4,2.4), W(96,'orcshield',4,2.2), W(116,'powder',7,1.5),
-      W(136,'golem',1), W(152,'drake',1) ] },
+      W(2,'wolf',7,0.9), W(16,'frostgiant',1), W(30,'spiderqueen',1), W(48,'troll',1),
+      W(62,'siegeram',1), W(78,'warchief',2,5.0), W(96,'orcshield',4,2.2), W(116,'plaguer',5,1.8),
+      W(136,'golem',1), W(156,'drake',1) ] },
   { name: '★ 오크 대군주의 왕좌', baseHp: 32000, money: 400, rate: 48, reward: 900, boss: true, waves: [
-      W(2,'goblin',8,0.9), W(14,'orcshield',4,1.8), W(28,'troll',1), W(40,'dark',5,2.0),
-      W(58,'warlord',1), W(70,'lich',2,4.0), W(88,'frostgiant',1), W(104,'ballista',8,1.1),
-      W(120,'drake',1), W(136,'orcberserk',6,1.2), W(156,'wraith',8,0.9) ] }
+      W(2,'goblin',8,0.9), W(14,'orcshield',4,1.8), W(28,'troll',1), W(40,'warchief',2,4.0),
+      W(58,'warlord',1), W(72,'siegeram',1), W(88,'frostgiant',1), W(104,'orccatapult',3,3.0),
+      W(120,'drake',1), W(136,'spiderqueen',1), W(154,'orcberserk',6,1.2),
+      W(174,'wraith',8,0.9), W(194,'golem',2,6.0) ] }
 ];
 
 
