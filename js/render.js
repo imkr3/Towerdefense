@@ -9,6 +9,10 @@ class Renderer {
     this.cam = ALLY_SPAWN_X;
     this.camTarget = this.cam;
     this.dragUntil = 0;
+    // 이펙트 품질 (1 = 최상). 프레임이 밀리면 스스로 낮춘다.
+    this.fxq = 1;
+    this._frameMs = 16.7;
+    this._qCool = 0;
     this.resize();
     window.addEventListener('resize', () => this.resize());
   }
@@ -41,6 +45,25 @@ class Renderer {
   }
   screenX(worldX) { return (worldX - this.cam) * this.zoom + this.w / 2; }
   rowY(row) { return this.groundY + (row || 0) * 10 * this.cs; }
+
+  /* 프레임 시간을 지켜보며 이펙트 품질을 조절한다.
+   * shadowBlur 가 가장 비싸므로 밀리기 시작하면 그것부터 끈다. */
+  trackFrame(dt) {
+    const ms = Math.min(120, dt * 1000);
+    this._frameMs += (ms - this._frameMs) * 0.12;
+    if (this._qCool > 0) { this._qCool -= dt; return; }
+    if (this._frameMs > 26 && this.fxq > 0) {
+      this.fxq = this.fxq > 0.5 ? 0.5 : 0;
+      this._qCool = 1.5;
+    } else if (this._frameMs < 18.5 && this.fxq < 1) {
+      this.fxq = this.fxq < 0.5 ? 0.5 : 1;
+      this._qCool = 3;
+    }
+  }
+
+  /* 품질에 따라 흐림 정도와 반복 횟수를 깎는다 */
+  blur(v) { return this.fxq >= 1 ? v : (this.fxq >= 0.5 ? v * 0.5 : 0); }
+  qn(n) { return this.fxq >= 1 ? n : Math.max(1, Math.round(n * (this.fxq >= 0.5 ? 0.6 : 0.35))); }
 
   panBy(dxScreen) {
     this.camTarget = this.clampCam(this.camTarget - dxScreen / this.zoom);
@@ -295,6 +318,24 @@ class Renderer {
         ctx.stroke();
         ctx.globalAlpha = 1;
     }
+    if (f.enraged) {                                       // 광폭화한 보스의 붉은 기운
+      const pulse = 0.8 + Math.sin(f.bob * 3.2) * 0.2;
+      ctx.globalAlpha = 0.45 * pulse;
+      ctx.strokeStyle = '#ff5a3c';
+      ctx.lineWidth = 2.4 * s;
+      ctx.beginPath();
+      ctx.ellipse(0, 1, 34 * s * pulse, 9 * s * pulse, 0, 0, 7);
+      ctx.stroke();
+      ctx.globalAlpha = 0.3 * pulse;
+      for (let i = 0; i < 3; i++) {
+        const a = f.bob * 1.6 + i * 2.1;
+        ctx.beginPath();
+        ctx.arc(Math.sin(a) * 22 * s, -30 * s - ((a * 9) % 34) * s, 3.2 * s, 0, 7);
+        ctx.fillStyle = '#ff7a4c';
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
     if (moving && f.s.speed > 70) {                        // 발밑 먼지
       const d = (Math.sin(f.bob * 2) + 1) * 0.5;
       ctx.fillStyle = 'rgba(255,255,255,' + (0.12 + d * 0.12) + ')';
@@ -369,6 +410,20 @@ class Renderer {
           ctx.lineTo(x + Math.cos(a) * d, y + Math.sin(a) * d);
           ctx.stroke();
         }
+      } else if (e.type === 'warn') {
+        // 낙하 예고: 원이 좁혀들며 곧 떨어질 자리를 알려준다
+        const r = e.r * this.zoom;
+        const gy = this.rowY(1) + 6 * cs;
+        const blink = 0.45 + 0.55 * Math.abs(Math.sin((1 - p) * 18));
+        ctx.strokeStyle = e.color;
+        ctx.globalAlpha = 0.75 * blink;
+        ctx.lineWidth = 3 * cs;
+        ctx.beginPath(); ctx.ellipse(x, gy, r, r * 0.32, 0, 0, 7); ctx.stroke();
+        ctx.globalAlpha = 0.5 * blink;
+        ctx.beginPath();
+        ctx.ellipse(x, gy, r * (0.15 + p * 0.85), r * 0.32 * (0.15 + p * 0.85), 0, 0, 7);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
       } else if (e.type === 'boom') {
         const r = e.r * this.zoom * (1.05 - p * 0.35);
         ctx.fillStyle = 'rgba(240,190,110,' + (p * 0.45) + ')';
@@ -487,6 +542,7 @@ class Renderer {
   /* 병종별 필살 연출. 가산 합성으로 화면 위에서 빛난다. */
   drawCast(e, x, y, p, cs) {
     const ctx = this.ctx;
+    const B = v => this.blur(v);
     const k = 1 - p;                       // 0 -> 1 진행
     const R = Math.max(60, e.r * this.zoom);
     const big = e.big ? 1.6 : 1;
@@ -499,7 +555,7 @@ class Renderer {
     switch (e.kind) {
       case 'lightning': {
         const top = -20;
-        for (let b = 0; b < (e.big ? 3 : 1); b++) {
+        for (let b = 0; b < (e.big ? this.qn(3) : 1); b++) {
           const off = (b - 1) * 30 * cs;
           const pts = [];
           let cy = top, cx2 = x + off;
@@ -513,18 +569,18 @@ class Renderer {
             ctx.globalAlpha = a * p;
             ctx.strokeStyle = col;
             ctx.lineWidth = w;
-            ctx.shadowBlur = blur;
+            ctx.shadowBlur = B(blur);
             ctx.beginPath();
             ctx.moveTo(pts[0][0], pts[0][1]);
             for (let n = 1; n < pts.length; n++) ctx.lineTo(pts[n][0], pts[n][1]);
             ctx.stroke();
           };
-          stroke(16 * cs * big, e.color, 0.35, 26);   // 넓은 광채
+          if (this.fxq >= 1) stroke(16 * cs * big, e.color, 0.35, 26);   // 넓은 광채
           stroke(7 * cs * big, e.color, 0.8, 18);     // 본체
           stroke(2.6 * cs * big, '#ffffff', 1, 10);   // 흰 심지
         }
         // 착탄 폭발
-        ctx.shadowBlur = 30;
+        ctx.shadowBlur = B(30);
         ctx.globalAlpha = p * 0.85;
         ctx.fillStyle = e.color;
         ctx.beginPath();
@@ -539,7 +595,7 @@ class Renderer {
         ctx.strokeStyle = e.color;
         ctx.lineWidth = 3 * cs;
         ctx.globalAlpha = p * 0.9;
-        for (let i = 0; i < 8; i++) {
+        for (let i = 0, n = this.qn(8); i < n; i++) {
           const a = i * 0.8 + k;
           const d = R * (0.3 + k * 0.8);
           ctx.beginPath();
@@ -550,12 +606,12 @@ class Renderer {
         break;
       }
       case 'shockwave': {
-        for (let i = 0; i < 4; i++) {
+        for (let i = 0, n = this.qn(4); i < n; i++) {
           const rr = R * (0.2 + k * (0.8 + i * 0.4));
           ctx.globalAlpha = p * (1 - i * 0.2);
           ctx.strokeStyle = i === 0 ? '#ffffff' : e.color;
           ctx.lineWidth = (8 - i * 1.6) * cs * big;
-          ctx.shadowBlur = 22;
+          ctx.shadowBlur = B(22);
           ctx.beginPath();
           ctx.ellipse(x, gy, rr, rr * 0.32, 0, 0, 7);
           ctx.stroke();
@@ -563,7 +619,7 @@ class Renderer {
         ctx.globalAlpha = p;
         ctx.lineWidth = 3.4 * cs;
         ctx.strokeStyle = e.color;
-        for (let i = 0; i < 7; i++) {
+        for (let i = 0, n = this.qn(7); i < n; i++) {
           const a = i * 0.9 + k * 2;
           ctx.beginPath();
           ctx.moveTo(x + Math.cos(a) * R * 0.25, gy + Math.sin(a) * R * 0.1);
@@ -580,7 +636,7 @@ class Renderer {
         g.addColorStop(0.5, e.color);
         g.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.globalAlpha = p * 0.9;
-        ctx.shadowBlur = 30;
+        ctx.shadowBlur = B(30);
         ctx.fillStyle = g;
         ctx.fillRect(x - R * 0.4, gy - h, R * 0.8, h);
         ctx.fillStyle = '#ffffff';
@@ -593,7 +649,7 @@ class Renderer {
         ctx.ellipse(x, gy, R * (0.35 + k * 0.7), R * 0.22, 0, 0, 7);
         ctx.stroke();
         ctx.fillStyle = e.color;
-        for (let i = 0; i < 7; i++) {
+        for (let i = 0, n = this.qn(7); i < n; i++) {
           const yy = gy - ((k * 140 + i * 30) % (h + 30));
           ctx.globalAlpha = p * 0.9;
           ctx.beginPath();
@@ -604,7 +660,7 @@ class Renderer {
       }
       case 'runes': {
         const rr = R * (0.35 + k * 0.8);
-        ctx.shadowBlur = 24;
+        ctx.shadowBlur = B(24);
         ctx.globalAlpha = p * 0.55;
         ctx.fillStyle = e.color;
         ctx.beginPath();
@@ -618,7 +674,7 @@ class Renderer {
         ctx.lineWidth = 2.8 * cs;
         ctx.beginPath();
         ctx.ellipse(x, gy, rr * 0.6, rr * 0.2, 0, 0, 7); ctx.stroke();
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0, n = this.qn(10); i < n; i++) {
           const a = i * Math.PI / 5 + k * 3;
           const px = x + Math.cos(a) * rr * 0.82;
           const py = gy + Math.sin(a) * rr * 0.28;
@@ -629,7 +685,7 @@ class Renderer {
         }
         // 솟아오르는 마력
         ctx.fillStyle = e.color;
-        for (let i = 0; i < 8; i++) {
+        for (let i = 0, n = this.qn(8); i < n; i++) {
           const a = i * 0.9;
           ctx.globalAlpha = p * 0.8;
           ctx.beginPath();
@@ -639,8 +695,8 @@ class Renderer {
         break;
       }
       case 'firestorm': {
-        ctx.shadowBlur = 26;
-        for (let i = 0; i < 18; i++) {
+        ctx.shadowBlur = B(26);
+        for (let i = 0, n = this.qn(18); i < n; i++) {
           const seed = i * 7.3 + Math.floor(e.x);
           const fx2 = x + Math.sin(seed) * R * 0.85;
           const rise = (k * 95 + (seed % 26)) * cs;
@@ -662,9 +718,9 @@ class Renderer {
         break;
       }
       case 'iceburst': {
-        ctx.shadowBlur = 22;
+        ctx.shadowBlur = B(22);
         ctx.globalAlpha = p;
-        for (let i = 0; i < 11; i++) {
+        for (let i = 0, n = this.qn(11); i < n; i++) {
           const a = i * 0.58 + 0.15;
           const d = R * (0.2 + k * 0.85);
           const px = x + Math.cos(a) * d;
@@ -688,7 +744,7 @@ class Renderer {
         break;
       }
       case 'slash': {
-        ctx.shadowBlur = 18;
+        ctx.shadowBlur = B(18);
         const L = 46 * cs * big;
         for (let i = 0; i < 2; i++) {
           const a = (i ? -0.75 : 0.75) + k * 0.5;
@@ -716,7 +772,7 @@ class Renderer {
         break;
       }
       case 'holy': {
-        ctx.shadowBlur = 26;
+        ctx.shadowBlur = B(26);
         ctx.globalAlpha = p * 0.55;
         ctx.fillStyle = e.color;
         ctx.beginPath();
@@ -724,7 +780,7 @@ class Renderer {
         ctx.globalAlpha = p;
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 4 * cs * big;
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0, n = this.qn(10); i < n; i++) {
           const a = i * Math.PI / 5 + k * 1.2;
           ctx.beginPath();
           ctx.moveTo(x + Math.cos(a) * R * 0.15, y + Math.sin(a) * R * 0.15);
@@ -739,13 +795,14 @@ class Renderer {
         break;
       }
     }
-    ctx.shadowBlur = 0;
+    ctx.shadowBlur = B(0);
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'source-over';
     ctx.restore();
   }
 
   render(battle, dt) {
+    this.trackFrame(dt);
     this.follow(battle, dt);
     const ctx = this.ctx;
     const sh = battle.shake || 0;
@@ -799,6 +856,21 @@ class Renderer {
       ctx.fillStyle = '#f0e6c8';
       ctx.fillText(boss.s.name, this.w / 2, y0 + h + 13);
       ctx.textAlign = 'left';
+    }
+    // 보스 패턴 이름
+    if (battle.patternT > 0) {
+      const q = Math.min(1, battle.patternT / 1.7);
+      const rise = (1 - q) * 18;
+      ctx.globalAlpha = Math.min(1, q * 2.2);
+      ctx.font = 'bold ' + Math.round(this.h * 0.052) + 'px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = 'rgba(0,0,0,.8)';
+      ctx.strokeText(battle.patternName, this.w / 2, this.h * 0.3 - rise);
+      ctx.fillStyle = '#ffcf70';
+      ctx.fillText(battle.patternName, this.w / 2, this.h * 0.3 - rise);
+      ctx.textAlign = 'left';
+      ctx.globalAlpha = 1;
     }
     if (battle.bossAlert > 0) {
       const p = Math.min(1, battle.bossAlert / 2.6);

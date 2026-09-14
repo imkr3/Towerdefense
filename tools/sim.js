@@ -49,7 +49,7 @@ function loadEngine(seed) {
 }
 
 /* 한 전장을 자동 전투로 돌린다. 카드는 나오는 대로 전부 낸다. */
-function runStage(g, index, upLv, unitLv) {
+function runStage(g, index, upLv, unitLv, trace) {
   const academy = Math.min(5, Math.floor(upLv / 2));
   const cap = g.unitLevelCap(index, academy);
   const levels = {};
@@ -72,12 +72,23 @@ function runStage(g, index, upLv, unitLv) {
 
   const b = new g.Battle(index, save);
   const dt = 1 / 30;
-  let t = 0;
+  let t = 0, nextLog = 20;
   while (b.state === 'play' && t < 420) {
     for (const u of b.roster) if (b.canDeploy(u.id)) b.deploy(u.id);
     if (b.canCommand() && b.allies.length > 4) b.useCommand();
     b.update(dt);
     t += dt;
+    if (trace && t >= nextLog) {                 // --trace: 20초마다 전황을 찍는다
+      nextLog += 20;
+      const cnt = {};
+      b.enemies.forEach(e => { cnt[e.s.name] = (cnt[e.s.name] || 0) + 1; });
+      console.log('    ' + String(Math.round(t)).padStart(3) + '초  아군성 ' +
+        String(Math.round(b.allyCastle.hp / b.allyCastle.maxHp * 100)).padStart(3) + '%  적성 ' +
+        String(Math.round(b.enemyCastle.hp / b.enemyCastle.maxHp * 100)).padStart(3) + '%  ' +
+        '아군 ' + String(b.allies.length).padStart(2) + '  적 ' +
+        String(b.enemies.length).padStart(2) + '  ' +
+        Object.keys(cnt).map(k => k + '×' + cnt[k]).join(' '));
+    }
   }
   return {
     stage: index + 1,
@@ -116,9 +127,9 @@ function printTable(rows, upLv, unitLv) {
 
 /* 기대하는 난이도 곡선. 크게 벗어나면 밸런스가 깨진 것으로 본다. */
 const EXPECT = [
-  { up: 0, lv: 1, min: 6,  max: 13, label: '무강화' },
-  { up: 2, lv: 3, min: 12, max: 18, label: '중반 강화' },
-  { up: 3, lv: 5, min: 17, max: 20, label: '후반 강화' },
+  { up: 0, lv: 1, min: 4,  max: 10, label: '무강화' },
+  { up: 2, lv: 3, min: 10, max: 16, label: '중반 강화' },
+  { up: 3, lv: 5, min: 14, max: 19, label: '후반 강화' },
   { up: 5, lv: 8, min: 20, max: 20, label: '완전 강화' }
 ];
 
@@ -149,6 +160,14 @@ function check() {
 const args = process.argv.slice(2);
 if (args[0] === '--check') {
   check();
+} else if (args[0] === '--trace') {
+  // node tools/sim.js --trace <전장번호> [강화Lv] [병종Lv]
+  const stage = parseInt(args[1] || '20', 10) - 1;
+  const upLv = parseInt(args[2] || '5', 10);
+  const unitLv = parseInt(args[3] || '8', 10);
+  const g = loadEngine(12345);
+  console.log(`\n  전장 ${stage + 1} 추적 (강화 ${upLv} / 병종 Lv${unitLv})`);
+  printTable([runStage(g, stage, upLv, unitLv, true)], upLv, unitLv);
 } else {
   const upLv = parseInt(args[0] || '0', 10);
   const unitLv = parseInt(args[1] || '1', 10);

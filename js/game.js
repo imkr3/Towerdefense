@@ -22,7 +22,9 @@ function sfx(name) {
   if (fn) fn.call(SFX);
 }
 
-const FX_LIMIT = 260;        // 이펙트가 무한정 쌓이지 않게
+const FX_LIMIT = 200;        // 이펙트가 무한정 쌓이지 않게
+const CAST_LIMIT = 4;        // 동시에 터지는 필살 연출 수 (렉 방지)
+const CAST_BIG_LIMIT = 2;    // 그중 전설 대형 연출
 const SLOW_SPEED_MUL = 0.45; // 둔화 시 이동
 const SLOW_RATE_MUL = 1.7;   // 둔화 시 공격 간격
 
@@ -67,12 +69,19 @@ class Fighter {
     this.usedRevive = false;
     this.abCd = 0;
     this.auraPulse = 0;
+
+    // 보스 패턴용
+    this.speedMul = 1;      // 광폭화로 빨라진다
+    this.rateMul = 1;       // 공격 간격 배율 (작을수록 빠름)
+    this.phaseIdx = 0;      // 지금까지 넘긴 페이즈
+    this.specialCd = (stats.special && stats.special.first) || 6;
+    this.enraged = false;
   }
 
-  get speedNow() { return this.s.speed * (this.slowT > 0 ? SLOW_SPEED_MUL : 1); }
+  get speedNow() { return this.s.speed * this.speedMul * (this.slowT > 0 ? SLOW_SPEED_MUL : 1); }
 
   get intervalNow() {
-    let v = this.s.interval;
+    let v = this.s.interval * this.rateMul;
     if (this.slowT > 0) v *= SLOW_RATE_MUL;
     if (this.hasteT > 0) v *= this.hasteMul;
     if (this.ab.enrage) {                       // 피가 깎일수록 빨라진다
@@ -200,6 +209,9 @@ class Battle {
     this.flash = 0;
     this.flashColor = '#ffffff';
     this.bossAlert = 0;
+    this.patternName = '';
+    this.patternT = 0;
+    this.pending = [];          // 예고 후 떨어지는 공격
     this.cooldowns = {};
     this.speed = 1;
 
@@ -286,6 +298,8 @@ class Battle {
     if (this.shake > 0) this.shake = Math.max(0, this.shake - dt * 26);
     if (this.flash > 0) this.flash = Math.max(0, this.flash - dt * 1.4);
     if (this.bossAlert > 0) this.bossAlert -= dt;
+    if (this.patternT > 0) this.patternT -= dt;
+    this.updatePending(dt);
     for (const k in this.cooldowns) {
       if (this.cooldowns[k] > 0) this.cooldowns[k] = Math.max(0, this.cooldowns[k] - dt);
     }
@@ -427,6 +441,9 @@ class Battle {
         }
       }
 
+      // 보스 패턴
+      if (f.s.phases || f.s.special) this.bossTick(f, dt);
+
       // 기절
       if (f.stunT > 0) { f.stunT -= dt; continue; }
 
@@ -532,6 +549,180 @@ class Battle {
     }
   }
 
+  /* ------------------- 보스 패턴 -------------------
+   * phases: 체력이 특정 비율 아래로 떨어질 때 한 번씩 터지는 연출 겸 기술.
+   * special: 일정 주기로 반복하는 고유 기술.
+   * 두 가지 모두 bossAct 하나로 처리한다. */
+  bossTick(f, dt) {
+    const ph = f.s.phases;
+    if (ph) {
+      const ratio = f.hp / f.maxHp;
+      while (f.phaseIdx < ph.length && ratio <= ph[f.phaseIdx].at) {
+        this.bossAct(f, ph[f.phaseIdx]);
+        f.phaseIdx++;
+      }
+    }
+    const sp = f.s.special;
+    if (sp && f.stunT <= 0) {
+      f.specialCd -= dt;
+      if (f.specialCd <= 0) {
+        f.specialCd = sp.cd || 10;
+        this.bossAct(f, sp);
+      }
+    }
+  }
+
+  announce(name) {
+    if (!name) return;
+    this.patternName = name;
+    this.patternT = 1.7;
+  }
+
+  /* 보스 기술 한 방. 아군 보스도 같은 코드로 돌아간다. */
+  bossAct(f, a) {
+    const foes = this.foesOf(f.side);
+    const r = a.r || 300;
+    this.announce(a.name);
+
+    switch (a.t) {
+      case 'roar': {                       // 포효: 밀어내고 기절
+        for (const e of foes) {
+          if (e.dead || Math.abs(e.x - f.x) > r) continue;
+          if (a.stun) e.stunT = Math.max(e.stunT, a.stun);
+          if (a.push && !e.ab.kbImmune) {
+            e.x = Math.max(60, Math.min(WORLD - 60, e.x + f.dir * a.push));
+            e.kbTimer = Math.max(e.kbTimer, 0.2);
+          }
+          if (a.dmg) e.takeDamage(a.dmg);
+        }
+        this.fx.push({ type: 'cast', kind: 'shockwave', x: f.x, row: f.row,
+                       color: f.s.accent, r: r * 0.6, big: true, dir: f.dir,
+                       t: 0.7, life: 0.7 });
+        this.shake = Math.max(this.shake, 14);
+        sfx('bossIn');
+        break;
+      }
+      case 'enrage': {                     // 광폭화: 영구 강화
+        f.enraged = true;
+        if (a.atk) f.atk = Math.round(f.atk * a.atk);
+        if (a.rate) f.rateMul *= a.rate;
+        if (a.speed) f.speedMul *= a.speed;
+        if (a.armor) f.ab = Object.assign({}, f.ab, { armor: a.armor });
+        f.auraPulse = 1;
+        this.fx.push({ type: 'cast', kind: 'firestorm', x: f.x, row: f.row,
+                       color: '#ff6b3c', r: 120, big: true, dir: f.dir, t: 0.7, life: 0.7 });
+        this.shake = Math.max(this.shake, 10);
+        break;
+      }
+      case 'summon': {                     // 증원
+        const n = a.n || 2;
+        for (let i = 0; i < n; i++) {
+          const sx = f.x - f.dir * (30 + i * 26);
+          if (f.side === 'ally') {
+            const u = UNIT_BY_ID[a.id];
+            if (u) { const m = this.makeAlly(u, sx); m.summoned = true; this.allies.push(m); }
+          } else {
+            this.spawnEnemy(a.id, sx).summoned = true;
+          }
+          this.fx.push({ type: 'spawn', x: sx, row: f.row, t: 0.4, life: 0.4 });
+        }
+        break;
+      }
+      case 'shield': {                     // 보호막
+        f.giveBarrier(f.maxHp * (a.ratio || 0.15));
+        this.fx.push({ type: 'aura', x: f.x, row: f.row, r: 90, t: 0.6, life: 0.6,
+                       color: '#8fd8ff' });
+        break;
+      }
+      case 'heal': {                       // 재생
+        f.heal(f.maxHp * (a.ratio || 0.15));
+        this.fx.push({ type: 'aura', x: f.x, row: f.row, r: 110, t: 0.6, life: 0.6,
+                       color: '#7fe08e' });
+        break;
+      }
+      case 'frost': {                      // 한파: 광역 둔화
+        for (const e of foes) {
+          if (e.dead || Math.abs(e.x - f.x) > r) continue;
+          e.slowT = Math.max(e.slowT, a.dur || 4);
+          this.fx.push({ type: 'chill', x: e.x, row: e.row, t: 0.4, life: 0.4 });
+        }
+        this.fx.push({ type: 'cast', kind: 'iceburst', x: f.x, row: f.row,
+                       color: '#bfe9ff', r: r * 0.5, big: true, dir: f.dir, t: 0.6, life: 0.6 });
+        break;
+      }
+      case 'drain': {                      // 흡수: 주변 적의 피를 빨아들인다
+        let sum = 0;
+        for (const e of foes) {
+          if (e.dead || Math.abs(e.x - f.x) > r) continue;
+          const d = a.dmg || 120;
+          e.takeDamage(d);
+          sum += d;
+        }
+        f.heal(sum * (a.ratio || 0.6));
+        this.fx.push({ type: 'cast', kind: 'runes', x: f.x, row: f.row,
+                       color: '#a06be0', r: r * 0.5, big: true, dir: f.dir, t: 0.6, life: 0.6 });
+        break;
+      }
+      case 'meteor': {                     // 예고 후 떨어지는 폭격
+        const n = a.n || 3;
+        const front = this.frontline();
+        for (let i = 0; i < n; i++) {
+          const tx = front + (i - (n - 1) / 2) * (a.gap || 130) + (Math.random() - 0.5) * 40;
+          this.queueStrike(f, {
+            x: Math.max(120, Math.min(WORLD - 120, tx)),
+            r: a.radius || 110, dmg: a.dmg || 300,
+            warn: (a.warn || 1.0) + i * 0.12,
+            burn: a.burn, stun: a.stun, kind: a.kind || 'firestorm'
+          });
+        }
+        break;
+      }
+    }
+  }
+
+  /* 예고 표시를 띄우고, 시간이 되면 그 자리에 내리꽂는다.
+   * 무작정 터지지 않으니 피할 틈이 있다. */
+  queueStrike(f, o) {
+    this.pending.push({
+      t: o.warn, side: f.side, x: o.x, r: o.r, dmg: o.dmg,
+      burn: o.burn, stun: o.stun, kind: o.kind, color: f.s.accent, row: f.row
+    });
+    this.fx.push({ type: 'warn', x: o.x, r: o.r, t: o.warn, life: o.warn,
+                   color: f.side === 'ally' ? '#6fc0ff' : '#e0503c' });
+  }
+
+  updatePending(dt) {
+    if (!this.pending.length) return;
+    let landed = false;
+    for (const s of this.pending) {
+      s.t -= dt;
+      if (s.t > 0) continue;
+      s.done = landed = true;
+      const foes = this.foesOf(s.side);
+      const castle = this.castleOf(s.side);
+      for (const e of foes) {
+        if (e.dead || Math.abs(e.x - s.x) > s.r + e.radius) continue;
+        e.takeDamage(s.dmg);
+        if (s.burn) {
+          e.burnT = Math.max(e.burnT, s.burn.dur);
+          e.burnDps = Math.max(e.burnDps, s.burn.dps);
+        }
+        if (s.stun) e.stunT = Math.max(e.stunT, s.stun);
+      }
+      if (!castle.dead && Math.abs(castle.x - s.x) <= s.r + castle.radius) {
+        castle.takeDamage(s.dmg);
+      }
+      this.fx.push({ type: 'cast', kind: s.kind, x: s.x, row: s.row,
+                     color: s.color, r: s.r, big: true, dir: 1, t: 0.6, life: 0.6 });
+      this.fx.push({ type: 'boom', x: s.x, r: s.r, t: 0.32, life: 0.32 });
+    }
+    if (landed) {
+      this.pending = this.pending.filter(s => !s.done);
+      this.shake = Math.max(this.shake, 12);
+      sfx('boom');
+    }
+  }
+
   /* 진영 기준으로 지금 살아 있는 적 목록과 성채를 돌려준다.
    * 발사체가 배열 참조를 들고 있으면 그 사이에 갈린 목록을 놓치게 된다. */
   foesOf(side) { return side === 'ally' ? this.enemies : this.allies; }
@@ -570,14 +761,26 @@ class Battle {
     const kind = f.s.castFx;
     if (!kind) return;
     const big = f.s.rarity === 'SSR';
+    // 같은 순간에 연출이 몰리면 프레임이 무너진다. 살아 있는 수를 세어 막는다.
+    let live = 0, liveBig = 0;
+    for (const e of this.fx) {
+      if (e.type !== 'cast') continue;
+      live++;
+      if (e.big) liveBig++;
+    }
+    if (live >= CAST_LIMIT) return;
+    if (big && liveBig >= CAST_BIG_LIMIT) return;
     this.fx.push({
       type: 'cast', kind: kind, x: x, row: row || 0,
       color: f.s.accent, r: f.s.areaRadius || 90, big: big, dir: f.dir,
       t: big ? 0.7 : 0.45, life: big ? 0.7 : 0.45
     });
     if (big) {
-      this.flash = Math.max(this.flash || 0, 0.28);
-      this.flashColor = f.s.accent;
+      // 섬광이 매 타격마다 덧씌워지면 화면이 계속 하얘지고 무거워진다
+      if ((this.flash || 0) < 0.12) {
+        this.flash = 0.28;
+        this.flashColor = f.s.accent;
+      }
       this.shake = Math.max(this.shake, 10);
     } else if (crit) {
       this.shake = Math.max(this.shake, 4);
