@@ -26,8 +26,8 @@ const FX_LIMIT = 200;        // 이펙트가 무한정 쌓이지 않게
 const REINFORCE_FIRST = 10;  // 대본 파도가 끝나고 첫 증원까지
 const REINFORCE_MIN = 3.0;   // 증원 간격 하한
 const REINFORCE_STEP = 0.06; // 증원 한 번마다 적이 세지는 폭
-const REINFORCE_MAX = 2.2;   // 증원 강화 상한 (끝없이 세지면 이길 수가 없다)
-const REINFORCE_CAP = 24;    // 전장에 동시에 서 있을 수 있는 적 수
+const REINFORCE_MAX = 1.9;   // 증원 강화 상한 (끝없이 세지면 이길 수가 없다)
+const REINFORCE_CAP = 16;    // 증원으로 전장에 동시에 설 수 있는 적 수
 const CAST_LIMIT = 4;        // 동시에 터지는 필살 연출 수 (렉 방지)
 const CAST_BIG_LIMIT = 2;    // 그중 전설 대형 연출
 const SLOW_SPEED_MUL = 0.45; // 둔화 시 이동
@@ -57,6 +57,7 @@ class Fighter {
     this.hitFlash = 0;
     this.swing = 0;
     this.dead = false;
+    this.moving = false;
     this.scale = stats.scale || 1;
     this.radius = 26 * this.scale;
 
@@ -111,15 +112,16 @@ class Fighter {
   }
 
   takeDamage(dmg) {
-    if (this.dead) return;
+    if (this.dead) return 0;
     if (this.ab.armor) dmg *= (1 - Math.min(0.75, this.ab.armor));   // 두꺼운 갑주
     if (this.barrier > 0) {
       const absorbed = Math.min(this.barrier, dmg);
       this.barrier -= absorbed;
       dmg -= absorbed;
       this.hitFlash = 0.15;
-      if (dmg <= 0) return;
+      if (dmg <= 0) return 0;
     }
+    const dealt = Math.min(this.hp, Math.max(0, dmg));
     this.hp -= dmg;
     this.hitFlash = 0.15;
     if (this.hp <= 0) {
@@ -128,19 +130,20 @@ class Fighter {
         this.hp = Math.round(this.maxHp * this.ab.revive);
         this.kbTimer = 0.5;
         this.reviveFx = true;
-        return;
+        return dealt;
       }
       this.hp = 0;
       this.dead = true;
-      return;
+      return dealt;
     }
-    if (this.ab.kbImmune) return;                   // 넉백 면역
+    if (this.ab.kbImmune) return dealt;                   // 넉백 면역
     const kbTotal = this.s.kb || 1;
     const stepsLeft = Math.ceil((this.hp / this.maxHp) * kbTotal);
     if (stepsLeft < this.kbLeft) {
       this.kbLeft = stepsLeft;
       this.kbTimer = 0.42;
     }
+    return dealt;
   }
 }
 
@@ -158,9 +161,11 @@ class Castle {
     this.ab = {};
   }
   takeDamage(d) {
+    const dealt = Math.min(this.hp, Math.max(0, d));
     this.hp -= d;
     this.hitFlash = 0.15;
     if (this.hp <= 0) { this.hp = 0; this.dead = true; }
+    return dealt;
   }
   heal() {}
   giveBarrier() {}
@@ -221,8 +226,8 @@ class Battle {
     this.speed = 1;
 
     this.queue = [];
-    this.stage.waves.forEach(w => {
-      for (let i = 0; i < w.n; i++) this.queue.push({ t: w.t + i * w.gap, e: w.e });
+    this.stage.waves.forEach((w, index) => {
+      for (let i = 0; i < w.n; i++) this.queue.push({ t: w.t + i * w.gap, e: w.e, wave: w.wave !== undefined ? w.wave : index });
     });
     this.queue.sort((a, b) => a.t - b.t);
     this.qi = 0;
@@ -236,9 +241,12 @@ class Battle {
       const spec = ENEMIES[w.e];
       if (!spec || (spec.ab && spec.ab.hold)) return;    // 토템처럼 박혀 있는 건 제외
       const ab = spec.ab || {};
-      // 보스·갑주·넉백 면역·장거리 공성은 상시 증원에서 뺀다.
-      // 계속 흘려보내면 뚫을 수 없는 벽이 되어 전선이 영영 멈춘다.
-      const wall = spec.boss || ab.armor || ab.kbImmune || spec.range > 300;
+      // 장거리 공성은 증원에서 아예 뺀다. 전선이 닿지 않는 자리에서 쏘기만 하니
+      // 죽지 않고 계속 쌓여 전장을 영영 멈춰 세운다.
+      if (spec.range > 300) return;
+      // 보스·갑주·넉백 면역은 상시 증원에서 빼고 이따금씩만 섞는다.
+      // 끝없이 흘려보내면 뚫을 수 없는 벽이 된다.
+      const wall = spec.boss || ab.armor || ab.kbImmune;
       (wall ? heavy : pool).push(w.e);
     });
     this.reinfPool = pool.length ? pool : ['orcspear'];
@@ -262,14 +270,16 @@ class Battle {
   /* 실제 출진 편성 (최대 LOADOUT_MAX) */
   battleUnits() {
     const unlocked = this.unlockedUnits();
-    const picked = (this.save.loadout || []).filter(id => unlocked.some(u => u.id === id));
+    const picked = [...new Set(this.save.loadout || [])].filter(id => unlocked.some(u => u.id === id));
     const list = picked.length ? picked.map(id => UNIT_BY_ID[id]) : unlocked.slice(0, LOADOUT_MAX);
     return list.slice(0, LOADOUT_MAX);
   }
 
   canDeploy(id) {
     const u = UNIT_BY_ID[id];
-    return this.state === 'play' && this.cooldowns[id] <= 0 && this.money >= u.cost;
+    return !!u && this.state === 'play' && this.roster.some(r => r.id === id) &&
+      this.cooldowns[id] <= 0 && this.money >= u.cost &&
+      (!u.maxActive || this.allies.filter(a => !a.dead && a.s.id === id).length < u.maxActive);
   }
 
   makeAlly(u, x) {
@@ -313,7 +323,16 @@ class Battle {
 
   update(dtRaw) {
     if (this.state !== 'play') { this.updateFx(dtRaw); return; }
-    const dt = dtRaw * this.speed;
+    let remaining = Math.max(0, Math.min(0.1, dtRaw)) * this.speed;
+    while (remaining > 1e-8 && this.state === 'play') {
+      const step = Math.min(1 / 30, remaining);
+      this.tick(step);
+      remaining -= step;
+    }
+    this.updateFx(dtRaw);
+  }
+
+  tick(dt) {
     this.time += dt;
 
     // 전투가 길어지면 자금이 더 빨리 찬다. 적도 증원으로 계속 불어나므로
@@ -331,7 +350,8 @@ class Battle {
     }
 
     while (this.qi < this.queue.length && this.queue[this.qi].t <= this.time) {
-      this.spawnEnemy(this.queue[this.qi].e);
+      const entry = this.queue[this.qi];
+      this.spawnEnemy(entry.e).wave = entry.wave;
       this.qi++;
     }
     this.tickReinforce(dt);
@@ -339,13 +359,14 @@ class Battle {
     this.step(this.allies, this.enemies, this.enemyCastle, dt, true);
     this.step(this.enemies, this.allies, this.allyCastle, dt, false);
 
-    this.reap(this.enemies, this.allies, this.enemyCastle, true);
-    this.reap(this.allies, this.enemies, this.allyCastle, false);
+    this.updateShots(dt);
+    // Resolve both sides until death explosions stop chaining. Rewards are paid once.
+    while (this.allies.concat(this.enemies).some(f => f.dead && !f.reaped)) {
+      this.reap(this.enemies, this.allies, this.allyCastle, true);
+      this.reap(this.allies, this.enemies, this.enemyCastle, false);
+    }
     this.enemies = this.enemies.filter(e => !e.dead);
     this.allies = this.allies.filter(a => !a.dead);
-
-    this.updateShots(dt);
-    this.updateFx(dtRaw);
 
     if (!this.endless && this.enemyCastle.dead) { this.shake = 16; this.finish('win'); }
     else if (this.allyCastle.dead) { this.shake = 16; this.finish(this.endless ? 'over' : 'lose'); }
@@ -370,7 +391,8 @@ class Battle {
   /* 사망 처리 (죽을 때 터지는 능력 포함) */
   reap(list, foes, foeCastle, isEnemySide) {
     for (const f of list) {
-      if (!f.dead) continue;
+      if (!f.dead || f.reaped) continue;
+      f.reaped = true;
       if (f.ab.deathBomb) {
         const b = f.ab.deathBomb;
         this.areaHit(b.dmg * f.abMul, f.x, b.radius, foes, foeCastle, null, false);
@@ -395,6 +417,7 @@ class Battle {
   }
 
   finish(result) {
+    if (this.state !== 'play') return;
     this.state = result;
     this.resultTime = 0;
     this.stars = 0;
@@ -449,6 +472,7 @@ class Battle {
   step(list, foes, foeCastle, dt, isAlly) {
     for (const f of list) {
       if (f.dead) continue;
+      f.moving = false;
       if (f.hitFlash > 0) f.hitFlash -= dt;
       if (f.swing > 0) f.swing -= dt;
       if (f.slowT > 0) f.slowT -= dt;
@@ -458,10 +482,10 @@ class Battle {
 
       // 중독 / 화상 피해
       let dot = 0;
-      if (f.poisonT > 0) { f.poisonT -= dt; dot += f.poisonDps; }
-      if (f.burnT > 0) { f.burnT -= dt; dot += f.burnDps; }
+      if (f.poisonT > 0) { dot += f.poisonDps * Math.min(dt, f.poisonT); f.poisonT = Math.max(0, f.poisonT - dt); }
+      if (f.burnT > 0) { dot += f.burnDps * Math.min(dt, f.burnT); f.burnT = Math.max(0, f.burnT - dt); }
       if (dot > 0) {
-        f.hp -= dot * dt;
+        f.hp -= dot;
         if (f.hp <= 0) {
           if (f.ab.revive && !f.usedRevive) {
             f.usedRevive = true; f.hp = Math.round(f.maxHp * f.ab.revive); f.reviveFx = true;
@@ -495,6 +519,7 @@ class Battle {
           this.attack(f, target, foes, foeCastle);
         }
       } else if (!f.ab.hold && this.canAdvance(f, foes)) {
+        f.moving = f.speedNow > 0;
         f.x += f.dir * f.speedNow * dt;
         f.x = Math.max(60, Math.min(WORLD - 60, f.x));
       }
@@ -517,7 +542,7 @@ class Battle {
     const ab = f.ab;
     if (!ab.heal && !ab.gold && !ab.summon && !ab.barrier && !ab.haste) return;
     if (ab.gold && isAlly) {
-      this.money = Math.min(this.walletMax, this.money + ab.gold * f.abMul * dt);
+      this.money = Math.min(this.walletMax, this.money + ab.gold * dt);
     }
     f.abCd -= dt;
     if (f.abCd > 0) return;
@@ -532,7 +557,7 @@ class Battle {
         m.heal(ab.heal * f.abMul);
         healed = true;
       }
-      if (healed || true) {
+      if (healed) {
         f.auraPulse = 0.5;
         this.fx.push({ type: 'aura', x: f.x, row: f.row, r: ab.radius,
                        t: 0.5, life: 0.5, color: '#7fe08e' });
@@ -570,7 +595,7 @@ class Battle {
             this.allies.push(m);
           }
         } else {
-          this.spawnEnemy(ab.summon.id, sx).summoned = true;
+          const m = this.spawnEnemy(ab.summon.id, sx); m.summoned = true; m.wave = f.wave;
         }
       }
       this.fx.push({ type: 'spawn', x: f.x - f.dir * 24, row: f.row, t: 0.4, life: 0.4 });
@@ -606,10 +631,17 @@ class Battle {
       const id = this.reinfPool[(this.reinfWave * 3 + i) % this.reinfPool.length];
       this.spawnEnemy(id, ENEMY_SPAWN_X - Math.random() * 70, mul);
     }
-    // 여섯 번에 한 번은 보스급도 딸려 온다
+    // 여섯 번에 한 번은 중장 병력도 딸려 온다. 다만 이미 버티고 선 보스가
+    // 있으면 보내지 않는다. 겹쳐 쌓이면 아무도 뚫을 수 없는 벽이 된다.
     if (this.reinfWave % 6 === 0 && this.reinfHeavy.length) {
-      const b = this.reinfHeavy[(this.reinfWave / 6 - 1) % this.reinfHeavy.length];
-      this.spawnEnemy(b, ENEMY_SPAWN_X, mul);
+      let heavies = 0;
+      for (const e of this.enemies) {
+        if (!e.dead && (e.boss || (e.ab.armor || e.ab.kbImmune))) heavies++;
+      }
+      if (heavies < 2) {
+        const b = this.reinfHeavy[(this.reinfWave / 6 - 1) % this.reinfHeavy.length];
+        this.spawnEnemy(b, ENEMY_SPAWN_X, mul);
+      }
     }
   }
 
@@ -692,7 +724,7 @@ class Battle {
             const u = UNIT_BY_ID[a.id];
             if (u) { const m = this.makeAlly(u, sx); m.summoned = true; this.allies.push(m); }
           } else {
-            this.spawnEnemy(a.id, sx).summoned = true;
+            const m = this.spawnEnemy(a.id, sx); m.summoned = true; m.wave = f.wave;
           }
           this.fx.push({ type: 'spawn', x: sx, row: f.row, t: 0.4, life: 0.4 });
         }
@@ -774,6 +806,7 @@ class Battle {
         if (e.dead || Math.abs(e.x - s.x) > s.r + e.radius) continue;
         e.takeDamage(s.dmg);
         if (s.burn) {
+          if (e.burnT <= 0) e.burnDps = 0;
           e.burnT = Math.max(e.burnT, s.burn.dur);
           e.burnDps = Math.max(e.burnDps, s.burn.dps);
         }
@@ -880,28 +913,30 @@ class Battle {
 
   /* 단일 대상 타격 + 부가 효과 */
   hitOne(dmg, target, src, crit) {
-    target.takeDamage(dmg);
+    const dealt = target.takeDamage(dmg) || 0;
     if (target.isCastle) {
       if (target.side === 'ally') this.shake = Math.max(this.shake, 8);
     } else if (this.dmgFxCount < 14) {
       this.dmgFxCount++;
       this.fx.push({ type: 'dmg', x: target.x + (Math.random() - 0.5) * 26,
-                     row: target.row, v: Math.round(dmg), dy: Math.random() * 10,
+                     row: target.row, v: Math.round(dealt), dy: Math.random() * 10,
                      crit: !!crit, ally: target.side === 'ally', t: 0.65, life: 0.65 });
     }
     if (!src) return;
     const ab = src.ab;
-    if (ab.lifesteal) src.heal(dmg * ab.lifesteal);
+    if (ab.lifesteal) src.heal(dealt * ab.lifesteal);
     if (target.isCastle || target.dead) return;
     if (ab.slow) {
       target.slowT = Math.max(target.slowT, ab.slow);
       this.fx.push({ type: 'chill', x: target.x, row: target.row, t: 0.4, life: 0.4 });
     }
     if (ab.poison) {
+      if (target.poisonT <= 0) target.poisonDps = 0;
       target.poisonT = Math.max(target.poisonT, ab.poison.dur);
       target.poisonDps = Math.max(target.poisonDps, ab.poison.dps * src.abMul);
     }
     if (ab.burn) {
+      if (target.burnT <= 0) target.burnDps = 0;
       target.burnT = Math.max(target.burnT, ab.burn.dur);
       target.burnDps = Math.max(target.burnDps, ab.burn.dps * src.abMul);
     }
@@ -985,15 +1020,31 @@ class Battle {
   /* 무한 전장에서 지금까지 넘긴 파도 수 */
   wavesDone() {
     if (!this.endless) return 0;
-    let n = 0, lastT = -1;
-    for (let i = 0; i < this.qi; i++) {
-      if (this.queue[i].t !== lastT) { lastT = this.queue[i].t; }
+    const pending = new Set(this.queue.slice(this.qi).map(e => e.wave));
+    const alive = new Set(this.enemies.filter(e => !e.dead).map(e => e.wave));
+    let cleared = 0;
+    for (const wave of new Set(this.queue.map(e => e.wave))) {
+      if (pending.has(wave) || alive.has(wave)) break;
+      cleared++;
     }
-    // 파도 = 등장 시각 묶음. 대략 등장 완료한 그룹 수를 센다
-    const seen = {};
-    for (let i = 0; i < this.qi; i++) seen[Math.round(this.queue[i].t)] = true;
-    n = Object.keys(seen).length;
-    return n;
+    return cleared;
+  }
+
+  nextWave() {
+    const entry = this.queue[this.qi];
+    if (entry) {
+      return { name: ENEMIES[entry.e].name, boss: !!ENEMIES[entry.e].boss,
+               seconds: Math.max(0, Math.ceil(entry.t - this.time)) };
+    }
+    // 대본 파도가 동나면 그 다음은 언제나 증원이다. 끝이 아니라는 걸 알려 준다.
+    if (this.endless || this.enemyCastle.dead) return null;
+    const heavy = this.reinfHeavy.length && (this.reinfWave + 1) % 6 === 0;
+    const id = heavy
+      ? this.reinfHeavy[((this.reinfWave + 1) / 6 - 1) % this.reinfHeavy.length]
+      : this.reinfPool[((this.reinfWave + 1) * 3) % this.reinfPool.length];
+    const spec = ENEMIES[id];
+    return { name: (spec ? spec.name : '적') + ' 증원', boss: heavy, reinforce: true,
+             seconds: Math.max(0, Math.ceil(this.reinfT)) };
   }
 
   /* 남은 적 = 아직 등장하지 않은 적 + 전장에 있는 적 */

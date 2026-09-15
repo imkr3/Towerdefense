@@ -53,7 +53,7 @@ async function runSize(browser, size) {
   await page.evaluate(() => localStorage.setItem('stick-kingdom-save-v1', JSON.stringify({
     cleared: 13, coins: 60000, stones: 30, tutorial: true,
     upgrades: { wallet: 3, income: 3, power: 3, vitality: 3, castle: 3 },
-    levels: {}, loadout: [], stars: { 0: 3, 1: 2 }, owned: {}
+    levels: {spear:3,shield:3,archer:3,mage:3,venom:3}, loadout: ['spear','shield','archer','venom','mage'], stars: { 0: 3, 1: 2 }, owned: {}
   })));
   await page.reload();
   await page.waitForTimeout(350);
@@ -73,9 +73,17 @@ async function runSize(browser, size) {
   // 훈련소
   await page.click('#btn-units');
   await page.waitForTimeout(350);
+  await shot(page, 'training-' + size.w);
   const cards = await page.$$eval('#units-list .unit-card', e => e.length);
   if (cards < 20) failures.push(size.name + ': 훈련소 목록이 부족하다 (' + cards + ')');
+  await page.click('[data-filter="enemy"]');
+  const wrong = await page.$$eval('#units-list .unit-card:not([hidden])', es => es.some(e => e.dataset.kind !== 'enemy'));
+  if (wrong) failures.push(size.name + ': 적 도감 필터 오류');
+  await page.click('[data-filter="all"]');
+  // Removing a card must survive navigation and save/reload.
+  await page.evaluate(() => { save.loadout = save.loadout.filter(id => id !== 'archer'); saveGame(save); });
   await page.click('#scr-units [data-goto]');
+  if (await page.evaluate(() => save.loadout.includes('archer'))) failures.push(size.name + ': 편성 해제가 취소되었다');
 
   // 소환
   await page.click('#btn-gacha');
@@ -91,28 +99,64 @@ async function runSize(browser, size) {
   await page.click('#scr-gacha [data-goto]');
   await page.waitForTimeout(150);
 
+  // Android navigation uses the same JS bridge as the packaged WebView.
+  await page.click('#btn-quest');
+  await page.evaluate(() => window.__androidBack());
+  if (!(await page.$eval('#scr-map', e => e.classList.contains('active')))) failures.push(size.name + ': 임무 뒤로 가기 오류');
+
   // 전투
   await page.click('#stage-list .stage:nth-child(14)');
   await page.waitForTimeout(300);
+  await page.evaluate(() => window.__androidBack());
+  if (!(await page.$eval('#modal-confirm', e => e.classList.contains('show')))) failures.push(size.name + ': Android 전투 포기 확인 누락');
+  await page.evaluate(() => window.__androidBack());
+  if (!(await page.$eval('#scr-battle', e => e.classList.contains('active')))) failures.push(size.name + ': 취소했는데 전투가 끝났다');
+  await page.evaluate(() => window.__androidPause());
+  const beforePause = await page.evaluate(() => { battle.cmdCd=0; return {money:battle.money,n:battle.allies.length,t:battle.time}; });
+  await page.evaluate(() => { document.querySelector('#cards .card').click(); document.querySelector('#btn-command').click(); });
+  await page.waitForTimeout(100);
+  const afterPause = await page.evaluate(() => ({money:battle.money,n:battle.allies.length,t:battle.time}));
+  if (JSON.stringify(beforePause)!==JSON.stringify(afterPause)) failures.push(size.name + ': 정지 중 전투 상태가 바뀌었다');
+  await page.keyboard.press('Space');
+  await page.keyboard.press('1');
+  if (!(await page.evaluate(() => battle.allies.length))) failures.push(size.name + ': 출진 단축키 오류');
   await page.click('#btn-speed');
   await page.click('#btn-speed');
+  const overlap = await page.evaluate(() => {
+    const a=document.querySelector('.hud-top').getBoundingClientRect();
+    const b=document.querySelector('.battle-intel').getBoundingClientRect();
+    const c=document.querySelector('.hud-bottom').getBoundingClientRect();
+    return a.bottom>b.top || b.bottom>c.top || document.documentElement.scrollWidth>innerWidth;
+  });
+  if (overlap) failures.push(size.name + ': 전투 HUD 겹침 또는 가로 넘침');
+  await page.waitForTimeout(100);
   let usedCommand = false;
-  for (let i = 0; i < 90; i++) {
-    for (const c of await page.$$('#cards .card')) {
-      try { await c.click({ timeout: 60 }); } catch (e) { /* 재정비 중 */ }
-    }
-    if (!usedCommand && await page.evaluate(() => battle.canCommand())) {
-      await page.click('#btn-command');
-      usedCommand = true;
-    }
-    await page.waitForTimeout(90);
-    if (i === 30) await shot(page, 'battle-' + size.w);
-    if (await page.$eval('#result', e => e.classList.contains('show'))) break;
+  if (await page.evaluate(() => battle.canCommand())) {
+    await page.click('#btn-command');
+    usedCommand = true;
+  }
+  // Inputs above use the real UI. Advance combat deterministically in chunks so
+  // browser scheduling and unavailable-card click timeouts cannot stall CI.
+  await page.evaluate(() => { paused = true; battle.speed = 1; });
+  // 증원이 끊이지 않으므로 결판이 날 때까지는 예전보다 오래 걸린다.
+  for (let i = 0; i < 300; i++) {
+    const done = await page.evaluate(() => {
+      for (let t=0; t<30 && battle.state==='play'; t++) {
+        for (const u of battle.roster) if (battle.canDeploy(u.id)) battle.deploy(u.id);
+        battle.update(1/30);
+      }
+      renderer.render(battle, 1/60);
+      updateHud();
+      return battle.state !== 'play';
+    });
+    if (i === 60) await shot(page, 'battle-' + size.w);
+    if (done) break;
   }
   const st = await page.evaluate(() => ({
     state: battle.state, allies: battle.allies.length, kills: battle.kills
   }));
   if (st.kills < 1) failures.push(size.name + ': 전투에서 처치가 0이다');
+  if (st.state === 'play') failures.push(size.name + ': 5분 안에 전투가 끝나지 않았다');
 
   errors.forEach(e => failures.push(size.name + ': ' + e));
   console.log('  ' + (errors.length ? '✗' : '✓') + ' ' + size.name +

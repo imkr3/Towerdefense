@@ -4,10 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       release:
-        description: '릴리스로 배포할 버전 (예: 1.1.0). 비우면 아티팩트만 만든다'
+        description: '배포할 버전. package.json 버전과 같아야 한다. 비우면 빌드만 한다.'
         required: false
         default: ''
   push:
+    branches:
+      - 'claude/tower-defense-base-g4cj9z'
+      - 'codex/gameplay-visual-polish'
     tags:
       - 'v*'
     paths:
@@ -15,7 +18,10 @@ on:
       - 'js/**'
       - 'css/**'
       - 'index.html'
+      - 'package.json'
+      - 'tools/**'
       - '.github/workflows/android.yml'
+      - '.github/release-notes.md'
 
 permissions:
   contents: write
@@ -24,84 +30,89 @@ jobs:
   build:
     name: APK 빌드
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - name: 소스 체크아웃
         uses: actions/checkout@v4
-
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: 게임 검사
+        run: npm test
+      - name: 버전 검증
+        id: version
+        env:
+          REQUESTED_RELEASE: ${{ inputs.release }}
+        run: |
+          set -euo pipefail
+          VER=$(node -p "require('./package.json').version")
+          [[ "$VER" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          if [ -n "$REQUESTED_RELEASE" ] && [ "$REQUESTED_RELEASE" != "$VER" ]; then
+            echo '요청 버전과 package.json 버전이 다르다'; exit 1
+          fi
+          if [[ "$GITHUB_REF" == refs/tags/* ]] && [ "$GITHUB_REF_NAME" != "v$VER" ]; then
+            echo '태그와 APK 버전이 다르다'; exit 1
+          fi
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
       - name: JDK 17 준비
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-
       - name: Android SDK 준비
         uses: android-actions/setup-android@v3
-
+        with:
+          packages: 'platform-tools platforms;android-34 build-tools;34.0.0'
+          log-accepted-android-sdk-licenses: false
       - name: Gradle 준비
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.7'
-
-      - name: 디버그 APK 빌드
-        run: gradle -p android assembleDebug --no-daemon --stacktrace
-
-      - name: 릴리스 APK 빌드
-        run: gradle -p android assembleRelease --no-daemon --stacktrace
-
-      - name: APK 내용 검증
+      - name: 디버그 및 릴리스 APK 빌드
+        run: gradle -p android assembleDebug assembleRelease --no-daemon --stacktrace
+      - name: APK 내용 및 서명 검증
+        env:
+          APP_VERSION: ${{ steps.version.outputs.version }}
         run: |
-          set -e
-          DBG=android/app/build/outputs/apk/debug/app-debug.apk
-          REL=android/app/build/outputs/apk/release/app-release.apk
-          for f in "$DBG" "$REL"; do
-            echo "== $f ($(du -h "$f" | cut -f1)) =="
-            unzip -l "$f" | grep -E 'assets/www/(index.html|js/|css/)' || {
-              echo "게임 파일이 APK 에 들어 있지 않다"; exit 1; }
+          set -euo pipefail
+          python3 tools/check-apk.py
+          SDK_TOOLS=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+          for APK in android/app/build/outputs/apk/{debug/app-debug,release/app-release}.apk; do
+            "$SDK_TOOLS/apksigner" verify --verbose "$APK"
+            "$SDK_TOOLS/aapt" dump badging "$APK" > /tmp/apk-badging.txt
+            sed -n '1p' /tmp/apk-badging.txt > /tmp/apk-version.txt
+            cat /tmp/apk-version.txt
+            grep -F "versionName='$APP_VERSION'" /tmp/apk-version.txt
+            grep -F "versionCode='14000'" /tmp/apk-version.txt
           done
-          echo "### APK 빌드 완료" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| 파일 | 크기 |" >> $GITHUB_STEP_SUMMARY
-          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
-          echo "| app-debug.apk | $(du -h "$DBG" | cut -f1) |" >> $GITHUB_STEP_SUMMARY
-          echo "| app-release.apk | $(du -h "$REL" | cut -f1) |" >> $GITHUB_STEP_SUMMARY
-
-      - name: 버전 이름 붙이기
-        id: rename
+      - name: 설치 파일 이름 및 체크섬
+        env:
+          APP_VERSION: ${{ steps.version.outputs.version }}
         run: |
-          VER="${{ github.event.inputs.release }}"
-          if [ -z "$VER" ]; then
-            VER="${GITHUB_REF_NAME}"
-            case "$VER" in v*) VER="${VER#v}";; *) VER="$(date +%Y%m%d)-${GITHUB_SHA::7}";; esac
-          fi
           mkdir -p dist
-          cp android/app/build/outputs/apk/release/app-release.apk "dist/stick-kingdom-war-${VER}.apk"
-          cp android/app/build/outputs/apk/debug/app-debug.apk "dist/stick-kingdom-war-${VER}-debug.apk"
-          echo "version=$VER" >> $GITHUB_OUTPUT
-          ls -lh dist
-
+          cp android/app/build/outputs/apk/release/app-release.apk "dist/stick-kingdom-war-$APP_VERSION.apk"
+          cp android/app/build/outputs/apk/debug/app-debug.apk "dist/stick-kingdom-war-$APP_VERSION-debug.apk"
+          cd dist
+          sha256sum *.apk > SHA256SUMS.txt
       - name: APK 업로드
         uses: actions/upload-artifact@v4
         with:
           name: stick-kingdom-war-apk
           if-no-files-found: error
-          path: dist/*.apk
-
-      - name: 릴리스에 APK 첨부
-        if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.release != ''
+          path: dist/*
+      - name: 기본 브랜치 버전 릴리스
+        if: startsWith(github.ref, 'refs/tags/v') || inputs.release != '' && inputs.release != null || github.event_name == 'push' && github.ref_name == github.event.repository.default_branch
         env:
           GH_TOKEN: ${{ github.token }}
+          APP_VERSION: ${{ steps.version.outputs.version }}
         run: |
-          if [ -n "${{ github.event.inputs.release }}" ]; then
-            TAG="v${{ github.event.inputs.release }}"
-            TARGET="--target ${GITHUB_REF_NAME}"
-          else
-            TAG="${GITHUB_REF_NAME}"
-            TARGET=""
+          set -euo pipefail
+          TAG="v$APP_VERSION"
+          # Published binaries are immutable; bump the version for a new release.
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "$TAG 릴리스가 이미 있다. 기존 APK를 덮어쓰지 않는다."
+            exit 0
           fi
-          echo "릴리스 태그: $TAG"
-          gh release create "$TAG" dist/*.apk $TARGET \
-            --title "막대 왕국 전쟁 ${{ steps.rename.outputs.version }}" \
-            --notes-file .github/release-notes.md \
-            || gh release upload "$TAG" dist/*.apk --clobber
-          gh release view "$TAG" --json tagName,assets \
-            --jq '"릴리스 " + .tagName + " 자산: " + ([.assets[].name] | join(", "))'
+          gh release create "$TAG" dist/* --target "$GITHUB_SHA" \
+            --title "막대 왕국 전쟁 $APP_VERSION" \
+            --notes-file .github/release-notes.md

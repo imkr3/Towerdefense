@@ -75,9 +75,9 @@ const UNITS = [
     id: 'merchant', name: '종군 상인', short: '상인', role: '보급', shape: 'merchant',
     body: '#2b3038', accent: '#c9a227', tunic: '#8a5a2a',
     hp: 620, atk: 0, range: 0, speed: 0, interval: 3.0,
-    cost: 150, cooldown: 20, kb: 1, unlockStage: 8,
+    cost: 150, cooldown: 20, kb: 1, unlockStage: 8, maxActive: 3,
     ab: { gold: 12, hold: true, noAttack: true, interval: 3 },
-    abText: '초당 군자금 +12 · 제자리 고정',
+    abText: '초당 군자금 +12 · 최대 3명 · 공격 강화 미적용',
     desc: '성문 앞에 자리를 잡고 물자를 판다. 살아 있는 동안 군자금이 더 빨리 찬다.'
   }),
   mk({
@@ -157,7 +157,7 @@ const UNITS = [
     hp: 520, atk: 0, range: 0, speed: 34, interval: 3.0,
     cost: 195, cooldown: 14, kb: 2, unlockStage: 6,
     ab: { haste: { mul: 0.7, dur: 4 }, radius: 240, interval: 3.5, noAttack: true },
-    abText: '주변 아군 공격 속도 30% 상승',
+    abText: '주변 아군 공격 간격 30% 감소',
     desc: '진군 나팔을 분다. 싸우지 않지만 주변 아군이 훨씬 빨리 때린다.'
   }),
   mk({
@@ -613,23 +613,23 @@ const STAGES = [
   { name: '화약 골짜기', baseHp: 7200, money: 250, rate: 34, reward: 170, waves: [
       W(2,'goblin',5,1.3), W(12,'powder',2,3.0), W(26,'hellhound',3,1.6), W(42,'powder',3,2.4),
       W(58,'wolf',5,1.1), W(72,'ballista',3,1.8) ] },
-  { name: '★ 트롤 대장의 요새', baseHp: 8600, money: 280, rate: 36, reward: 300, boss: true, waves: [
+  { name: '★ 트롤 대장의 요새', baseHp: 8600, money: 300, rate: 38, reward: 300, boss: true, waves: [
       W(2,'goblin',5,1.3), W(14,'ogre',2,2.6), W(28,'troll',1), W(34,'orcspear',5,1.3),
       W(50,'wolf',5,1.2), W(66,'shaman',2,3.5) ] },
-  { name: '흑기사의 숲', baseHp: 9800, money: 270, rate: 36, reward: 210, waves: [
+  { name: '흑기사의 숲', baseHp: 9800, money: 300, rate: 39, reward: 210, waves: [
       W(2,'orcspear',5,1.2), W(14,'dark',1), W(28,'orcberserk',2,2.6), W(44,'plaguer',2,3.0),
       W(60,'dark',2,3.5), W(76,'ballista',4,1.6), W(92,'bat',7,0.8) ] },
-  { name: '망령의 폐허', baseHp: 10800, money: 280, rate: 37, reward: 230, waves: [
+  { name: '망령의 폐허', baseHp: 10800, money: 310, rate: 41, reward: 230, waves: [
       W(2,'wolf',5,1.0), W(14,'wraith',2,2.6), W(24,'totem',1), W(34,'orccatapult',1),
       W(48,'wraith',3,2.4), W(64,'plaguer',3,2.2), W(80,'orcberserk',3,2.2),
       W(96,'hellhound',5,1.2) ] },
-  { name: '리치의 재림', baseHp: 11000, money: 300, rate: 38, reward: 260, boss: true, waves: [
+  { name: '리치의 재림', baseHp: 11000, money: 330, rate: 42, reward: 260, boss: true, waves: [
       W(2,'goblin',6,1.1), W(14,'lich',1), W(20,'orcspear',5,1.2), W(36,'lich',1),
       W(50,'warchief',1), W(64,'powder',4,2.0), W(82,'dark',3,3.0) ] },
-  { name: '방패벽 관문', baseHp: 12000, money: 300, rate: 39, reward: 285, waves: [
+  { name: '방패벽 관문', baseHp: 12000, money: 340, rate: 44, reward: 285, waves: [
       W(2,'orcshield',2,3.0), W(16,'ballista',4,1.5), W(30,'golem',1), W(44,'siegeram',1),
       W(60,'orcshield',3,2.6), W(76,'wolf',7,0.9), W(92,'shaman',3,3.0), W(110,'dark',3,2.6) ] },
-  { name: '★ 두 트롤의 문', baseHp: 13000, money: 320, rate: 40, reward: 420, boss: true, waves: [
+  { name: '★ 두 트롤의 문', baseHp: 13000, money: 360, rate: 46, reward: 420, boss: true, waves: [
       W(2,'goblin',6,1.1), W(14,'troll',1), W(24,'orcspear',6,1.1), W(40,'troll',1),
       W(52,'warchief',1), W(66,'dark',3,2.6), W(84,'orccatapult',2,4.0), W(102,'powder',5,1.8) ] },
   { name: '역병의 늪', baseHp: 20000, money: 370, rate: 48, reward: 330, waves: [
@@ -681,11 +681,11 @@ function makeEndlessStage(waveCount) {
     const pick = pool[(w * 7 + 3) % pool.length].id;
     const n = 3 + Math.min(9, Math.floor(w / 2));
     const gap = Math.max(0.55, 1.6 - w * 0.03);
-    waves.push(W(t, pick, n, gap));
+    waves.push(Object.assign(W(t, pick, n, gap), { wave: w }));
     // 5 파도마다 보스
-    if (w > 0 && w % 5 === 0) {
-      const bi = Math.min(ENDLESS_BOSSES.length - 1, Math.floor(w / 5) - 1);
-      waves.push(W(t + 4, ENDLESS_BOSSES[bi], 1));
+    if ((w + 1) % 5 === 0) {
+      const bi = Math.min(ENDLESS_BOSSES.length - 1, Math.floor((w + 1) / 5) - 1);
+      waves.push(Object.assign(W(t + 4, ENDLESS_BOSSES[bi], 1), { wave: w }));
     }
     t += Math.max(7, 16 - w * 0.25);
   }
@@ -826,4 +826,22 @@ function unitTrainCost(unit, level) {
 function upgradeCost(key, level) {
   const u = UPGRADES[key];
   return Math.round(u.base * Math.pow(u.step, level));
+}
+
+/* Tactical descriptions shared by the campaign and enemy codex. */
+function enemyTactic(e) {
+  if (e.boss) return '보스 · 왕명을 아껴 폭격 후 회복';
+  if (e.ab && e.ab.armor) return '중장갑 · 중독과 화상으로 지속 피해';
+  if (e.ab && e.ab.heal) return '치유 지원 · 범위 공격으로 후열 압박';
+  if (e.ab && e.ab.deathBomb) return '사망 폭발 · 저렴한 전열로 피해 분산';
+  if (e.speed >= 85) return '고속 돌격 · 방패병과 둔화로 저지';
+  if (e.ranged) return '원거리 · 방어 병종 뒤에 장거리 배치';
+  if (e.area) return '광역 공격 · 소수 정예와 치유 조합';
+  return '전열 병력 · 방패와 궁수의 합동 공격';
+}
+function unitRoleColor(u) {
+  if (u.ab && u.ab.noAttack) return '#7bcda6';
+  if (u.role === '방어' || u.role === '불굴') return '#8abcf2';
+  if (u.ranged) return '#c6adfa';
+  return '#efbd76';
 }

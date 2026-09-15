@@ -95,7 +95,10 @@ public class MainActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
-        if (web != null) web.onPause();
+        if (web != null) {
+            web.evaluateJavascript("window.__androidPause && window.__androidPause()", null);
+            web.onPause();
+        }
     }
 
     @Override

@@ -7,7 +7,7 @@ plugins {
 def webSrc = rootProject.file('..')
 def webDst = layout.projectDirectory.dir('src/main/assets/www')
 
-tasks.register('syncWebAssets', Copy) {
+tasks.register('syncWebAssets', Sync) {
     description = '웹 게임 소스를 안드로이드 assets 로 복사'
     from(webSrc) {
         include 'index.html', 'manifest.json', 'icon.svg'
@@ -35,8 +35,8 @@ android {
         applicationId "com.stickkingdom.war"
         minSdk 26
         targetSdk 34
-        versionCode 1
-        versionName "1.0"
+        versionCode 14000
+        versionName "1.4.0"
     }
 
     buildTypes {

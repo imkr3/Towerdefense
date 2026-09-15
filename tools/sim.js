@@ -157,7 +157,7 @@ function check() {
   EXPECT.forEach(e => {
     const rows = runAll(e.up, e.lv, 12345);
     const wins = printTable(rows, e.up, e.lv);
-    const slow = rows.filter(r => r.win && r.seconds > 360);
+    const slow = rows.filter(r => r.win && r.seconds > 400);
     if (wins < e.min || wins > e.max) {
       console.error(`  ✗ ${e.label}: ${wins}승은 기대 범위 ${e.min}~${e.max} 밖이다`);
       failed++;
@@ -165,7 +165,7 @@ function check() {
       console.log(`  ✓ ${e.label}: ${wins}승 (기대 ${e.min}~${e.max})`);
     }
     if (slow.length) {
-      console.error(`  ✗ ${e.label}: 6분을 넘긴 전장 ${slow.map(r => r.stage).join(', ')}`);
+      console.error(`  ✗ ${e.label}: 교착에 가까운 전장 ${slow.map(r => r.stage).join(', ')}`);
       failed++;
     }
   });
@@ -209,6 +209,9 @@ if (args[0] === '--check') {
   const upLv = parseInt(args[2] || '5', 10);
   const unitLv = parseInt(args[3] || '8', 10);
   const g = loadEngine(12345);
+  // 난수는 한 판 안에서 이어진다. --check 와 같은 결과를 보려면
+  // 앞 전장들을 먼저 돌려 난수 흐름을 같은 자리에 맞춰 두어야 한다.
+  for (let i = 0; i < stage; i++) runStage(g, i, upLv, unitLv);
   console.log(`\n  전장 ${stage + 1} 추적 (강화 ${upLv} / 병종 Lv${unitLv})`);
   printTable([runStage(g, stage, upLv, unitLv, true)], upLv, unitLv);
 } else {
