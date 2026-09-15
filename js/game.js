@@ -107,15 +107,16 @@ class Fighter {
   }
 
   takeDamage(dmg) {
-    if (this.dead) return;
+    if (this.dead) return 0;
     if (this.ab.armor) dmg *= (1 - Math.min(0.75, this.ab.armor));   // 두꺼운 갑주
     if (this.barrier > 0) {
       const absorbed = Math.min(this.barrier, dmg);
       this.barrier -= absorbed;
       dmg -= absorbed;
       this.hitFlash = 0.15;
-      if (dmg <= 0) return;
+      if (dmg <= 0) return 0;
     }
+    const dealt = Math.min(this.hp, Math.max(0, dmg));
     this.hp -= dmg;
     this.hitFlash = 0.15;
     if (this.hp <= 0) {
@@ -124,19 +125,20 @@ class Fighter {
         this.hp = Math.round(this.maxHp * this.ab.revive);
         this.kbTimer = 0.5;
         this.reviveFx = true;
-        return;
+        return dealt;
       }
       this.hp = 0;
       this.dead = true;
-      return;
+      return dealt;
     }
-    if (this.ab.kbImmune) return;                   // 넉백 면역
+    if (this.ab.kbImmune) return dealt;                   // 넉백 면역
     const kbTotal = this.s.kb || 1;
     const stepsLeft = Math.ceil((this.hp / this.maxHp) * kbTotal);
     if (stepsLeft < this.kbLeft) {
       this.kbLeft = stepsLeft;
       this.kbTimer = 0.42;
     }
+    return dealt;
   }
 }
 
@@ -154,9 +156,11 @@ class Castle {
     this.ab = {};
   }
   takeDamage(d) {
+    const dealt = Math.min(this.hp, Math.max(0, d));
     this.hp -= d;
     this.hitFlash = 0.15;
     if (this.hp <= 0) { this.hp = 0; this.dead = true; }
+    return dealt;
   }
   heal() {}
   giveBarrier() {}
@@ -829,9 +833,7 @@ class Battle {
 
   /* 단일 대상 타격 + 부가 효과 */
   hitOne(dmg, target, src, crit) {
-    const hpBefore = target.hp;
-    target.takeDamage(dmg);
-    const dealt = Math.max(0, Math.min(hpBefore, hpBefore - target.hp));
+    const dealt = target.takeDamage(dmg) || 0;
     if (target.isCastle) {
       if (target.side === 'ally') this.shake = Math.max(this.shake, 8);
     } else if (this.dmgFxCount < 14) {

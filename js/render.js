@@ -2240,6 +2240,10 @@ function legs(S, hipY) {
     ctx.lineTo(kx, ky);
     ctx.lineTo(fx, fy);
     ctx.stroke();
+    // Boots make the planted foot readable at small scales.
+    ctx.lineWidth = S.lw * 1.4;
+    ctx.beginPath(); ctx.moveTo(fx - s, fy); ctx.lineTo(fx + 3 * s, fy); ctx.stroke();
+    ctx.lineWidth = S.lw;
   }
 }
 
@@ -2257,10 +2261,23 @@ function armSwing(S) {
 
 function torso(S, lw) {
   const { ctx, s } = S;
-  ctx.strokeStyle = S.tun; ctx.lineWidth = lw || (S.lw * 1.6);
+  const armored = ['shield','knight','paladin','colossus','dark','orcshield','warchief','warlord'].includes(S.raw.shape);
+  const width = armored ? 8 * s : 5.5 * s;
+  ctx.fillStyle = S.tun;
   ctx.beginPath();
-  ctx.moveTo(0, -19 * s); ctx.lineTo(0, -41 * s);
-  ctx.stroke();
+  ctx.moveTo(-width * .8, -41 * s); ctx.lineTo(width * .8, -41 * s);
+  ctx.lineTo(width, -19 * s); ctx.lineTo(-width, -19 * s); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = S.flash ? '#fff' : '#15273355'; ctx.lineWidth = s; ctx.stroke();
+  ctx.fillStyle = S.flash ? '#fff' : '#ffffff26';
+  ctx.fillRect(-width * .5, -39 * s, 2 * s, 15 * s);
+  ctx.fillStyle = S.flash ? '#fff' : '#353d43';
+  ctx.fillRect(-width, -25 * s, width * 2, 3 * s);
+  ctx.fillStyle = S.acc; ctx.fillRect(-1.5 * s, -25.5 * s, 3 * s, 4 * s);
+  if (armored) {
+    ctx.fillStyle = S.acc;
+    ctx.fillRect(-width - 2 * s, -41 * s, 5 * s, 5 * s);
+    ctx.fillRect(width - 3 * s, -41 * s, 5 * s, 5 * s);
+  }
 }
 
 function arm(S, hx, hy) {
@@ -2301,6 +2318,8 @@ function robe(S, w, top, color) {
   ctx.moveTo(0, top);
   ctx.lineTo(w, 0); ctx.lineTo(-w, 0);
   ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = S.flash ? '#fff' : '#ffffff35'; ctx.lineWidth = 1.5 * s;
+  ctx.beginPath();ctx.moveTo(0, top + 5 * s);ctx.lineTo(w * .35, -4 * s);ctx.stroke();
 }
 
 function cape(S, dir, color, k) {
@@ -2309,7 +2328,7 @@ function cape(S, dir, color, k) {
   ctx.fillStyle = S.flash ? '#fff' : color;
   ctx.beginPath();
   ctx.moveTo(dir * 3 * s, -50 * s);
-  ctx.lineTo(dir * 22 * s * m, -6 * s);
+  ctx.lineTo(dir * (22 + Math.sin(S.phase * .8) * (S.moving ? 4 : 1.5)) * s * m, -6 * s);
   ctx.lineTo(dir * 4 * s, -14 * s);
   ctx.closePath(); ctx.fill();
 }
@@ -2325,6 +2344,9 @@ function shieldShape(S, x, y, w, h, color) {
   ctx.strokeStyle = S.flash ? '#fff' : 'rgba(0,0,0,.35)';
   ctx.lineWidth = 1.8 * s;
   ctx.stroke();
+  ctx.strokeStyle = S.flash ? '#fff' : '#e8d4a0';ctx.lineWidth = 2 * s;
+  ctx.beginPath();ctx.moveTo(x + w * .5, y + h * .2);ctx.lineTo(x + w * .5, y + h * .74);
+  ctx.moveTo(x + w * .23, y + h * .4);ctx.lineTo(x + w * .77, y + h * .4);ctx.stroke();
 }
 
 function bow(S, x, y, r, color) {

@@ -64,4 +64,8 @@ test('3x simulation advances in bounded steps', () => {
   const b=battle();b.speed=3;const steps=[];b.tick=dt=>steps.push(dt);b.update(.1);
   assert.equal(steps.length,9);assert.ok(steps.every(dt=>dt<=1/30));
 });
+test('Revival does not erase damage already dealt for lifesteal', () => {
+  const b=battle(),a=b.makeAlly(U.duelist,500),e=b.makeAlly(U.paladin,550);
+  a.hp=100;e.hp=10;b.hitOne(100,e,a,false);assert.equal(e.usedRevive,true);assert.equal(a.hp,103.5);
+});
 console.log(count + ' regression checks passed');

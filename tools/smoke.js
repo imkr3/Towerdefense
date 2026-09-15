@@ -73,6 +73,7 @@ async function runSize(browser, size) {
   // 훈련소
   await page.click('#btn-units');
   await page.waitForTimeout(350);
+  await shot(page, 'training-' + size.w);
   const cards = await page.$$eval('#units-list .unit-card', e => e.length);
   if (cards < 20) failures.push(size.name + ': 훈련소 목록이 부족하다 (' + cards + ')');
   await page.click('[data-filter="enemy"]');
@@ -119,18 +120,27 @@ async function runSize(browser, size) {
     return a.bottom>b.top || b.bottom>c.top || document.documentElement.scrollWidth>innerWidth;
   });
   if (overlap) failures.push(size.name + ': 전투 HUD 겹침 또는 가로 넘침');
+  await page.waitForTimeout(100);
   let usedCommand = false;
-  for (let i = 0; i < 90; i++) {
-    for (const c of await page.$$('#cards .card')) {
-      try { await c.click({ timeout: 60 }); } catch (e) { /* 재정비 중 */ }
-    }
-    if (!usedCommand && await page.evaluate(() => battle.canCommand())) {
-      await page.click('#btn-command');
-      usedCommand = true;
-    }
-    await page.waitForTimeout(90);
-    if (i === 30) await shot(page, 'battle-' + size.w);
-    if (await page.$eval('#result', e => e.classList.contains('show'))) break;
+  if (await page.evaluate(() => battle.canCommand())) {
+    await page.click('#btn-command');
+    usedCommand = true;
+  }
+  // Inputs above use the real UI. Advance combat deterministically in chunks so
+  // browser scheduling and unavailable-card click timeouts cannot stall CI.
+  await page.evaluate(() => { paused = true; battle.speed = 1; });
+  for (let i = 0; i < 120; i++) {
+    const done = await page.evaluate(() => {
+      for (let t=0; t<30 && battle.state==='play'; t++) {
+        for (const u of battle.roster) if (battle.canDeploy(u.id)) battle.deploy(u.id);
+        battle.update(1/30);
+      }
+      renderer.render(battle, 1/60);
+      updateHud();
+      return battle.state !== 'play';
+    });
+    if (i === 65) await shot(page, 'battle-' + size.w);
+    if (done) break;
   }
   const st = await page.evaluate(() => ({
     state: battle.state, allies: battle.allies.length, kills: battle.kills
