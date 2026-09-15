@@ -52,6 +52,7 @@ class Fighter {
     this.hitFlash = 0;
     this.swing = 0;
     this.dead = false;
+    this.moving = false;
     this.scale = stats.scale || 1;
     this.radius = 26 * this.scale;
 
@@ -106,15 +107,16 @@ class Fighter {
   }
 
   takeDamage(dmg) {
-    if (this.dead) return;
+    if (this.dead) return 0;
     if (this.ab.armor) dmg *= (1 - Math.min(0.75, this.ab.armor));   // 두꺼운 갑주
     if (this.barrier > 0) {
       const absorbed = Math.min(this.barrier, dmg);
       this.barrier -= absorbed;
       dmg -= absorbed;
       this.hitFlash = 0.15;
-      if (dmg <= 0) return;
+      if (dmg <= 0) return 0;
     }
+    const dealt = Math.min(this.hp, Math.max(0, dmg));
     this.hp -= dmg;
     this.hitFlash = 0.15;
     if (this.hp <= 0) {
@@ -123,19 +125,20 @@ class Fighter {
         this.hp = Math.round(this.maxHp * this.ab.revive);
         this.kbTimer = 0.5;
         this.reviveFx = true;
-        return;
+        return dealt;
       }
       this.hp = 0;
       this.dead = true;
-      return;
+      return dealt;
     }
-    if (this.ab.kbImmune) return;                   // 넉백 면역
+    if (this.ab.kbImmune) return dealt;                   // 넉백 면역
     const kbTotal = this.s.kb || 1;
     const stepsLeft = Math.ceil((this.hp / this.maxHp) * kbTotal);
     if (stepsLeft < this.kbLeft) {
       this.kbLeft = stepsLeft;
       this.kbTimer = 0.42;
     }
+    return dealt;
   }
 }
 
@@ -153,9 +156,11 @@ class Castle {
     this.ab = {};
   }
   takeDamage(d) {
+    const dealt = Math.min(this.hp, Math.max(0, d));
     this.hp -= d;
     this.hitFlash = 0.15;
     if (this.hp <= 0) { this.hp = 0; this.dead = true; }
+    return dealt;
   }
   heal() {}
   giveBarrier() {}
@@ -216,8 +221,8 @@ class Battle {
     this.speed = 1;
 
     this.queue = [];
-    this.stage.waves.forEach(w => {
-      for (let i = 0; i < w.n; i++) this.queue.push({ t: w.t + i * w.gap, e: w.e });
+    this.stage.waves.forEach((w, index) => {
+      for (let i = 0; i < w.n; i++) this.queue.push({ t: w.t + i * w.gap, e: w.e, wave: w.wave !== undefined ? w.wave : index });
     });
     this.queue.sort((a, b) => a.t - b.t);
     this.qi = 0;
@@ -237,14 +242,16 @@ class Battle {
   /* 실제 출진 편성 (최대 LOADOUT_MAX) */
   battleUnits() {
     const unlocked = this.unlockedUnits();
-    const picked = (this.save.loadout || []).filter(id => unlocked.some(u => u.id === id));
+    const picked = [...new Set(this.save.loadout || [])].filter(id => unlocked.some(u => u.id === id));
     const list = picked.length ? picked.map(id => UNIT_BY_ID[id]) : unlocked.slice(0, LOADOUT_MAX);
     return list.slice(0, LOADOUT_MAX);
   }
 
   canDeploy(id) {
     const u = UNIT_BY_ID[id];
-    return this.state === 'play' && this.cooldowns[id] <= 0 && this.money >= u.cost;
+    return !!u && this.state === 'play' && this.roster.some(r => r.id === id) &&
+      this.cooldowns[id] <= 0 && this.money >= u.cost &&
+      (!u.maxActive || this.allies.filter(a => !a.dead && a.s.id === id).length < u.maxActive);
   }
 
   makeAlly(u, x) {
@@ -288,7 +295,16 @@ class Battle {
 
   update(dtRaw) {
     if (this.state !== 'play') { this.updateFx(dtRaw); return; }
-    const dt = dtRaw * this.speed;
+    let remaining = Math.max(0, Math.min(0.1, dtRaw)) * this.speed;
+    while (remaining > 1e-8 && this.state === 'play') {
+      const step = Math.min(1 / 30, remaining);
+      this.tick(step);
+      remaining -= step;
+    }
+    this.updateFx(dtRaw);
+  }
+
+  tick(dt) {
     this.time += dt;
 
     // 전투가 길어지면 자금이 더 빨리 찬다. 교착을 풀어 주는 장치.
@@ -305,20 +321,22 @@ class Battle {
     }
 
     while (this.qi < this.queue.length && this.queue[this.qi].t <= this.time) {
-      this.spawnEnemy(this.queue[this.qi].e);
+      const entry = this.queue[this.qi];
+      this.spawnEnemy(entry.e).wave = entry.wave;
       this.qi++;
     }
 
     this.step(this.allies, this.enemies, this.enemyCastle, dt, true);
     this.step(this.enemies, this.allies, this.allyCastle, dt, false);
 
-    this.reap(this.enemies, this.allies, this.enemyCastle, true);
-    this.reap(this.allies, this.enemies, this.allyCastle, false);
+    this.updateShots(dt);
+    // Resolve both sides until death explosions stop chaining. Rewards are paid once.
+    while (this.allies.concat(this.enemies).some(f => f.dead && !f.reaped)) {
+      this.reap(this.enemies, this.allies, this.allyCastle, true);
+      this.reap(this.allies, this.enemies, this.enemyCastle, false);
+    }
     this.enemies = this.enemies.filter(e => !e.dead);
     this.allies = this.allies.filter(a => !a.dead);
-
-    this.updateShots(dt);
-    this.updateFx(dtRaw);
 
     if (!this.endless && this.enemyCastle.dead) { this.shake = 16; this.finish('win'); }
     else if (this.allyCastle.dead) { this.shake = 16; this.finish(this.endless ? 'over' : 'lose'); }
@@ -342,7 +360,8 @@ class Battle {
   /* 사망 처리 (죽을 때 터지는 능력 포함) */
   reap(list, foes, foeCastle, isEnemySide) {
     for (const f of list) {
-      if (!f.dead) continue;
+      if (!f.dead || f.reaped) continue;
+      f.reaped = true;
       if (f.ab.deathBomb) {
         const b = f.ab.deathBomb;
         this.areaHit(b.dmg * f.abMul, f.x, b.radius, foes, foeCastle, null, false);
@@ -367,6 +386,7 @@ class Battle {
   }
 
   finish(result) {
+    if (this.state !== 'play') return;
     this.state = result;
     this.resultTime = 0;
     this.stars = 0;
@@ -421,6 +441,7 @@ class Battle {
   step(list, foes, foeCastle, dt, isAlly) {
     for (const f of list) {
       if (f.dead) continue;
+      f.moving = false;
       if (f.hitFlash > 0) f.hitFlash -= dt;
       if (f.swing > 0) f.swing -= dt;
       if (f.slowT > 0) f.slowT -= dt;
@@ -430,10 +451,10 @@ class Battle {
 
       // 중독 / 화상 피해
       let dot = 0;
-      if (f.poisonT > 0) { f.poisonT -= dt; dot += f.poisonDps; }
-      if (f.burnT > 0) { f.burnT -= dt; dot += f.burnDps; }
+      if (f.poisonT > 0) { dot += f.poisonDps * Math.min(dt, f.poisonT); f.poisonT = Math.max(0, f.poisonT - dt); }
+      if (f.burnT > 0) { dot += f.burnDps * Math.min(dt, f.burnT); f.burnT = Math.max(0, f.burnT - dt); }
       if (dot > 0) {
-        f.hp -= dot * dt;
+        f.hp -= dot;
         if (f.hp <= 0) {
           if (f.ab.revive && !f.usedRevive) {
             f.usedRevive = true; f.hp = Math.round(f.maxHp * f.ab.revive); f.reviveFx = true;
@@ -467,6 +488,7 @@ class Battle {
           this.attack(f, target, foes, foeCastle);
         }
       } else if (!f.ab.hold && this.canAdvance(f, foes)) {
+        f.moving = f.speedNow > 0;
         f.x += f.dir * f.speedNow * dt;
         f.x = Math.max(60, Math.min(WORLD - 60, f.x));
       }
@@ -489,7 +511,7 @@ class Battle {
     const ab = f.ab;
     if (!ab.heal && !ab.gold && !ab.summon && !ab.barrier && !ab.haste) return;
     if (ab.gold && isAlly) {
-      this.money = Math.min(this.walletMax, this.money + ab.gold * f.abMul * dt);
+      this.money = Math.min(this.walletMax, this.money + ab.gold * dt);
     }
     f.abCd -= dt;
     if (f.abCd > 0) return;
@@ -504,7 +526,7 @@ class Battle {
         m.heal(ab.heal * f.abMul);
         healed = true;
       }
-      if (healed || true) {
+      if (healed) {
         f.auraPulse = 0.5;
         this.fx.push({ type: 'aura', x: f.x, row: f.row, r: ab.radius,
                        t: 0.5, life: 0.5, color: '#7fe08e' });
@@ -542,7 +564,7 @@ class Battle {
             this.allies.push(m);
           }
         } else {
-          this.spawnEnemy(ab.summon.id, sx).summoned = true;
+          const m = this.spawnEnemy(ab.summon.id, sx); m.summoned = true; m.wave = f.wave;
         }
       }
       this.fx.push({ type: 'spawn', x: f.x - f.dir * 24, row: f.row, t: 0.4, life: 0.4 });
@@ -622,7 +644,7 @@ class Battle {
             const u = UNIT_BY_ID[a.id];
             if (u) { const m = this.makeAlly(u, sx); m.summoned = true; this.allies.push(m); }
           } else {
-            this.spawnEnemy(a.id, sx).summoned = true;
+            const m = this.spawnEnemy(a.id, sx); m.summoned = true; m.wave = f.wave;
           }
           this.fx.push({ type: 'spawn', x: sx, row: f.row, t: 0.4, life: 0.4 });
         }
@@ -704,6 +726,7 @@ class Battle {
         if (e.dead || Math.abs(e.x - s.x) > s.r + e.radius) continue;
         e.takeDamage(s.dmg);
         if (s.burn) {
+          if (e.burnT <= 0) e.burnDps = 0;
           e.burnT = Math.max(e.burnT, s.burn.dur);
           e.burnDps = Math.max(e.burnDps, s.burn.dps);
         }
@@ -810,28 +833,30 @@ class Battle {
 
   /* 단일 대상 타격 + 부가 효과 */
   hitOne(dmg, target, src, crit) {
-    target.takeDamage(dmg);
+    const dealt = target.takeDamage(dmg) || 0;
     if (target.isCastle) {
       if (target.side === 'ally') this.shake = Math.max(this.shake, 8);
     } else if (this.dmgFxCount < 14) {
       this.dmgFxCount++;
       this.fx.push({ type: 'dmg', x: target.x + (Math.random() - 0.5) * 26,
-                     row: target.row, v: Math.round(dmg), dy: Math.random() * 10,
+                     row: target.row, v: Math.round(dealt), dy: Math.random() * 10,
                      crit: !!crit, ally: target.side === 'ally', t: 0.65, life: 0.65 });
     }
     if (!src) return;
     const ab = src.ab;
-    if (ab.lifesteal) src.heal(dmg * ab.lifesteal);
+    if (ab.lifesteal) src.heal(dealt * ab.lifesteal);
     if (target.isCastle || target.dead) return;
     if (ab.slow) {
       target.slowT = Math.max(target.slowT, ab.slow);
       this.fx.push({ type: 'chill', x: target.x, row: target.row, t: 0.4, life: 0.4 });
     }
     if (ab.poison) {
+      if (target.poisonT <= 0) target.poisonDps = 0;
       target.poisonT = Math.max(target.poisonT, ab.poison.dur);
       target.poisonDps = Math.max(target.poisonDps, ab.poison.dps * src.abMul);
     }
     if (ab.burn) {
+      if (target.burnT <= 0) target.burnDps = 0;
       target.burnT = Math.max(target.burnT, ab.burn.dur);
       target.burnDps = Math.max(target.burnDps, ab.burn.dps * src.abMul);
     }
@@ -915,15 +940,21 @@ class Battle {
   /* 무한 전장에서 지금까지 넘긴 파도 수 */
   wavesDone() {
     if (!this.endless) return 0;
-    let n = 0, lastT = -1;
-    for (let i = 0; i < this.qi; i++) {
-      if (this.queue[i].t !== lastT) { lastT = this.queue[i].t; }
+    const pending = new Set(this.queue.slice(this.qi).map(e => e.wave));
+    const alive = new Set(this.enemies.filter(e => !e.dead).map(e => e.wave));
+    let cleared = 0;
+    for (const wave of new Set(this.queue.map(e => e.wave))) {
+      if (pending.has(wave) || alive.has(wave)) break;
+      cleared++;
     }
-    // 파도 = 등장 시각 묶음. 대략 등장 완료한 그룹 수를 센다
-    const seen = {};
-    for (let i = 0; i < this.qi; i++) seen[Math.round(this.queue[i].t)] = true;
-    n = Object.keys(seen).length;
-    return n;
+    return cleared;
+  }
+
+  nextWave() {
+    const entry = this.queue[this.qi];
+    if (!entry) return null;
+    return { name: ENEMIES[entry.e].name, boss: !!ENEMIES[entry.e].boss,
+             seconds: Math.max(0, Math.ceil(entry.t - this.time)) };
   }
 
   /* 남은 적 = 아직 등장하지 않은 적 + 전장에 있는 적 */
