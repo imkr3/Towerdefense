@@ -121,22 +121,45 @@ class Renderer {
       ctx.fill();
     }
 
-    // 먼 산맥 (뾰족하게)
-    const ridge = (color, amp, step, par, base) => {
+    // Layered, irregular silhouettes; deterministic scenery stays still while panning.
+    const ridge = (color, amp, step, par, base, seed) => {
       ctx.fillStyle = color;
       ctx.beginPath();
-      ctx.moveTo(-10, this.groundY + 10);
-      const off = ((-this.cam * par) % (step * 2) + step * 2) % (step * 2);
-      for (let x = -off - step; x < w + step * 2; x += step) {
-        ctx.lineTo(x, this.groundY - base);
-        ctx.lineTo(x + step / 2, this.groundY - base - amp);
+      ctx.moveTo(-step, this.groundY + 4);
+      const start = Math.floor(this.cam * par / step) - 2;
+      for (let i = start; i < start + Math.ceil(w / step) + 5; i++) {
+        const x = i * step - this.cam * par;
+        const height = base + amp * (0.45 + 0.55 * Math.sin(i * 2.31 + seed) ** 2);
+        ctx.lineTo(x, this.groundY - height);
+        ctx.lineTo(x + step * 0.48, this.groundY - height * 0.64);
       }
-      ctx.lineTo(w + 20, this.groundY + 10);
-      ctx.closePath();
-      ctx.fill();
+      ctx.lineTo(w + step, this.groundY + 4);
+      ctx.closePath(); ctx.fill();
     };
-    ridge(pal.ridgeFar, 120, 190, 0.14, 40);
-    ridge(pal.ridge, 76, 130, 0.30, 10);
+    ridge(pal.ridgeFar, this.groundY * 0.42, 160, 0.12, 35, 4);
+    ridge(pal.ridge, this.groundY * 0.24, 110, 0.28, 16, 7);
+    // Distant watchtowers and woodland create scale without hiding the fighters.
+    ctx.fillStyle = pal.prop;
+    ctx.globalAlpha = 0.32;
+    for (let i = 0; i < 22; i++) {
+      const x = i * 130 - this.cam * 0.4;
+      if (x < -70 || x > w + 70) continue;
+      const y = this.groundY - 10;
+      const h = 22 + (i * 17 % 30);
+      if (i % 5 === 0) {
+        ctx.fillRect(x, y - h, 16, h);
+        for (let j = 0; j < 3; j++) ctx.fillRect(x + j * 6, y - h - 5, 4, 6);
+      } else {
+        ctx.fillRect(x - 2, y - h, 4, h);
+        ctx.beginPath(); ctx.moveTo(x, y - h - 20);
+        ctx.lineTo(x - 17, y - 6); ctx.lineTo(x + 17, y - 6); ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1;
+    const mist = ctx.createLinearGradient(0, this.groundY - 45, 0, this.groundY);
+    mist.addColorStop(0, 'transparent'); mist.addColorStop(1, pal.sky1);
+    ctx.globalAlpha = 0.2; ctx.fillStyle = mist;
+    ctx.fillRect(0, this.groundY - 45, w, 45); ctx.globalAlpha = 1;
 
     // 땅
     ctx.fillStyle = pal.ground;
@@ -144,6 +167,9 @@ class Renderer {
     ctx.fillStyle = pal.groundDark;
     ctx.fillRect(0, this.groundY + 2, w, 4);
 
+    // A worn road anchors the three combat rows.
+    ctx.fillStyle = 'rgba(225,211,171,.12)';
+    ctx.fillRect(0, this.groundY + 9, w, 21 * this.cs);
     // 땅 무늬
     ctx.fillStyle = pal.speck;
     const step = 64;
@@ -290,7 +316,7 @@ class Renderer {
     if (x < -140 || x > this.w + 140) return;
     const s = this.cs * f.scale;
     const y = this.rowY(f.row);
-    const moving = f.kbTimer <= 0 && f.swing <= 0 && !f.ab.hold;
+    const moving = !!f.moving && f.stunT <= 0;
     const atk = f.swing > 0 ? (f.swing / 0.22) : 0;
     // 휘두를 때 앞으로 파고들었다가 되돌아온다
     const lunge = atk > 0 ? Math.sin(atk * Math.PI) * 7 * this.cs : 0;
@@ -300,6 +326,9 @@ class Renderer {
     ctx.save();
     ctx.translate(x + f.dir * lunge, y + breathe);
     ctx.scale(f.dir, 1);
+    ctx.strokeStyle = f.side === 'ally' ? '#9cdef0' : '#efab91';
+    ctx.lineWidth = 1.2 * s;
+    ctx.beginPath(); ctx.ellipse(0, 2, 20 * s, 5 * s, 0, 0, 7); ctx.stroke();
     ctx.fillStyle = 'rgba(0,0,0,.22)';
     ctx.beginPath(); ctx.ellipse(0, 1, 17 * s, 4.5 * s, 0, 0, 7); ctx.fill();
     if (f.s.rarity === 'SSR' || f.s.rarity === 'SR') {      // 상위 등급 발밑 오라
@@ -363,6 +392,8 @@ class Renderer {
       ctx.lineWidth = 2 * s;
       ctx.beginPath(); ctx.ellipse(x, y - 30 * s, 22 * s, 34 * s, 0, 0, 7); ctx.stroke();
     }
+    if (f.burnT > 0) statusDot(ctx, x - 16 * s, y - 80 * s, s, '#ff984f');
+    if (f.hasteT > 0) statusDot(ctx, x + 16 * s, y - 80 * s, s, '#f7e0a0');
     if (f.poisonT > 0) statusDot(ctx, x - 8 * s, y - 80 * s, s, '#9de08e');
     if (f.slowT > 0) statusDot(ctx, x, y - 80 * s, s, '#8fd8ff');
     if (f.stunT > 0) statusDot(ctx, x + 8 * s, y - 80 * s, s, '#ffd166');
@@ -805,7 +836,9 @@ class Renderer {
     this.trackFrame(dt);
     this.follow(battle, dt);
     const ctx = this.ctx;
-    const sh = battle.shake || 0;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const sh = reduced ? 0 : (battle.shake || 0);
+    this.sceneTime = battle.time;
     ctx.save();
     if (sh > 0.2) {
       ctx.translate((Math.random() - 0.5) * sh, (Math.random() - 0.5) * sh * 0.6);
@@ -823,7 +856,7 @@ class Renderer {
     this.drawFx(battle);
 
     // 전설 병종의 필살기 섬광
-    if (battle.flash > 0) {
+    if (!reduced && battle.flash > 0) {
       ctx.globalAlpha = Math.min(0.45, battle.flash);
       ctx.fillStyle = battle.flashColor || '#ffffff';
       ctx.fillRect(0, 0, this.w, this.h);
@@ -840,11 +873,13 @@ class Renderer {
     const boss = battle.aliveBoss();
     if (boss) {
       const w = Math.min(300, this.w - 80), h = 10;
-      const x0 = (this.w - w) / 2, y0 = 26;
+      const x0 = (this.w - w) / 2, y0 = 106 + (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--st')) || 0);
       ctx.fillStyle = 'rgba(0,0,0,.55)';
       ctx.fillRect(x0 - 2, y0 - 2, w + 4, h + 4);
       ctx.fillStyle = '#8e2f3a';
       ctx.fillRect(x0, y0, w * (boss.hp / boss.maxHp), h);
+      ctx.fillStyle = '#ffedc9';
+      for (const phase of boss.s.phases || []) ctx.fillRect(x0 + w * phase.at - 1, y0, 2, h);
       ctx.strokeStyle = 'rgba(255,255,255,.6)';
       ctx.lineWidth = 1;
       ctx.strokeRect(x0 - 2.5, y0 - 2.5, w + 5, h + 5);
@@ -889,7 +924,7 @@ class Renderer {
   drawMiniMap(battle) {
     const ctx = this.ctx;
     const w = Math.min(280, this.w - 40), h = 8;
-    const x0 = (this.w - w) / 2, y0 = 8;
+    const x0 = (this.w - w) / 2, y0 = 88;
     ctx.fillStyle = 'rgba(0,0,0,.38)';
     rectPath(ctx, x0, y0, w, h); ctx.fill();
     const put = (wx, color, r) => {

@@ -9,8 +9,9 @@
     "balance": "node tools/sim.js --check",
     "sim": "node tools/sim.js",
     "smoke": "node tools/smoke.js",
-    "test": "npm run lint && npm run assets && npm run balance",
-    "serve": "python3 -m http.server 8000"
+    "test": "npm run lint && npm run assets && npm run regression && npm run balance",
+    "serve": "python3 -m http.server 8000",
+    "regression": "node tools/regression.js"
   },
   "devDependencies": {
     "playwright": "^1.47.0"

@@ -20,6 +20,7 @@
   <canvas id="title-bg"></canvas>
   <div class="title-inner">
     <div class="title-art">
+      <p class="title-eyebrow">THE KINGDOM HOLDS</p>
       <div class="crest">⚔</div>
       <h1>막대 왕국 전쟁</h1>
       <p class="sub">왕국군 <b>vs</b> 오크 군단</p>
@@ -79,6 +80,7 @@
     <div class="coin-chip">💰 <span id="train-coins">0</span></div>
   </header>
   <div class="cap-line"><span id="train-cap"></span></div>
+  <nav id="training-filters" class="training-filters" aria-label="병종 목록 필터"><button class="on" data-filter="all" aria-pressed="true">전체</button><button data-filter="team" aria-pressed="false">내 편성</button><button data-filter="ally" aria-pressed="false">왕국군</button><button data-filter="enemy" aria-pressed="false">적 도감</button></nav>
   <div class="scroll grid" id="units-list"></div>
 </section>
 
@@ -142,18 +144,23 @@
 
   <div class="hud-top">
     <div class="hud-left">
-      <button class="icon-btn small" id="btn-quit">✕</button>
+      <button class="icon-btn small" id="btn-quit" aria-label="전투 나가기">✕</button>
       <div class="stage-tag" id="battle-stage">1. 국경 초소</div>
     </div>
     <div class="hud-right">
       <div class="kill-chip">처치 <span id="kill-count">0</span></div>
       <div class="kill-chip foe-chip">남은 적 <span id="foe-left">0</span></div>
       <button class="icon-btn small" id="btn-auto">자동 꺼짐</button>
-      <button class="icon-btn small" id="btn-pause">⏸</button>
+      <button class="icon-btn small" id="btn-pause" aria-label="일시정지">⏸</button>
       <button class="icon-btn small" id="btn-speed">▶▶ 1x</button>
     </div>
   </div>
 
+  <div class="battle-intel">
+    <div id="castle-status"><span>왕국 <b id="ally-hp-txt">100%</b></span><div class="castle-track"><i id="ally-hp"></i></div><div class="castle-track enemy"><i id="enemy-hp"></i></div><span>적 요새 <b id="enemy-hp-txt">100%</b></span></div>
+    <div class="wave-line"><span id="wave-preview"></span><time id="battle-clock">0:00</time></div>
+  </div>
+  <div id="pause-label" hidden>일시정지 <small>▶ 또는 Space로 재개</small></div>
   <div class="hud-bottom">
     <div class="wallet">
       <div class="wallet-bar"><div class="wallet-fill" id="wallet-fill"></div></div>
@@ -214,11 +221,12 @@
   <div class="modal-card">
     <h3>교전 수칙</h3>
     <ul>
-      <li>군자금은 시간이 지나면 저절로 찬다. 위쪽 막대가 현재 보유량이다.</li>
+      <li>군자금은 시간이 지나면 저절로 찬다. 아래쪽 막대가 현재 보유량이다.</li>
       <li>아래 카드를 눌러 병사를 출진시킨다. 카드마다 비용과 재정비 시간이 있다.</li>
       <li>병사는 알아서 전진해 적과 싸운다. <b>적 요새를 무너뜨리면 승리</b>.</li>
       <li>아군 성채가 무너지면 패배. 화면을 좌우로 밀어 전장을 살필 수 있다.</li>
       <li>맞을 때마다 병사는 뒤로 밀린다. 방패병으로 버티고 뒤에서 화살을 퍼부어라.</li>
+      <li>키보드: <b>1~0</b> 출진 · <b>Q</b> 왕명 · <b>Space</b> 정지 · <b>A</b> 자동 · <b>F</b> 전선 추적.</li>
       <li>전투로 얻은 골드로 병영에서 무기·갑옷·성벽을 강화한다.</li>
       <li>훈련소에서 병종별로 레벨을 올린다. 레벨당 체력과 공격력이 10%씩 오른다.</li>
       <li>레벨 상한은 돌파한 전장 수만큼 올라간다. 최대 15레벨.</li>

@@ -75,9 +75,9 @@ const UNITS = [
     id: 'merchant', name: '종군 상인', short: '상인', role: '보급', shape: 'merchant',
     body: '#2b3038', accent: '#c9a227', tunic: '#8a5a2a',
     hp: 620, atk: 0, range: 0, speed: 0, interval: 3.0,
-    cost: 150, cooldown: 20, kb: 1, unlockStage: 8,
+    cost: 150, cooldown: 20, kb: 1, unlockStage: 8, maxActive: 3,
     ab: { gold: 12, hold: true, noAttack: true, interval: 3 },
-    abText: '초당 군자금 +12 · 제자리 고정',
+    abText: '초당 군자금 +12 · 최대 3명 · 공격 강화 미적용',
     desc: '성문 앞에 자리를 잡고 물자를 판다. 살아 있는 동안 군자금이 더 빨리 찬다.'
   }),
   mk({
@@ -681,11 +681,11 @@ function makeEndlessStage(waveCount) {
     const pick = pool[(w * 7 + 3) % pool.length].id;
     const n = 3 + Math.min(9, Math.floor(w / 2));
     const gap = Math.max(0.55, 1.6 - w * 0.03);
-    waves.push(W(t, pick, n, gap));
+    waves.push(Object.assign(W(t, pick, n, gap), { wave: w }));
     // 5 파도마다 보스
-    if (w > 0 && w % 5 === 0) {
-      const bi = Math.min(ENDLESS_BOSSES.length - 1, Math.floor(w / 5) - 1);
-      waves.push(W(t + 4, ENDLESS_BOSSES[bi], 1));
+    if ((w + 1) % 5 === 0) {
+      const bi = Math.min(ENDLESS_BOSSES.length - 1, Math.floor((w + 1) / 5) - 1);
+      waves.push(Object.assign(W(t + 4, ENDLESS_BOSSES[bi], 1), { wave: w }));
     }
     t += Math.max(7, 16 - w * 0.25);
   }
@@ -826,4 +826,22 @@ function unitTrainCost(unit, level) {
 function upgradeCost(key, level) {
   const u = UPGRADES[key];
   return Math.round(u.base * Math.pow(u.step, level));
+}
+
+/* Tactical descriptions shared by the campaign and enemy codex. */
+function enemyTactic(e) {
+  if (e.boss) return '보스 · 왕명을 아껴 폭격 후 회복';
+  if (e.ab && e.ab.armor) return '중장갑 · 중독과 화상으로 지속 피해';
+  if (e.ab && e.ab.heal) return '치유 지원 · 범위 공격으로 후열 압박';
+  if (e.ab && e.ab.deathBomb) return '사망 폭발 · 저렴한 전열로 피해 분산';
+  if (e.speed >= 85) return '고속 돌격 · 방패병과 둔화로 저지';
+  if (e.ranged) return '원거리 · 방어 병종 뒤에 장거리 배치';
+  if (e.area) return '광역 공격 · 소수 정예와 치유 조합';
+  return '전열 병력 · 방패와 궁수의 합동 공격';
+}
+function unitRoleColor(u) {
+  if (u.ab && u.ab.noAttack) return '#7bcda6';
+  if (u.role === '방어' || u.role === '불굴') return '#8abcf2';
+  if (u.ranged) return '#c6adfa';
+  return '#efbd76';
 }

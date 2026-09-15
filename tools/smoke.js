@@ -53,7 +53,7 @@ async function runSize(browser, size) {
   await page.evaluate(() => localStorage.setItem('stick-kingdom-save-v1', JSON.stringify({
     cleared: 13, coins: 60000, stones: 30, tutorial: true,
     upgrades: { wallet: 3, income: 3, power: 3, vitality: 3, castle: 3 },
-    levels: {}, loadout: [], stars: { 0: 3, 1: 2 }, owned: {}
+    levels: {spear:3,shield:3,archer:3,mage:3,venom:3}, loadout: ['spear','shield','archer','venom','mage'], stars: { 0: 3, 1: 2 }, owned: {}
   })));
   await page.reload();
   await page.waitForTimeout(350);
@@ -75,7 +75,14 @@ async function runSize(browser, size) {
   await page.waitForTimeout(350);
   const cards = await page.$$eval('#units-list .unit-card', e => e.length);
   if (cards < 20) failures.push(size.name + ': 훈련소 목록이 부족하다 (' + cards + ')');
+  await page.click('[data-filter="enemy"]');
+  const wrong = await page.$$eval('#units-list .unit-card:not([hidden])', es => es.some(e => e.dataset.kind !== 'enemy'));
+  if (wrong) failures.push(size.name + ': 적 도감 필터 오류');
+  await page.click('[data-filter="all"]');
+  // Removing a card must survive navigation and save/reload.
+  await page.evaluate(() => { save.loadout = save.loadout.filter(id => id !== 'archer'); saveGame(save); });
   await page.click('#scr-units [data-goto]');
+  if (await page.evaluate(() => save.loadout.includes('archer'))) failures.push(size.name + ': 편성 해제가 취소되었다');
 
   // 소환
   await page.click('#btn-gacha');
@@ -94,8 +101,24 @@ async function runSize(browser, size) {
   // 전투
   await page.click('#stage-list .stage:nth-child(14)');
   await page.waitForTimeout(300);
+  await page.click('#btn-pause');
+  const beforePause = await page.evaluate(() => { battle.cmdCd=0; return {money:battle.money,n:battle.allies.length,t:battle.time}; });
+  await page.evaluate(() => { document.querySelector('#cards .card').click(); document.querySelector('#btn-command').click(); });
+  await page.waitForTimeout(100);
+  const afterPause = await page.evaluate(() => ({money:battle.money,n:battle.allies.length,t:battle.time}));
+  if (JSON.stringify(beforePause)!==JSON.stringify(afterPause)) failures.push(size.name + ': 정지 중 전투 상태가 바뀌었다');
+  await page.keyboard.press('Space');
+  await page.keyboard.press('1');
+  if (!(await page.evaluate(() => battle.allies.length))) failures.push(size.name + ': 출진 단축키 오류');
   await page.click('#btn-speed');
   await page.click('#btn-speed');
+  const overlap = await page.evaluate(() => {
+    const a=document.querySelector('.hud-top').getBoundingClientRect();
+    const b=document.querySelector('.battle-intel').getBoundingClientRect();
+    const c=document.querySelector('.hud-bottom').getBoundingClientRect();
+    return a.bottom>b.top || b.bottom>c.top || document.documentElement.scrollWidth>innerWidth;
+  });
+  if (overlap) failures.push(size.name + ': 전투 HUD 겹침 또는 가로 넘침');
   let usedCommand = false;
   for (let i = 0; i < 90; i++) {
     for (const c of await page.$$('#cards .card')) {

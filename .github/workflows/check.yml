@@ -32,6 +32,9 @@ jobs:
       - name: 정적 점검 (참조 파일 · 데이터 정합성 · 그리기 코드)
         run: npm run assets
 
+      - name: 전투 회귀 검사
+        run: npm run regression
+
       - name: 전장 밸런스 검사
         run: npm run balance
 
