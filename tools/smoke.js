@@ -99,10 +99,19 @@ async function runSize(browser, size) {
   await page.click('#scr-gacha [data-goto]');
   await page.waitForTimeout(150);
 
+  // Android navigation uses the same JS bridge as the packaged WebView.
+  await page.click('#btn-quest');
+  await page.evaluate(() => window.__androidBack());
+  if (!(await page.$eval('#scr-map', e => e.classList.contains('active')))) failures.push(size.name + ': 임무 뒤로 가기 오류');
+
   // 전투
   await page.click('#stage-list .stage:nth-child(14)');
   await page.waitForTimeout(300);
-  await page.click('#btn-pause');
+  await page.evaluate(() => window.__androidBack());
+  if (!(await page.$eval('#modal-confirm', e => e.classList.contains('show')))) failures.push(size.name + ': Android 전투 포기 확인 누락');
+  await page.evaluate(() => window.__androidBack());
+  if (!(await page.$eval('#scr-battle', e => e.classList.contains('active')))) failures.push(size.name + ': 취소했는데 전투가 끝났다');
+  await page.evaluate(() => window.__androidPause());
   const beforePause = await page.evaluate(() => { battle.cmdCd=0; return {money:battle.money,n:battle.allies.length,t:battle.time}; });
   await page.evaluate(() => { document.querySelector('#cards .card').click(); document.querySelector('#btn-command').click(); });
   await page.waitForTimeout(100);

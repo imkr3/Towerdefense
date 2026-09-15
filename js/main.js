@@ -336,7 +336,7 @@ function renderEndlessSlot() {
   el.className = 'endless-card';
   el.innerHTML =
     '<div class="e-title">무한 전장</div>' +
-    '<div class="e-sub">끝없이 밀려오는 파도. 성채가 무너질 때까지 버틴다.</div>' +
+    '<div class="e-sub">총 45공세에 도전한다. 증원까지 모두 격파해야 돌파로 인정된다.</div>' +
     '<div class="e-best">최고 기록 <b>' + (save.endlessBest || 0) + '</b> 파도</div>' +
     '<button class="btn primary e-btn">도전</button>';
   el.querySelector('.e-btn').addEventListener('click', () => startEndless());
@@ -388,11 +388,12 @@ function renderShop() {
 /* ------------------------------ 훈련소 ------------------------------ */
 let trainingFilter = 'all';
 function renderTraining() {
+  const hardCap = UNIT_LEVEL_HARD_CAP + (save.upgrades.academy || 0);
   $('#train-coins').textContent = save.coins;
   const cap = unitLevelCap(save.cleared, save.upgrades.academy);
   $('#train-cap').innerHTML =
     'Lv 상한 <b>' + cap + '</b>' +
-    (cap < UNIT_LEVEL_HARD_CAP ? ' (전장을 돌파하면 상승)' : ' (최대)') +
+    (cap < hardCap ? ' (전장을 돌파하면 상승)' : ' (최대)') +
     ' · 편성 <b>' + save.loadout.length + ' / ' + LOADOUT_MAX + '</b>' +
     ' <span class="hint">카드는 편성한 병종만 나온다</span>';
 
@@ -423,19 +424,19 @@ function renderTraining() {
           (unlocked && inTeam ? '<span class="team-tag">편성</span>' : '') + '</div>' +
         (unlocked && u.abText ? '<div class="ab-text">◆ ' + u.abText + '</div>' : '') +
         '<div class="unit-desc">' +
-          (unlocked ? u.desc : '전장 ' + u.unlockStage + '을(를) 돌파하면 합류한다.') + '</div>' +
+          (unlocked ? u.desc : '전장 ' + u.unlockStage + '에 도달하면 합류한다.') + '</div>' +
         (unlocked ?
           '<div class="stat-row">' +
             '<span class="stat">비용 ' + u.cost + '</span>' +
-            '<span class="stat hl">체력 ' + Math.round(u.hp * mul) + '</span>' +
-            (u.atk ? '<span class="stat hl">공격 ' + Math.round(u.atk * mul) + '</span>' : '') +
+            '<span class="stat hl">체력 ' + Math.round(u.hp * mul * (1 + .08 * (save.upgrades.vitality || 0))) + '</span>' +
+            (u.atk ? '<span class="stat hl">공격 ' + Math.round(u.atk * mul * (1 + .06 * (save.upgrades.power || 0))) + '</span>' : '') +
             (u.range ? '<span class="stat">사거리 ' + u.range + '</span>' : '') +
             '<span class="stat">속도 ' + u.speed + '</span>' +
             '<span class="stat">대기 ' + u.cooldown + '초</span>' +
           '</div>' +
           '<div class="btn-row">' +
             '<button class="btn train-btn"' + (atCap ? ' disabled' : '') + '>' +
-              (atCap ? (lv >= UNIT_LEVEL_HARD_CAP ? '최대 레벨' : '상한 도달')
+              (atCap ? (lv >= hardCap ? '최대 레벨' : '상한 도달')
                      : '💰 ' + cost + ' → Lv.' + (lv + 1)) + '</button>' +
             '<button class="btn team-btn' + (inTeam ? ' on' : '') + '"' +
               (!inTeam && teamFull ? ' disabled' : '') + '>' +
@@ -631,7 +632,7 @@ function showPullResult(results) {
       '<div class="pull-name">' + r.unit.name + '</div>' +
       '<div class="pull-note">' +
         (r.dup ? (r.levelUp ? 'Lv +1 · 💰' + r.gold : '💰' + r.gold)
-               : '<b>NEW</b>') + '</div>';
+               : '<b>신규</b>') + '</div>';
     grid.appendChild(el);
     drawUnitIcon(el.querySelector('canvas'), r.unit, 60);
   });
@@ -906,7 +907,7 @@ function showResult() {
   const win = battle.state === 'win';
   $('#result-title').textContent = win ? '승 리' : '패 배';
   $('#result-stars').innerHTML = win
-    ? starMarks(battle.stars) + (battle.newStars ? '<span class="new-star">NEW</span>' : '')
+    ? starMarks(battle.stars) + (battle.newStars ? '<span class="new-star">신규</span>' : '')
     : '';
   const lines = [];
   lines.push('획득 골드 💰 ' + battle.coins +
@@ -1313,20 +1314,27 @@ document.addEventListener('DOMContentLoaded', init);
 /* 안드로이드 뒤로 가기 처리. true 를 돌려주면 앱이 닫히지 않는다. */
 window.__androidBack = function () {
   const open = document.querySelector('.modal.show');
-  if (open) { open.classList.remove('show'); return true; }
+  if (open) {
+    if (open.id === 'modal-tutorial') $('#btn-tutorial-close').click();
+    else if (open.id === 'modal-confirm') $('#confirm-no').click();
+    else open.classList.remove('show');
+    return true;
+  }
+  if ($('#pull-result').classList.contains('show')) { $('#btn-pull-close').click(); return true; }
   const active = document.querySelector('.screen.active');
   if (!active) return false;
   if (active.id === 'scr-battle') {
-    if (battle && battle.state === 'play' && !$('#result').classList.contains('show')) {
-      show('scr-map');
-    } else {
-      show('scr-map');
-    }
+    $('#btn-quit').click();
     return true;
   }
-  if (active.id === 'scr-shop' || active.id === 'scr-units') { show('scr-map'); return true; }
+  if (['scr-shop','scr-units','scr-gacha','scr-quest'].includes(active.id)) { show('scr-map'); return true; }
   if (active.id === 'scr-map') { show('scr-title'); return true; }
   return false;   // 타이틀에서는 앱 종료
+};
+
+window.__androidPause = function () {
+  if (battle && battle.state === 'play') setPaused(true);
+  saveGame(save);
 };
 
 // 오프라인 지원 (http/https 로 열었을 때만)

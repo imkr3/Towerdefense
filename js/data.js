@@ -157,7 +157,7 @@ const UNITS = [
     hp: 520, atk: 0, range: 0, speed: 34, interval: 3.0,
     cost: 195, cooldown: 14, kb: 2, unlockStage: 6,
     ab: { haste: { mul: 0.7, dur: 4 }, radius: 240, interval: 3.5, noAttack: true },
-    abText: '주변 아군 공격 속도 30% 상승',
+    abText: '주변 아군 공격 간격 30% 감소',
     desc: '진군 나팔을 분다. 싸우지 않지만 주변 아군이 훨씬 빨리 때린다.'
   }),
   mk({
