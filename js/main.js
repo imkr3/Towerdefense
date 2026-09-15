@@ -795,7 +795,8 @@ function autoDeploy(dt) {
 function updateHud() {
   const money = Math.floor(battle.money);
   $('#kill-count').textContent = battle.kills;
-  $('#foe-left').textContent = battle.foesLeft();
+  // 증원이 돌기 시작하면 남은 적을 셀 수 없다
+  $('#foe-left').textContent = battle.reinforcing() ? '∞' : battle.foesLeft();
   const cmdBtn = $('#btn-command');
   const ready = battle.cmdCd <= 0;
   cmdBtn.classList.toggle('ready', ready);

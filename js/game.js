@@ -23,6 +23,11 @@ function sfx(name) {
 }
 
 const FX_LIMIT = 200;        // 이펙트가 무한정 쌓이지 않게
+const REINFORCE_FIRST = 10;  // 대본 파도가 끝나고 첫 증원까지
+const REINFORCE_MIN = 3.0;   // 증원 간격 하한
+const REINFORCE_STEP = 0.06; // 증원 한 번마다 적이 세지는 폭
+const REINFORCE_MAX = 2.2;   // 증원 강화 상한 (끝없이 세지면 이길 수가 없다)
+const REINFORCE_CAP = 24;    // 전장에 동시에 서 있을 수 있는 적 수
 const CAST_LIMIT = 4;        // 동시에 터지는 필살 연출 수 (렉 방지)
 const CAST_BIG_LIMIT = 2;    // 그중 전설 대형 연출
 const SLOW_SPEED_MUL = 0.45; // 둔화 시 이동
@@ -222,6 +227,26 @@ class Battle {
     this.queue.sort((a, b) => a.t - b.t);
     this.qi = 0;
 
+    // 증원: 대본 파도가 동나도 적 요새는 병력을 계속 토해낸다.
+    // 버티기만 해서는 절대 끝나지 않고, 요새를 부수는 수밖에 없다.
+    const seen = {}, pool = [], heavy = [];
+    this.stage.waves.forEach(w => {
+      if (seen[w.e]) return;
+      seen[w.e] = true;
+      const spec = ENEMIES[w.e];
+      if (!spec || (spec.ab && spec.ab.hold)) return;    // 토템처럼 박혀 있는 건 제외
+      const ab = spec.ab || {};
+      // 보스·갑주·넉백 면역·장거리 공성은 상시 증원에서 뺀다.
+      // 계속 흘려보내면 뚫을 수 없는 벽이 되어 전선이 영영 멈춘다.
+      const wall = spec.boss || ab.armor || ab.kbImmune || spec.range > 300;
+      (wall ? heavy : pool).push(w.e);
+    });
+    this.reinfPool = pool.length ? pool : ['orcspear'];
+    this.reinfHeavy = heavy;
+    this.reinfWave = 0;
+    this.reinfT = REINFORCE_FIRST;
+    this.reinfOn = false;
+
     this.roster = this.battleUnits();
     this.roster.forEach(u => { this.cooldowns[u.id] = 0; });
   }
@@ -291,8 +316,9 @@ class Battle {
     const dt = dtRaw * this.speed;
     this.time += dt;
 
-    // 전투가 길어지면 자금이 더 빨리 찬다. 교착을 풀어 주는 장치.
-    const ramp = 1 + Math.min(0.6, Math.max(0, (this.time - 90) / 150) * 0.6);
+    // 전투가 길어지면 자금이 더 빨리 찬다. 적도 증원으로 계속 불어나므로
+    // 이쪽 보급이 더 가파르게 올라야 교착이 풀린다.
+    const ramp = 1 + Math.min(1.4, Math.max(0, (this.time - 60) / 180) * 1.4);
     this.money = Math.min(this.walletMax, this.money + this.income * ramp * dt);
     if (this.cmdCd > 0) this.cmdCd = Math.max(0, this.cmdCd - dt);
     if (this.shake > 0) this.shake = Math.max(0, this.shake - dt * 26);
@@ -308,6 +334,7 @@ class Battle {
       this.spawnEnemy(this.queue[this.qi].e);
       this.qi++;
     }
+    this.tickReinforce(dt);
 
     this.step(this.allies, this.enemies, this.enemyCastle, dt, true);
     this.step(this.enemies, this.allies, this.allyCastle, dt, false);
@@ -328,10 +355,11 @@ class Battle {
     }
   }
 
-  spawnEnemy(id, atX) {
+  spawnEnemy(id, atX, mul) {
     const spec = ENEMIES[id];
     const st = Object.assign({ range: 60, speed: 40, interval: 1.2, kb: 1, scale: 1 }, spec);
-    const f = new Fighter(st, 'enemy', atX !== undefined ? atX : ENEMY_SPAWN_X - Math.random() * 40, null);
+    const buff = mul && mul > 1 ? { hp: mul, atk: mul } : null;
+    const f = new Fighter(st, 'enemy', atX !== undefined ? atX : ENEMY_SPAWN_X - Math.random() * 40, buff);
     f.gold = spec.gold || 0;
     f.boss = !!spec.boss;
     if (f.boss) { this.bossAlert = 2.6; this.bossName = spec.name; this.shake = 10; sfx('bossIn'); }
@@ -548,6 +576,48 @@ class Battle {
       this.fx.push({ type: 'spawn', x: f.x - f.dir * 24, row: f.row, t: 0.4, life: 0.4 });
     }
   }
+
+  /* ------------------- 끝없는 증원 -------------------
+   * 대본 파도를 다 막아도 적 요새는 병력을 계속 내보낸다. 시간이 갈수록
+   * 간격이 좁아지고 한 마리 한 마리가 세진다. 버티기만 하는 전략은 반드시
+   * 무너지므로, 결국 요새를 부수러 나가야 한다. */
+  tickReinforce(dt) {
+    if (this.endless) return;                   // 무한 전장은 자체 파도로 돈다
+    if (this.qi < this.queue.length) return;    // 대본 파도가 남아 있으면 아직
+    if (this.enemyCastle.dead) return;
+
+    this.reinfT -= dt;
+    if (this.reinfT > 0) return;
+
+    if (!this.reinfOn) {                        // 첫 증원은 경보와 함께
+      this.reinfOn = true;
+      this.announce('적 증원 시작');
+      sfx('bossIn');
+    }
+    this.reinfWave++;
+    this.reinfT = Math.max(REINFORCE_MIN, REINFORCE_FIRST - this.reinfWave * 0.25);
+
+    // 숫자로 밀어붙이면 화면도 프레임도 무너진다. 머릿수는 묶어 두고
+    // 대신 한 마리 한 마리를 계속 세게 만든다.
+    if (this.enemies.length >= REINFORCE_CAP) return;
+    const mul = this.reinfMul();
+    const n = 1 + Math.min(2, Math.floor(this.reinfWave / 5));
+    for (let i = 0; i < n; i++) {
+      const id = this.reinfPool[(this.reinfWave * 3 + i) % this.reinfPool.length];
+      this.spawnEnemy(id, ENEMY_SPAWN_X - Math.random() * 70, mul);
+    }
+    // 여섯 번에 한 번은 보스급도 딸려 온다
+    if (this.reinfWave % 6 === 0 && this.reinfHeavy.length) {
+      const b = this.reinfHeavy[(this.reinfWave / 6 - 1) % this.reinfHeavy.length];
+      this.spawnEnemy(b, ENEMY_SPAWN_X, mul);
+    }
+  }
+
+  /* 증원이 거듭될수록 붙는 강화 배율 */
+  reinfMul() { return Math.min(REINFORCE_MAX, 1 + this.reinfWave * REINFORCE_STEP); }
+
+  /* 증원이 돌기 시작했는가 (HUD 에서 남은 적 대신 ∞ 를 띄운다) */
+  reinforcing() { return this.reinfOn && !this.enemyCastle.dead; }
 
   /* ------------------- 보스 패턴 -------------------
    * phases: 체력이 특정 비율 아래로 떨어질 때 한 번씩 터지는 연출 겸 기술.

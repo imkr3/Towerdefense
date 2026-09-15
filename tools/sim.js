@@ -49,20 +49,35 @@ function loadEngine(seed) {
 }
 
 /* 한 전장을 자동 전투로 돌린다. 카드는 나오는 대로 전부 낸다. */
-function runStage(g, index, upLv, unitLv, trace) {
+/* 소환으로 최상급만 뽑아낸 편성. "좋은 애 뽑으면 그냥 깨진다"를 재어 본다. */
+function gachaLoadout(g, index) {
+  const rank = { SSR: 0, SR: 1, R: 2, N: 3 };
+  const pulled = g.UNITS
+    .filter(u => u.gacha)
+    .sort((a, b) => (rank[a.rarity] - rank[b.rarity]) || (b.cost - a.cost));
+  const front = g.ROSTER_UNITS
+    .filter(u => u.unlockStage <= index + 1)
+    .sort((a, b) => a.cost - b.cost)
+    .slice(0, 2);                       // 값싼 벽 둘은 남겨 둔다
+  return front.concat(pulled).slice(0, g.LOADOUT_MAX).map(u => u.id);
+}
+
+function runStage(g, index, upLv, unitLv, trace, gacha) {
   const academy = Math.min(5, Math.floor(upLv / 2));
   const cap = g.unitLevelCap(index, academy);
   const levels = {};
   g.UNITS.forEach(u => { levels[u.id] = Math.min(unitLv, cap); });
 
   const unlocked = g.ROSTER_UNITS.filter(u => u.unlockStage <= index + 1);
-  const loadout = unlocked.slice()
+  const loadout = gacha ? gachaLoadout(g, index) : unlocked.slice()
     .sort((a, b) => b.cost - a.cost)
     .slice(0, g.LOADOUT_MAX)
     .map(u => u.id);
+  const owned = {};
+  if (gacha) g.UNITS.forEach(u => { if (u.gacha) owned[u.id] = 1; });
 
   const save = {
-    cleared: index, coins: 0, levels: levels, loadout: loadout, stars: {}, owned: {},
+    cleared: index, coins: 0, levels: levels, loadout: loadout, stars: {}, owned: owned,
     upgrades: {
       wallet: upLv, income: upLv, power: upLv, vitality: upLv, castle: upLv,
       logistics: upLv, treasury: upLv, spoils: upLv,
@@ -101,10 +116,10 @@ function runStage(g, index, upLv, unitLv, trace) {
   };
 }
 
-function runAll(upLv, unitLv, seed) {
+function runAll(upLv, unitLv, seed, gacha) {
   const g = loadEngine(seed);
   const rows = [];
-  for (let i = 0; i < g.STAGES.length; i++) rows.push(runStage(g, i, upLv, unitLv));
+  for (let i = 0; i < g.STAGES.length; i++) rows.push(runStage(g, i, upLv, unitLv, false, gacha));
   return rows;
 }
 
@@ -127,11 +142,15 @@ function printTable(rows, upLv, unitLv) {
 
 /* 기대하는 난이도 곡선. 크게 벗어나면 밸런스가 깨진 것으로 본다. */
 const EXPECT = [
-  { up: 0, lv: 1, min: 4,  max: 10, label: '무강화' },
-  { up: 2, lv: 3, min: 10, max: 16, label: '중반 강화' },
-  { up: 3, lv: 5, min: 14, max: 19, label: '후반 강화' },
+  { up: 0, lv: 1, min: 2,  max: 8,  label: '무강화' },
+  { up: 2, lv: 3, min: 9,  max: 15, label: '중반 강화' },
+  { up: 3, lv: 5, min: 13, max: 18, label: '후반 강화' },
   { up: 5, lv: 8, min: 20, max: 20, label: '완전 강화' }
 ];
+
+/* 소환 병종은 특색으로 값을 해야지, 전장 진도를 건너뛰는 열쇠가 되면 안 된다.
+ * 최상급만 뽑아 편성했을 때 전장 병종 편성과 이만큼 이상 벌어지면 실패로 본다. */
+const GACHA_GAP = 4;
 
 function check() {
   let failed = 0;
@@ -150,6 +169,20 @@ function check() {
       failed++;
     }
   });
+  // 소환 편성이 전장 편성을 얼마나 앞지르는지
+  [{ up: 0, lv: 1 }, { up: 3, lv: 5 }].forEach(e => {
+    const base = runAll(e.up, e.lv, 12345, false).filter(r => r.win).length;
+    const pulled = runAll(e.up, e.lv, 12345, true).filter(r => r.win).length;
+    const gap = pulled - base;
+    const line = `소환 편성 격차 (강화 ${e.up}/Lv${e.lv}): 전장 ${base}승 vs 소환 ${pulled}승 = ${gap >= 0 ? '+' : ''}${gap}`;
+    if (Math.abs(gap) > GACHA_GAP) {
+      console.error(`  ✗ ${line} — ±${GACHA_GAP} 를 넘었다`);
+      failed++;
+    } else {
+      console.log(`  ✓ ${line}`);
+    }
+  });
+
   if (failed) {
     console.error(`\n밸런스 검사 실패 (${failed}건)\n`);
     process.exit(1);
@@ -160,6 +193,16 @@ function check() {
 const args = process.argv.slice(2);
 if (args[0] === '--check') {
   check();
+} else if (args[0] === '--gacha') {
+  // node tools/sim.js --gacha [강화Lv] [병종Lv]
+  // 최상급 소환 병종만 편성했을 때의 곡선. 전장 병종 편성과 나란히 찍는다.
+  const upLv = parseInt(args[1] || '0', 10);
+  const unitLv = parseInt(args[2] || '1', 10);
+  console.log('\n  [전장 병종 편성]');
+  const base = printTable(runAll(upLv, unitLv, 12345, false), upLv, unitLv);
+  console.log('  [최상급 소환 편성]');
+  const pulled = printTable(runAll(upLv, unitLv, 12345, true), upLv, unitLv);
+  console.log(`  차이: 소환 편성이 ${pulled - base >= 0 ? '+' : ''}${pulled - base} 전장\n`);
 } else if (args[0] === '--trace') {
   // node tools/sim.js --trace <전장번호> [강화Lv] [병종Lv]
   const stage = parseInt(args[1] || '20', 10) - 1;
