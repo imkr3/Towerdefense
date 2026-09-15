@@ -113,6 +113,22 @@ jobs:
             echo "$TAG 릴리스가 이미 있다. 기존 APK를 덮어쓰지 않는다."
             exit 0
           fi
+          # gh 가 create 를 재시도하면 빈 릴리스 레코드가 하나 더 생기면서
+          # "Published releases must have a valid tag" 422 로 끝난다.
+          # 정작 자산이 붙은 릴리스는 멀쩡히 올라가 있으므로, 실패했더라도
+          # 결과를 다시 확인해서 자산이 다 있으면 성공으로 본다.
           gh release create "$TAG" dist/* --target "$GITHUB_SHA" \
             --title "막대 왕국 전쟁 $APP_VERSION" \
-            --notes-file .github/release-notes.md
+            --notes-file .github/release-notes.md && exit 0
+          echo "릴리스 생성이 오류로 끝났다. 실제 결과를 확인한다."
+          UPLOADED=$(gh release view "$TAG" --json assets \
+            --jq '[.assets[].name] | join(" ")' 2>/dev/null || true)
+          echo "올라간 자산: ${UPLOADED:-없음}"
+          for F in dist/*; do
+            case " $UPLOADED " in
+              *" $(basename "$F") "*) ;;
+              *) echo "$(basename "$F") 가 릴리스에 없다"; exit 1 ;;
+            esac
+          done
+          echo "자산이 모두 올라가 있다. 릴리스 성공으로 본다."
+
