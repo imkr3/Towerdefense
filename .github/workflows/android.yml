@@ -83,7 +83,7 @@ jobs:
             sed -n '1p' /tmp/apk-badging.txt > /tmp/apk-version.txt
             cat /tmp/apk-version.txt
             grep -F "versionName='$APP_VERSION'" /tmp/apk-version.txt
-            grep -F "versionCode='14000'" /tmp/apk-version.txt
+            grep -F "versionCode='14001'" /tmp/apk-version.txt
           done
       - name: 설치 파일 이름 및 체크섬
         env:
