@@ -58,6 +58,20 @@ async function runSize(browser, size) {
   await page.reload();
   await page.waitForTimeout(350);
   await shot(page, 'title-' + size.w);
+  // Export, validation, cancellation, restore, and reload must preserve earned progress.
+  const backup = await page.evaluate(() => SaveStore.export(save));
+  await page.click('#btn-save-manager');
+  await page.fill('#save-text', '{bad json');
+  await page.click('#btn-restore-text');
+  if (await page.evaluate(() => save.coins) !== 60000) throw Error('Invalid import changed progress');
+  await page.fill('#save-text', backup);
+  await page.click('#btn-restore-text');
+  await page.click('#confirm-no');
+  await page.click('#btn-restore-text');
+  await page.click('#confirm-yes');
+  await page.reload();
+  if (!await page.evaluate(() => save.cleared === 13 && save.coins === 60000 && save.stones === 30)) throw Error('Restore did not survive reload');
+
 
   await page.click('#btn-start');
   await page.waitForTimeout(250);

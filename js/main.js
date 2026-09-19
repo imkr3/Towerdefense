@@ -2,7 +2,7 @@
  *  막대 왕국 전쟁 - 화면 전환 / 저장 / 메인 루프
  * ======================================================================= */
 
-const SAVE_KEY = 'stick-kingdom-save-v1';
+const SAVE_KEY = SaveStore.key;
 
 function defaultSave() {
   const lv = {};
@@ -42,21 +42,23 @@ function syncLoadout() {
 }
 
 function loadGame() {
-  try {
-    const raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) return defaultSave();
-    const s = Object.assign(defaultSave(), JSON.parse(raw));
+  const raw = SaveStore.read();
+  if (!raw) return defaultSave();
+  return normalizeSave(raw);
+}
+
+function normalizeSave(raw) {
+    const s = Object.assign(defaultSave(), raw);
     const d = defaultSave();
     s.upgrades = Object.assign(d.upgrades, s.upgrades || {});
     s.levels = Object.assign(d.levels, s.levels || {});
     s.cleared = Math.max(0, Math.min(STAGES.length, s.cleared | 0));
-    // 상한을 넘긴 레벨은 잘라낸다
-    const cap = unitLevelCap(s.cleared, s.upgrades.academy);
+    // 밸런스 패치로 상한이 바뀌어도 이미 획득한 레벨은 보존한다.
     UNITS.forEach(u => {
-      s.levels[u.id] = Math.max(1, Math.min(cap, s.levels[u.id] | 0 || 1));
+      s.levels[u.id] = Math.max(1, Math.floor(s.levels[u.id]) || 1);
     });
     if (!Array.isArray(s.loadout)) s.loadout = [];
-    if (!Array.isArray(s.knownUnits) || !Object.prototype.hasOwnProperty.call(JSON.parse(raw), 'knownUnits')) {
+    if (!Array.isArray(s.knownUnits) || !Object.prototype.hasOwnProperty.call(raw, 'knownUnits')) {
       s.knownUnits = UNITS.filter(u => u.unlockStage <= s.cleared + 1 || (u.gacha && s.owned && s.owned[u.id])).map(u => u.id);
     }
     if (!s.stars || typeof s.stars !== 'object') s.stars = {};
@@ -72,11 +74,13 @@ function loadGame() {
     if (typeof s.pulls !== 'number') s.pulls = 0;
     if (!seasonById(s.season)) s.season = 'olympus';
     return s;
-  } catch (e) { return defaultSave(); }
 }
 
 function saveGame(s) {
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify(s)); } catch (e) {}
+  const ok = SaveStore.write(s);
+  const notice = document.getElementById('save-warning');
+  if (notice) { notice.hidden = ok; notice.textContent = SaveStore.error; }
+  return ok;
 }
 
 let save = loadGame();
@@ -365,7 +369,7 @@ function renderShop() {
     for (let i = 0; i < u.max; i++) pips += '<div class="pip' + (i < lv ? ' on' : '') + '"></div>';
     card.innerHTML =
       '<div class="up-head"><div class="up-name">' + u.name + '</div>' +
-      '<div class="up-lv">Lv.' + lv + ' / ' + u.max + '</div></div>' +
+      '<div class="up-lv">레벨 ' + lv + ' / ' + u.max + '</div></div>' +
       '<div class="up-desc">' + u.desc + '</div>' +
       '<div class="pips">' + pips + '</div>' +
       '<button class="btn primary up-buy"' + (maxed ? ' disabled' : '') + '>' +
@@ -378,7 +382,7 @@ function renderShop() {
         saveGame(save);
         renderShop();
         SFX.levelUp();
-        toast(u.name + ' Lv.' + (lv + 1) + ' 완료');
+        toast(u.name + ' 레벨 ' + (lv + 1) + ' 완료');
       });
     }
     box.appendChild(card);
@@ -392,7 +396,7 @@ function renderTraining() {
   $('#train-coins').textContent = save.coins;
   const cap = unitLevelCap(save.cleared, save.upgrades.academy);
   $('#train-cap').innerHTML =
-    'Lv 상한 <b>' + cap + '</b>' +
+    '레벨 상한 <b>' + cap + '</b>' +
     (cap < hardCap ? ' (전장을 돌파하면 상승)' : ' (최대)') +
     ' · 편성 <b>' + save.loadout.length + ' / ' + LOADOUT_MAX + '</b>' +
     ' <span class="hint">카드는 편성한 병종만 나온다</span>';
@@ -420,7 +424,7 @@ function renderTraining() {
           (unlocked ? u.role : u.unlockStage + '전장') + '</span>' +
           (u.gacha ? '<span class="rare-tag r-' + rarityOf(u) + '">' +
                      RARITY[rarityOf(u)].name + '</span>' : '') +
-          (unlocked ? '<span class="lv-tag">Lv.' + lv + '</span>' : '') +
+          (unlocked ? '<span class="lv-tag">레벨 ' + lv + '</span>' : '') +
           (unlocked && inTeam ? '<span class="team-tag">편성</span>' : '') + '</div>' +
         (unlocked && u.abText ? '<div class="ab-text">◆ ' + u.abText + '</div>' : '') +
         '<div class="unit-desc">' +
@@ -437,7 +441,7 @@ function renderTraining() {
           '<div class="btn-row">' +
             '<button class="btn train-btn"' + (atCap ? ' disabled' : '') + '>' +
               (atCap ? (lv >= hardCap ? '최대 레벨' : '상한 도달')
-                     : '💰 ' + cost + ' → Lv.' + (lv + 1)) + '</button>' +
+                     : '💰 ' + cost + ' → 레벨 ' + (lv + 1)) + '</button>' +
             '<button class="btn team-btn' + (inTeam ? ' on' : '') + '"' +
               (!inTeam && teamFull ? ' disabled' : '') + '>' +
               (inTeam ? '편성 해제' : (teamFull ? '자리 없음' : '편성')) + '</button>' +
@@ -457,7 +461,7 @@ function renderTraining() {
           addStat('trains', 1);
           renderTraining();
           SFX.levelUp();
-          toast(u.name + ' Lv.' + (lv + 1) + ' 훈련 완료');
+          toast(u.name + ' 레벨 ' + (lv + 1) + ' 훈련 완료');
         });
       }
       const tb = el.querySelector('.team-btn');
@@ -631,7 +635,7 @@ function showPullResult(results) {
       '<canvas></canvas>' +
       '<div class="pull-name">' + r.unit.name + '</div>' +
       '<div class="pull-note">' +
-        (r.dup ? (r.levelUp ? 'Lv +1 · 💰' + r.gold : '💰' + r.gold)
+        (r.dup ? (r.levelUp ? '레벨 +1 · 💰' + r.gold : '💰' + r.gold)
                : '<b>신규</b>') + '</div>';
     grid.appendChild(el);
     drawUnitIcon(el.querySelector('canvas'), r.unit, 60);
@@ -795,7 +799,7 @@ function buildCards() {
     b.setAttribute('aria-label', u.name + ' 출진, 비용 ' + u.cost);
     b.innerHTML =
       '<canvas class="c-ico"></canvas>' +
-      '<div class="c-lv">Lv.' + (save.levels[u.id] || 1) + '</div>' +
+      '<div class="c-lv">레벨 ' + (save.levels[u.id] || 1) + '</div>' +
       '<div class="c-name">' + (u.short || u.name) + '</div>' +
       '<div class="c-role">' + u.role + '</div>' +
       '<div class="c-cost">' + u.cost + '</div>' +
@@ -1179,7 +1183,11 @@ function init() {
   refreshTitleBadges();
   bindCanvasDrag($('#cv'));
 
-  $('#btn-start').addEventListener('click', () => show('scr-map'));
+  initSaveManager();
+  $('#btn-start').addEventListener('click', () => {
+    if (SaveStore.blocked) { $('#modal-save').classList.add('show'); return; }
+    show('scr-map');
+  });
   $('#btn-howto').addEventListener('click', () => $('#modal-howto').classList.add('show'));
   $$('[data-close]').forEach(b => b.addEventListener('click',
     () => b.closest('.modal').classList.remove('show')));
@@ -1189,8 +1197,9 @@ function init() {
   $('#btn-reset').addEventListener('click', () => {
     askConfirm('기록 초기화',
       '진행도와 소환한 병종까지 전부 사라진다. 정말 지울까?', () => {
-        save = defaultSave();
-        saveGame(save);
+        const fresh = defaultSave();
+        if (!SaveStore.write(fresh, true)) { toast(SaveStore.error); return; }
+        save = fresh;
         refreshTitleBadges();
         toast('기록을 초기화했다');
       });
@@ -1345,3 +1354,55 @@ window.__androidPause = function () {
 if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 }
+
+
+function backupText() {
+  if (SaveStore.blocked) return localStorage.getItem(SAVE_KEY) || localStorage.getItem(SAVE_KEY + '-damaged') || '';
+  return SaveStore.export(save);
+}
+function initSaveManager() {
+  const notice = $('#save-warning');
+  notice.textContent = SaveStore.error; notice.hidden = !SaveStore.blocked;
+  if (SaveStore.recovered) toast('이전 자동 백업으로 진행도를 복구했습니다.');
+  $('#btn-save-manager').addEventListener('click', () => $('#modal-save').classList.add('show'));
+  $('#btn-export-save').addEventListener('click', () => {
+    try {
+      const raw = backupText();
+      $('#save-text').value = raw;
+      if (window.AndroidSave) { window.AndroidSave.exportSave(raw); return; }
+      const url = URL.createObjectURL(new Blob([raw], {type:'application/json'}));
+      const a = document.createElement('a'); a.href=url; a.download='stick-kingdom-backup.json'; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) { toast('백업을 만들지 못했습니다: ' + e.message); }
+  });
+  $('#btn-import-save').addEventListener('click', () => {
+    if (window.AndroidSave) window.AndroidSave.importSave();
+    else $('#save-file').click();
+  });
+  $('#save-file').addEventListener('change', async e => {
+    const f=e.target.files[0]; e.target.value=''; if (!f) return;
+    if (f.size>1048576) { toast('1MB 이하의 백업 파일을 선택해 주세요.'); return; }
+    try { window.receiveSaveBackup(await f.text()); }
+    catch (err) { toast('백업 파일을 읽지 못했습니다. 다른 파일을 선택해 주세요.'); }
+  });
+  $('#btn-previous-save').addEventListener('click', () => {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY + '-restore-point') || localStorage.getItem(SaveStore.backupKey);
+      if (!raw) { toast('남아 있는 이전 백업이 없습니다.'); return; }
+      window.receiveSaveBackup(raw);
+    } catch (e) { toast('이전 백업을 읽지 못했습니다.'); }
+  });
+  $('#btn-restore-text').addEventListener('click', () => window.receiveSaveBackup($('#save-text').value));
+}
+window.receiveSaveBackup = function(raw) {
+  try {
+    const candidate = normalizeSave(SaveStore.parse(raw));
+    askConfirm('진행도 복원', '전장 ' + candidate.cleared + '개 돌파 · 골드 ' + candidate.coins +
+      ' · 소환석 ' + candidate.stones + '. 이 데이터로 교체할까요? 현재 저장은 자동 백업에 남깁니다.', () => {
+      if (!SaveStore.write(candidate, true)) { toast(SaveStore.error); return; }
+      save=candidate; SFX.on=save.sound !== false;
+      $('#modal-save').classList.remove('show'); $('#save-warning').hidden=true;
+      show('scr-title'); toast('진행도를 복원했습니다.');
+    });
+  } catch(e) { toast('복원하지 않았습니다: ' + e.message); }
+};

@@ -2,10 +2,11 @@
 from pathlib import Path
 from zipfile import ZipFile
 import json
+import sys
 
 root = Path(__file__).resolve().parent.parent
 version = json.loads((root / 'package.json').read_text())['version']
-for build in ('debug', 'release'):
+for build in (sys.argv[1:] or ['debug', 'release']):
     apk = root / f'android/app/build/outputs/apk/{build}/app-{build}.apk'
     with ZipFile(apk) as z:
         sources = [root / name for name in ('index.html', 'manifest.json', 'icon.svg')]

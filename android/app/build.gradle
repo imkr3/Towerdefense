@@ -35,23 +35,43 @@ android {
         applicationId "com.stickkingdom.war"
         minSdk 26
         targetSdk 34
-        versionCode 14001
-        versionName "1.4.1"
+        versionCode 14002
+        versionName "1.4.2"
     }
 
+    signingConfigs {
+        stableRelease {
+            if (System.getenv('ANDROID_KEYSTORE_PATH')) {
+                storeFile file(System.getenv('ANDROID_KEYSTORE_PATH'))
+                storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('ANDROID_KEY_ALIAS')
+                keyPassword System.getenv('ANDROID_KEY_PASSWORD')
+            }
+        }
+    }
     buildTypes {
         debug {
             debuggable true
+            applicationIdSuffix ".dev"
         }
         release {
             minifyEnabled false
-            // 사이드로드용: 릴리스도 디버그 키로 서명해 바로 설치할 수 있게 한다
-            signingConfig signingConfigs.debug
+            // 기존 설치의 서명 키를 재사용해야 진행도를 유지하며 업데이트할 수 있다.
+            signingConfig signingConfigs.stableRelease
         }
     }
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+// Never silently produce an incompatible release with an ephemeral debug key.
+gradle.taskGraph.whenReady { graph ->
+    if (graph.allTasks.any { it.name.toLowerCase().contains('release') }) {
+        ['ANDROID_KEYSTORE_PATH', 'ANDROID_KEYSTORE_PASSWORD', 'ANDROID_KEY_ALIAS', 'ANDROID_KEY_PASSWORD'].each {
+            if (!System.getenv(it)) throw new GradleException("Release signing requires " + it)
+        }
     }
 }
