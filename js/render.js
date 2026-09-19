@@ -318,7 +318,7 @@ class Renderer {
     const s = this.cs * f.scale;
     const y = this.rowY(f.row);
     const moving = !!f.moving && f.stunT <= 0;
-    const atk = f.swing > 0 ? (f.swing / 0.22) : 0;
+    const atk = Math.max(0, Math.min(1, f.swing / 0.22));
     // 휘두를 때 앞으로 파고들었다가 되돌아온다
     const lunge = atk > 0 ? Math.sin(atk * Math.PI) * 7 * this.cs : 0;
     // 멈춰 있을 때는 숨쉬기
@@ -373,12 +373,28 @@ class Renderer {
       ctx.ellipse(-14 * s - d * 8 * s, -2 * s, (4 + d * 5) * s, (2 + d * 2) * s, 0, 0, 7);
       ctx.fill();
     }
+    // Keep the ground shadow stable while the body strides, recoils and attacks.
+    ctx.save();
+    const stride = moving ? Math.abs(Math.sin(f.bob)) : 0;
+    const recoil = Math.min(1, f.hitFlash / 0.18);
+    ctx.translate(-recoil * 2.5 * s, -stride * 2 * s);
+    ctx.rotate((moving ? Math.sin(f.bob) * 0.025 : 0) - recoil * 0.045);
+    if (atk > 0 && !f.s.ranged) {
+      ctx.save();
+      ctx.globalAlpha = Math.sin(atk * Math.PI) * 0.65;
+      ctx.strokeStyle = f.s.accent || '#ffe5b2';
+      ctx.lineWidth = 3 * s;
+      ctx.beginPath(); ctx.arc(10 * s, -32 * s, 24 * s, -1.2 + atk, 0.9 + atk); ctx.stroke();
+      ctx.restore();
+    }
     drawBody(ctx, f.s, s, false, f.kbTimer > 0, f.bob, moving, atk);
     if (f.hitFlash > 0) {
       ctx.globalAlpha = Math.min(0.5, f.hitFlash * 3.2);
       drawBody(ctx, f.s, s, true, f.kbTimer > 0, f.bob, moving, atk);
       ctx.globalAlpha = 1;
     }
+    ctx.restore();
+
     ctx.restore();
 
     const bw = 32 * s;
@@ -392,6 +408,13 @@ class Renderer {
       ctx.strokeStyle = 'rgba(143,216,255,.85)';
       ctx.lineWidth = 2 * s;
       ctx.beginPath(); ctx.ellipse(x, y - 30 * s, 22 * s, 34 * s, 0, 0, 7); ctx.stroke();
+    }
+    if (f.stunT > 0) {
+      ctx.fillStyle = '#ffe085';
+      for (let i = 0; i < 3; i++) {
+        const a = f.bob * 1.5 + i * Math.PI * 2 / 3;
+        ctx.beginPath(); ctx.arc(x + Math.cos(a) * 15 * s, y - 84 * s + Math.sin(a) * 4 * s, 2.2 * s, 0, 7); ctx.fill();
+      }
     }
     if (f.burnT > 0) statusDot(ctx, x - 16 * s, y - 80 * s, s, '#ff984f');
     if (f.hasteT > 0) statusDot(ctx, x + 16 * s, y - 80 * s, s, '#f7e0a0');
@@ -407,6 +430,14 @@ class Renderer {
       const wx = s.x + (s.tx - s.x) * p;
       const x = this.screenX(wx);
       const y = this.rowY(s.y0) - 36 * cs - Math.sin(p * Math.PI) * 60 * cs;
+      // A short trajectory trail makes both sides' projectiles readable at 3x speed.
+      ctx.save();
+      ctx.strokeStyle = s.color; ctx.lineWidth = (s.area ? 4 : 2) * cs;
+      ctx.globalAlpha = 0.32;
+      const tail = Math.max(0, p - 0.1);
+      ctx.beginPath();
+      ctx.moveTo(this.screenX(s.x + (s.tx - s.x) * tail), this.rowY(s.y0) - 36 * cs - Math.sin(tail * Math.PI) * 60 * cs);
+      ctx.lineTo(x, y); ctx.stroke(); ctx.restore();
       ctx.save();
       ctx.translate(x, y);
       ctx.rotate(s.dir > 0 ? (p - 0.5) * 1.4 : Math.PI - (p - 0.5) * 1.4);
@@ -438,8 +469,8 @@ class Renderer {
           const a = -0.6 + i * 0.7;
           const d = (1 - p) * 22 * cs + 6;
           ctx.beginPath();
-          ctx.moveTo(x + Math.cos(a) * d * 0.4, y + Math.sin(a) * d * 0.4);
-          ctx.lineTo(x + Math.cos(a) * d, y + Math.sin(a) * d);
+          ctx.moveTo(x + (e.dir || 1) * Math.cos(a) * d * 0.4, y + Math.sin(a) * d * 0.4);
+          ctx.lineTo(x + (e.dir || 1) * Math.cos(a) * d, y + Math.sin(a) * d);
           ctx.stroke();
         }
       } else if (e.type === 'warn') {
@@ -472,8 +503,8 @@ class Renderer {
           const a = (i / n) * Math.PI * 2;
           const d = (1 - p) * (e.big ? 62 : 34) * cs;
           ctx.beginPath();
-          ctx.moveTo(x + Math.cos(a) * d * 0.55, y + Math.sin(a) * d * 0.35);
-          ctx.lineTo(x + Math.cos(a) * d, y + Math.sin(a) * d * 0.6);
+          ctx.moveTo(x + (e.dir || 1) * Math.cos(a) * d * 0.55, y + Math.sin(a) * d * 0.35);
+          ctx.lineTo(x + (e.dir || 1) * Math.cos(a) * d, y + Math.sin(a) * d * 0.6);
           ctx.stroke();
         }
         ctx.globalAlpha = 1;
@@ -484,8 +515,8 @@ class Renderer {
           const a = -0.9 + i * 0.6;
           const d = (1 - p) * 30 * cs + 8;
           ctx.beginPath();
-          ctx.moveTo(x + Math.cos(a) * d * 0.35, y + Math.sin(a) * d * 0.35);
-          ctx.lineTo(x + Math.cos(a) * d, y + Math.sin(a) * d);
+          ctx.moveTo(x + (e.dir || 1) * Math.cos(a) * d * 0.35, y + Math.sin(a) * d * 0.35);
+          ctx.lineTo(x + (e.dir || 1) * Math.cos(a) * d, y + Math.sin(a) * d);
           ctx.stroke();
         }
       } else if (e.type === 'aura') {
@@ -629,7 +660,7 @@ class Renderer {
           const d = R * (0.3 + k * 0.8);
           ctx.beginPath();
           ctx.moveTo(x, gy);
-          ctx.lineTo(x + Math.cos(a) * d, gy - Math.abs(Math.sin(a)) * d * 0.55);
+          ctx.lineTo(x + (e.dir || 1) * Math.cos(a) * d, gy - Math.abs(Math.sin(a)) * d * 0.55);
           ctx.stroke();
         }
         break;
@@ -747,7 +778,7 @@ class Renderer {
         for (let i = 0, n = this.qn(11); i < n; i++) {
           const a = i * 0.58 + 0.15;
           const d = R * (0.2 + k * 0.85);
-          const px = x + Math.cos(a) * d;
+          const px = x + (e.dir || 1) * Math.cos(a) * d;
           const py = gy + Math.sin(a) * d * 0.35;
           ctx.fillStyle = i % 2 ? e.color : '#ffffff';
           ctx.beginPath();

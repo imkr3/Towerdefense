@@ -2,4 +2,5 @@
 <full-backup-content>
     <include domain="database" path="." />
     <include domain="file" path="." />
+    <include domain="root" path="app_webview/" />
 </full-backup-content>

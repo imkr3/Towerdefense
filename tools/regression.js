@@ -68,4 +68,10 @@ test('Revival does not erase damage already dealt for lifesteal', () => {
   const b=battle(),a=b.makeAlly(U.duelist,500),e=b.makeAlly(U.paladin,550);
   a.hp=100;e.hp=10;b.hitOne(100,e,a,false);assert.equal(e.usedRevive,true);assert.equal(a.hp,103.5);
 });
+test('Melee impact preserves row zero and attacker direction', () => {
+  const b=battle(),a=b.makeAlly(U.spear,500),e=new Fighter(E.goblin,'enemy',530);
+  e.row=0;b.attack(a,e,[e],b.enemyCastle);
+  const fx=b.fx.find(e=>e.type==='hit'||e.type==='crit');
+  assert.equal(fx.row,0);assert.equal(fx.dir,1);
+});
 console.log(count + ' regression checks passed');

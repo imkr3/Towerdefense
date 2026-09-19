@@ -913,8 +913,8 @@ class Battle {
       if (f.s.area) this.areaHit(r.dmg, cx, f.s.areaRadius, foes, foeCastle, f, r.crit);
       else this.hitOne(r.dmg, target, f, r.crit);
       this.castFx(f, target.x !== undefined ? target.x : cx, target.row, r.crit);
-      this.fx.push({ type: r.crit ? 'crit' : 'hit', x: target.x, row: target.row || 1,
-                     t: 0.22, life: 0.22 });
+      this.fx.push({ type: r.crit ? 'crit' : 'hit', x: target.x, row: target.row ?? 1,
+                     dir: f.dir, t: 0.22, life: 0.22 });
       sfx(f.s.area ? 'hit' : 'slash');
     }
   }
@@ -1011,7 +1011,7 @@ class Battle {
       }
       if (!hit && !castle.dead && Math.abs(castle.x - s.tx) < 110) hit = castle;
       if (hit) this.hitOne(s.dmg, hit, s.src, s.crit);
-      this.fx.push({ type: s.crit ? 'crit' : 'hit', x: s.tx, row: s.y0, t: 0.22, life: 0.22 });
+      this.fx.push({ type: s.crit ? 'crit' : 'hit', x: hit ? hit.x : s.tx, row: hit ? (hit.row ?? s.y0) : s.y0, dir: s.dir, t: 0.22, life: 0.22 });
     }
     this.shots = this.shots.filter(s => !s.done);
   }
