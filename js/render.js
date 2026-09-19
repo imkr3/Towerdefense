@@ -19,6 +19,9 @@ class Renderer {
 
   resize() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    // 노치 여백. 매 프레임 getComputedStyle 을 부르면 스타일 재계산이 걸린다.
+    this.safeTop = parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue('--st')) || 0;
     const r = this.cv.getBoundingClientRect();
     this.w = Math.max(320, r.width);
     this.h = Math.max(240, r.height);
@@ -46,8 +49,7 @@ class Renderer {
   screenX(worldX) { return (worldX - this.cam) * this.zoom + this.w / 2; }
   rowY(row) { return this.groundY + (row || 0) * 10 * this.cs; }
 
-  /* 프레임 시간을 지켜보며 이펙트 품질을 조절한다.
-   * shadowBlur 가 가장 비싸므로 밀리기 시작하면 그것부터 끈다. */
+  /* 프레임 시간을 지켜보며 이펙트 품질(파티클 수)을 조절한다. */
   trackFrame(dt) {
     const ms = Math.min(120, dt * 1000);
     this._frameMs += (ms - this._frameMs) * 0.12;
@@ -61,8 +63,7 @@ class Renderer {
     }
   }
 
-  /* 품질에 따라 흐림 정도와 반복 횟수를 깎는다 */
-  blur(v) { return this.fxq >= 1 ? v : (this.fxq >= 0.5 ? v * 0.5 : 0); }
+  /* 품질에 따라 반복 횟수를 깎는다 */
   qn(n) { return this.fxq >= 1 ? n : Math.max(1, Math.round(n * (this.fxq >= 0.5 ? 0.6 : 0.35))); }
 
   panBy(dxScreen) {
@@ -573,7 +574,6 @@ class Renderer {
   /* 병종별 필살 연출. 가산 합성으로 화면 위에서 빛난다. */
   drawCast(e, x, y, p, cs) {
     const ctx = this.ctx;
-    const B = v => this.blur(v);
     const k = 1 - p;                       // 0 -> 1 진행
     const R = Math.max(60, e.r * this.zoom);
     const big = e.big ? 1.6 : 1;
@@ -581,7 +581,6 @@ class Renderer {
     ctx.save();
     ctx.lineCap = 'round';
     ctx.globalCompositeOperation = 'lighter';
-    ctx.shadowColor = e.color;
 
     switch (e.kind) {
       case 'lightning': {
@@ -596,22 +595,21 @@ class Renderer {
             cx2 += (Math.sin(cy * 0.11 + b * 2.7 + e.x) * 26 - 5) * cs;
             pts.push([cx2, cy]);
           }
-          const stroke = (w, col, a, blur) => {
+          const stroke = (w, col, a) => {
             ctx.globalAlpha = a * p;
             ctx.strokeStyle = col;
             ctx.lineWidth = w;
-            ctx.shadowBlur = B(blur);
             ctx.beginPath();
             ctx.moveTo(pts[0][0], pts[0][1]);
             for (let n = 1; n < pts.length; n++) ctx.lineTo(pts[n][0], pts[n][1]);
             ctx.stroke();
           };
-          if (this.fxq >= 1) stroke(16 * cs * big, e.color, 0.35, 26);   // 넓은 광채
-          stroke(7 * cs * big, e.color, 0.8, 18);     // 본체
-          stroke(2.6 * cs * big, '#ffffff', 1, 10);   // 흰 심지
+          stroke(30 * cs * big, e.color, 0.10);       // 바깥 광채
+          stroke(16 * cs * big, e.color, 0.28);       // 안쪽 광채
+          stroke(7 * cs * big, e.color, 0.8);         // 본체
+          stroke(2.6 * cs * big, '#ffffff', 1);       // 흰 심지
         }
         // 착탄 폭발
-        ctx.shadowBlur = B(30);
         ctx.globalAlpha = p * 0.85;
         ctx.fillStyle = e.color;
         ctx.beginPath();
@@ -642,7 +640,6 @@ class Renderer {
           ctx.globalAlpha = p * (1 - i * 0.2);
           ctx.strokeStyle = i === 0 ? '#ffffff' : e.color;
           ctx.lineWidth = (8 - i * 1.6) * cs * big;
-          ctx.shadowBlur = B(22);
           ctx.beginPath();
           ctx.ellipse(x, gy, rr, rr * 0.32, 0, 0, 7);
           ctx.stroke();
@@ -667,7 +664,6 @@ class Renderer {
         g.addColorStop(0.5, e.color);
         g.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.globalAlpha = p * 0.9;
-        ctx.shadowBlur = B(30);
         ctx.fillStyle = g;
         ctx.fillRect(x - R * 0.4, gy - h, R * 0.8, h);
         ctx.fillStyle = '#ffffff';
@@ -691,7 +687,6 @@ class Renderer {
       }
       case 'runes': {
         const rr = R * (0.35 + k * 0.8);
-        ctx.shadowBlur = B(24);
         ctx.globalAlpha = p * 0.55;
         ctx.fillStyle = e.color;
         ctx.beginPath();
@@ -726,7 +721,6 @@ class Renderer {
         break;
       }
       case 'firestorm': {
-        ctx.shadowBlur = B(26);
         for (let i = 0, n = this.qn(18); i < n; i++) {
           const seed = i * 7.3 + Math.floor(e.x);
           const fx2 = x + Math.sin(seed) * R * 0.85;
@@ -749,7 +743,6 @@ class Renderer {
         break;
       }
       case 'iceburst': {
-        ctx.shadowBlur = B(22);
         ctx.globalAlpha = p;
         for (let i = 0, n = this.qn(11); i < n; i++) {
           const a = i * 0.58 + 0.15;
@@ -775,7 +768,6 @@ class Renderer {
         break;
       }
       case 'slash': {
-        ctx.shadowBlur = B(18);
         const L = 46 * cs * big;
         for (let i = 0; i < 2; i++) {
           const a = (i ? -0.75 : 0.75) + k * 0.5;
@@ -803,7 +795,6 @@ class Renderer {
         break;
       }
       case 'holy': {
-        ctx.shadowBlur = B(26);
         ctx.globalAlpha = p * 0.55;
         ctx.fillStyle = e.color;
         ctx.beginPath();
@@ -826,7 +817,6 @@ class Renderer {
         break;
       }
     }
-    ctx.shadowBlur = B(0);
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'source-over';
     ctx.restore();
@@ -873,7 +863,7 @@ class Renderer {
     const boss = battle.aliveBoss();
     if (boss) {
       const w = Math.min(300, this.w - 80), h = 10;
-      const x0 = (this.w - w) / 2, y0 = 106 + (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--st')) || 0);
+      const x0 = (this.w - w) / 2, y0 = 106 + this.safeTop;
       ctx.fillStyle = 'rgba(0,0,0,.55)';
       ctx.fillRect(x0 - 2, y0 - 2, w + 4, h + 4);
       ctx.fillStyle = '#8e2f3a';
@@ -924,7 +914,7 @@ class Renderer {
   drawMiniMap(battle) {
     const ctx = this.ctx;
     const w = Math.min(280, this.w - 40), h = 8;
-    const x0 = (this.w - w) / 2, y0 = 88;
+    const x0 = (this.w - w) / 2, y0 = 88 + this.safeTop;
     ctx.fillStyle = 'rgba(0,0,0,.38)';
     rectPath(ctx, x0, y0, w, h); ctx.fill();
     const put = (wx, color, r) => {

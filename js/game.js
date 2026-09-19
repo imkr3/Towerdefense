@@ -360,8 +360,9 @@ class Battle {
     this.step(this.enemies, this.allies, this.allyCastle, dt, false);
 
     this.updateShots(dt);
-    // Resolve both sides until death explosions stop chaining. Rewards are paid once.
-    while (this.allies.concat(this.enemies).some(f => f.dead && !f.reaped)) {
+    // 사망 폭발이 연쇄를 멈출 때까지 양쪽을 정리한다. 보상은 한 번만 준다.
+    // 매 판정마다 배열을 새로 합치면 틱마다 쓰레기가 쌓이므로 그냥 훑는다.
+    while (this.hasUnreaped()) {
       this.reap(this.enemies, this.allies, this.allyCastle, true);
       this.reap(this.allies, this.enemies, this.enemyCastle, false);
     }
@@ -386,6 +387,13 @@ class Battle {
     if (f.boss) { this.bossAlert = 2.6; this.bossName = spec.name; this.shake = 10; sfx('bossIn'); }
     this.enemies.push(f);
     return f;
+  }
+
+  /* 아직 정리하지 않은 시체가 남았는가 */
+  hasUnreaped() {
+    for (const f of this.allies) if (f.dead && !f.reaped) return true;
+    for (const f of this.enemies) if (f.dead && !f.reaped) return true;
+    return false;
   }
 
   /* 사망 처리 (죽을 때 터지는 능력 포함) */
@@ -916,7 +924,7 @@ class Battle {
     const dealt = target.takeDamage(dmg) || 0;
     if (target.isCastle) {
       if (target.side === 'ally') this.shake = Math.max(this.shake, 8);
-    } else if (this.dmgFxCount < 14) {
+    } else if (dealt >= 1 && this.dmgFxCount < 14) {
       this.dmgFxCount++;
       this.fx.push({ type: 'dmg', x: target.x + (Math.random() - 0.5) * 26,
                      row: target.row, v: Math.round(dealt), dy: Math.random() * 10,

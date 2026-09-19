@@ -20,21 +20,21 @@ const UNITS = [
   mk({
     id: 'spear', name: '창병', role: '근접', shape: 'spear',
     body: '#2b3038', accent: '#c3cad2', tunic: '#3f6bb5',
-    hp: 260, atk: 34, range: 62, speed: 46, interval: 1.0,
+    hp: 340, atk: 44, range: 90, speed: 46, interval: 1.0,
     cost: 55, cooldown: 2.2, kb: 3, unlockStage: 1,
     desc: '값싸고 빨리 나오는 징집병. 머릿수로 전선을 채운다.'
   }),
   mk({
     id: 'shield', name: '방패병', role: '방어', shape: 'shield',
     body: '#2b3038', accent: '#8d6a3f', tunic: '#6b7480',
-    hp: 1900, atk: 14, range: 58, speed: 26, interval: 1.5,
+    hp: 2300, atk: 30, range: 58, speed: 26, interval: 1.5,
     cost: 120, cooldown: 6.5, kb: 1, scale: 1.1, unlockStage: 2,
     desc: '두꺼운 방패로 전선을 버틴다. 공격력은 없다시피 하다.'
   }),
   mk({
     id: 'archer', name: '궁수', role: '원거리', shape: 'archer',
     body: '#2b3038', accent: '#3f7a43', tunic: '#4a7c4e',
-    hp: 220, atk: 62, range: 265, speed: 36, interval: 1.25,
+    hp: 300, atk: 80, range: 265, speed: 36, interval: 1.25,
     cost: 145, cooldown: 5.0, kb: 2, ranged: true, unlockStage: 3,
     desc: '뒤에서 활을 쏜다. 앞줄이 뚫리면 순식간에 쓰러진다.'
   }),
@@ -43,14 +43,14 @@ const UNITS = [
     body: '#2b3038', accent: '#e8d9a8', tunic: '#f0ead6',
     hp: 460, atk: 0, range: 0, speed: 30, interval: 2.0,
     cost: 175, cooldown: 12, kb: 1, unlockStage: 4,
-    ab: { heal: 95, radius: 230, interval: 2.4, noAttack: true },
+    ab: { heal: 120, radius: 230, interval: 2.4, noAttack: true },
     abText: '주변 아군 회복 · 공격 안 함',
     desc: '싸우지 않는 대신 2.4초마다 주변 아군의 상처를 꿰맨다.'
   }),
   mk({
     id: 'berserk', castFx: 'slash', name: '광전사', role: '돌격', shape: 'berserk',
     body: '#2b3038', accent: '#b0b6bd', tunic: '#a63a2e',
-    hp: 470, atk: 42, range: 70, speed: 74, interval: 0.45,
+    hp: 600, atk: 52, range: 70, speed: 74, interval: 0.45,
     cost: 200, cooldown: 6.0, kb: 3, unlockStage: 5,
     desc: '쌍도끼를 미친 듯이 휘두른다. 방패병 뒤에 세워야 산다.'
   }),
@@ -66,7 +66,7 @@ const UNITS = [
   mk({
     id: 'bomber', castFx: 'firestorm', name: '화약병', role: '자폭형', shape: 'bomber',
     body: '#2b3038', accent: '#6b4b2a', tunic: '#8a6a3a',
-    hp: 300, atk: 260, range: 78, speed: 96, interval: 3.0,
+    hp: 300, atk: 300, range: 78, speed: 96, interval: 3.0,
     cost: 165, cooldown: 8.0, kb: 1, area: true, areaRadius: 95, unlockStage: 7,
     abText: '범위 폭발',
     desc: '적진까지 달려가 화약통을 터뜨린다. 한 방이 아주 아프다.'
@@ -83,7 +83,7 @@ const UNITS = [
   mk({
     id: 'knight', castFx: 'slash', name: '기사', role: '주력', shape: 'knight',
     body: '#2b3038', accent: '#c8ced6', tunic: '#8e2f3a',
-    hp: 1250, atk: 135, range: 76, speed: 32, interval: 1.9,
+    hp: 1600, atk: 165, range: 76, speed: 32, interval: 1.9,
     cost: 245, cooldown: 9.5, kb: 2, area: true, areaRadius: 80, scale: 1.1, unlockStage: 9,
     abText: '범위 공격',
     desc: '대검을 휘둘러 앞의 여럿을 함께 벤다. 왕국군의 중핵.'
@@ -163,7 +163,7 @@ const UNITS = [
   mk({
     id: 'longbow', name: '대궁병', role: '장거리', shape: 'longbow',
     body: '#2b3038', accent: '#6b8f3f', tunic: '#3f5a2f',
-    hp: 280, atk: 96, range: 400, speed: 30, interval: 2.0,
+    hp: 340, atk: 118, range: 400, speed: 30, interval: 2.0,
     cost: 225, cooldown: 7.0, kb: 2, ranged: true, unlockStage: 9,
     abText: '사거리 400 · 뒤에서 안전하게',
     desc: '장궁으로 전선 훨씬 뒤에서 쏜다. 사거리 하나로 먹고산다.'
@@ -255,7 +255,7 @@ const SEASON_UNITS = [
     id: 'zeus', castFx: 'lightning', name: '제우스', short: '제우스', role: '뇌신', shape: 'zeus',
     season: 'olympus', rarity: 'SSR', gacha: true, unlockStage: 999,
     body: '#e8cfa4', accent: '#ffe14a', tunic: '#f7f2e4',
-    hp: 2600, atk: 400, range: 380, speed: 24, interval: 2.6,
+    hp: 2600, atk: 370, range: 380, speed: 24, interval: 2.6,
     cost: 620, cooldown: 58, kb: 1, ranged: true, area: true, areaRadius: 150, scale: 1.35,
     ab: { stun: { chance: 0.35, dur: 1.4 } },
     abText: '초장거리 번개 광역 · 35% 기절',
@@ -307,7 +307,7 @@ const SEASON_UNITS = [
     id: 'thor', castFx: 'shockwave', name: '토르', short: '토르', role: '뇌신', shape: 'thor',
     season: 'ragnarok', rarity: 'SSR', gacha: true, unlockStage: 999,
     body: '#2b3038', accent: '#b9c2cc', tunic: '#8e2f3a',
-    hp: 3900, atk: 470, range: 120, speed: 30, interval: 2.2,
+    hp: 3900, atk: 430, range: 120, speed: 30, interval: 2.2,
     cost: 640, cooldown: 60, kb: 1, area: true, areaRadius: 130, scale: 1.4,
     ab: { stun: { chance: 0.4, dur: 1.2 }, push: 50 },
     abText: '광역 망치 · 40% 기절 · 밀쳐내기',
@@ -359,7 +359,7 @@ const SEASON_UNITS = [
     id: 'anubis', castFx: 'pillar', name: '아누비스', short: '아누비스', role: '사자', shape: 'anubis',
     season: 'nile', rarity: 'SSR', gacha: true, unlockStage: 999,
     body: '#2a2a30', accent: '#e8c65a', tunic: '#1e1e24',
-    hp: 3300, atk: 360, range: 110, speed: 26, interval: 2.2,
+    hp: 3300, atk: 330, range: 110, speed: 26, interval: 2.2,
     cost: 600, cooldown: 55, kb: 1, area: true, areaRadius: 120, scale: 1.35,
     ab: { summon: { id: 'mummy', n: 2 }, interval: 7 },
     abText: '광역 · 7초마다 미라 2기 소환',

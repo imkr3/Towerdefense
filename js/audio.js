@@ -17,6 +17,7 @@ const SFX = {
       this.master = this.ctx.createGain();
       this.master.gain.value = 0.22;
       this.master.connect(this.ctx.destination);
+      this.noiseBuf = this.makeNoise(1.0);
       this.ready = true;
     } catch (e) { this.ready = false; }
   },
@@ -41,26 +42,37 @@ const SFX = {
     o.start(t); o.stop(t + dur + 0.02);
   },
 
-  /* 잡음 (타격, 폭발) */
-  noise: function (dur, freq, vol, q) {
-    if (!this.on || !this.ready) return;
-    const t = this.ctx.currentTime;
+  /* 잡음 원본을 한 번만 만들어 두고 계속 돌려 쓴다.
+   * 타격마다 버퍼를 새로 채우면 그 순간 프레임이 튄다. */
+  makeNoise: function (dur) {
     const len = Math.max(1, Math.floor(this.ctx.sampleRate * dur));
     const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
     const data = buf.getChannelData(0);
-    for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+    return buf;
+  },
+
+  /* 잡음 (타격, 폭발) */
+  noise: function (dur, freq, vol, q) {
+    if (!this.on || !this.ready || !this.noiseBuf) return;
+    const t = this.ctx.currentTime;
     const src = this.ctx.createBufferSource();
-    src.buffer = buf;
+    src.buffer = this.noiseBuf;
+    // 매번 다른 구간에서 시작해 같은 소리로 들리지 않게 한다
+    const maxOff = Math.max(0, this.noiseBuf.duration - dur - 0.02);
+    const off = maxOff > 0 ? Math.random() * maxOff : 0;
     const f = this.ctx.createBiquadFilter();
     f.type = 'lowpass';
     f.frequency.setValueAtTime(freq || 900, t);
     f.frequency.exponentialRampToValueAtTime(Math.max(80, (freq || 900) * 0.3), t + dur);
     f.Q.value = q || 1;
     const g = this.ctx.createGain();
+    // 원본은 일정한 잡음이라, 줄어드는 소리는 게인으로 만든다
     g.gain.setValueAtTime(vol || 0.3, t);
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     src.connect(f); f.connect(g); g.connect(this.master);
-    src.start(t);
+    src.start(t, off, dur + 0.02);
+    src.stop(t + dur + 0.02);
   },
 
   /* --- 상황별 --- */

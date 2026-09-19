@@ -872,7 +872,8 @@ function updateHud() {
   $('#wave-preview').classList.toggle('boss-warning', !!wave && wave.boss);
   $('#battle-clock').textContent = Math.floor(battle.time / 60) + ':' + String(Math.floor(battle.time % 60)).padStart(2, '0');
   cmdBtn.classList.toggle('ready', ready);
-  $('#cmd-cd').textContent = ready ? '준비' : Math.ceil(battle.cmdCd);
+  $('#cmd-cd').textContent = ready ? '준비'
+    : (battle.cmdCd > 0 ? Math.ceil(battle.cmdCd) : '대기');
   $('#money-txt').textContent = money;
   $('#wallet-txt').textContent = battle.walletMax;
   $('#wallet-fill').style.width = (battle.money / battle.walletMax * 100) + '%';
@@ -890,10 +891,16 @@ function updateHud() {
   });
 }
 
-function showResult() {
-  // 누적 기록과 임무 진행
+/* 전투에 쏟은 시간을 기록에 옮긴다. 전투를 포기하고 나가도 시간은 남긴다. */
+function flushPlayTime() {
+  if (playAccum <= 0) return;
   save.stats.playSec += Math.round(playAccum);
   playAccum = 0;
+}
+
+function showResult() {
+  // 누적 기록과 임무 진행
+  flushPlayTime();
   save.stats.bossKills += battle.bossKills || 0;
   addStat('kills', battle.kills);
   addStat('bosses', battle.bossKills || 0);
@@ -1243,9 +1250,11 @@ function init() {
   $('#btn-quit').addEventListener('click', () => {
     if (battle && battle.state === 'play') {
       askConfirm('전투 포기', '지금까지의 전과를 버리고 진군도로 돌아갈까?',
-                 () => show('scr-map'));
+                 () => { flushPlayTime(); saveGame(save); show('scr-map'); });
       return;
     }
+    flushPlayTime();
+    saveGame(save);
     show('scr-map');
   });
   $('#btn-speed').addEventListener('click', () => {

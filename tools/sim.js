@@ -62,17 +62,22 @@ function gachaLoadout(g, index) {
   return front.concat(pulled).slice(0, g.LOADOUT_MAX).map(u => u.id);
 }
 
-function runStage(g, index, upLv, unitLv, trace, gacha) {
+/* 갓 시작한 플레이어. 3전장까지 해금되는 기본 병종만 손에 쥐고 있다. */
+function basicLoadout(g) {
+  return g.ROSTER_UNITS.filter(u => u.unlockStage <= 3).map(u => u.id);
+}
+
+function runStage(g, index, upLv, unitLv, trace, gacha, basic) {
   const academy = Math.min(5, Math.floor(upLv / 2));
   const cap = g.unitLevelCap(index, academy);
   const levels = {};
   g.UNITS.forEach(u => { levels[u.id] = Math.min(unitLv, cap); });
 
   const unlocked = g.ROSTER_UNITS.filter(u => u.unlockStage <= index + 1);
-  const loadout = gacha ? gachaLoadout(g, index) : unlocked.slice()
+  const loadout = basic ? basicLoadout(g) : (gacha ? gachaLoadout(g, index) : unlocked.slice()
     .sort((a, b) => b.cost - a.cost)
     .slice(0, g.LOADOUT_MAX)
-    .map(u => u.id);
+    .map(u => u.id));
   const owned = {};
   if (gacha) g.UNITS.forEach(u => { if (u.gacha) owned[u.id] = 1; });
 
@@ -123,6 +128,14 @@ function runAll(upLv, unitLv, seed, gacha) {
   return rows;
 }
 
+/* 기본 병종만으로 앞 전장들을 어디까지 미는지 */
+function runBasic(stages, seed) {
+  const g = loadEngine(seed);
+  const rows = [];
+  for (let i = 0; i < stages; i++) rows.push(runStage(g, i, 0, 1, false, false, true));
+  return rows;
+}
+
 function printTable(rows, upLv, unitLv) {
   console.log(`\n  병영 강화 Lv${upLv} / 병종 Lv${unitLv}`);
   console.log('  ' + '-'.repeat(58));
@@ -141,16 +154,22 @@ function printTable(rows, upLv, unitLv) {
 }
 
 /* 기대하는 난이도 곡선. 크게 벗어나면 밸런스가 깨진 것으로 본다. */
+/* 기대하는 난이도 곡선.
+ * 기본 병종만으로 초반 전장은 밀 수 있어야 하고, 보스 전장부터는
+ * 병영 강화 없이 넘지 못해야 한다. */
 const EXPECT = [
-  { up: 0, lv: 1, min: 2,  max: 8,  label: '무강화' },
-  { up: 2, lv: 3, min: 9,  max: 15, label: '중반 강화' },
-  { up: 3, lv: 5, min: 13, max: 18, label: '후반 강화' },
+  { up: 0, lv: 1, min: 4,  max: 11, label: '무강화' },
+  { up: 2, lv: 3, min: 9,  max: 16, label: '중반 강화' },
+  { up: 3, lv: 5, min: 13, max: 19, label: '후반 강화' },
   { up: 5, lv: 8, min: 20, max: 20, label: '완전 강화' }
 ];
 
 /* 소환 병종은 특색으로 값을 해야지, 전장 진도를 건너뛰는 열쇠가 되면 안 된다.
  * 최상급만 뽑아 편성했을 때 전장 병종 편성과 이만큼 이상 벌어지면 실패로 본다. */
 const GACHA_GAP = 4;
+
+/* 해금되는 기본 병종(창병·방패병·궁수)만으로 넘어야 하는 전장 수 */
+const BASIC_STAGES = 3;
 
 function check() {
   let failed = 0;
@@ -169,6 +188,14 @@ function check() {
       failed++;
     }
   });
+  // 갓 시작한 플레이어가 기본 병종만으로 3전장까지 갈 수 있어야 한다
+  const basicRows = runBasic(BASIC_STAGES, 12345);
+  basicRows.forEach(r => {
+    const line = `기본 병종 ${r.stage}전장: ${r.win ? '승리' : '패배'} (${r.seconds}초, 성채 ${r.castle}%)`;
+    if (r.win) console.log(`  ✓ ${line}`);
+    else { console.error(`  ✗ ${line} — 강화 없이 넘을 수 있어야 한다`); failed++; }
+  });
+
   // 소환 편성이 전장 편성을 얼마나 앞지르는지
   [{ up: 0, lv: 1 }, { up: 3, lv: 5 }].forEach(e => {
     const base = runAll(e.up, e.lv, 12345, false).filter(r => r.win).length;
@@ -203,6 +230,12 @@ if (args[0] === '--check') {
   console.log('  [최상급 소환 편성]');
   const pulled = printTable(runAll(upLv, unitLv, 12345, true), upLv, unitLv);
   console.log(`  차이: 소환 편성이 ${pulled - base >= 0 ? '+' : ''}${pulled - base} 전장\n`);
+} else if (args[0] === '--basic') {
+  // node tools/sim.js --basic [전장수]
+  // 기본 병종(3전장까지 해금)만 들고 강화 없이 어디까지 가는지
+  const stages = parseInt(args[1] || String(BASIC_STAGES + 2), 10);
+  console.log('\n  기본 병종만 · 강화 없음');
+  printTable(runBasic(stages, 12345), 0, 1);
 } else if (args[0] === '--trace') {
   // node tools/sim.js --trace <전장번호> [강화Lv] [병종Lv]
   const stage = parseInt(args[1] || '20', 10) - 1;
