@@ -35,6 +35,7 @@
       <button class="btn ghost" id="btn-howto">교전 수칙</button>
       <button class="btn ghost" id="btn-sound">🔊 효과음 켜짐</button>
     <button class="btn ghost" id="btn-full">전체화면 · 가로 고정</button>
+      <button class="btn ghost" id="btn-save-manager">저장 관리 · 백업 / 복원</button>
       <button class="btn ghost danger" id="btn-reset">기록 초기화</button>
     </div>
   </div>
@@ -238,6 +239,15 @@
   </div>
 </div>
 
+<div id="save-warning" hidden role="alert"></div>
+<div class="modal" id="modal-save"><div class="modal-card">
+<h3>저장 관리</h3><p>백업 파일은 앱 밖에 보관됩니다. 앱을 삭제하기 전에 백업을 따로 저장해 주세요.</p>
+<div class="confirm-btns"><button class="btn" id="btn-export-save">백업 내보내기</button><button class="btn" id="btn-import-save">백업 파일 열기</button></div>
+<button class="btn small" id="btn-previous-save">이전 저장 복원</button>
+<input id="save-file" type="file" accept=".json,application/json" hidden>
+<textarea id="save-text" aria-label="백업 JSON" placeholder="백업 내용을 복사하거나 여기에 붙여 넣을 수 있습니다."></textarea>
+<div class="confirm-btns"><button class="btn" id="btn-restore-text">붙여 넣은 백업 복원</button><button class="btn primary" data-close>닫기</button></div>
+</div></div>
 <div id="rotate-hint">
   <div class="rot-box">
     <div class="rot-icon">
@@ -251,6 +261,7 @@
 
 <script src="js/audio.js"></script>
 <script src="js/data.js"></script>
+<script src="js/save-store.js"></script>
 <script src="js/game.js"></script>
 <script src="js/render.js"></script>
 <script src="js/main.js"></script>
