@@ -306,7 +306,7 @@ function renderMap() {
       '<div class="stage-info">' +
         '<div class="stage-name">' + (locked ? '???' : st.name) + '</div>' +
         '<div class="stage-meta">' + (locked ? '이전 전장을 먼저 돌파해야 한다' :
-            ('적 요새 ' + st.baseHp.toLocaleString() + ' · 보상 💰' + st.reward)) + '</div>' +
+            ('적 요새 ' + st.baseHp.toLocaleString() + ' · 보상 💰' + st.reward + (st.hint ? '<br>' + st.hint : ''))) + '</div>' +
       '</div>' +
       '<div class="stage-mark">' +
         (locked ? '' : (cleared || i < save.cleared
@@ -330,7 +330,7 @@ function renderMap() {
 function renderEndlessSlot() {
   const slot = $('#endless-slot');
   if (!slot) return;
-  const open = save.cleared >= STAGES.length;
+  const open = save.cleared >= ENDLESS_UNLOCK_STAGE;
   slot.innerHTML = '';
   if (!open) {
     slot.innerHTML = '<div class="endless-card locked">🔒 무한 전장은 20전장을 모두 돌파하면 열린다</div>';

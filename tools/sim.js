@@ -123,10 +123,10 @@ function runStage(g, index, upLv, unitLv, trace, gacha, basic) {
   };
 }
 
-function runAll(upLv, unitLv, seed, gacha) {
+function runAll(upLv, unitLv, seed, gacha, limit) {
   const g = loadEngine(seed);
   const rows = [];
-  for (let i = 0; i < g.STAGES.length; i++) rows.push(runStage(g, i, upLv, unitLv, false, gacha));
+  for (let i = 0; i < (limit || g.STAGES.length); i++) rows.push(runStage(g, i, upLv, unitLv, false, gacha));
   return rows;
 }
 
@@ -176,7 +176,7 @@ const BASIC_STAGES = 3;
 function check() {
   let failed = 0;
   EXPECT.forEach(e => {
-    const rows = runAll(e.up, e.lv, 12345);
+    const rows = runAll(e.up, e.lv, 12345, false, 20);
     const wins = printTable(rows, e.up, e.lv);
     const slow = rows.filter(r => r.win && r.seconds > 400);
     if (wins < e.min || wins > e.max) {
@@ -200,8 +200,8 @@ function check() {
 
   // 소환 편성이 전장 편성을 얼마나 앞지르는지
   [{ up: 0, lv: 1 }, { up: 3, lv: 5 }].forEach(e => {
-    const base = runAll(e.up, e.lv, 12345, false).filter(r => r.win).length;
-    const pulled = runAll(e.up, e.lv, 12345, true).filter(r => r.win).length;
+    const base = runAll(e.up, e.lv, 12345, false, 20).filter(r => r.win).length;
+    const pulled = runAll(e.up, e.lv, 12345, true, 20).filter(r => r.win).length;
     const gap = pulled - base;
     const line = `소환 편성 격차 (강화 ${e.up}/Lv${e.lv}): 전장 ${base}승 vs 소환 ${pulled}승 = ${gap >= 0 ? '+' : ''}${gap}`;
     if (Math.abs(gap) > GACHA_GAP) {
@@ -212,6 +212,18 @@ function check() {
     }
   });
 
+  const entryEngine=loadEngine(12345), entryRows=[];
+  for(let i=20;i<entryEngine.STAGES.length;i++)entryRows.push(runStage(entryEngine,i,5,8,false,false));
+  printTable(entryRows,5,8);
+  if(!entryRows[0].win){console.error('  ✗ 21전장은 기존 캠페인 완주 강화 수준으로 진입 가능해야 함');failed++;}
+  // Expansion has its own progression gate; original campaign thresholds stay unchanged.
+  for(const seed of [12345,98765]) {
+    const g=loadEngine(seed), rows=[];
+    for(let i=20;i<g.STAGES.length;i++) rows.push(runStage(g,i,8,12,false,false));
+    printTable(rows,8,12);
+    if(rows.some(r=>!r.win || r.seconds>400)){console.error('  ✗ 확장 전장: 충분한 강화로 400초 내 돌파 필요 (seed '+seed+')');failed++;}
+    else console.log('  ✓ 확장 전장 10개 완주 (seed '+seed+')');
+  }
   if (failed) {
     console.error(`\n밸런스 검사 실패 (${failed}건)\n`);
     process.exit(1);

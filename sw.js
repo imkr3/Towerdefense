@@ -1,5 +1,5 @@
 /* 막대 왕국 전쟁 - 오프라인 캐시 */
-const CACHE = 'stick-kingdom-v9';
+const CACHE = 'stick-kingdom-v10';
 const ASSETS = [
   './', './index.html', './css/style.css',
   './js/audio.js', './js/data.js', './js/save-store.js', './js/game.js', './js/render.js', './js/main.js',
