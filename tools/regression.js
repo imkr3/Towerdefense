@@ -109,4 +109,32 @@ test('Medical upgrade increases support healing by 6 percent per level', () => {
   const b=battle(),p=b.makeAlly(U.priest,500),a=b.makeAlly(U.spear,520);b.save.upgrades.medicine=5;a.hp=10;
   b.supportTick(p,[p,a],.1,true);assert.ok(Math.abs(a.hp-(10+120*1.3))<1e-8);
 });
+const {rollSummon,GACHA,RARITY}=vm.runInContext('({rollSummon,GACHA,RARITY})',ctx);
+test('Mythic pity wins over legendary pity, resets both, preserves inventory',()=>{
+  const s={mythPity:119,pity:39,pulls:119,owned:{zeus:true}};
+  let forced;rollSummon(s,r=>{forced=r;return U.hades;});assert.equal(forced,'UR');assert.equal(s.pity,0);assert.equal(s.mythPity,0);assert.equal(s.pulls,120);assert.equal(s.owned.zeus,true);
+});
+test('Old saves start mythic pity safely and SSR does not reset mythic progress',()=>{
+  const s={pity:39};let forced;rollSummon(s,r=>{forced=r;return U.zeus;});assert.equal(forced,'SSR');assert.equal(s.mythPity,1);assert.equal(s.pity,0);
+  assert.equal(Object.values(RARITY).reduce((n,r)=>n+r.weight,0),100);
+});
+function heroBattle(id){const s=save();s.owned[id]=true;s.loadout=[id];const b=new Battle(0,s,{baseHp:10000,money:900,rate:0,waves:[],reward:0});b.deploy(id);b.allies[0].x=600;return b;}
+test('Active needs living deployed hero, target and initial cooldown',()=>{
+  const b=heroBattle('hades');assert.equal(b.useHeroActive('hades'),false);b.heroCooldowns.hades=0;
+  assert.equal(b.useHeroActive('hades'),false);const e=b.spawnEnemy('ogre',800);const hp=e.hp;
+  assert.equal(b.useHeroActive('hades'),true);assert.ok(e.hp<hp);assert.equal(e.slowT,3);assert.equal(b.enemyCastle.hp,10000);assert.equal(b.useHeroActive('hades'),false);
+});
+test('Redeploy cannot reset active cooldown and dead heroes cannot cast',()=>{
+  const b=heroBattle('ra');b.heroCooldowns.ra=31;b.allies[0].dead=true;assert.equal(b.canHeroActive('ra'),false);
+  b.money=900;b.cooldowns.ra=0;b.deploy('ra');assert.equal(b.heroCooldowns.ra,31);
+});
+test('Rune protection cleanses nearby allies without stacking shields',()=>{
+  const b=heroBattle('odin'),a=b.allies[0];a.poisonT=3;a.burnT=3;b.heroCooldowns.odin=0;
+  assert.equal(b.useHeroActive('odin'),true);assert.equal(a.poisonT+a.burnT,0);assert.equal(a.barrier,320);
+  b.heroCooldowns.odin=0;b.heroGlobalCd=0;b.useHeroActive('odin');assert.equal(a.barrier,320);
+});
+test('Shared active cooldown and stun block skill spam',()=>{
+  const b=heroBattle('odin');b.heroCooldowns.odin=0;b.heroGlobalCd=1;assert.equal(b.canHeroActive('odin'),false);
+  b.heroGlobalCd=0;b.allies[0].stunT=1;assert.equal(b.canHeroActive('odin'),false);
+});
 console.log(count + ' regression checks passed');

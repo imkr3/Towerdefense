@@ -12,7 +12,7 @@ function defaultSave() {
     upgrades: { wallet: 0, income: 0, power: 0, vitality: 0, castle: 0 },
     levels: lv, loadout: ['spear'], knownUnits: ['spear'],
     stars: {}, totalKills: 0, sound: true,
-    owned: {}, stones: 3, pity: 0, season: 'olympus', pulls: 0, tutorial: false,
+    owned: {}, stones: 3, pity: 0, mythPity: 0, season: 'olympus', pulls: 0, tutorial: false,
     endlessBest: 0, achv: {}, daily: null, auto: false,
     stats: { battles: 0, wins: 0, bossKills: 0, trains: 0, playSec: 0 }
   };
@@ -443,6 +443,7 @@ function renderTraining() {
                      RARITY[rarityOf(u)].name + '</span>' : '') +
           (unlocked ? '<span class="lv-tag">레벨 ' + lv + '</span>' : '') +
           (unlocked && inTeam ? '<span class="team-tag">편성</span>' : '') + '</div>' +
+        (unlocked && u.active ? '<div class="active-desc">액티브 · ' + u.active.name + ' (' + u.active.cd + '초): ' + u.active.desc + '</div>' : '') +
         (unlocked && u.abText ? '<div class="ab-text">◆ ' + u.abText + '</div>' : '') +
         '<div class="unit-desc">' +
           (unlocked ? u.desc : '전장 ' + u.unlockStage + '에 도달하면 합류한다.') + '</div>' +
@@ -605,14 +606,7 @@ function doPull(count) {
   const got = [];
   let bestIdx = -1, bestRank = -1;
   for (let i = 0; i < count; i++) {
-    save.pity++;
-    save.pulls++;
-    let u;
-    if (save.pity >= GACHA.pity) { u = pullOne('SSR'); save.pity = 0; }
-    else {
-      u = pullOne();
-      if (rarityOf(u) === 'SSR') save.pity = 0;
-    }
+    const u = rollSummon(save, pullOne);
     got.push(u);
     const rank = RARITY_ORDER.indexOf(rarityOf(u));
     if (rank > bestRank) { bestRank = rank; bestIdx = i; }
@@ -714,10 +708,11 @@ function renderGacha() {
   const rate = $('#rate-box');
   let total = 0;
   RARITY_ORDER.forEach(k => { total += RARITY[k].weight; });
-  rate.innerHTML = '<div class="rate-title">등급 확률</div>' +
+  rate.innerHTML = '<div class="rate-title">기본 등급 확률 · 확정 소환 제외</div>' +
     RARITY_ORDER.slice().reverse().map(k =>
       '<div class="rate-row r-' + k + '"><span>' + RARITY[k].name + '</span><span>' +
-      (RARITY[k].weight / total * 100).toFixed(1) + '%</span></div>').join('');
+      (RARITY[k].weight / total * 100).toFixed(1) + '%</span></div>').join('') +
+    '<div class="active-desc">신화 확정까지 ' + (GACHA.mythPity-(save.mythPity||0)) + '회 · 전설 확정까지 ' + (GACHA.pity-save.pity) + '회<br>시즌 변경 시 누적 유지 · 신화 획득 시 두 누적 초기화</div>';
 
   drawBanner(sn);
 }
@@ -833,8 +828,22 @@ function buildCards() {
     box.appendChild(b);
   });
   cardEls = $$('#cards .card');
+  const abilities=$('#hero-abilities'); abilities.innerHTML='';
+  battle.roster.filter(u=>u.active).forEach(u=>{
+    const btn=document.createElement('button');btn.className='hero-ability';btn.dataset.hero=u.id;
+    btn.style.setProperty('--hero-color',u.accent);btn.title=u.active.desc;
+    btn.onclick=()=>{if(canBattleInput() && battle.useHeroActive(u.id)){SFX.command();toast(u.name+' · '+u.active.name);}};
+    abilities.appendChild(btn);
+  });
+  abilities.hidden=!abilities.children.length;
+  requestAnimationFrame(positionHeroAbilities);
 }
 
+function positionHeroAbilities(){
+  const bar=$('#hero-abilities'), hud=$('.hud-bottom');
+  if(bar && hud) bar.style.bottom=(hud.offsetHeight+5)+'px';
+}
+window.addEventListener('resize',positionHeroAbilities);
 let cardEls = [];
 
 let paused = false;
@@ -872,6 +881,12 @@ function autoDeploy(dt) {
 }
 
 function updateHud() {
+  $$('#hero-abilities button').forEach(btn=>{
+    const u=UNIT_BY_ID[btn.dataset.hero], alive=battle.heroCaster(u.id);
+    const cd=Math.ceil(Math.max(battle.heroCooldowns[u.id]||0,battle.heroGlobalCd));
+    btn.disabled=!canBattleInput() || !battle.canHeroActive(u.id);
+    btn.textContent=u.name+' · '+u.active.name+' · '+(!alive?'출진 필요':cd>0?cd+'초':battle.canHeroActive(u.id)?'사용':'대상 없음');
+  });
   const money = Math.floor(battle.money);
   $('#kill-count').textContent = battle.kills;
   // 증원이 돌기 시작하면 남은 적을 셀 수 없다
