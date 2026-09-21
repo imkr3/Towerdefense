@@ -74,12 +74,18 @@ ok('적 ' + Object.keys(D.ENEMIES).length + '종');
 
 D.STAGES.forEach((st, i) => {
   if (!st.waves.length) bad('전장 ' + (i + 1) + ': 파도가 없다');
-  st.waves.forEach(w => {
+  st.waves.forEach((w, n) => {
     if (!D.ENEMIES[w.e]) bad('전장 ' + (i + 1) + ': 없는 적 ' + w.e);
+    // 파도는 적어 둔 순서대로 등장해야 한다. 시각이 뒤로 가면 보스가
+    // 엉뚱하게 앞당겨져 난이도 곡선이 통째로 무너진다.
+    if (n > 0 && w.t < st.waves[n - 1].t) {
+      bad('전장 ' + (i + 1) + ': 파도 시각이 거꾸로다 (' + w.e + ' ' + w.t +
+          '초, 앞 파도는 ' + st.waves[n - 1].t + '초)');
+    }
   });
   if (!(st.baseHp > 0)) bad('전장 ' + (i + 1) + ': 요새 체력이 이상하다');
 });
-ok('전장 ' + D.STAGES.length + '개, 파도 참조 정상');
+ok('전장 ' + D.STAGES.length + '개, 파도 참조와 등장 순서 정상');
 
 D.SEASONS.forEach(sn => {
   sn.units.forEach(id => {

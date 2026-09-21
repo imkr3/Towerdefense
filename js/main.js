@@ -653,7 +653,8 @@ function showPullResult(results) {
     drawUnitIcon(el.querySelector('canvas'), r.unit, 60);
   });
   $('#pull-head').textContent =
-    best >= 3 ? '전설 강림!' : (best >= 2 ? '영웅 등장' : '소환 결과');
+    best >= 4 ? '신화 강림!!'
+    : (best >= 3 ? '전설 강림!' : (best >= 2 ? '영웅 등장' : '소환 결과'));
   $('#pull-head').className = 'pull-head r-' + RARITY_ORDER[best];
   box.classList.add('show');
 }

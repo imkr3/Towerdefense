@@ -62,9 +62,13 @@ function gachaLoadout(g, index) {
   return front.concat(pulled).slice(0, g.LOADOUT_MAX).map(u => u.id);
 }
 
-/* 갓 시작한 플레이어. 3전장까지 해금되는 기본 병종만 손에 쥐고 있다. */
+/* 갓 시작한 플레이어. BASIC_STAGES 까지 해금되는 기본 병종만 손에 쥐고 있다.
+ * 뒤 전장을 돌릴 때도 이 편성을 그대로 들려 보내야 제약이 된다. */
 function basicLoadout(g) {
-  return g.ROSTER_UNITS.filter(u => u.unlockStage <= 3).map(u => u.id);
+  return g.ROSTER_UNITS
+    .filter(u => u.unlockStage <= BASIC_STAGES)
+    .slice(0, g.LOADOUT_MAX)
+    .map(u => u.id);
 }
 
 function runStage(g, index, upLv, unitLv, trace, gacha, basic) {
@@ -133,8 +137,9 @@ function runAll(upLv, unitLv, seed, gacha, limit) {
 /* 기본 병종만으로 앞 전장들을 어디까지 미는지 */
 function runBasic(stages, seed) {
   const g = loadEngine(seed);
+  const n = Math.max(1, Math.min(stages, g.STAGES.length));
   const rows = [];
-  for (let i = 0; i < stages; i++) rows.push(runStage(g, i, 0, 1, false, false, true));
+  for (let i = 0; i < n; i++) rows.push(runStage(g, i, 0, 1, false, false, true));
   return rows;
 }
 
@@ -172,6 +177,10 @@ const GACHA_GAP = 4;
 
 /* 해금되는 기본 병종(창병·방패병·궁수)만으로 넘어야 하는 전장 수 */
 const BASIC_STAGES = 3;
+
+/* 2막(21~30전장)을 캠페인 완주 수준(강화5/Lv8)으로 돌파해도 되는 최대 개수.
+ * 이걸 넘으면 2막이 자체 성장 구간 노릇을 못 한다. */
+const EXT_ENTRY_MAX = 6;
 
 function check() {
   let failed = 0;
@@ -212,10 +221,18 @@ function check() {
     }
   });
 
+  // 2막은 캠페인을 막 끝낸 수준으로 "들어갈 수는" 있되 쓸어담지는 못해야 한다.
   const entryEngine=loadEngine(12345), entryRows=[];
   for(let i=20;i<entryEngine.STAGES.length;i++)entryRows.push(runStage(entryEngine,i,5,8,false,false));
   printTable(entryRows,5,8);
   if(!entryRows[0].win){console.error('  ✗ 21전장은 기존 캠페인 완주 강화 수준으로 진입 가능해야 함');failed++;}
+  const entryWins=entryRows.filter(r=>r.win).length;
+  if(entryWins>EXT_ENTRY_MAX){
+    console.error(`  ✗ 2막이 너무 무르다: 캠페인 완주 수준으로 ${entryWins}/10 돌파 (최대 ${EXT_ENTRY_MAX})`);
+    failed++;
+  } else {
+    console.log(`  ✓ 2막 진입 관문: 캠페인 완주 수준으로 ${entryWins}/10 돌파 (최대 ${EXT_ENTRY_MAX})`);
+  }
   // Expansion has its own progression gate; original campaign thresholds stay unchanged.
   for(const seed of [12345,98765]) {
     const g=loadEngine(seed), rows=[];
@@ -247,7 +264,7 @@ if (args[0] === '--check') {
 } else if (args[0] === '--basic') {
   // node tools/sim.js --basic [전장수]
   // 기본 병종(3전장까지 해금)만 들고 강화 없이 어디까지 가는지
-  const stages = parseInt(args[1] || String(BASIC_STAGES + 2), 10);
+  const stages = parseInt(args[1], 10) || BASIC_STAGES + 2;
   console.log('\n  기본 병종만 · 강화 없음');
   printTable(runBasic(stages, 12345), 0, 1);
 } else if (args[0] === '--trace') {

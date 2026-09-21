@@ -81,8 +81,32 @@ class Renderer {
   }
 
   /* --------------------------- 배경 --------------------------- */
+  /* 배경은 카메라에만 따라 움직이는 정지 화면이다. 카메라는 대부분의 프레임에서
+   * 1픽셀도 채 움직이지 않으므로, 한 번 그려 두고 다시 쓰면 그만이다.
+   * 가장 빨리 흐르는 층(땅 무늬)이 1픽셀 움직일 때마다만 다시 그린다. */
   drawBackground(stageIndex) {
-    const ctx = this.ctx, w = this.w, h = this.h;
+    const camQ = Math.round(this.cam * this.zoom);
+    const key = stageIndex + '|' + this.w + 'x' + this.h + '|' + this.groundY + '|' + camQ;
+    if (this._bgKey !== key) {
+      if (!this._bg) {
+        this._bg = document.createElement('canvas');
+        this._bgCtx = this._bg.getContext('2d');
+      }
+      if (this._bg.width !== this.cv.width || this._bg.height !== this.cv.height) {
+        this._bg.width = this.cv.width;
+        this._bg.height = this.cv.height;
+        const dpr = this.cv.width / this.w;
+        this._bgCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        this._skyKey = null;                 // 그라디언트는 컨텍스트에 매여 있다
+      }
+      this.paintBackground(this._bgCtx, stageIndex, camQ / this.zoom);
+      this._bgKey = key;
+    }
+    this.ctx.drawImage(this._bg, 0, 0, this.w, this.h);
+  }
+
+  paintBackground(ctx, stageIndex, cam) {
+    const w = this.w, h = this.h;
     const pal = FIELD_PALETTES[stageIndex % FIELD_PALETTES.length];
 
     // 하늘 그라디언트는 매 프레임 새로 만들 필요가 없다
@@ -98,7 +122,7 @@ class Renderer {
     ctx.fillRect(0, 0, w, h);
 
     // 해 / 달
-    const ox = ((this.w * 0.74 - this.cam * 0.05) % (this.w + 240) + this.w + 240) % (this.w + 240) - 120;
+    const ox = ((this.w * 0.74 - cam * 0.05) % (this.w + 240) + this.w + 240) % (this.w + 240) - 120;
     ctx.fillStyle = pal.orbGlow;
     ctx.beginPath(); ctx.arc(ox, this.groundY * 0.2, 44, 0, 7); ctx.fill();
     ctx.fillStyle = pal.orb;
@@ -110,7 +134,7 @@ class Renderer {
 
     // 구름
     ctx.fillStyle = pal.cloud;
-    const cpar = this.cam * 0.12;
+    const cpar = cam * 0.12;
     for (let i = 0; i < 9; i++) {
       const cx = ((i * 260 - cpar) % 2340 + 2340) % 2340 - 260;
       const cy = 46 + ((i * 53) % 5) * 24;
@@ -127,9 +151,9 @@ class Renderer {
       ctx.fillStyle = color;
       ctx.beginPath();
       ctx.moveTo(-step, this.groundY + 4);
-      const start = Math.floor(this.cam * par / step) - 2;
+      const start = Math.floor(cam * par / step) - 2;
       for (let i = start; i < start + Math.ceil(w / step) + 5; i++) {
-        const x = i * step - this.cam * par;
+        const x = i * step - cam * par;
         const height = base + amp * (0.45 + 0.55 * Math.sin(i * 2.31 + seed) ** 2);
         ctx.lineTo(x, this.groundY - height);
         ctx.lineTo(x + step * 0.48, this.groundY - height * 0.64);
@@ -143,7 +167,7 @@ class Renderer {
     ctx.fillStyle = pal.prop;
     ctx.globalAlpha = 0.32;
     for (let i = 0; i < 22; i++) {
-      const x = i * 130 - this.cam * 0.4;
+      const x = i * 130 - cam * 0.4;
       if (x < -70 || x > w + 70) continue;
       const y = this.groundY - 10;
       const h = 22 + (i * 17 % 30);
@@ -174,7 +198,7 @@ class Renderer {
     // 땅 무늬
     ctx.fillStyle = pal.speck;
     const step = 64;
-    const off = ((-this.cam * this.zoom) % step + step) % step;
+    const off = ((-cam * this.zoom) % step + step) % step;
     for (let x = off - step; x < w + step; x += step) {
       const yy = this.groundY + 26 + ((x * 7) % 44);
       ctx.fillRect(x, yy, 14, 3);
@@ -333,7 +357,9 @@ class Renderer {
     ctx.fillStyle = 'rgba(0,0,0,.22)';
     ctx.beginPath(); ctx.ellipse(0, 1, 17 * s, 4.5 * s, 0, 0, 7); ctx.fill();
     if (f.s.rarity === 'UR' || f.s.rarity === 'SSR' || f.s.rarity === 'SR') {      // 상위 등급 발밑 오라
-        const glow = f.s.rarity === 'SSR' ? 0.5 : 0.28;
+        // 신화가 전설보다 흐리게 빛나면 안 된다
+        const glow = f.s.rarity === 'UR' ? 0.62
+                   : (f.s.rarity === 'SSR' ? 0.5 : 0.28);
         const pulse = 0.85 + Math.sin(f.bob * 1.4) * 0.15;
         ctx.globalAlpha = glow * pulse;
         ctx.fillStyle = f.s.accent;
@@ -669,8 +695,9 @@ class Renderer {
             for (let n = 1; n < pts.length; n++) ctx.lineTo(pts[n][0], pts[n][1]);
             ctx.stroke();
           };
-          stroke(30 * cs * big, e.color, 0.10);       // 바깥 광채
-          stroke(16 * cs * big, e.color, 0.28);       // 안쪽 광채
+          // 품질을 낮췄을 때는 바깥 광채부터 뺀다
+          if (this.fxq >= 1) stroke(30 * cs * big, e.color, 0.10);   // 바깥 광채
+          if (this.fxq >= 0.5) stroke(16 * cs * big, e.color, 0.28); // 안쪽 광채
           stroke(7 * cs * big, e.color, 0.8);         // 본체
           stroke(2.6 * cs * big, '#ffffff', 1);       // 흰 심지
         }

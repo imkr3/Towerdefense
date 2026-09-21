@@ -422,7 +422,10 @@ class Battle {
   spawnEnemy(id, atX, mul) {
     const spec = ENEMIES[id];
     const st = Object.assign({ range: 60, speed: 40, interval: 1.2, kb: 1, scale: 1 }, spec);
-    const buff = mul && mul > 1 ? { hp: mul, atk: mul } : null;
+    // 전장 자체가 거느린 강화 배율(2막처럼 같은 적이 더 억센 곳)과
+    // 증원 배율을 함께 얹는다.
+    const total = (this.stage.enemyMul || 1) * (mul && mul > 1 ? mul : 1);
+    const buff = total > 1 ? { hp: total, atk: total } : null;
     const f = new Fighter(st, 'enemy', atX !== undefined ? atX : ENEMY_SPAWN_X - Math.random() * 40, buff);
     f.gold = spec.gold || 0;
     f.boss = !!spec.boss;
