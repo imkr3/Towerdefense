@@ -390,7 +390,7 @@ function renderShop() {
 }
 
 /* ------------------------------ 훈련소 ------------------------------ */
-let trainingFilter = 'all';
+let trainingFilter = 'ally';
 function renderTraining() {
   const hardCap = UNIT_LEVEL_HARD_CAP + (save.upgrades.academy || 0);
   $('#train-coins').textContent = save.coins;
@@ -401,6 +401,23 @@ function renderTraining() {
     ' · 편성 <b>' + save.loadout.length + ' / ' + LOADOUT_MAX + '</b>' +
     ' <span class="hint">카드는 편성한 병종만 나온다</span>';
 
+  const strip = $('#loadout-strip');
+  strip.innerHTML = '';
+  for (let i = 0; i < LOADOUT_MAX; i++) {
+    const u = UNIT_BY_ID[save.loadout[i]], slot = document.createElement('div');
+    slot.className = 'loadout-slot' + (u ? ' filled' : '');
+    if (!u) { slot.textContent = (i + 1) + ' · 빈 자리'; strip.appendChild(slot); continue; }
+    slot.innerHTML = '<canvas></canvas><strong>' + (i+1) + '. ' + u.name + '</strong><small>' + u.role + ' · 비용 ' + u.cost + '</small>';
+    drawUnitIcon(slot.querySelector('canvas'),u,38);
+    const controls = document.createElement('div'); controls.className='slot-controls';
+    for (const [delta,label] of [[-1,'앞으로'],[1,'뒤로']]) {
+      const btn=document.createElement('button'); btn.textContent=delta<0?'◀':'▶';
+      btn.setAttribute('aria-label',u.name+' '+label); btn.disabled=i+delta<0 || i+delta>=save.loadout.length;
+      btn.onclick=()=>{[save.loadout[i],save.loadout[i+delta]]=[save.loadout[i+delta],save.loadout[i]];saveGame(save);renderTraining();};
+      controls.appendChild(btn);
+    }
+    slot.appendChild(controls); strip.appendChild(slot);
+  }
   const box = $('#units-list');
   box.innerHTML = '';
   const ownedSeason = SEASON_UNITS.filter(u => u.gacha && save.owned[u.id]);
@@ -437,6 +454,7 @@ function renderTraining() {
             (u.range ? '<span class="stat">사거리 ' + u.range + '</span>' : '') +
             '<span class="stat">속도 ' + u.speed + '</span>' +
             '<span class="stat">대기 ' + u.cooldown + '초</span>' +
+            (u.maxActive ? '<span class="stat">동시 출진 ' + u.maxActive + '명</span>' : '') +
           '</div>' +
           '<div class="btn-row">' +
             '<button class="btn train-btn"' + (atCap ? ' disabled' : '') + '>' +
@@ -456,8 +474,8 @@ function renderTraining() {
           if (save.coins < cost) { toast('골드가 부족하다'); return; }
           save.coins -= cost;
           save.levels[u.id] = lv + 1;
-          saveGame(save);
           save.stats.trains++;
+          saveGame(save);
           addStat('trains', 1);
           renderTraining();
           SFX.levelUp();
@@ -510,7 +528,7 @@ function renderTraining() {
       '</div>';
     const tactic = document.createElement('div');
     tactic.className = 'unit-desc';
-    tactic.textContent = enemyTactic(e);
+    tactic.textContent = (e.abText ? e.abText + ' · ' : '') + enemyTactic(e);
     el.querySelector('.unit-body').appendChild(tactic);
     drawUnitIcon(el.querySelector('canvas'), e, 54);
     box.appendChild(el);

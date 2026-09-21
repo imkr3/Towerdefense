@@ -602,3 +602,10 @@ button:focus-visible{outline:3px solid #48b9ee;outline-offset:3px;}
 #modal-confirm{z-index:120;}
 #modal-save .modal-card{max-height:90vh;overflow:auto;}
 @media(max-height:450px){.title-btns{gap:4px}.title-btns .btn{padding:6px}}
+
+/* 편성 순서: 전투 카드와 같은 순서로 표시 */
+#loadout-strip{display:flex;gap:6px;padding:7px 12px;overflow-x:auto;flex-shrink:0;background:#172532;border-bottom:1px solid #506276}
+.loadout-slot{flex:1 0 94px;max-width:150px;min-height:70px;border:1px dashed #596675;border-radius:8px;color:#aab5c1;padding:5px;text-align:center;font-size:11px}
+.loadout-slot.filled{border:1px solid #cfac68;background:#273c50;color:#fff}
+.loadout-slot canvas{width:38px;height:38px;float:left}.loadout-slot strong,.loadout-slot small{display:block;line-height:1.5}.slot-controls{display:flex;justify-content:center;gap:12px;clear:both}.slot-controls button{min-width:30px;min-height:24px;border:0;border-radius:4px;background:#48627b;color:white}.slot-controls button:disabled{opacity:.3}
+@media(max-height:420px){#loadout-strip{padding:4px 8px}.loadout-slot{min-height:54px}.loadout-slot canvas{width:30px;height:30px}}

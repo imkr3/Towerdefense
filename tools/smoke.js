@@ -88,6 +88,13 @@ async function runSize(browser, size) {
   await page.click('#btn-units');
   await page.waitForTimeout(350);
   await shot(page, 'training-' + size.w);
+  const beforeOrder=await page.evaluate(()=>save.loadout.slice());
+  await page.getByRole('button',{name:'창병 뒤로',exact:true}).click();
+  if(!await page.evaluate(ids=>save.loadout[1]===ids[0]&&save.loadout[0]===ids[1],beforeOrder))throw Error('Loadout reorder failed');
+  await page.reload(); await page.click('#btn-start'); await page.click('#btn-units');
+  if(!await page.evaluate(ids=>save.loadout[1]===ids[0],beforeOrder))throw Error('Loadout order lost after reload');
+  await page.evaluate(()=>{for(const id of ['runeguard','musketeer','purifier','frostlancer']){const cv=document.createElement('canvas');drawUnitIcon(cv,UNIT_BY_ID[id],60);}});
+
   const cards = await page.$$eval('#units-list .unit-card', e => e.length);
   if (cards < 20) failures.push(size.name + ': 훈련소 목록이 부족하다 (' + cards + ')');
   await page.click('[data-filter="enemy"]');

@@ -409,6 +409,16 @@ class Renderer {
       ctx.lineWidth = 2 * s;
       ctx.beginPath(); ctx.ellipse(x, y - 30 * s, 22 * s, 34 * s, 0, 0, 7); ctx.stroke();
     }
+    if (f.ab.thorns) {
+      ctx.strokeStyle='#efb388';ctx.lineWidth=1.7*s;
+      for(let i=0;i<4;i++) { const yy=y-(18+i*10)*s;
+        ctx.beginPath();ctx.moveTo(x+f.dir*17*s,yy);ctx.lineTo(x+f.dir*25*s,yy-5*s);ctx.stroke(); }
+    }
+    if (f.ab.regen && f.burnT<=0 && f.hp<f.maxHp) {
+      ctx.fillStyle='#8bdfa2'; const rise=(f.bob%2)/2;
+      ctx.globalAlpha=1-rise;ctx.fillRect(x-3*s,y-(55+rise*18)*s,6*s,2*s);
+      ctx.fillRect(x-s,y-(57+rise*18)*s,2*s,6*s);ctx.globalAlpha=1;
+    }
     if (f.stunT > 0) {
       ctx.fillStyle = '#ffe085';
       for (let i = 0; i < 3; i++) {
@@ -985,6 +995,29 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk) {
 
   switch (st.shape) {
     /* ---------------------- 왕국군 ---------------------- */
+    case 'runeguard':
+      legs(S); torso(S, 4.5*s); head(S,'greathelm');
+      shieldShape(S,14*s,-50*s,20*s,43*s,acc);
+      line(S,12*s,-44*s,24*s,-32*s,2*s,tun); line(S,24*s,-44*s,12*s,-32*s,2*s,tun);
+      armWeapon(S,-.2,()=>line(S,0,0,25*s,-8*s,4*s,acc),5*s);
+      break;
+    case 'musketeer':
+      legs(S); torso(S); head(S,'wide');
+      armWeapon(S,-.15-atk*.15,()=>{
+        line(S,-8*s,0,38*s,-3*s,5*s,tun); line(S,10*s,-3*s,43*s,-4*s,3*s,acc);
+        if(atk>.65){tri(S,46*s,-4*s,58*s,-10*s,56*s,3*s,acc);}
+      },8*s);
+      break;
+    case 'purifier':
+      robe(S,17*s,-39*s,tun); legsHidden(S); torso(S); head(S,'coif'); halo(S,acc);
+      armWeapon(S,.2,()=>{line(S,0,0,10*s,16*s,1.5*s,acc);
+        ctx.fillStyle=acc;ctx.beginPath();ctx.arc(10*s,20*s,6*s,0,7);ctx.fill();},5*s);
+      break;
+    case 'frostlancer':
+      legs(S); torso(S,3.8*s); head(S,'icehorn');
+      armWeapon(S,-.2,()=>{line(S,0,0,49*s,-12*s,3*s,acc);
+        tri(S,56*s,-14*s,41*s,-23*s,43*s,-5*s,acc);},9*s);
+      break;
     case 'spear':
       legs(S); torso(S); head(S, 'cap');
       armWeapon(S, -0.35, () => {
@@ -2232,6 +2265,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk) {
 
 /* 걸을 때 반대쪽 팔을 흔드는 인간형 병종 */
 const HUMANOID = {
+  runeguard:1, musketeer:1, purifier:1, frostlancer:1,
   spear: 1, shield: 1, archer: 1, venom: 1, bomber: 1, knight: 1, duelist: 1,
   longbow: 1, rogue: 1, engineer: 1, skeleton: 1,
   goblin: 1, orcspear: 1, ballista: 1, powder: 1, dark: 1, orcberserk: 1
