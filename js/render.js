@@ -332,7 +332,7 @@ class Renderer {
     ctx.beginPath(); ctx.ellipse(0, 2, 20 * s, 5 * s, 0, 0, 7); ctx.stroke();
     ctx.fillStyle = 'rgba(0,0,0,.22)';
     ctx.beginPath(); ctx.ellipse(0, 1, 17 * s, 4.5 * s, 0, 0, 7); ctx.fill();
-    if (f.s.rarity === 'SSR' || f.s.rarity === 'SR') {      // 상위 등급 발밑 오라
+    if (f.s.rarity === 'UR' || f.s.rarity === 'SSR' || f.s.rarity === 'SR') {      // 상위 등급 발밑 오라
         const glow = f.s.rarity === 'SSR' ? 0.5 : 0.28;
         const pulse = 0.85 + Math.sin(f.bob * 1.4) * 0.15;
         ctx.globalAlpha = glow * pulse;
@@ -472,7 +472,31 @@ class Renderer {
       const p = e.t / e.life;
       const x = this.screenX(e.x);
       const y = this.rowY(e.row || 0) - 28 * cs;
-      if (e.type === 'hit') {
+      if(e.type==='mythic') {
+        const k=1-p, radius=Math.min(e.r*this.zoom,260*cs), ground=this.rowY(e.row);
+        ctx.save();ctx.translate(x,ground);ctx.strokeStyle=e.color;ctx.fillStyle=e.color;ctx.globalAlpha=Math.min(1,p*2);
+        // Ground seals and rising sparks are bounded, with no full-screen flash.
+        for(let ring=0;ring<3;ring++){
+          const rr=radius*(.45+ring*.24)*Math.min(1,k*5);
+          ctx.lineWidth=(3-ring*.7)*cs;ctx.beginPath();ctx.ellipse(0,0,rr,rr*.22,k*(ring-1)*.2,0,Math.PI*2);ctx.stroke();
+        }
+        if(e.kind==='sunfall'){
+          const cy=-110*cs-k*28*cs;ctx.lineWidth=4*cs;ctx.beginPath();ctx.arc(0,cy,32*cs,0,7);ctx.stroke();
+          for(let i=0;i<12;i++){const a=i*Math.PI/6+k;ctx.beginPath();ctx.moveTo(Math.cos(a)*40*cs,cy+Math.sin(a)*40*cs);ctx.lineTo(Math.cos(a)*55*cs,cy+Math.sin(a)*55*cs);ctx.stroke();}
+          ctx.globalAlpha=p*.25;ctx.beginPath();ctx.moveTo(-25*cs,cy);ctx.lineTo(-radius,0);ctx.lineTo(radius,0);ctx.lineTo(25*cs,cy);ctx.fill();
+        }else if(e.kind==='runeveil'){
+          for(let i=0;i<8;i++){const a=i*Math.PI/4+k*.7,xx=Math.cos(a)*radius*.7,yy=-45*cs+Math.sin(a)*22*cs;
+            ctx.beginPath();ctx.moveTo(xx,yy-10*cs);ctx.lineTo(xx-5*cs,yy);ctx.lineTo(xx+5*cs,yy+5*cs);ctx.lineTo(xx,yy+10*cs);ctx.stroke();}
+        }else if(e.kind==='underworld'){
+          ctx.globalAlpha=p*.65;ctx.lineWidth=5*cs;ctx.beginPath();ctx.ellipse(0,-55*cs,45*cs,65*cs,0,0,7);ctx.stroke();
+          for(let i=-1;i<=1;i++){ctx.beginPath();ctx.moveTo(i*20*cs,0);ctx.bezierCurveTo(i*50*cs,-30*cs,-i*15*cs,-70*cs,i*30*cs,-115*cs);ctx.stroke();}
+        }else{
+          for(let i=-1;i<=1;i++){const xx=i*radius*.5;ctx.beginPath();ctx.moveTo(xx-15*cs,-160*cs);ctx.lineTo(xx+10*cs,-105*cs);ctx.lineTo(xx-10*cs,-70*cs);ctx.lineTo(xx,0);ctx.stroke();}
+        }
+        ctx.globalAlpha=p*.8;
+        for(let i=0;i<18;i++){const a=i*2.399,rr=radius*(.2+.8*k);ctx.beginPath();ctx.arc(Math.cos(a)*rr,Math.sin(a)*rr*.2-k*(20+i%4*14)*cs,2*cs,0,7);ctx.fill();}
+        ctx.restore();
+      } else if (e.type === 'hit') {
         ctx.strokeStyle = 'rgba(255,255,255,' + p + ')';
         ctx.lineWidth = 2.5 * cs;
         for (let i = 0; i < 3; i++) {
@@ -995,6 +1019,30 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk) {
 
   switch (st.shape) {
     /* ---------------------- 왕국군 ---------------------- */
+    case 'hades':
+      robe(S,23*s,-42*s,tun);legsHidden(S);torso(S,4*s);head(S,'crown');
+      armWeapon(S,-.2,()=>{line(S,0,10*s,5*s,-46*s,3*s,acc);line(S,-3*s,-45*s,-3*s,-57*s,3*s,acc);line(S,12*s,-45*s,12*s,-57*s,3*s,acc);line(S,-3*s,-45*s,12*s,-45*s,3*s,acc);},8*s);break;
+    case 'odin':
+      robe(S,21*s,-40*s,tun);legsHidden(S);torso(S);head(S,'wide');
+      line(S,-5*s,-62*s,2*s,-62*s,3*s,'#17232c');
+      armWeapon(S,-.15,()=>{line(S,0,8*s,35*s,-47*s,3*s,acc);tri(S,40*s,-55*s,28*s,-46*s,37*s,-41*s,acc);},5*s);
+      for(let i=-1;i<=1;i+=2){const yy=-72*s+Math.sin(phase+i)*3*s;line(S,i*19*s,yy,i*27*s,yy-5*s,3*s,col);line(S,i*27*s,yy-5*s,i*35*s,yy,3*s,col);}break;
+    case 'ra':
+      robe(S,20*s,-40*s,tun);legsHidden(S);torso(S);head(S,'nemes');
+      tri(S,8*s,-63*s,22*s,-60*s,8*s,-57*s,acc);
+      ctx.strokeStyle=acc;ctx.lineWidth=3*s;ctx.beginPath();ctx.arc(0,-84*s,11*s,0,7);ctx.stroke();
+      for(let i=-1;i<=1;i+=2)for(let j=0;j<4;j++)line(S,i*8*s,-42*s,i*(30+j*5)*s,(-55+j*7)*s,3*s,acc);break;
+    case 'persephone':
+      robe(S,20*s,-40*s,tun);legsHidden(S);torso(S);head(S,'laurel');
+      ctx.fillStyle=acc;for(let i=-1;i<=1;i++){ctx.beginPath();ctx.arc(i*7*s,-70*s,4*s,0,7);ctx.fill();}
+      armWeapon(S,0,()=>{ctx.fillStyle=acc;ctx.beginPath();ctx.arc(8*s,-3*s,6*s,0,7);ctx.fill();},6*s);break;
+    case 'skadi':
+      legs(S);torso(S);head(S,'furhood');bow(S,21*s,-34*s,23*s,acc);arm(S,20*s,-34*s);
+      line(S,-12*s,-42*s,-20*s,-22*s,6*s,tun);break;
+    case 'bastet':
+      legs(S);torso(S);head(S,'ears');
+      line(S,-9*s,-26*s,-24*s,-17*s,3*s,acc);line(S,-24*s,-17*s,-27*s,-28*s,3*s,acc);
+      armWeapon(S,-.3+atk,()=>{for(let j=0;j<3;j++)line(S,5*s,j*3*s,19*s,(-5+j*3)*s,2*s,acc);},6*s);break;
     case 'runeguard':
       legs(S); torso(S, 4.5*s); head(S,'greathelm');
       shieldShape(S,14*s,-50*s,20*s,43*s,acc);
@@ -2265,7 +2313,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk) {
 
 /* 걸을 때 반대쪽 팔을 흔드는 인간형 병종 */
 const HUMANOID = {
-  runeguard:1, musketeer:1, purifier:1, frostlancer:1,
+  skadi:1,bastet:1,runeguard:1, musketeer:1, purifier:1, frostlancer:1,
   spear: 1, shield: 1, archer: 1, venom: 1, bomber: 1, knight: 1, duelist: 1,
   longbow: 1, rogue: 1, engineer: 1, skeleton: 1,
   goblin: 1, orcspear: 1, ballista: 1, powder: 1, dark: 1, orcberserk: 1

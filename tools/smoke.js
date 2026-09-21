@@ -179,6 +179,26 @@ async function runSize(browser, size) {
   if (st.kills < 1) failures.push(size.name + ': 전투에서 처치가 0이다');
   if (st.state === 'play') failures.push(size.name + ': 5분 안에 전투가 끝나지 않았다');
 
+  // Exercise new shapes, genuine skill buttons, pause guards, and bounded effects.
+  await page.evaluate(()=>{
+    for(const id of ['hades','odin','ra','persephone','skadi','bastet']){const c=document.createElement('canvas');drawUnitIcon(c,UNIT_BY_ID[id],64);}
+    const heroSave={...save,owned:{...save.owned,hades:true,odin:true,ra:true},loadout:['hades','odin','ra']};
+    battle=new Battle(0,heroSave,{baseHp:99999,money:900,rate:0,waves:[],reward:0});
+    for(const id of heroSave.loadout){battle.money=900;battle.deploy(id);battle.heroCooldowns[id]=0;}
+    battle.allies.forEach(f=>{f.x=600;});battle.spawnEnemy('ogre',800);buildCards();paused=true;updateHud();
+  });
+  if(!await page.locator('[data-hero="hades"]').isDisabled())throw Error('Paused hero input enabled');
+  await page.evaluate(()=>{paused=false;updateHud();});
+  const skillsOverlap=await page.evaluate(()=>document.querySelector('#hero-abilities').getBoundingClientRect().bottom>document.querySelector('.hud-bottom').getBoundingClientRect().top);
+  if(skillsOverlap)throw Error('Hero abilities overlap deployment cards');
+  for(const id of ['hades','odin','ra']){
+    await page.evaluate(()=>{battle.heroGlobalCd=0;updateHud();});
+    await page.click('[data-hero="'+id+'"]');
+    if(!await page.evaluate(id=>battle.heroCooldowns[id]>0,id))throw Error('Active button failed: '+id);
+    await page.evaluate(()=>{renderer.render(battle,1/60);});
+    await shot(page,'active-'+id+'-'+size.w);
+  }
+
   errors.forEach(e => failures.push(size.name + ': ' + e));
   console.log('  ' + (errors.length ? '✗' : '✓') + ' ' + size.name +
               ' (' + size.w + 'x' + size.h + ')  상태 ' + st.state +

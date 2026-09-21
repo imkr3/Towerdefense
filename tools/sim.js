@@ -51,7 +51,7 @@ function loadEngine(seed) {
 /* 한 전장을 자동 전투로 돌린다. 카드는 나오는 대로 전부 낸다. */
 /* 소환으로 최상급만 뽑아낸 편성. "좋은 애 뽑으면 그냥 깨진다"를 재어 본다. */
 function gachaLoadout(g, index) {
-  const rank = { SSR: 0, SR: 1, R: 2, N: 3 };
+  const rank = { UR: -1, SSR: 0, SR: 1, R: 2, N: 3 };
   const pulled = g.UNITS
     .filter(u => u.gacha)
     .sort((a, b) => (rank[a.rarity] - rank[b.rarity]) || (b.cost - a.cost));
@@ -97,6 +97,7 @@ function runStage(g, index, upLv, unitLv, trace, gacha, basic) {
   while (b.state === 'play' && t < 420) {
     for (const u of b.roster) if (b.canDeploy(u.id)) b.deploy(u.id);
     if (b.canCommand() && b.allies.length > 4) b.useCommand();
+    for(const u of b.roster) if(u.active && b.canHeroActive(u.id)) b.useHeroActive(u.id);
     b.update(dt);
     t += dt;
     if (trace && t >= nextLog) {                 // --trace: 20초마다 전황을 찍는다

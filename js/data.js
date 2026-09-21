@@ -254,16 +254,18 @@ const ROSTER_UNITS = UNITS.filter(u => u.unlockStage <= 100);   // 전장 진행
  *  시즌 소환 병종 (뽑기로만 얻는다)
  * ======================================================================= */
 const RARITY = {
-  N:   { name: '일반', color: '#8b8477', weight: 52, refund: 120 },
+  N:   { name: '일반', color: '#8b8477', weight: 51, refund: 120 },
   R:   { name: '희귀', color: '#3f8ed0', weight: 30, refund: 320 },
   SR:  { name: '영웅', color: '#a05fd0', weight: 14, refund: 900 },
-  SSR: { name: '전설', color: '#e8a020', weight: 4,  refund: 2400 }
+  SSR: { name: '전설', color: '#e8a020', weight: 4,  refund: 2400 },
+  UR: { name:'신화', color:'#68f5e5', weight:1, refund:4000 }
 };
-const RARITY_ORDER = ['N', 'R', 'SR', 'SSR'];
+const RARITY_ORDER = ['N', 'R', 'SR', 'SSR', 'UR'];
 
 const GACHA = {
   stonePerPull: 1,
   tenPull: 9,          // 10회 소환에 필요한 소환석
+  mythPity: 120,       // 신화 확정까지 누적, 시즌을 바꿔도 유지
   pity: 40,            // 이 횟수 안에 전설 확정
   goldPerStone: 2000,  // 골드로 소환석 구매
   tenMinRarity: 'SR'   // 10회 소환은 영웅 이상 1개 확정
@@ -453,24 +455,65 @@ const SEASON_UNITS = [
   })
 ];
 
+/* 신화: 압도적인 상시 화력 대신 직접 선택하는 전술 능력에 집중한다. */
+SEASON_UNITS.push(
+  mk({id:'hades',name:'하데스',role:'명계',shape:'hades',season:'olympus',rarity:'UR',gacha:true,unlockStage:999,
+    body:'#807395',accent:'#c98aff',tunic:'#33213f',hp:2200,atk:210,range:245,speed:25,interval:2.4,
+    cost:760,cooldown:65,kb:2,ranged:true,area:true,areaRadius:80,scale:1.2,maxActive:1,
+    ab:{lifesteal:.1},abText:'범위 공격 · 흡혈 10% · 명계의 문',desc:'검은 왕관과 쌍지창을 든 명계의 군주. 적 무리 아래 영혼의 문을 연다.',
+    active:{name:'명계의 문',kind:'underworld',cd:52,radius:230,mul:2.2,slow:3,desc:'가장 가까운 적 주변 피해·3초 둔화. 성채에는 피해 없음.'}}),
+  mk({id:'odin',name:'오딘',role:'룬의 지배자',shape:'odin',season:'ragnarok',rarity:'UR',gacha:true,unlockStage:999,
+    body:'#b4bdc4',accent:'#7be6ff',tunic:'#28495e',hp:2400,atk:190,range:290,speed:27,interval:2.6,
+    cost:780,cooldown:68,kb:2,ranged:true,maxActive:1,scale:1.15,
+    ab:{pierce:true},abText:'관통 · 운명의 룬',desc:'외눈의 현자와 두 까마귀. 금빛 창 궁니르로 운명의 사선을 꿰뚫는다.',
+    active:{name:'운명의 룬',kind:'runeveil',cd:48,radius:300,barrier:320,desc:'주변 아군 보호막·중독과 화상 정화. 보호막 중첩 없음.'}}),
+  mk({id:'ra',name:'라',role:'태양신',shape:'ra',season:'nile',rarity:'UR',gacha:true,unlockStage:999,
+    body:'#c9a466',accent:'#ffca62',tunic:'#f0e0ae',hp:2000,atk:205,range:260,speed:26,interval:2.5,
+    cost:750,cooldown:65,kb:2,ranged:true,area:true,areaRadius:85,maxActive:1,scale:1.2,
+    ab:{burn:{dps:18,dur:3}},abText:'화상 · 태양의 심판',desc:'매의 머리 위에 태양 원반을 이고 떠오른다. 황금 날개로 전장에 새벽을 부른다.',
+    active:{name:'태양의 심판',kind:'sunfall',cd:55,radius:215,mul:2.4,burn:5,desc:'가장 가까운 적 주변 피해·5초 화상. 성채에는 피해 없음.'}}),
+  mk({id:'persephone',name:'페르세포네',role:'봄과 명계',shape:'persephone',season:'olympus',rarity:'SR',gacha:true,unlockStage:999,
+    body:'#e2c4cf',accent:'#f6a5d4',tunic:'#713d79',hp:700,atk:75,range:235,speed:32,interval:1.8,
+    cost:280,cooldown:18,kb:2,ranged:true,ab:{heal:45,radius:175,interval:4},abText:'주변 회복 · 꽃잎 탄환',desc:'석류와 꽃관을 지닌 봄의 여왕. 명계의 군대에도 생명을 되돌린다.'}),
+  mk({id:'skadi',name:'스카디',role:'겨울 사냥꾼',shape:'skadi',season:'ragnarok',rarity:'SR',gacha:true,unlockStage:999,
+    body:'#bfd4e1',accent:'#a9eaff',tunic:'#4e698a',hp:560,atk:95,range:315,speed:43,interval:1.7,
+    cost:285,cooldown:17,kb:2,ranged:true,ab:{slow:1.2},abText:'1.2초 둔화 · 서리 화살',desc:'털 망토를 두른 산의 사냥꾼. 서리 활로 돌격의 발걸음을 묶는다.'}),
+  mk({id:'bastet',name:'바스테트',role:'고양이 수호신',shape:'bastet',season:'nile',rarity:'SR',gacha:true,unlockStage:999,
+    body:'#39364e',accent:'#e9bf65',tunic:'#287d7a',hp:1100,atk:76,range:70,speed:80,interval:.9,
+    cost:280,cooldown:17,kb:3,ab:{crit:{chance:.2,mul:1.8},lifesteal:.12},abText:'치명타 20% · 흡혈 12%',desc:'고양이 귀와 황금 발톱을 지닌 수호신. 낮은 자세로 전선의 빈틈을 파고든다.'})
+);
 // 전설 병종이 무한히 쌓여 전장을 봉쇄하지 않도록 동시 출진을 제한한다.
 SEASON_UNITS.forEach(u => { if (u.gacha && u.rarity === 'SSR') u.maxActive = 2; });
 UNITS.push.apply(UNITS, SEASON_UNITS);
 SEASON_UNITS.forEach(u => { UNIT_BY_ID[u.id] = u; });
 
+UNIT_BY_ID.zeus.active={name:'천둥의 칙령',kind:'thunderseal',cd:48,radius:180,mul:1.5,stun:.8,desc:'가장 가까운 적 주변 번개 피해·0.8초 기절.'};
+UNIT_BY_ID.thor.active={name:'묠니르 강타',kind:'thunderseal',cd:45,radius:190,mul:1.3,stun:.6,desc:'가장 가까운 적 주변 충격파 피해·0.6초 기절.'};
+UNIT_BY_ID.anubis.active={name:'사자의 결계',kind:'underworld',cd:50,radius:250,barrier:240,desc:'주변 아군에게 보호막·중독과 화상 정화.'};
+
+function rollSummon(s, pick) {
+  s.pity = (s.pity || 0) + 1;
+  s.mythPity = (s.mythPity || 0) + 1;
+  s.pulls = (s.pulls || 0) + 1;
+  const u = pick(s.mythPity >= GACHA.mythPity ? 'UR' : s.pity >= GACHA.pity ? 'SSR' : undefined);
+  if (u.rarity === 'UR') s.mythPity = 0;
+  if (u.rarity === 'SSR' || u.rarity === 'UR') s.pity = 0;
+  return u;
+}
+
 const SEASONS = [
   { id: 'olympus', name: '올림포스', sub: '그리스 신화',
     color: '#d8c47a', accent: '#8e6b1f',
     desc: '번개와 창의 신들이 왕국의 부름에 응했다.',
-    units: ['zeus', 'ares', 'artemis', 'medusa', 'spartan', 'hoplite'] },
+    units: ['hades', 'persephone', 'zeus', 'ares', 'artemis', 'medusa', 'spartan', 'hoplite'] },
   { id: 'ragnarok', name: '라그나로크', sub: '북유럽 신화',
     color: '#8fb6d8', accent: '#2f5f8e',
     desc: '최후의 전투를 앞둔 북방의 전사들이 내려왔다.',
-    units: ['thor', 'valkyrie', 'fenrir', 'viking', 'runeseer', 'northarcher'] },
+    units: ['odin', 'skadi', 'thor', 'valkyrie', 'fenrir', 'viking', 'runeseer', 'northarcher'] },
   { id: 'nile', name: '나일의 왕가', sub: '이집트 신화',
     color: '#e8c65a', accent: '#8a6a1f',
     desc: '모래 아래 잠들어 있던 사자의 신과 사제들이 깨어났다.',
-    units: ['anubis', 'rapriest', 'pharaoh', 'scarab', 'desertarcher'] }
+    units: ['ra', 'bastet', 'anubis', 'rapriest', 'pharaoh', 'scarab', 'desertarcher'] }
 ];
 
 /* 소환 풀: 시즌 병종 + (다른 시즌은 낮은 확률로) */
@@ -774,12 +817,12 @@ const ACHIEVEMENTS = [
     test: s => (s.pulls || 0) >= 10 },
   { id: 'summon100',name: '제단의 단골',  desc: '소환 100회',                  gold: 3000, stone: 3,
     test: s => (s.pulls || 0) >= 100 },
-  { id: 'legend',   name: '신화의 계약',  desc: '전설 병종 보유',              gold: 2000, stone: 2,
-    test: s => SEASON_UNITS.some(u => u.rarity === 'SSR' && s.owned && s.owned[u.id]) },
-  { id: 'allseason',name: '세 신화',      desc: '세 시즌 전설을 모두 보유',    gold: 8000, stone: 10,
+  { id: 'legend',   name: '신화의 계약',  desc: '전설 이상 병종 보유',              gold: 2000, stone: 2,
+    test: s => SEASON_UNITS.some(u => (u.rarity === 'SSR' || u.rarity === 'UR') && s.owned && s.owned[u.id]) },
+  { id: 'allseason',name: '세 신화',      desc: '세 시즌에서 전설 이상을 각각 보유',    gold: 8000, stone: 10,
     test: s => SEASONS.every(sn => sn.units.some(id => {
       const u = UNIT_BY_ID[id];
-      return u && u.rarity === 'SSR' && s.owned && s.owned[id];
+      return u && (u.rarity === 'SSR' || u.rarity === 'UR') && s.owned && s.owned[id];
     })) },
   { id: 'maxlv',    name: '정예 조련',    desc: '병종 하나를 15레벨로',        gold: 2500, stone: 3,
     test: s => Object.keys(s.levels || {}).some(k => s.levels[k] >= 15) },

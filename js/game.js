@@ -200,6 +200,8 @@ class Battle {
     this.cmdCd = this.cmdMax;   // 시작하자마자는 쓸 수 없다
     this.cmdHeal = COMMAND.healRatio + COMMAND.healPerLv * cmdLv;
     this.cmdUses = 0;
+    this.heroCooldowns = {};
+    this.heroGlobalCd = 0;
 
     const castleHp = Math.round(4000 * (1 + 0.10 * (up.castle || 0)));
     this.allyCastle = new Castle('ally', castleHp, ALLY_BASE_X);
@@ -257,7 +259,7 @@ class Battle {
     this.reinfOn = false;
 
     this.roster = this.battleUnits();
-    this.roster.forEach(u => { this.cooldowns[u.id] = 0; });
+    this.roster.forEach(u => { this.cooldowns[u.id] = 0; if(u.active) this.heroCooldowns[u.id]=20; });
   }
 
   /* 해금된 병종 */
@@ -303,6 +305,42 @@ class Battle {
   }
 
   /* 왕의 명령: 전군 회복 + 가속 */
+  heroCaster(id) {
+    return this.allies.find(f=>!f.dead && !f.summoned && f.s.id===id) || null;
+  }
+  heroTarget(f) {
+    return this.enemies.filter(e=>!e.dead && Math.abs(e.x-f.x)<=f.attackRange+180)
+      .sort((a,b)=>Math.abs(a.x-f.x)-Math.abs(b.x-f.x))[0] || null;
+  }
+  canHeroActive(id) {
+    const f=this.heroCaster(id), u=UNIT_BY_ID[id];
+    return !!(this.state==='play' && u && u.active && this.roster.some(r=>r.id===id) && f &&
+      f.stunT<=0 && f.kbTimer<=0 && (this.heroCooldowns[id]||0)<=0 && this.heroGlobalCd<=0 &&
+      (u.active.barrier || this.heroTarget(f)));
+  }
+  useHeroActive(id) {
+    if(!this.canHeroActive(id)) return false;
+    const f=this.heroCaster(id), a=f.s.active, target=a.barrier?f:this.heroTarget(f);
+    this.heroCooldowns[id]=a.cd; this.heroGlobalCd=6;
+    if(a.barrier) {
+      for(const m of this.allies) if(!m.dead && Math.abs(m.x-f.x)<=a.radius) {
+        m.giveBarrier(a.barrier*f.abMul);m.poisonT=0;m.poisonDps=0;m.burnT=0;m.burnDps=0;
+      }
+    } else {
+      for(const e of this.enemies) if(!e.dead && Math.abs(e.x-target.x)<=a.radius) {
+        this.hitOne(f.atk*a.mul,e,f,false);
+        if(!e.dead) {
+          if(a.slow)e.slowT=Math.max(e.slowT,a.slow);
+          if(a.stun)e.stunT=Math.max(e.stunT,a.stun);
+          if(a.burn){if(e.burnT<=0)e.burnDps=0;e.burnT=Math.max(e.burnT,a.burn);e.burnDps=Math.max(e.burnDps,24*f.abMul);}
+        }
+      }
+    }
+    this.fx.push({type:'mythic',kind:a.kind,x:target.x,row:target.row,r:a.radius,color:f.s.accent,t:1.15,life:1.15});
+    this.shake=Math.max(this.shake,5);f.swing=.22;
+    return true;
+  }
+
   canCommand() { return this.state === 'play' && this.cmdCd <= 0 && this.allies.length > 0; }
 
   useCommand() {
@@ -341,6 +379,8 @@ class Battle {
     // 이쪽 보급이 더 가파르게 올라야 교착이 풀린다.
     const ramp = 1 + Math.min(1.4, Math.max(0, (this.time - 60) / 180) * 1.4);
     this.money = Math.min(this.walletMax, this.money + this.income * ramp * dt);
+    for(const id in this.heroCooldowns)this.heroCooldowns[id]=Math.max(0,this.heroCooldowns[id]-dt);
+    this.heroGlobalCd=Math.max(0,this.heroGlobalCd-dt);
     if (this.cmdCd > 0) this.cmdCd = Math.max(0, this.cmdCd - dt);
     if (this.shake > 0) this.shake = Math.max(0, this.shake - dt * 26);
     if (this.flash > 0) this.flash = Math.max(0, this.flash - dt * 1.4);
