@@ -76,6 +76,14 @@ async function runSize(browser, size) {
   await page.click('#btn-start');
   await page.waitForTimeout(250);
   await shot(page, 'map-' + size.w);
+  const originalProgress=await page.evaluate(()=>save.cleared);
+  const expansionMap=await page.evaluate(()=>{
+    save.cleared=20;renderMap();const cards=[...document.querySelectorAll('#stage-list .stage')];
+    return {count:cards.length,open:!cards[20].disabled,locked:cards[21].disabled,endless:!!document.querySelector('#endless-slot .e-btn')};
+  });
+  if(expansionMap.count!==30||!expansionMap.open||!expansionMap.locked||!expansionMap.endless)throw Error('Expansion progression or endless unlock broken');
+  await page.evaluate(n=>{save.cleared=n;renderMap();},originalProgress);
+
 
   // 병영
   await page.click('#btn-shop');

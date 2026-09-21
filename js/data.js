@@ -720,6 +720,31 @@ const STAGES = [
       W(194,'wraith',7,0.9), W(216,'golem',2,6.0) ] }
 ];
 
+/* 2막: 기존 20전장 인덱스는 유지하여 저장과 별 기록을 보존한다. */
+const ENDLESS_UNLOCK_STAGE = 20;
+STAGES.push(
+  {name:'검은 강의 나루',hint:'망령 폭발에 대비해 전열을 분산',baseHp:32000,money:480,rate:59,reward:960,waves:[
+    W(2,'orcspear',7,1),W(18,'wraith',5,2),W(38,'dark',3,3),W(22,'lich',1),W(80,'wolf',8,1),W(104,'wraith',6,1.6),W(130,'golem',2,5),W(154,'orcshield',5,2),W(180,'lich',1)]},
+  {name:'망자의 행렬',hint:'소환 병력은 관통과 범위 공격으로 처리',baseHp:33500,money:490,rate:60,reward:1020,boss:true,waves:[
+    W(2,'orcshield',3,2),W(20,'lich',1),W(40,'plaguer',5,2),W(60,'wraith',6,1.4),W(84,'lich',1),W(108,'dark',5,2),W(134,'totem',2,4),W(158,'lich',1),W(182,'orcberserk',7,1)]},
+  {name:'가시 왕관의 성문',hint:'가시 반격은 원거리 병종으로 대응',baseHp:35000,money:500,rate:61,reward:1100,waves:[
+    W(2,'orcshield',4,2),W(22,'shaman',3,3),W(44,'golem',2,5),W(66,'siegeram',2,5),W(92,'orcshield',5,2),W(116,'ballista',5,2),W(140,'warchief',2,5),W(168,'dark',6,2),W(24,'troll',1)]},
+  {name:'★ 명계의 삼중 봉인',hint:'리치 소환과 거미 여왕의 독에 대비',baseHp:38000,money:520,rate:62,reward:1350,boss:true,waves:[
+    W(2,'wraith',5,2),W(24,'lich',1),W(48,'spiderqueen',1),W(70,'plaguer',6,1.8),W(96,'troll',1),W(122,'lich',1),W(148,'orcshield',5,2),W(174,'spiderqueen',1),W(204,'wraith',8,1)]},
+  {name:'눈보라 추격전',hint:'빠른 늑대 기수를 둔화로 저지',baseHp:39500,money:530,rate:63,reward:1250,waves:[
+    W(2,'wolf',10,.8),W(24,'dark',5,2),W(24,'frostgiant',1),W(72,'wolf',10,.8),W(96,'orccatapult',2,5),W(120,'orcberserk',7,1.2),W(148,'frostgiant',1),W(180,'golem',2,5),W(208,'wolf',12,.7)]},
+  {name:'얼어붙은 공성로',hint:'공성 병기를 막을 보호막 전열 필요',baseHp:41000,money:540,rate:64,reward:1320,waves:[
+    W(2,'orcshield',4,2),W(22,'siegeram',2,5),W(46,'ballista',6,2),W(24,'frostgiant',1),W(100,'orcshield',6,1.8),W(126,'orccatapult',3,5),W(154,'warchief',2,5),W(184,'frostgiant',1),W(214,'dark',7,1.8)]},
+  {name:'★ 영원의 겨울 왕좌',hint:'연속 광역 공격 뒤 왕명으로 회복',baseHp:44000,money:560,rate:65,reward:1600,boss:true,waves:[
+    W(2,'wolf',8,1),W(24,'frostgiant',1),W(52,'troll',1),W(78,'orcshield',6,1.8),W(104,'frostgiant',1),W(136,'golem',2,5),W(164,'warchief',2,5),W(192,'frostgiant',1),W(224,'orcberserk',8,1)]},
+  {name:'불타는 태양 회랑',hint:'화상을 정화하며 화룡을 견제',baseHp:45500,money:570,rate:66,reward:1500,waves:[
+    W(2,'hellhound',9,.8),W(26,'powder',6,1.8),W(24,'drake',1),W(80,'plaguer',6,2),W(108,'orcshield',6,1.8),W(138,'drake',1),W(170,'hellhound',10,.8),W(200,'siegeram',2,4),W(230,'dark',7,1.5)]},
+  {name:'황금 일식의 제단',hint:'치유·가속 토템을 범위 공격으로 압박',baseHp:47500,money:590,rate:67,reward:1650,boss:true,waves:[
+    W(2,'orcshield',5,2),W(26,'totem',2,6),W(50,'shaman',5,3),W(24,'warlord',1),W(108,'golem',2,5),W(140,'drake',1),W(174,'warchief',3,5),W(208,'orcberserk',8,1),W(240,'lich',2,8)]},
+  {name:'★ 세 신화의 종착지',hint:'보스 연속 공세에 액티브와 왕명을 나눠 사용',baseHp:51000,money:620,rate:68,reward:2200,boss:true,waves:[
+    W(2,'orcshield',5,2),W(26,'lich',1),W(52,'frostgiant',1),W(82,'drake',1),W(18,'warlord',1),W(148,'warchief',2,5),W(182,'spiderqueen',1),W(216,'golem',3,5),W(248,'warlord',1),W(276,'hellhound',10,.8)]}
+);
+
 
 /* =======================================================================
  *  무한 전장 - 끝없이 밀려오는 파도
@@ -826,6 +851,7 @@ const ACHIEVEMENTS = [
     })) },
   { id: 'maxlv',    name: '정예 조련',    desc: '병종 하나를 15레벨로',        gold: 2500, stone: 3,
     test: s => Object.keys(s.levels || {}).some(k => s.levels[k] >= 15) },
+  { id:'campaign30',name:'세 신화의 정복자',desc:'30전장 모두 돌파',gold:5000,stone:5,test:s=>s.cleared>=30 },
   { id: 'endless10',name: '끝없는 전장',  desc: '무한 전장 10파도 돌파',       gold: 2000, stone: 3,
     test: s => (s.endlessBest || 0) >= 10 },
   { id: 'endless25',name: '불굴의 성채',  desc: '무한 전장 25파도 돌파',       gold: 7000, stone: 8,
