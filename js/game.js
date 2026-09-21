@@ -113,6 +113,7 @@ class Fighter {
 
   takeDamage(dmg) {
     if (this.dead) return 0;
+    dmg = Math.max(0, dmg);
     if (this.ab.armor) dmg *= (1 - Math.min(0.75, this.ab.armor));   // 두꺼운 갑주
     if (this.barrier > 0) {
       const absorbed = Math.min(this.barrier, dmg);
@@ -122,7 +123,7 @@ class Fighter {
       if (dmg <= 0) return 0;
     }
     const dealt = Math.min(this.hp, Math.max(0, dmg));
-    this.hp -= dmg;
+    this.hp -= Math.max(0, dmg);
     this.hitFlash = 0.15;
     if (this.hp <= 0) {
       if (this.ab.revive && !this.usedRevive) {     // 1회 부활
@@ -294,6 +295,7 @@ class Battle {
     this.money -= u.cost;
     this.cooldowns[id] = u.cooldown * this.cdMul;
     const f = this.makeAlly(u, ALLY_SPAWN_X + Math.random() * 40);
+    f.giveBarrier(25 * Math.min(5, this.save.upgrades.deployment || 0));
     this.allies.push(f);
     this.fx.push({ type: 'spawn', x: f.x, row: f.row, t: 0.4, life: 0.4 });
     sfx('deploy');
@@ -488,10 +490,12 @@ class Battle {
       if (f.auraPulse > 0) f.auraPulse -= dt;
       f.bob += dt * (f.speedNow / 22);
 
+      const burning = f.burnT > 0;
       // 중독 / 화상 피해
       let dot = 0;
       if (f.poisonT > 0) { dot += f.poisonDps * Math.min(dt, f.poisonT); f.poisonT = Math.max(0, f.poisonT - dt); }
       if (f.burnT > 0) { dot += f.burnDps * Math.min(dt, f.burnT); f.burnT = Math.max(0, f.burnT - dt); }
+      if (isAlly) dot *= 1 - 0.05 * Math.min(5, this.save.upgrades.resistance || 0);
       if (dot > 0) {
         f.hp -= dot;
         if (f.hp <= 0) {
@@ -500,6 +504,8 @@ class Battle {
           } else { f.hp = 0; f.dead = true; continue; }
         }
       }
+
+      if (f.ab.regen && !burning) f.heal(f.ab.regen * dt);
 
       // 보스 패턴
       if (f.s.phases || f.s.special) this.bossTick(f, dt);
@@ -548,7 +554,7 @@ class Battle {
 
   supportTick(f, mates, dt, isAlly) {
     const ab = f.ab;
-    if (!ab.heal && !ab.gold && !ab.summon && !ab.barrier && !ab.haste) return;
+    if (!ab.heal && !ab.gold && !ab.summon && !ab.barrier && !ab.haste && !ab.cleanse) return;
     if (ab.gold && isAlly) {
       this.money = Math.min(this.walletMax, this.money + ab.gold * dt);
     }
@@ -556,13 +562,19 @@ class Battle {
     if (f.abCd > 0) return;
     f.abCd = ab.interval || 3;
 
+    if (ab.cleanse) {
+      for (const m of mates) if (!m.dead && Math.abs(m.x - f.x) <= ab.radius) {
+        m.poisonT = 0; m.poisonDps = 0; m.burnT = 0; m.burnDps = 0; m.slowT = 0;
+      }
+      this.fx.push({type:'aura',x:f.x,row:f.row,r:ab.radius,color:'#a4f6cc',t:.5,life:.5});
+    }
     if (ab.heal) {
       let healed = false;
       for (const m of mates) {
         if (m.dead || m === f) continue;
         if (Math.abs(m.x - f.x) > ab.radius) continue;
         if (m.hp >= m.maxHp) continue;
-        m.heal(ab.heal * f.abMul);
+        m.heal(ab.heal * f.abMul * (isAlly ? 1 + .06 * Math.min(5, this.save.upgrades.medicine || 0) : 1));
         healed = true;
       }
       if (healed) {
@@ -931,6 +943,10 @@ class Battle {
                      crit: !!crit, ally: target.side === 'ally', t: 0.65, life: 0.65 });
     }
     if (!src) return;
+    if (!target.isCastle && target.ab.thorns && !src.s.ranged && !src.dead && dealt > 0) {
+      src.takeDamage(Math.min(80, dealt * target.ab.thorns));
+      this.fx.push({type:'hit',x:src.x,row:src.row,dir:target.dir,t:.18,life:.18});
+    }
     const ab = src.ab;
     if (ab.lifesteal) src.heal(dealt * ab.lifesteal);
     if (target.isCastle || target.dead) return;

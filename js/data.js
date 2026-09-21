@@ -205,6 +205,26 @@ const UNITS = [
     abText: '초당 3회 연타 · 치명타 22%',
     desc: '눈에 안 보일 속도로 두 자루를 번갈아 찌른다.'
   }),
+  mk({id:'runeguard',name:'룬 수호병',role:'보호막',shape:'runeguard',
+    body:'#384d68',accent:'#76e5eb',tunic:'#315783',hp:1600,atk:32,range:65,speed:28,interval:1.5,
+    cost:240,cooldown:13,kb:1,unlockStage:7,maxActive:2,
+    ab:{barrier:95,radius:145,interval:6},abText:'6초마다 주변 보호막 95 · 최대 2명',
+    desc:'룬 방패로 좁은 전선을 지킨다. 보호막은 중첩되지 않고 더 큰 값으로 갱신된다.'}),
+  mk({id:'musketeer',name:'왕실 총사',role:'관통',shape:'musketeer',
+    body:'#35364d',accent:'#edbc70',tunic:'#754764',hp:360,atk:190,range:290,speed:32,interval:2.5,
+    cost:285,cooldown:11,kb:2,unlockStage:10,ranged:true,
+    ab:{pierce:true},abText:'사선 위 적 관통 · 느린 장전',
+    desc:'긴 총신으로 밀집 대열을 관통한다. 빠른 적에게 접근을 허용하지 말자.'}),
+  mk({id:'purifier',name:'새벽 정화사',role:'정화',shape:'purifier',
+    body:'#d5ddd6',accent:'#a4f6cc',tunic:'#478479',hp:550,atk:0,range:0,speed:31,interval:3,
+    cost:230,cooldown:16,kb:2,unlockStage:12,maxActive:2,
+    ab:{cleanse:true,heal:55,radius:185,interval:4,noAttack:true},abText:'4초마다 중독·화상·둔화 해제 및 회복 · 최대 2명',
+    desc:'향로의 빛으로 상태이상을 씻는다. 직접 공격하지 않으며 기절은 해제하지 못한다.'}),
+  mk({id:'frostlancer',name:'서리 창기사',role:'둔화',shape:'frostlancer',
+    body:'#4b6482',accent:'#c0efff',tunic:'#648aa8',hp:1250,atk:110,range:145,speed:39,interval:1.5,
+    cost:270,cooldown:10,kb:2,unlockStage:14,
+    ab:{slow:1.6},abText:'타격 시 1.6초 둔화',
+    desc:'긴 얼음 창으로 돌격을 저지한다. 방패 뒤에서 늑대 기수를 견제하자.'}),
   // 소환 전용
   mk({
     id: 'barricade', name: '나무 방벽', role: '구조물', shape: 'barricade',
@@ -257,8 +277,8 @@ const SEASON_UNITS = [
     body: '#e8cfa4', accent: '#ffe14a', tunic: '#f7f2e4',
     hp: 2600, atk: 370, range: 380, speed: 24, interval: 2.6,
     cost: 620, cooldown: 58, kb: 1, ranged: true, area: true, areaRadius: 150, scale: 1.35,
-    ab: { stun: { chance: 0.35, dur: 1.4 } },
-    abText: '초장거리 번개 광역 · 35% 기절',
+    ab: { stun: { chance: 0.35, dur: 0.8 } },
+    abText: '초장거리 번개 광역 · 35% 확률로 0.8초 기절',
     desc: '하늘에서 번개를 내리꽂는다. 맞은 자리의 모든 것이 멈춘다.'
   }),
   mk({
@@ -275,10 +295,10 @@ const SEASON_UNITS = [
     id: 'artemis', castFx: 'holy', name: '아르테미스', short: '아르테미스', role: '사냥', shape: 'artemis',
     season: 'olympus', rarity: 'SR', gacha: true, unlockStage: 999,
     body: '#2b3038', accent: '#cfe8b0', tunic: '#4a7c4e',
-    hp: 430, atk: 118, range: 420, speed: 44, interval: 0.9,
+    hp: 430, atk: 118, range: 390, speed: 44, interval: 1.15,
     cost: 380, cooldown: 18, kb: 2, ranged: true,
     ab: { pierce: true },
-    abText: '일직선 관통 · 초당 1회 이상 연사',
+    abText: '일직선 관통 · 1.15초마다 사격',
     desc: '달의 사냥꾼. 화살 한 발이 줄지어 선 적을 전부 꿰뚫는다.'
   }),
   mk({
@@ -309,8 +329,8 @@ const SEASON_UNITS = [
     body: '#2b3038', accent: '#b9c2cc', tunic: '#8e2f3a',
     hp: 3900, atk: 430, range: 120, speed: 30, interval: 2.2,
     cost: 640, cooldown: 60, kb: 1, area: true, areaRadius: 130, scale: 1.4,
-    ab: { stun: { chance: 0.4, dur: 1.2 }, push: 50 },
-    abText: '광역 망치 · 40% 기절 · 밀쳐내기',
+    ab: { stun: { chance: 0.4, dur: 0.8 }, push: 50 },
+    abText: '광역 망치 · 40% 확률로 0.8초 기절 · 밀쳐내기',
     desc: '묠니르가 떨어질 때마다 전선이 통째로 뒤로 밀린다.'
   }),
   mk({
@@ -433,6 +453,8 @@ const SEASON_UNITS = [
   })
 ];
 
+// 전설 병종이 무한히 쌓여 전장을 봉쇄하지 않도록 동시 출진을 제한한다.
+SEASON_UNITS.forEach(u => { if (u.gacha && u.rarity === 'SSR') u.maxActive = 2; });
 UNITS.push.apply(UNITS, SEASON_UNITS);
 SEASON_UNITS.forEach(u => { UNIT_BY_ID[u.id] = u; });
 
@@ -470,14 +492,14 @@ const ENEMIES = {
   orcspear: { name: '오크 창병', body: '#4a6b46', accent: '#b0b6bd', tunic: '#3d5a3a', shape: 'orcspear',
               hp: 400, atk: 66, range: 120, speed: 40, interval: 1.4, kb: 2, gold: 18 },
   ogre:     { name: '오우거', body: '#6b7a52', accent: '#4a3520', tunic: '#5a6a44', shape: 'ogre',
-              hp: 3500, atk: 48, range: 62, speed: 24, interval: 1.6, kb: 1, gold: 34, scale: 1.2 },
+              ab:{regen:18}, abText:'초당 체력 18 재생 · 화상 중에는 재생 중단', hp: 3300, atk: 48, range: 62, speed: 24, interval: 1.6, kb: 1, gold: 34, scale: 1.2 },
   wolf:     { name: '늑대 기수', body: '#5a5f66', accent: '#7a4a2a', tunic: '#4a6b46', shape: 'wolf',
               hp: 450, atk: 86, range: 62, speed: 92, interval: 0.7, kb: 3, gold: 22 },
   ballista: { name: '석궁 사수', body: '#4a6b46', accent: '#6b4b2a', tunic: '#3d5a3a', shape: 'ballista',
               hp: 620, atk: 52, range: 330, speed: 26, interval: 0.9, kb: 2, gold: 40, ranged: true },
   spider:   { name: '독거미', body: '#3f3348', accent: '#9de08e', tunic: '#2c2434', shape: 'spider',
               hp: 520, atk: 50, range: 62, speed: 100, interval: 0.8, kb: 2, gold: 26,
-              ab: { poison: { dps: 34, dur: 4 } } },
+              ab: { poison: { dps: 26, dur: 4 }, slow: 1.2 }, abText:'독과 거미줄 · 정화로 해제' },
   shaman:   { name: '오크 주술사', body: '#4a6b46', accent: '#c98ae0', tunic: '#5a3a6b', shape: 'shaman',
               hp: 1150, atk: 58, range: 200, speed: 30, interval: 1.8, kb: 2, gold: 55, ranged: true,
               ab: { heal: 75, radius: 230, interval: 3 } },
@@ -486,7 +508,7 @@ const ENEMIES = {
               area: true, areaRadius: 100 },
   orcshield:{ name: '방패 오크', body: '#4a6b46', accent: '#7a5a3a', tunic: '#3d5a3a', shape: 'orcshield',
               hp: 5300, atk: 98, range: 62, speed: 22, interval: 1.6, kb: 1, gold: 48, scale: 1.15,
-              ab: { kbImmune: true, armor: 0.2 } },
+              ab: { kbImmune: true, armor: 0.15, thorns: 0.12 }, abText:'근접 피해 12% 반격 · 원거리 공격으로 대응' },
   wraith:   { name: '망령', body: '#8fa0b5', accent: '#5de0d0', tunic: '#6a7c92', shape: 'wraith',
               hp: 1020, atk: 118, range: 70, speed: 66, interval: 1.2, kb: 1, gold: 45,
               ab: { deathBomb: { dmg: 190, radius: 115 } } },
@@ -775,6 +797,9 @@ function totalStars(s) {
 
 /* -------------------- 병영 강화 -------------------- */
 const UPGRADES = {
+  medicine:{name:'야전 의무대',max:5,base:320,step:1.65,desc:'아군 지원병의 회복량 +6%/레벨 (왕명 제외)'},
+  resistance:{name:'해독 훈련',max:5,base:350,step:1.65,desc:'아군 중독·화상 피해 -5%/레벨'},
+  deployment:{name:'출진 보호진',max:5,base:380,step:1.7,desc:'직접 출진한 병사에게 보호막 25/레벨 (소환수 제외)'},
   wallet:  { name: '군자금 금고', max: 10, base: 100, step: 1.5,
              desc: '전투 중 보유할 수 있는 군자금 한도가 늘어난다.' },
   income:  { name: '세금 징수', max: 10, base: 115, step: 1.52,

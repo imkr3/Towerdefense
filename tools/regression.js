@@ -74,4 +74,39 @@ test('Melee impact preserves row zero and attacker direction', () => {
   const fx=b.fx.find(e=>e.type==='hit'||e.type==='crit');
   assert.equal(fx.row,0);assert.equal(fx.dir,1);
 });
+test('Thorns counter melee once but never ranged damage', () => {
+  const b=battle(),a=b.makeAlly(U.spear,500),e=new Fighter(E.orcshield,'enemy',530);
+  const hp=a.hp;b.hitOne(100,e,a,false);assert.ok(a.hp<hp);
+  const ar=b.makeAlly(U.musketeer,500),before=ar.hp;b.hitOne(100,e,ar,false);assert.equal(ar.hp,before);
+});
+test('Regeneration stops during burning', () => {
+  const b=battle(),e=new Fighter(E.ogre,'enemy',1800);e.hp=100;e.stunT=10;
+  b.step([e],[],b.allyCastle,1,false);assert.equal(e.hp,118);
+  e.burnT=1;e.burnDps=10;b.step([e],[],b.allyCastle,1,false);assert.equal(e.hp,108);
+});
+test('Cleanse removes nearby DOT and slow, keeps stun and distant ailments', () => {
+  const b=battle(),p=b.makeAlly(U.purifier,500),a=b.makeAlly(U.spear,520),far=b.makeAlly(U.spear,900);
+  for(const f of [a,far]){f.poisonT=5;f.burnT=4;f.slowT=3;f.stunT=2;}
+  b.supportTick(p,[p,a,far],.1,true);assert.equal(a.poisonT+a.burnT+a.slowT,0);assert.equal(a.stunT,2);assert.equal(far.poisonT,5);
+});
+test('Deployment ward applies only on card deployment', () => {
+  const s=save();s.upgrades.deployment=3;const b=new Battle(0,s,{baseHp:10000,money:900,rate:0,waves:[],reward:0});
+  b.deploy('spear');assert.equal(b.allies[0].barrier,75);assert.equal(b.makeAlly(U.skeleton,500).barrier,0);
+});
+test('DOT resistance reduces poison by the advertised amount', () => {
+  const b=battle(),a=b.makeAlly(U.spear,500);b.save.upgrades.resistance=5;a.poisonT=1;a.poisonDps=100;a.stunT=2;
+  const hp=a.hp;b.step([a],[],b.enemyCastle,1,true);assert.equal(hp-a.hp,75);
+});
+test('Negative damage never heals HP or barrier', () => {
+  const f=new Fighter(E.goblin,'enemy',500);f.hp=100;f.giveBarrier(20);f.takeDamage(-50);assert.equal(f.hp,100);assert.equal(f.barrier,20);
+});
+test('Legendary active cap allows replacements after death', () => {
+  const s=save();s.owned.zeus=true;s.loadout=['zeus'];const b=new Battle(0,s,{baseHp:10000,money:900,rate:0,waves:[],reward:0});
+  for(let i=0;i<2;i++){b.money=900;b.cooldowns.zeus=0;assert.equal(b.deploy('zeus'),true);}
+  b.money=900;b.cooldowns.zeus=0;assert.equal(b.canDeploy('zeus'),false);b.allies[0].dead=true;assert.equal(b.canDeploy('zeus'),true);
+});
+test('Medical upgrade increases support healing by 6 percent per level', () => {
+  const b=battle(),p=b.makeAlly(U.priest,500),a=b.makeAlly(U.spear,520);b.save.upgrades.medicine=5;a.hp=10;
+  b.supportTick(p,[p,a],.1,true);assert.ok(Math.abs(a.hp-(10+120*1.3))<1e-8);
+});
 console.log(count + ' regression checks passed');

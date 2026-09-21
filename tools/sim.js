@@ -86,6 +86,7 @@ function runStage(g, index, upLv, unitLv, trace, gacha, basic) {
     upgrades: {
       wallet: upLv, income: upLv, power: upLv, vitality: upLv, castle: upLv,
       logistics: upLv, treasury: upLv, spoils: upLv,
+      medicine: Math.min(5,upLv), resistance: Math.min(5,upLv), deployment: Math.min(5,upLv),
       academy: academy, command: Math.min(5, Math.floor(upLv / 2))
     }
   };
