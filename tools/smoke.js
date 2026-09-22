@@ -159,6 +159,33 @@ async function runSize(browser, size) {
   });
   if (overlap) failures.push(size.name + ': 전투 HUD 겹침 또는 가로 넘침');
   await page.waitForTimeout(100);
+
+  // 이펙트 레이어. WebGL 을 쓸 수 있으면 필살 연출 하나하나가 실제로 파티클을
+  // 만들어야 하고, drawFx 가 신화 연출을 그쪽으로 넘겨야 한다. WebGL 이 없는
+  // 환경에서는 Canvas2D 로 되돌아가므로 건너뛴다.
+  const fx = await page.evaluate(() => {
+    const g = renderer.glfx;
+    if (!g || !g.ok) return { skipped: true };
+    const kinds = ['lightning', 'firestorm', 'holy', 'iceburst', 'shockwave', 'runes',
+                   'pillar', 'slash', 'sunfall', 'runeveil', 'underworld', 'thunderseal'];
+    const empty = [];
+    for (const k of kinds) {
+      g.clear();
+      g.emit(k, renderer.w / 2, renderer.rowY(1),
+             { color: [1, .88, .29], radius: 200, scale: renderer.cs, big: true });
+      if (!g.count) empty.push(k);
+    }
+    g.clear();
+    battle.fx.push({ type: 'mythic', kind: 'sunfall', x: battle.cam || 0, row: 1,
+                     r: 215, color: '#ffd166', t: 1.15, life: 1.15 });
+    renderer.render(battle, 1 / 60);
+    const routed = g.count > 0;
+    g.clear();
+    return { skipped: false, empty, routed };
+  });
+  if (!fx.skipped && fx.empty.length) failures.push(size.name + ': 파티클이 나오지 않는 연출 (' + fx.empty.join(', ') + ')');
+  if (!fx.skipped && !fx.routed) failures.push(size.name + ': 신화 연출이 WebGL 로 넘어가지 않는다');
+
   let usedCommand = false;
   if (await page.evaluate(() => battle.canCommand())) {
     await page.click('#btn-command');

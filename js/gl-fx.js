@@ -303,7 +303,7 @@ class GLFx {
   }
 
   /* ------------------------------ 연출 ------------------------------
-   * 게임의 castFx 종류 8가지. x, y 는 화면 좌표(y 는 지면).
+   * 병종 필살 8가지와 신화 필살 4가지. x, y 는 화면 좌표(y 는 지면).
    * opt: color [r,g,b] 0~1 / scale / radius / density / big */
   emit(kind, x, y, opt) {
     if (!this.ok) return;
@@ -525,6 +525,155 @@ class GLFx {
         }
         break;
       }
+
+      /* ----------------------------------------------------------------
+       * 신화 필살 연출 넷. 병종 필살보다 크고 오래 간다(1.15초).
+       * 넷 다 지면 봉인(_seal)을 깔고 그 위에 자기 모양을 얹는다.
+       * ---------------------------------------------------------------- */
+
+      /* 태양의 심판 — 해가 내려와 심판의 빛을 쏟는다 */
+      case 'sunfall': {
+        this._seal(x, y, R, col, sc, q);
+        const cy = y - 300 * sc;                       // 해가 뜬 높이
+        this.add(x, cy, 0, 0, 1.1, 60 * sc * big, 120 * sc, col, 0.9, 1, 0, 0, 0, 1.2);
+        this.add(x, cy, 0, 0, 1, 34 * sc * big, 52 * sc, white, 1, 1, 0, 0, 0, 1.1);
+        for (let i = 0, n = N(20); i < n; i++) {       // 뻗는 빛살
+          const a = i / n * TAU;
+          for (let k = 1; k <= 4; k++) {
+            const rr = (48 + k * 22) * sc;
+            this.add(x + Math.cos(a) * rr, cy + Math.sin(a) * rr, 0, 0,
+                     rnd(0.5, 1), (20 - k * 3) * sc * big, 3 * sc,
+                     k < 2 ? white : col, 0.9, 2.6, a, 0, 0, 1.2);
+          }
+        }
+        for (let i = 0, n = N(150); i < n; i++) {      // 쏟아지는 심판의 빛
+          const px = x + rnd(-R, R) * 0.55;
+          this.add(px, cy + rnd(40, 90) * sc, (px - x) * 0.55, rnd(260, 620) * sc,
+                   rnd(0.5, 1), rnd(7, 18) * sc, 2 * sc, i % 4 ? col : white,
+                   0.95, 2.4, Math.PI / 2, 0, 180, 1.4);
+        }
+        for (let i = 0, n = N(80); i < n; i++) {       // 지면에 남는 잔불
+          const a = rnd(0, TAU), rr = rnd(0, R);
+          this.add(x + Math.cos(a) * rr, y + Math.sin(a) * rr * 0.26,
+                   rnd(-30, 30), rnd(-150, -50) * sc, rnd(0.6, 1.2),
+                   rnd(5, 13) * sc, 1, col, 1, 1, 0, rnd(-3, 3), 120, 1.8);
+        }
+        break;
+      }
+
+      /* 운명의 룬 — 아군을 감싸는 룬 장막. 때리는 연출이 아니라 지키는 연출이다 */
+      case 'runeveil': {
+        this._seal(x, y, R, col, sc, q);
+        for (let i = 0, n = N(10); i < n; i++) {       // 떠도는 룬 문자
+          const a = i / n * TAU;
+          const px = x + Math.cos(a) * R * 0.72;
+          const py = y - 60 * sc + Math.sin(a) * 26 * sc;
+          for (let k = 0; k < 4; k++) {                // 문자 하나를 짧은 획 넷으로
+            const ang = a + k * 0.9;
+            this.add(px + Math.cos(ang) * 7 * sc, py - k * 7 * sc, 0, rnd(-30, -8) * sc,
+                     rnd(0.7, 1.15), 13 * sc * big, 3 * sc, k % 2 ? col : white,
+                     0.95, 2, ang, 0, 0, 1.2);
+          }
+        }
+        for (let ring = 0; ring < 4; ring++) {         // 돔을 이루는 고리 네 겹
+          const t = (ring + 1) / 5;                    // 높이 0.2 ~ 0.8
+          const ry = y - t * 150 * sc;
+          const rr = R * Math.sqrt(1 - t * t) * 0.95;
+          const n = N(40);
+          for (let i = 0; i < n; i++) {
+            const a = i / n * TAU;
+            this.add(x + Math.cos(a) * rr, ry + Math.sin(a) * rr * 0.22,
+                     -Math.sin(a) * 40 * sc, 0, rnd(0.65, 1.1), 11 * sc, 2 * sc,
+                     col, 0.8, 1.8, a, 0, 0, 1.4);
+          }
+        }
+        for (let i = 0, n = N(90); i < n; i++) {       // 정화의 티끌
+          const a = rnd(0, TAU), rr = rnd(0, R);
+          this.add(x + Math.cos(a) * rr, y + Math.sin(a) * rr * 0.26,
+                   rnd(-20, 20), rnd(-130, -40) * sc, rnd(0.8, 1.3),
+                   rnd(4, 10) * sc, 1, white, 0.85, 1, 0, 0, 40, 1.6);
+        }
+        break;
+      }
+
+      /* 명계의 문 — 문이 열리고 혼이 피어오른다 */
+      case 'underworld': {
+        this._seal(x, y, R, col, sc, q);
+        const gw = 46 * sc * big, gh = 205 * sc;       // 문의 폭과 높이
+        const gy = y - gh * 0.5;                       // 문의 한가운데(아래가 지면)
+        for (let i = 0, n = N(70); i < n; i++) {       // 문틀
+          const a = i / n * TAU;
+          this.add(x + Math.cos(a) * gw, gy + Math.sin(a) * gh * 0.5, 0, 0,
+                   rnd(0.7, 1.15), 15 * sc, 3 * sc, i % 4 ? col : white,
+                   0.95, 2, a + Math.PI / 2, 0, 0, 1.2);
+        }
+        for (let i = 0, n = N(60); i < n; i++) {       // 문 안쪽에서 새어 나오는 빛
+          const a = rnd(0, TAU), rr = Math.sqrt(Math.random());
+          this.add(x + Math.cos(a) * gw * rr * 0.8, gy + Math.sin(a) * gh * 0.4 * rr,
+                   0, rnd(-60, -20) * sc, rnd(0.5, 1), rnd(6, 16) * sc, 2 * sc,
+                   col, 0.7, 1, 0, 0, 0, 1.6);
+        }
+        for (let s = -1; s <= 1; s++) {                // 피어오르는 혼 세 줄기
+          const segs = N(26);
+          for (let k = 0; k < segs; k++) {
+            const t = k / segs;
+            this.add(x + s * 26 * sc + Math.sin(t * 5 + s) * 34 * sc * t, y - t * 260 * sc,
+                     0, rnd(-40, -10) * sc, rnd(0.6, 1.15), (17 - t * 9) * sc, 2 * sc,
+                     k % 3 ? col : white, 0.95, 1.6, 0, 0, 0, 1.5);
+          }
+        }
+        break;
+      }
+
+      /* 천둥의 칙령 — 세 줄기가 한꺼번에 내리꽂힌다 */
+      case 'thunderseal': {
+        this._seal(x, y, R, col, sc, q);
+        for (let b = -1; b <= 1; b++) {
+          const bx = x + b * R * 0.45;
+          let px = bx, py = y - 460 * sc;
+          const segs = N(40);
+          for (let i = 0; i < segs; i++) {
+            const ny = py + (460 * sc) / segs;
+            const nx = px + rnd(-16, 16) * sc;
+            const ang = Math.atan2(ny - py, nx - px);
+            const lf = rnd(0.5, 0.8);
+            this.add(px, py, 0, 0, lf, 34 * sc * big, 15 * sc, col, 0.55, 2.2, ang, 0, 0, 0.8);
+            this.add(px, py, 0, 0, lf, 12 * sc * big, 6 * sc, white, 1, 2.6, ang, 0, 0, 0.7);
+            px = nx; py = ny;
+          }
+          for (let i = 0, n = N(50); i < n; i++) {     // 착탄 불티
+            const a = rnd(0, TAU), sp = rnd(80, 560) * sc;
+            this.add(bx, y, Math.cos(a) * sp, -Math.abs(Math.sin(a)) * sp * 0.8,
+                     rnd(0.4, 0.9), rnd(8, 20) * sc, 1, col, 1, rnd(1, 2.4), a, rnd(-6, 6), 900);
+          }
+        }
+        break;
+      }
+    }
+  }
+
+  /* 신화 필살 넷이 공통으로 까는 지면 봉인.
+   * 고리 세 겹이 퍼지고 그 사이에서 불티가 솟는다.
+   * Canvas2D 판이 타원 세 겹을 긋던 바로 그 자리다. */
+  _seal(x, y, R, col, sc, q) {
+    const rnd = (a, b) => a + Math.random() * (b - a);
+    const N = n => Math.max(1, Math.round(n * q));
+    const TAU = Math.PI * 2;
+    for (let ring = 0; ring < 3; ring++) {
+      const rr = R * (0.45 + ring * 0.24), n = N(54 + ring * 10);
+      for (let i = 0; i < n; i++) {
+        const a = i / n * TAU;
+        this.add(x + Math.cos(a) * rr, y + Math.sin(a) * rr * 0.22,
+                 Math.cos(a) * 26 * sc, Math.sin(a) * 6 * sc,
+                 rnd(0.7, 1.15), (16 - ring * 3) * sc, 3 * sc,
+                 ring ? col : [1, 1, 0.94], 0.85, 2, a, 0, 0, 1.3);
+      }
+    }
+    for (let i = 0, n = N(60); i < n; i++) {           // 봉인 사이로 솟는 불티
+      const a = rnd(0, TAU), rr = rnd(R * 0.2, R);
+      this.add(x + Math.cos(a) * rr, y + Math.sin(a) * rr * 0.22, 0,
+               rnd(-170, -60) * sc, rnd(0.7, 1.2), rnd(4, 10) * sc, 1,
+               col, 0.9, 1, 0, rnd(-3, 3), 120, 1.7);
     }
   }
 }

@@ -39,6 +39,9 @@ class Renderer {
                      Math.min(this.h * 0.86, this.h - hudH - 26)));
     // cs: 지면 위 여유 높이에 맞춘 캐릭터 배율
     this.cs = Math.max(0.70, Math.min(1.45, this.groundY / 350));
+    // 2D 캔버스 크기가 바뀌면 WebGL 레이어도 같이 맞춘다. 여기서 부르지 않으면
+    // 전투에 들어갈 때 순서상 fx 캔버스가 320x240 인 채로 남는다.
+    this.syncGlSize();
   }
 
   /* WebGL 레이어를 2D 캔버스와 같은 크기로 맞춘다 */
@@ -511,29 +514,8 @@ class Renderer {
       const x = this.screenX(e.x);
       const y = this.rowY(e.row || 0) - 28 * cs;
       if(e.type==='mythic') {
-        const k=1-p, radius=Math.min(e.r*this.zoom,260*cs), ground=this.rowY(e.row);
-        ctx.save();ctx.translate(x,ground);ctx.strokeStyle=e.color;ctx.fillStyle=e.color;ctx.globalAlpha=Math.min(1,p*2);
-        // Ground seals and rising sparks are bounded, with no full-screen flash.
-        for(let ring=0;ring<3;ring++){
-          const rr=radius*(.45+ring*.24)*Math.min(1,k*5);
-          ctx.lineWidth=(3-ring*.7)*cs;ctx.beginPath();ctx.ellipse(0,0,rr,rr*.22,k*(ring-1)*.2,0,Math.PI*2);ctx.stroke();
-        }
-        if(e.kind==='sunfall'){
-          const cy=-110*cs-k*28*cs;ctx.lineWidth=4*cs;ctx.beginPath();ctx.arc(0,cy,32*cs,0,7);ctx.stroke();
-          for(let i=0;i<12;i++){const a=i*Math.PI/6+k;ctx.beginPath();ctx.moveTo(Math.cos(a)*40*cs,cy+Math.sin(a)*40*cs);ctx.lineTo(Math.cos(a)*55*cs,cy+Math.sin(a)*55*cs);ctx.stroke();}
-          ctx.globalAlpha=p*.25;ctx.beginPath();ctx.moveTo(-25*cs,cy);ctx.lineTo(-radius,0);ctx.lineTo(radius,0);ctx.lineTo(25*cs,cy);ctx.fill();
-        }else if(e.kind==='runeveil'){
-          for(let i=0;i<8;i++){const a=i*Math.PI/4+k*.7,xx=Math.cos(a)*radius*.7,yy=-45*cs+Math.sin(a)*22*cs;
-            ctx.beginPath();ctx.moveTo(xx,yy-10*cs);ctx.lineTo(xx-5*cs,yy);ctx.lineTo(xx+5*cs,yy+5*cs);ctx.lineTo(xx,yy+10*cs);ctx.stroke();}
-        }else if(e.kind==='underworld'){
-          ctx.globalAlpha=p*.65;ctx.lineWidth=5*cs;ctx.beginPath();ctx.ellipse(0,-55*cs,45*cs,65*cs,0,0,7);ctx.stroke();
-          for(let i=-1;i<=1;i++){ctx.beginPath();ctx.moveTo(i*20*cs,0);ctx.bezierCurveTo(i*50*cs,-30*cs,-i*15*cs,-70*cs,i*30*cs,-115*cs);ctx.stroke();}
-        }else{
-          for(let i=-1;i<=1;i++){const xx=i*radius*.5;ctx.beginPath();ctx.moveTo(xx-15*cs,-160*cs);ctx.lineTo(xx+10*cs,-105*cs);ctx.lineTo(xx-10*cs,-70*cs);ctx.lineTo(xx,0);ctx.stroke();}
-        }
-        ctx.globalAlpha=p*.8;
-        for(let i=0;i<18;i++){const a=i*2.399,rr=radius*(.2+.8*k);ctx.beginPath();ctx.arc(Math.cos(a)*rr,Math.sin(a)*rr*.2-k*(20+i%4*14)*cs,2*cs,0,7);ctx.fill();}
-        ctx.restore();
+        if (this.glfx && this.glfx.ok) this.emitMythic(e, x, cs);
+        else this.drawMythic(e, x, p, cs);
       } else if (e.type === 'hit') {
         ctx.strokeStyle = 'rgba(255,255,255,' + p + ')';
         ctx.lineWidth = 2.5 * cs;
@@ -685,6 +667,48 @@ class Renderer {
       scale: cs,
       big: !!e.big
     });
+  }
+
+  /* 신화 필살 연출도 같은 파티클 레이어로 넘긴다. 한 번만 터진다. */
+  emitMythic(e, x, cs) {
+    if (e._emitted) return;
+    e._emitted = true;
+    // emit() 이 radius 에 scale 을 한 번 더 곱하므로 미리 나눠 둔다.
+    // Canvas2D 판과 같은 화면 반지름(260*cs 로 묶인 값)에서 터지게 하려는 것이다.
+    this.glfx.emit(e.kind, x, this.rowY(e.row || 0), {
+      color: this.rgbOf(e.color),
+      radius: Math.min(e.r * this.zoom, 260 * cs) / cs,
+      scale: cs,
+      big: true
+    });
+  }
+
+  /* WebGL 을 못 쓰는 기기에서 그리는 신화 필살 연출. 원래 그림 그대로다. */
+  drawMythic(e, x, p, cs) {
+    const ctx = this.ctx;
+    const k=1-p, radius=Math.min(e.r*this.zoom,260*cs), ground=this.rowY(e.row);
+    ctx.save();ctx.translate(x,ground);ctx.strokeStyle=e.color;ctx.fillStyle=e.color;ctx.globalAlpha=Math.min(1,p*2);
+    // Ground seals and rising sparks are bounded, with no full-screen flash.
+    for(let ring=0;ring<3;ring++){
+      const rr=radius*(.45+ring*.24)*Math.min(1,k*5);
+      ctx.lineWidth=(3-ring*.7)*cs;ctx.beginPath();ctx.ellipse(0,0,rr,rr*.22,k*(ring-1)*.2,0,Math.PI*2);ctx.stroke();
+    }
+    if(e.kind==='sunfall'){
+      const cy=-110*cs-k*28*cs;ctx.lineWidth=4*cs;ctx.beginPath();ctx.arc(0,cy,32*cs,0,7);ctx.stroke();
+      for(let i=0;i<12;i++){const a=i*Math.PI/6+k;ctx.beginPath();ctx.moveTo(Math.cos(a)*40*cs,cy+Math.sin(a)*40*cs);ctx.lineTo(Math.cos(a)*55*cs,cy+Math.sin(a)*55*cs);ctx.stroke();}
+      ctx.globalAlpha=p*.25;ctx.beginPath();ctx.moveTo(-25*cs,cy);ctx.lineTo(-radius,0);ctx.lineTo(radius,0);ctx.lineTo(25*cs,cy);ctx.fill();
+    }else if(e.kind==='runeveil'){
+      for(let i=0;i<8;i++){const a=i*Math.PI/4+k*.7,xx=Math.cos(a)*radius*.7,yy=-45*cs+Math.sin(a)*22*cs;
+        ctx.beginPath();ctx.moveTo(xx,yy-10*cs);ctx.lineTo(xx-5*cs,yy);ctx.lineTo(xx+5*cs,yy+5*cs);ctx.lineTo(xx,yy+10*cs);ctx.stroke();}
+    }else if(e.kind==='underworld'){
+      ctx.globalAlpha=p*.65;ctx.lineWidth=5*cs;ctx.beginPath();ctx.ellipse(0,-55*cs,45*cs,65*cs,0,0,7);ctx.stroke();
+      for(let i=-1;i<=1;i++){ctx.beginPath();ctx.moveTo(i*20*cs,0);ctx.bezierCurveTo(i*50*cs,-30*cs,-i*15*cs,-70*cs,i*30*cs,-115*cs);ctx.stroke();}
+    }else{
+      for(let i=-1;i<=1;i++){const xx=i*radius*.5;ctx.beginPath();ctx.moveTo(xx-15*cs,-160*cs);ctx.lineTo(xx+10*cs,-105*cs);ctx.lineTo(xx-10*cs,-70*cs);ctx.lineTo(xx,0);ctx.stroke();}
+    }
+    ctx.globalAlpha=p*.8;
+    for(let i=0;i<18;i++){const a=i*2.399,rr=radius*(.2+.8*k);ctx.beginPath();ctx.arc(Math.cos(a)*rr,Math.sin(a)*rr*.2-k*(20+i%4*14)*cs,2*cs,0,7);ctx.fill();}
+    ctx.restore();
   }
 
   /* '#rrggbb' -> [r,g,b] 0~1. 같은 색이 계속 오므로 표에 담아 둔다. */
