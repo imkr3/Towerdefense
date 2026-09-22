@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>이펙트 비교 · Canvas2D vs WebGL</title>
+<style>
+  :root {
+    --bg: #11161c; --panel: #1a222b; --line: #2c3946;
+    --ink: #e8e2d2; --dim: #93a2b1; --gold: #d8b45a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 14px/1.5 system-ui, -apple-system, 'Noto Sans KR', sans-serif;
+    padding: 14px;
+  }
+  h1 { font-size: 17px; margin: 0 0 4px; }
+  .sub { color: var(--dim); font-size: 13px; margin-bottom: 14px; }
+  .bar {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 8px; padding: 10px; margin-bottom: 12px;
+  }
+  .bar label { color: var(--dim); font-size: 12px; }
+  select, button, input[type=range] { font: inherit; }
+  select, button {
+    background: #24303c; color: var(--ink); border: 1px solid var(--line);
+    border-radius: 6px; padding: 6px 10px; cursor: pointer;
+  }
+  button.go { background: var(--gold); color: #1b1408; border-color: var(--gold); font-weight: 700; }
+  button.on { outline: 2px solid var(--gold); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+  .cell {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 8px; overflow: hidden;
+  }
+  .cap {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 8px 12px; border-bottom: 1px solid var(--line);
+  }
+  .cap b { font-size: 14px; }
+  .cap .n { color: var(--dim); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .stage { position: relative; height: 380px; background: #0c1116; }
+  .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .ground { position: absolute; left: 0; right: 0; bottom: 96px; height: 1px; background: #26323d; }
+  .note { color: var(--dim); font-size: 12px; margin-top: 12px; line-height: 1.7; }
+  .note code { background: #222c36; padding: 1px 5px; border-radius: 4px; }
+  .warn { color: #e8a04a; }
+  table { border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+  td, th { border: 1px solid var(--line); padding: 5px 10px; text-align: left; }
+  th { color: var(--dim); font-weight: 600; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+
+<h1>이펙트 비교 · Canvas2D(현재) vs WebGL(제안)</h1>
+<div class="sub">
+  왼쪽은 게임에 들어 있는 <code>render.js</code> 의 <code>drawCast</code> 를 그대로 부른다.
+  오른쪽은 외부 라이브러리 없이 새로 쓴 WebGL 파티클 레이어다. 같은 순간에 같은 연출을 터뜨린다.
+</div>
+
+<div class="bar">
+  <label>연출</label>
+  <select id="kind">
+    <option value="lightning">번개 (제우스)</option>
+    <option value="firestorm">불길 (불꽃술사)</option>
+    <option value="holy">성광 (성기사)</option>
+    <option value="iceburst">얼음 (서리 마도사)</option>
+    <option value="shockwave">충격파 (토르)</option>
+    <option value="runes">마법진 (대마법사)</option>
+    <option value="pillar">빛기둥 (아누비스)</option>
+    <option value="slash">참격 (기사)</option>
+  </select>
+  <label>동시에</label>
+  <select id="burst">
+    <option value="1">1개</option>
+    <option value="3">3개</option>
+    <option value="6">6개</option>
+    <option value="12">12개</option>
+  </select>
+  <button class="go" id="fire">터뜨리기 (스페이스)</button>
+  <button id="loop">반복 끄기</button>
+  <label>WebGL 파티클 양</label>
+  <input type="range" id="density" min="0.2" max="3" step="0.1" value="1">
+  <span class="n" id="densityTxt">x1.0</span>
+</div>
+
+<div class="grid">
+  <div class="cell">
+    <div class="cap"><b>Canvas2D — 현재 방식</b><span class="n" id="statA">–</span></div>
+    <div class="stage"><canvas id="cvA"></canvas><div class="ground"></div></div>
+  </div>
+  <div class="cell">
+    <div class="cap"><b>WebGL — 파티클</b><span class="n" id="statB">–</span></div>
+    <div class="stage"><canvas id="cvB"></canvas><div class="ground"></div></div>
+  </div>
+</div>
+
+<div id="glerr" class="note warn" hidden></div>
+
+<table id="tally">
+  <tr><th>항목</th><th>Canvas2D</th><th>WebGL</th></tr>
+  <tr><td>한 프레임 그리기</td><td class="num" id="tA">–</td><td class="num" id="tB">–</td></tr>
+  <tr><td>화면 위 요소 수</td><td class="num" id="nA">–</td><td class="num" id="nB">–</td></tr>
+</table>
+
+<div class="note">
+  측정값은 각 캔버스의 그리기 호출 시간만 잰 것이다(평균 30프레임).
+  브라우저가 그리기를 미뤘다가 몰아 처리하기 때문에, 숫자는 같은 조건에서의 비교로만 보면 된다.
+</div>
+
+<script src="../../js/data.js"></script>
+<script src="../../js/game.js"></script>
+<script src="../../js/render.js"></script>
+<script src="gl-fx.js"></script>
+<script>
+(function () {
+/* ---------------- 공통 ---------------- */
+const cvA = document.getElementById('cvA'), cvB = document.getElementById('cvB');
+const ctxA = cvA.getContext('2d');
+const fx = new GLFx(cvB, 40000);
+if (!fx.ok) {
+  const el = document.getElementById('glerr');
+  el.hidden = false;
+  el.textContent = 'WebGL 을 쓸 수 없는 환경이다: ' + (fx.error || '컨텍스트 생성 실패');
+}
+
+let VW = 0, VH = 0, DPR = 1, GROUND = 0;
+function resize() {
+  const r = cvA.getBoundingClientRect();
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  VW = Math.max(280, r.width); VH = Math.max(200, r.height);
+  GROUND = VH - 96;
+  cvA.width = Math.round(VW * DPR); cvA.height = Math.round(VH * DPR);
+  ctxA.setTransform(DPR, 0, 0, DPR, 0, 0);
+  if (fx.ok) fx.resize(VW, VH, DPR);
+}
+window.addEventListener('resize', resize);
+
+/* drawCast 는 Renderer 의 ctx / zoom / groundY / fxq / qn 만 쓴다.
+ * 게임 전체를 띄우지 않고 그 다섯 개만 갖춘 껍데기에 붙여 부른다. */
+const fakeRenderer = {
+  ctx: ctxA, zoom: 1, fxq: 1,
+  get groundY() { return GROUND; },
+  qn(n) { return n; }
+};
+const drawCast = Renderer.prototype.drawCast;
+
+/* ---------------- 연출 데이터 ---------------- */
+const COLORS = {
+  lightning: '#ffe14a', firestorm: '#ff6b3c', holy: '#fff2b0', iceburst: '#bfe9ff',
+  shockwave: '#ffd166', runes: '#b48aff', pillar: '#8fd8ff', slash: '#ffd166'
+};
+function hexToRgb(h) {
+  return [parseInt(h.slice(1, 3), 16) / 255,
+          parseInt(h.slice(3, 5), 16) / 255,
+          parseInt(h.slice(5, 7), 16) / 255];
+}
+
+let castFx = [];            // Canvas2D 쪽이 들고 있는 연출 목록
+const kindSel = document.getElementById('kind');
+const burstSel = document.getElementById('burst');
+const densityEl = document.getElementById('density');
+
+function fire() {
+  const kind = kindSel.value;
+  const n = parseInt(burstSel.value, 10);
+  const hex = COLORS[kind];
+  const rgb = hexToRgb(hex);
+  const dens = parseFloat(densityEl.value);
+  for (let i = 0; i < n; i++) {
+    const px = VW * (n === 1 ? 0.5 : (0.14 + 0.72 * (i / (n - 1))));
+    castFx.push({ type: 'cast', kind: kind, x: px, row: 1, color: hex,
+                  r: 110, big: true, dir: 1, t: 0.7, life: 0.7 });
+    if (fx.ok) fx.emit(kind, px, GROUND, { color: rgb, radius: 110, density: dens });
+  }
+}
+document.getElementById('fire').addEventListener('click', fire);
+window.addEventListener('keydown', e => {
+  if (e.code === 'Space') { e.preventDefault(); fire(); }
+});
+densityEl.addEventListener('input', () => {
+  document.getElementById('densityTxt').textContent = 'x' + parseFloat(densityEl.value).toFixed(1);
+});
+
+let looping = true, loopT = 0;
+const loopBtn = document.getElementById('loop');
+loopBtn.classList.add('on');
+loopBtn.addEventListener('click', () => {
+  looping = !looping;
+  loopBtn.textContent = looping ? '반복 끄기' : '반복 켜기';
+  loopBtn.classList.toggle('on', looping);
+});
+
+/* ---------------- 루프 ---------------- */
+const msA = [], msB = [];
+function avg(a) { return a.length ? a.reduce((s, v) => s + v, 0) / a.length : 0; }
+
+let last = 0;
+function frame(ts) {
+  requestAnimationFrame(frame);
+  if (!last) last = ts;
+  let dt = (ts - last) / 1000; last = ts;
+  if (dt > 0.1) dt = 0.1;
+
+  if (looping) {
+    loopT -= dt;
+    if (loopT <= 0) { loopT = 1.1; fire(); }
+  }
+
+  // --- Canvas2D ---
+  const a0 = performance.now();
+  ctxA.clearRect(0, 0, VW, VH);
+  for (const e of castFx) {
+    const p = e.t / e.life;
+    drawCast.call(fakeRenderer, e, e.x, GROUND - 28, p, 1);
+  }
+  ctxA.getImageData(0, 0, 1, 1);          // 미뤄진 그리기를 강제로 마무리시킨다
+  msA.push(performance.now() - a0);
+  if (msA.length > 30) msA.shift();
+
+  for (const e of castFx) e.t -= dt;
+  castFx = castFx.filter(e => e.t > 0);
+
+  // --- WebGL ---
+  let bms = 0;
+  if (fx.ok) {
+    fx.update(dt);
+    const b0 = performance.now();
+    fx.draw();
+    fx.gl.finish();                        // 같은 조건으로 재기 위해 끝까지 기다린다
+    bms = performance.now() - b0;
+    msB.push(bms);
+    if (msB.length > 30) msB.shift();
+  }
+
+  document.getElementById('statA').textContent =
+    castFx.length + '개 연출 · ' + avg(msA).toFixed(2) + ' ms';
+  document.getElementById('statB').textContent =
+    (fx.ok ? fx.count.toLocaleString() + '개 파티클 · ' + avg(msB).toFixed(2) + ' ms' : 'WebGL 없음');
+  document.getElementById('tA').textContent = avg(msA).toFixed(2) + ' ms';
+  document.getElementById('tB').textContent = fx.ok ? avg(msB).toFixed(2) + ' ms' : '–';
+  document.getElementById('nA').textContent = castFx.length + ' 개';
+  document.getElementById('nB').textContent = fx.ok ? fx.count.toLocaleString() + ' 개' : '–';
+}
+
+resize();
+requestAnimationFrame(frame);
+
+// 자동 검사에서 만질 손잡이
+window.PROTO = {
+  fire: fire,
+  reset: function () { castFx.length = 0; if (fx.ok) fx.clear(); },
+  stats: function () {
+    return { casts: castFx.length, particles: fx.ok ? fx.count : 0,
+             msA: avg(msA), msB: avg(msB), ok: fx.ok, err: fx.error };
+  },
+  setLoop: function (on) { looping = on; }
+};
+})();
+</script>
+</body>
+</html>
