@@ -182,6 +182,17 @@ const BASIC_STAGES = 3;
  * 이걸 넘으면 2막이 자체 성장 구간 노릇을 못 한다. */
 const EXT_ENTRY_MAX = 6;
 
+/* 막 경계. 1막 1~20, 2막 21~30, 3막 31~40. */
+const ACT2_FROM = 20;
+const ACT3_FROM = 30;
+
+/* 3막(31~40전장)을 2막 완주 수준(강화8/Lv12)으로 돌파해도 되는 최대 개수.
+ * 이걸 넘으면 3막이 새 병종과 최종 강화를 요구하는 구간 노릇을 못 한다. */
+const ACT3_ENTRY_MAX = 5;
+
+/* 3막을 완전 강화(병영 10 / 병종 20)로 돌 때 허용하는 최대 전투 시간 */
+const ACT3_TIME_MAX = 400;
+
 function check() {
   let failed = 0;
   EXPECT.forEach(e => {
@@ -223,7 +234,7 @@ function check() {
 
   // 2막은 캠페인을 막 끝낸 수준으로 "들어갈 수는" 있되 쓸어담지는 못해야 한다.
   const entryEngine=loadEngine(12345), entryRows=[];
-  for(let i=20;i<entryEngine.STAGES.length;i++)entryRows.push(runStage(entryEngine,i,5,8,false,false));
+  for(let i=ACT2_FROM;i<ACT3_FROM;i++)entryRows.push(runStage(entryEngine,i,5,8,false,false));
   printTable(entryRows,5,8);
   if(!entryRows[0].win){console.error('  ✗ 21전장은 기존 캠페인 완주 강화 수준으로 진입 가능해야 함');failed++;}
   const entryWins=entryRows.filter(r=>r.win).length;
@@ -236,10 +247,34 @@ function check() {
   // Expansion has its own progression gate; original campaign thresholds stay unchanged.
   for(const seed of [12345,98765]) {
     const g=loadEngine(seed), rows=[];
-    for(let i=20;i<g.STAGES.length;i++) rows.push(runStage(g,i,8,12,false,false));
+    for(let i=ACT2_FROM;i<ACT3_FROM;i++) rows.push(runStage(g,i,8,12,false,false));
     printTable(rows,8,12);
-    if(rows.some(r=>!r.win || r.seconds>400)){console.error('  ✗ 확장 전장: 충분한 강화로 400초 내 돌파 필요 (seed '+seed+')');failed++;}
-    else console.log('  ✓ 확장 전장 10개 완주 (seed '+seed+')');
+    if(rows.some(r=>!r.win || r.seconds>400)){console.error('  ✗ 2막 전장: 충분한 강화로 400초 내 돌파 필요 (seed '+seed+')');failed++;}
+    else console.log('  ✓ 2막 전장 10개 완주 (seed '+seed+')');
+  }
+
+  // 3막 진입 관문: 2막을 막 끝낸 수준으로는 앞쪽 몇 전장만 뚫려야 한다.
+  const a3Engine=loadEngine(12345), a3Entry=[];
+  for(let i=ACT3_FROM;i<a3Engine.STAGES.length;i++)a3Entry.push(runStage(a3Engine,i,8,12,false,false));
+  printTable(a3Entry,8,12);
+  if(!a3Entry[0].win){console.error('  ✗ 31전장은 2막 완주 강화 수준으로 진입 가능해야 함');failed++;}
+  const a3Wins=a3Entry.filter(r=>r.win).length;
+  if(a3Wins>ACT3_ENTRY_MAX){
+    console.error(`  ✗ 3막이 너무 무르다: 2막 완주 수준으로 ${a3Wins}/10 돌파 (최대 ${ACT3_ENTRY_MAX})`);
+    failed++;
+  } else {
+    console.log(`  ✓ 3막 진입 관문: 2막 완주 수준으로 ${a3Wins}/10 돌파 (최대 ${ACT3_ENTRY_MAX})`);
+  }
+
+  // 3막은 완전 강화까지 올리면 반드시 끝나야 한다. 두 난수 흐름 모두에서.
+  for(const seed of [12345,98765]) {
+    const g=loadEngine(seed), rows=[];
+    for(let i=ACT3_FROM;i<g.STAGES.length;i++) rows.push(runStage(g,i,10,20,false,false));
+    printTable(rows,10,20);
+    const slow=rows.filter(r=>r.seconds>ACT3_TIME_MAX);
+    if(rows.some(r=>!r.win)||slow.length){
+      console.error(`  ✗ 3막 전장: 완전 강화로 ${ACT3_TIME_MAX}초 내 돌파 필요 (seed ${seed})`);failed++;
+    } else console.log('  ✓ 3막 전장 10개 완주 (seed '+seed+')');
   }
   if (failed) {
     console.error(`\n밸런스 검사 실패 (${failed}건)\n`);

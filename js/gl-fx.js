@@ -17,6 +17,10 @@
  *    fx.draw();
  * ======================================================================= */
 
+/* 이 레이어가 그릴 줄 아는 연출 목록. 여기에 없는 연출은 Canvas2D 가 맡는다. */
+const GLFX_KINDS = ['lightning', 'firestorm', 'holy', 'iceburst', 'shockwave',
+                    'runes', 'pillar', 'slash', 'stormchain', 'acid', 'execute', 'voidrift'];
+
 const GLFX_STRIDE = 17;          // 파티클 한 개가 쓰는 float 수
 const GLFX_INST = 9;             // GPU 로 올리는 인스턴스 속성 수
 
@@ -305,6 +309,10 @@ class GLFx {
   /* ------------------------------ 연출 ------------------------------
    * 게임의 castFx 종류 8가지. x, y 는 화면 좌표(y 는 지면).
    * opt: color [r,g,b] 0~1 / scale / radius / density / big */
+  /* 이 레이어가 아는 연출인가. 모르는 연출은 호출한 쪽이 캔버스로 그려야
+   * 한다. 조용히 아무것도 그리지 않으면 기술이 통째로 사라진다. */
+  supports(kind) { return GLFX_KINDS.indexOf(kind) >= 0; }
+
   emit(kind, x, y, opt) {
     if (!this.ok) return;
     opt = opt || {};
@@ -496,6 +504,103 @@ class GLFx {
           this.add(x + Math.cos(a) * R * 0.62, y + Math.sin(a) * R * 0.2,
                    Math.cos(a) * 60 * sc, Math.sin(a) * 18 * sc,
                    rnd(0.3, 0.55), 24 * sc, 4 * sc, col, 0.85, 1.6, a, 0, 0, 1.2);
+        }
+        break;
+      }
+
+      /* 옮겨붙는 벼락 */
+      case 'stormchain': {
+        for (let b = 0; b < 4; b++) {
+          const dir = b % 2 ? 1 : -1;
+          const reach = R * (0.7 + (b >> 1) * 0.5) * dir;
+          const segs = N(18);
+          let px = x, py = y - 14 * sc;
+          for (let i = 1; i <= segs; i++) {
+            const nx = x + reach * (i / segs);
+            const ny = y - 14 * sc + Math.sin(i * 1.7 + b) * 18 * sc;
+            const ang = Math.atan2(ny - py, nx - px);
+            this.add(px, py, 0, 0, rnd(0.25, 0.5), 22 * sc * big, 9 * sc, col, 0.6, 2.4, ang, 0, 0, 0.9);
+            this.add(px, py, 0, 0, rnd(0.2, 0.42), 9 * sc * big, 4 * sc, white, 1, 2.8, ang, 0, 0, 0.8);
+            px = nx; py = ny;
+          }
+          for (let i = 0, n = N(10); i < n; i++) {     // 갈라지는 끝에서 튀는 불티
+            const a = rnd(0, TAU), sp = rnd(80, 320) * sc;
+            this.add(px, py, Math.cos(a) * sp, Math.sin(a) * sp * 0.6,
+                     rnd(0.2, 0.5), rnd(5, 11) * sc, 1, col, 1, 2, a, 0, 520);
+          }
+        }
+        for (let i = 0, n = N(34); i < n; i++) {       // 바닥으로 퍼지는 전류
+          const a = i / n * TAU;
+          this.add(x, y, Math.cos(a) * 320 * sc, Math.sin(a) * 90 * sc,
+                   rnd(0.3, 0.55), 16 * sc, 3 * sc, i % 3 ? col : white, 0.9, 2.2, a, 0, 0, 1.2);
+        }
+        break;
+      }
+
+      /* 녹아내리는 산성 */
+      case 'acid': {
+        for (let i = 0, n = N(90); i < n; i++) {       // 튀어 오르는 방울
+          const a = rnd(-Math.PI, 0), sp = rnd(70, 330) * sc;
+          this.add(x, y - 16 * sc, Math.cos(a) * sp, Math.sin(a) * sp,
+                   rnd(0.4, 0.95), rnd(6, 15) * sc * big, rnd(2, 5) * sc,
+                   i % 4 ? col : white, 0.95, 1.2, 0, rnd(-4, 4), 620);
+        }
+        for (let i = 0, n = N(40); i < n; i++) {       // 지면에 고이는 웅덩이
+          const a = rnd(0, TAU);
+          this.add(x + Math.cos(a) * rnd(0, R), y + Math.sin(a) * rnd(0, R) * 0.28,
+                   0, 0, rnd(0.5, 1.1), rnd(26, 58) * sc, 12 * sc, col, 0.55, 1, 0, 0, 0, 1.5);
+        }
+        for (let i = 0, n = N(24); i < n; i++) {       // 피어오르는 연기
+          this.add(x + rnd(-R, R) * 0.7, y, rnd(-20, 20), rnd(-140, -60) * sc,
+                   rnd(0.6, 1.2), rnd(8, 18) * sc, 26 * sc, col, 0.35, 1, 0, 0, 90, 1.8);
+        }
+        break;
+      }
+
+      /* 내리꽂는 처형 참격 */
+      case 'execute': {
+        const segs = N(26);
+        for (let i = 0; i < segs; i++) {
+          const t = i / segs;
+          const px = x - 14 * sc + t * 34 * sc;
+          const py = y - 86 * sc + t * 104 * sc;
+          const taper = 1 - Math.abs(t - 0.5) * 1.1;
+          this.add(px, py, 0, 0, rnd(0.2, 0.42), 30 * sc * big * taper, 6 * sc,
+                   white, 0.9, 3, 1.25, 0, 0, 0.9);
+          this.add(px, py, 0, 0, rnd(0.25, 0.5), 16 * sc * taper, 4 * sc,
+                   col, 0.8, 2.6, 1.25, 0, 0, 1);
+        }
+        for (let i = 0, n = N(50); i < n; i++) {       // 갈라진 자리에서 튀는 조각
+          const a = rnd(-2.6, -0.5), sp = rnd(130, 420) * sc;
+          this.add(x, y - 10 * sc, Math.cos(a) * sp, Math.sin(a) * sp,
+                   rnd(0.25, 0.55), rnd(5, 12) * sc, 1, i % 3 ? col : white, 1, 2.2, a, 0, 700);
+        }
+        break;
+      }
+
+      /* 심연의 균열 */
+      case 'voidrift': {
+        for (let c = -1; c <= 1; c++) {                // 솟구치는 기둥
+          const cx = x + c * R * 0.45;
+          const steps = N(16);
+          for (let k = 0; k < steps; k++) {
+            const t = k / steps;
+            this.add(cx + Math.sin(t * 6 + c) * 10 * sc, y - t * 150 * sc,
+                     rnd(-12, 12), rnd(-160, -60) * sc, rnd(0.4, 0.9),
+                     (26 - t * 14) * sc * big, 6 * sc, k % 3 ? col : white,
+                     0.75, 1.6, 0, rnd(-2, 2), -40, 1.4);
+          }
+        }
+        for (let i = 0, n = N(56); i < n; i++) {       // 안쪽으로 빨려드는 재
+          const a = rnd(0, TAU), rr = R * rnd(0.6, 1.2);
+          this.add(x + Math.cos(a) * rr, y + Math.sin(a) * rr * 0.3,
+                   -Math.cos(a) * 200 * sc, -Math.sin(a) * 60 * sc,
+                   rnd(0.4, 0.8), rnd(6, 14) * sc, 2 * sc, col, 0.9, 2, a, 0, 0, 1.3);
+        }
+        for (let i = 0, n = N(30); i < n; i++) {       // 갈라진 바닥 고리
+          const a = i / n * TAU;
+          this.add(x + Math.cos(a) * R * 0.8, y + Math.sin(a) * R * 0.24, 0, 0,
+                   rnd(0.35, 0.7), 24 * sc, 4 * sc, i % 4 ? col : white, 0.8, 2, a, 0, 0, 1.2);
         }
         break;
       }

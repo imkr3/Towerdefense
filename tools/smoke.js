@@ -79,9 +79,17 @@ async function runSize(browser, size) {
   const originalProgress=await page.evaluate(()=>save.cleared);
   const expansionMap=await page.evaluate(()=>{
     save.cleared=20;renderMap();const cards=[...document.querySelectorAll('#stage-list .stage')];
-    return {count:cards.length,open:!cards[20].disabled,locked:cards[21].disabled,endless:!!document.querySelector('#endless-slot .e-btn')};
+    return {count:cards.length,acts:document.querySelectorAll('#stage-list .act-head').length,
+            open:!cards[20].disabled,locked:cards[21].disabled,
+            endless:!!document.querySelector('#endless-slot .e-btn')};
   });
-  if(expansionMap.count!==30||!expansionMap.open||!expansionMap.locked||!expansionMap.endless)throw Error('Expansion progression or endless unlock broken');
+  if(expansionMap.count!==40||expansionMap.acts!==3||!expansionMap.open||!expansionMap.locked||!expansionMap.endless)throw Error('Expansion progression or endless unlock broken');
+  // 3막 전장도 카드가 서고, 돌파 전까지는 잠겨 있어야 한다.
+  const act3=await page.evaluate(()=>{
+    save.cleared=30;renderMap();const cards=[...document.querySelectorAll('#stage-list .stage')];
+    return {open:!cards[30].disabled,locked:cards[31].disabled};
+  });
+  if(!act3.open||!act3.locked)throw Error('Act 3 progression broken');
   await page.evaluate(n=>{save.cleared=n;renderMap();},originalProgress);
 
 

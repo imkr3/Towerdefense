@@ -137,10 +137,104 @@ test('Shared active cooldown and stun block skill spam',()=>{
   const b=heroBattle('odin');b.heroCooldowns.odin=0;b.heroGlobalCd=1;assert.equal(b.canHeroActive('odin'),false);
   b.heroGlobalCd=0;b.allies[0].stunT=1;assert.equal(b.canHeroActive('odin'),false);
 });
-test('Thirty stages retain the existing endless unlock threshold',()=>{
-  const {STAGES,ENDLESS_UNLOCK_STAGE}=vm.runInContext('({STAGES,ENDLESS_UNLOCK_STAGE})',ctx);
-  assert.equal(STAGES.length,30);assert.equal(ENDLESS_UNLOCK_STAGE,20);
-  assert.ok(STAGES.slice(20).every(s=>s.waves.length>=8&&s.reward>900));
+test('Forty stages span three acts and keep the endless threshold',()=>{
+  const {STAGES,ENDLESS_UNLOCK_STAGE,ACTS,actOf}=vm.runInContext('({STAGES,ENDLESS_UNLOCK_STAGE,ACTS,actOf})',ctx);
+  assert.equal(STAGES.length,40);assert.equal(ENDLESS_UNLOCK_STAGE,20);
+  assert.equal(ACTS.map(a=>a.from).join(','),'0,20,30');
+  assert.equal(actOf(0),ACTS[0]);assert.equal(actOf(29),ACTS[1]);assert.equal(actOf(39),ACTS[2]);
+  assert.ok(STAGES.slice(20,30).every(s=>s.waves.length>=8&&s.reward>900));
+  assert.ok(STAGES.slice(30).every(s=>s.waves.length>=8&&s.reward>=2400&&s.enemyMul>3));
+});
+test('Evasion only dodges projectiles and never true shots', () => {
+  const b=battle(),h=b.spawnEnemy('harpy',600);
+  const archer=b.makeAlly(U.archer,500),falcon=b.makeAlly(U.falconer,500),spear=b.makeAlly(U.spear,560);
+  let dodged=0;for(let i=0;i<400;i++){const hp=h.hp;b.hitOne(1,h,archer,false);if(h.hp===hp)dodged++;h.hp=h.maxHp;}
+  assert.ok(dodged>110&&dodged<250,'회피율이 45% 언저리여야 한다: '+dodged);
+  for(let i=0;i<50;i++){const hp=h.hp;b.hitOne(1,h,falcon,false);assert.ok(h.hp<hp);h.hp=h.maxHp;}
+  for(let i=0;i<50;i++){const hp=h.hp;b.hitOne(1,h,spear,false);assert.ok(h.hp<hp);h.hp=h.maxHp;}
+});
+test('Curse raises damage taken and purifiers wash it off', () => {
+  const b=battle(),hex=b.spawnEnemy('hexer',700),a=b.makeAlly(U.spear,600),p=b.makeAlly(U.purifier,600);
+  b.hitOne(0,a,hex,false);assert.ok(a.curseT>0);assert.equal(a.curseMul,1.35);
+  const hp=a.hp;a.takeDamage(100);assert.ok(Math.abs(hp-a.hp-135)<1e-6);
+  b.supportTick(p,[p,a],.1,true);assert.equal(a.curseT,0);assert.equal(a.curseMul,1);
+});
+test('Sunder strips armour for its duration only, per fighter', () => {
+  const b=battle(),al=b.makeAlly(U.alchemist,500);
+  const one=b.spawnEnemy('orcshield',560),two=b.spawnEnemy('orcshield',600);
+  b.hitOne(0,one,al,false);
+  assert.ok(Math.abs(one.armorNow-0)<1e-9,'부식이 갑주 15%를 전부 벗긴다');
+  assert.ok(Math.abs(two.armorNow-0.15)<1e-9,'다른 개체의 갑주는 그대로여야 한다');
+  one.sunderT=0;assert.ok(Math.abs(one.armorNow-0.15)<1e-9);
+});
+test('Execution multiplies damage only below the threshold', () => {
+  const b=battle(),ex=b.makeAlly(U.executioner,500),e=b.spawnEnemy('ogre',560);
+  assert.equal(b.hitOne(100,e,ex,false),100);
+  e.hp=e.maxHp*0.2;assert.equal(b.hitOne(100,e,ex,false),260);
+});
+test('Shield break eats the barrier before the hit lands', () => {
+  const b=battle(),inq=b.makeAlly(U.inquisitor,500),e=b.spawnEnemy('goblin',560);
+  e.giveBarrier(300);b.hitOne(100,e,inq,false);
+  assert.equal(e.barrier,0);assert.equal(e.hp,e.maxHp-100);
+});
+test('Chain lightning jumps to nearby foes with falloff and never loops', () => {
+  const b=battle(),t=b.makeAlly(U.tempest,500);t.atk=100;
+  const near=[b.spawnEnemy('goblin',560),b.spawnEnemy('goblin',600),b.spawnEnemy('goblin',640)];
+  const far=b.spawnEnemy('goblin',1400);
+  const hp=near.map(e=>e.hp);
+  b.chainFrom(t,near[0],b.enemies);
+  assert.equal(near[0].hp,hp[0],'첫 대상은 연쇄에서 제외된다');
+  assert.ok(Math.abs(hp[1]-near[1].hp-60)<1e-6);
+  assert.ok(Math.abs(hp[2]-near[2].hp-36)<1e-6);
+  assert.equal(far.hp,far.maxHp);
+});
+test('Raiders drain the war chest but never below zero', () => {
+  const b=battle(),r=b.spawnEnemy('raider',200),a=b.makeAlly(U.spear,180);
+  b.money=20;b.hitOne(10,a,r,false);assert.equal(b.money,6);
+  b.hitOne(10,a,r,false);assert.equal(b.money,0);
+});
+test('Death split spawns once and the spawn keeps its wave', () => {
+  const b=battle(),e=b.spawnEnemy('bloat',900);e.wave=3;e.dead=true;
+  b.reap(b.enemies,b.allies,b.allyCastle,true);
+  const spawn=b.enemies.filter(x=>x.split);
+  assert.equal(spawn.length,2);assert.ok(spawn.every(x=>x.wave===3&&x.s.id==='spider'));
+  spawn[0].dead=true;b.reap(b.enemies,b.allies,b.allyCastle,true);
+  assert.equal(b.enemies.filter(x=>x.split).length,2);
+});
+test('Summon caps hold the live count steady', () => {
+  const b=battle(),bm=b.makeAlly(U.beastmaster,500);b.allies.push(bm);
+  for(let i=0;i<4;i++){bm.abCd=0;b.supportTick(bm,b.allies,.1,true);}
+  assert.equal(b.allies.filter(a=>a.s.id==='warwolf').length,4);
+  b.allies.filter(a=>a.s.id==='warwolf')[0].dead=true;
+  b.allies=b.allies.filter(a=>!a.dead);bm.abCd=0;b.supportTick(bm,b.allies,.1,true);
+  assert.equal(b.allies.filter(a=>a.s.id==='warwolf').length,4);
+});
+test('A weaker haste aura never slows the royal command', () => {
+  const b=battle(),h=b.makeAlly(U.herald,500),a=b.makeAlly(U.spear,520);
+  b.allies.push(h,a);b.cmdCd=0;b.useCommand();
+  assert.equal(a.hasteMul,0.6);
+  h.abCd=0;b.supportTick(h,b.allies,.1,true);
+  assert.equal(a.hasteMul,0.6,'나팔수가 왕명 가속을 덮어써서는 안 된다');
+  a.hasteT=0;h.abCd=0;b.supportTick(h,b.allies,.1,true);
+  assert.equal(a.hasteMul,0.7);
+});
+test('Every effect the roster casts can be drawn by both layers',()=>{
+  const {UNITS,ENEMIES}=vm.runInContext('({UNITS,ENEMIES})',ctx);
+  const layer=Object.create(require('../js/gl-fx.js').GLFx.prototype);
+  const render=fs.readFileSync(path.join(__dirname,'../js/render.js'),'utf8');
+  const kinds=new Set();
+  // 신화 액티브(kind)는 mythic 연출 한 곳에서 기본형까지 받아 그린다.
+  UNITS.forEach(u=>{ if(u.castFx)kinds.add(u.castFx); });
+  Object.keys(ENEMIES).forEach(k=>{
+    const e=ENEMIES[k];
+    if(e.special&&e.special.kind)kinds.add(e.special.kind);
+    (e.phases||[]).forEach(p=>{if(p.kind)kinds.add(p.kind);});
+  });
+  for(const kind of kinds){
+    assert.ok(render.indexOf("case '"+kind+"'")>=0||render.indexOf("kind==='"+kind+"'")>=0,
+              '캔버스 연출 없음: '+kind);
+  }
+  for(const u of UNITS) if(u.castFx) assert.ok(layer.supports(u.castFx),'WebGL 연출 없음: '+u.castFx);
 });
 test('First expansion victory advances from 20 to 21 and retains old stars',()=>{
   const s=save();s.stars[19]=3;const b=new Battle(20,s);b.finish('win');

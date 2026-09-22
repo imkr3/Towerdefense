@@ -292,7 +292,21 @@ function renderMap() {
 
   const list = $('#stage-list');
   list.innerHTML = '';
+  let nextEl = null;
   STAGES.forEach((st, i) => {
+    // 막이 바뀌는 자리에 머리글을 끼워 40개 전장을 눈으로 나눈다
+    const act = ACTS.find(a => a.from === i);
+    if (act) {
+      const head = document.createElement('div');
+      head.className = 'act-head' + (save.cleared < i ? ' locked' : '');
+      const last = Math.min(STAGES.length, i + 10);
+      const done = Math.max(0, Math.min(last, save.cleared) - i);
+      head.innerHTML =
+        '<div class="act-name">' + act.name +
+          '<span class="act-count">' + done + ' / ' + (last - i) + '</span></div>' +
+        '<div class="act-sub">' + act.sub + '</div>';
+      list.appendChild(head);
+    }
     const locked = i > save.cleared;
     const cleared = i < save.cleared;
     const el = document.createElement('button');
@@ -300,7 +314,7 @@ function renderMap() {
     el.disabled = locked;
     el.className = 'stage' + (locked ? ' locked' : '') + (cleared ? ' cleared' : '') +
                    (st.boss ? ' boss' : '') + (i === save.cleared ? ' current' : '');
-    el.style.setProperty('--field', FIELD_PALETTES[i % FIELD_PALETTES.length].ridge);
+    el.style.setProperty('--field', fieldPalette(i).ridge);
     el.innerHTML =
       '<div class="stage-no">' + (locked ? '🔒' : (i + 1)) + '</div>' +
       '<div class="stage-info">' +
@@ -319,12 +333,12 @@ function renderMap() {
       el.querySelector('.stage-info').appendChild(intel);
       el.addEventListener('click', () => startBattle(i));
     }
+    if (i === Math.min(save.cleared, STAGES.length - 1)) nextEl = el;
     list.appendChild(el);
   });
 
   // 처음 도전할 스테이지가 보이도록 스크롤
-  const next = list.children[Math.min(save.cleared, STAGES.length - 1)];
-  if (next) setTimeout(() => next.scrollIntoView({ block: 'center' }), 30);
+  if (nextEl) setTimeout(() => nextEl.scrollIntoView({ block: 'center' }), 30);
 }
 
 function renderEndlessSlot() {
@@ -523,7 +537,15 @@ function renderTraining() {
           (e.ab && e.ab.slow ? '<span class="stat hl">둔화</span>' : '') +
           (e.ab && e.ab.kbImmune ? '<span class="stat hl">넉백 면역</span>' : '') +
           (e.ab && e.ab.deathBomb ? '<span class="stat hl">사망 시 폭발</span>' : '') +
+          (e.ab && e.ab.deathSpawn ? '<span class="stat hl">사망 시 분열</span>' : '') +
           (e.ab && e.ab.summon ? '<span class="stat hl">소환</span>' : '') +
+          (e.ab && e.ab.evade ? '<span class="stat hl">회피 ' + Math.round(e.ab.evade * 100) + '%</span>' : '') +
+          (e.ab && e.ab.curse ? '<span class="stat hl">저주</span>' : '') +
+          (e.ab && e.ab.sunder ? '<span class="stat hl">부식</span>' : '') +
+          (e.ab && e.ab.chain ? '<span class="stat hl">연쇄</span>' : '') +
+          (e.ab && e.ab.barrier ? '<span class="stat hl">보호막 지원</span>' : '') +
+          (e.ab && e.ab.revive ? '<span class="stat hl">부활</span>' : '') +
+          (e.ab && e.ab.steal ? '<span class="stat hl">군자금 약탈</span>' : '') +
           (e.area ? '<span class="stat">범위</span>' : '') +
         '</div>' +
       '</div>';

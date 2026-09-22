@@ -111,6 +111,16 @@ body{
   display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr));
   gap:8px; align-content:start;
 }
+/* 막 머리글: 다단 목록에서도 한 줄을 통째로 차지한다 */
+.act-head{
+  grid-column:1/-1; margin:6px 0 2px; padding:7px 10px;
+  background:linear-gradient(90deg,var(--iron),rgba(47,53,64,.72));
+  border-left:6px solid var(--gold); color:var(--parch);
+}
+.act-head.locked{opacity:.55;}
+.act-name{font-weight:900; font-size:14px; display:flex; align-items:center; gap:8px;}
+.act-count{font-size:11px; font-weight:800; color:var(--gold-l);}
+.act-sub{font-size:11px; opacity:.8; margin-top:2px;}
 .stage{
   display:flex; align-items:center; gap:10px; background:var(--parch);
   border:2px solid var(--ink); border-left:6px solid var(--steel);
