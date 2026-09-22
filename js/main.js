@@ -780,6 +780,7 @@ function startBattle(index) {
 
 function beginBattle() {
   clearTimeout(resultTimer);
+  if (renderer) { renderer.syncGlSize(); renderer.resetFx(); }
   playAccum = 0;
   $('#result').classList.remove('show');
   $('#btn-speed').textContent = '▶▶ 1x';
@@ -1011,7 +1012,7 @@ function loop(ts) {
     if (battle.state === 'play') playAccum += dt;
   }
   else battle.updateFx(dt * 0.4);
-  renderer.render(battle, dt);
+  renderer.render(battle, dt, (paused || $('.modal.show')) ? dt * 0.4 : dt);
   updateHud();
   if (before === 'play' && battle.state !== 'play') {
     const ended = battle;
@@ -1211,6 +1212,18 @@ function refreshTitleBadges() {
 
 function init() {
   renderer = new Renderer($('#cv'));
+  // 필살 연출용 WebGL 레이어. 못 만들면 renderer 가 Canvas2D 연출로 되돌아간다.
+  if (typeof GLFx !== 'undefined') {
+    const glfx = new GLFx($('#cv-fx'));
+    if (glfx.ok) {
+      renderer.glfx = glfx;
+      renderer.syncGlSize();
+      window.addEventListener('resize', () => renderer.syncGlSize());
+      // Canvas2D 때문에 4개로 묶어 두었던 제한을 넓힌다. 다만 무한정은 아니다 —
+      // 가산 합성이라 너무 많이 겹치면 화면이 빛으로 덮여 전장이 안 보인다.
+      if (typeof setCastLimits === 'function') setCastLimits(8, 3);
+    }
+  }
   SFX.init();
   SFX.on = save.sound !== false;
   $('#btn-sound').textContent = save.sound !== false ? '🔊 효과음 켜짐' : '🔇 효과음 꺼짐';

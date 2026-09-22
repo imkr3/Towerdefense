@@ -41,6 +41,18 @@ class Renderer {
     this.cs = Math.max(0.70, Math.min(1.45, this.groundY / 350));
   }
 
+  /* WebGL 레이어를 2D 캔버스와 같은 크기로 맞춘다 */
+  syncGlSize() {
+    if (!this.glfx || !this.glfx.ok) return;
+    this.glfx.resize(this.w, this.h, Math.min(window.devicePixelRatio || 1, 2));
+  }
+
+  /* 전투가 새로 시작되면 남아 있던 연출을 비운다 */
+  resetFx() {
+    this.prevCam = undefined;
+    if (this.glfx && this.glfx.ok) this.glfx.clear();
+  }
+
   viewWidth() { return this.w / this.zoom; }
   clampCam(x) {
     const half = this.viewWidth() / 2;
@@ -651,7 +663,8 @@ class Renderer {
         ctx.textAlign = 'left';
         ctx.globalAlpha = 1;
       } else if (e.type === 'cast') {
-        this.drawCast(e, x, y, p, cs);
+        if (this.glfx && this.glfx.ok) this.emitCast(e, x, cs);
+        else this.drawCast(e, x, y, p, cs);
       } else if (e.type === 'spawn') {
         ctx.strokeStyle = 'rgba(255,255,255,' + p + ')';
         ctx.lineWidth = 2.5 * cs;
@@ -660,6 +673,32 @@ class Renderer {
         ctx.stroke();
       }
     }
+  }
+
+  /* cast 연출을 WebGL 파티클로 넘긴다. 연출 하나는 한 번만 터진다. */
+  emitCast(e, x, cs) {
+    if (e._emitted) return;
+    e._emitted = true;
+    this.glfx.emit(e.kind, x, this.rowY(e.row || 0), {
+      color: this.rgbOf(e.color),
+      radius: (e.r || 110) * this.zoom,
+      scale: cs,
+      big: !!e.big
+    });
+  }
+
+  /* '#rrggbb' -> [r,g,b] 0~1. 같은 색이 계속 오므로 표에 담아 둔다. */
+  rgbOf(hex) {
+    if (!this._rgbCache) this._rgbCache = {};
+    let v = this._rgbCache[hex];
+    if (v) return v;
+    const h = (typeof hex === 'string' && hex.charAt(0) === '#') ? hex : '#ffe14a';
+    v = [parseInt(h.slice(1, 3), 16) / 255,
+         parseInt(h.slice(3, 5), 16) / 255,
+         parseInt(h.slice(5, 7), 16) / 255];
+    if (!(v[0] >= 0)) v = [1, 0.88, 0.29];
+    this._rgbCache[hex] = v;
+    return v;
   }
 
   /* 병종별 필살 연출. 가산 합성으로 화면 위에서 빛난다. */
@@ -914,16 +953,20 @@ class Renderer {
     ctx.restore();
   }
 
-  render(battle, dt) {
+  render(battle, dt, fxDt) {
     this.trackFrame(dt);
+    const camBefore = this.cam;
     this.follow(battle, dt);
     const ctx = this.ctx;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const sh = reduced ? 0 : (battle.shake || 0);
     this.sceneTime = battle.time;
+    let shakeX = 0, shakeY = 0;
     ctx.save();
     if (sh > 0.2) {
-      ctx.translate((Math.random() - 0.5) * sh, (Math.random() - 0.5) * sh * 0.6);
+      shakeX = (Math.random() - 0.5) * sh;
+      shakeY = (Math.random() - 0.5) * sh * 0.6;
+      ctx.translate(shakeX, shakeY);
     }
     this.drawBackground(battle.stageIndex);
     this.drawProps(battle.stageIndex);
@@ -947,6 +990,18 @@ class Renderer {
     ctx.restore();
     this.drawMiniMap(battle);
     this.drawBossBar(battle);
+    this.drawGlFx(battle, fxDt === undefined ? dt : fxDt, camBefore, shakeX, shakeY);
+  }
+
+  /* WebGL 연출 레이어. 파티클은 화면 좌표로 살기 때문에 카메라가 흐른 만큼
+   * 같이 밀어 주고, 화면 흔들림도 같은 값으로 따라가게 한다. */
+  drawGlFx(battle, dt, camBefore, shakeX, shakeY) {
+    const g = this.glfx;
+    if (!g || !g.ok) return;
+    g.quality = this.fxq < 0.5 ? 0.45 : (this.fxq < 1 ? 0.7 : 1);
+    g.setOffset(shakeX, shakeY);
+    g.update(dt, (camBefore - this.cam) * this.zoom);
+    g.draw();
   }
 
   /* 보스 체력바 + 등장 경보 */

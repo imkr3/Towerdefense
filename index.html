@@ -143,6 +143,8 @@
 <!-- ===================== 전투 ===================== -->
 <section id="scr-battle" class="screen battle">
   <canvas id="cv"></canvas>
+  <!-- 필살 연출 전용 WebGL 레이어. 입력은 아래 캔버스가 받는다. -->
+  <canvas id="cv-fx"></canvas>
 
   <div class="hud-top">
     <div class="hud-left">
@@ -264,6 +266,7 @@
 <script src="js/audio.js"></script>
 <script src="js/data.js"></script>
 <script src="js/save-store.js"></script>
+<script src="js/gl-fx.js"></script>
 <script src="js/game.js"></script>
 <script src="js/render.js"></script>
 <script src="js/main.js"></script>

@@ -28,8 +28,15 @@ const REINFORCE_MIN = 3.0;   // 증원 간격 하한
 const REINFORCE_STEP = 0.06; // 증원 한 번마다 적이 세지는 폭
 const REINFORCE_MAX = 1.9;   // 증원 강화 상한 (끝없이 세지면 이길 수가 없다)
 const REINFORCE_CAP = 16;    // 증원으로 전장에 동시에 설 수 있는 적 수
-const CAST_LIMIT = 4;        // 동시에 터지는 필살 연출 수 (렉 방지)
-const CAST_BIG_LIMIT = 2;    // 그중 전설 대형 연출
+/* 동시에 터지는 필살 연출 수. Canvas2D 로 그릴 때는 연출 수에 정비례해
+ * 비용이 늘어나 4개에서 막아야 했다. WebGL 레이어가 살아 있으면 비용이
+ * 거의 늘지 않으므로 화면 쪽에서 이 값을 올려 준다. */
+let CAST_LIMIT = 4;
+let CAST_BIG_LIMIT = 2;
+function setCastLimits(n, big) {
+  CAST_LIMIT = n;
+  CAST_BIG_LIMIT = big;
+}
 const SLOW_SPEED_MUL = 0.45; // 둔화 시 이동
 const SLOW_RATE_MUL = 1.7;   // 둔화 시 공격 간격
 

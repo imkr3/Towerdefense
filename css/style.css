@@ -191,6 +191,9 @@ body{
 /* ---------- 전투 ---------- */
 .battle{background:#9dc4dd; padding:0;}
 #cv{position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none;}
+/* 필살 연출 레이어. 전투 캔버스 바로 위에 얹고 입력은 통과시킨다. */
+#cv-fx{position:absolute; inset:0; width:100%; height:100%; display:block;
+       pointer-events:none; z-index:1;}
 .hud-top{
   position:absolute; top:calc(5px + var(--st)); left:var(--sl); right:var(--sr);
   display:flex; align-items:flex-start; justify-content:space-between; padding:0 8px; gap:8px;
