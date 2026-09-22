@@ -159,6 +159,18 @@ test('Curse raises damage taken and purifiers wash it off', () => {
   const hp=a.hp;a.takeDamage(100);assert.ok(Math.abs(hp-a.hp-135)<1e-6);
   b.supportTick(p,[p,a],.1,true);assert.equal(a.curseT,0);assert.equal(a.curseMul,1);
 });
+test('An expired strong curse or sunder never boosts a weaker later one', () => {
+  const b=battle(),hex=b.spawnEnemy('hexer',700),king=b.spawnEnemy('shadowking',760);
+  const a=b.makeAlly(U.spear,600);
+  b.hitOne(0,a,king,false);assert.equal(a.curseMul,1.25);
+  a.curseT=0;b.hitOne(0,a,hex,false);assert.equal(a.curseMul,1.35);
+  a.curseT=0;b.hitOne(0,a,king,false);assert.equal(a.curseMul,1.25,'만료된 강한 저주가 남으면 안 된다');
+  const al=b.makeAlly(U.alchemist,500),e=b.spawnEnemy('orcshield',560);
+  const weak=new Fighter({...U.alchemist,ab:{sunder:{amount:0.1,dur:3}}},'ally',500);
+  b.hitOne(0,e,al,false);assert.equal(e.sunderAmt,0.3);
+  e.sunderT=0;b.hitOne(0,e,weak,false);
+  assert.equal(e.sunderAmt,0.1,'만료된 강한 부식이 남으면 안 된다');
+});
 test('Sunder strips armour for its duration only, per fighter', () => {
   const b=battle(),al=b.makeAlly(U.alchemist,500);
   const one=b.spawnEnemy('orcshield',560),two=b.spawnEnemy('orcshield',600);

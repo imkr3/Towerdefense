@@ -878,8 +878,9 @@ class Battle {
       case 'curse': {                      // 저주: 전선 전체가 받는 피해가 늘어난다
         for (const e of foes) {
           if (e.dead || Math.abs(e.x - f.x) > r) continue;
+          if (e.curseT <= 0) e.curseMul = 1;
           e.curseT = Math.max(e.curseT, a.dur || 6);
-          e.curseMul = Math.max(e.curseMul > 1 ? e.curseMul : 1, a.mul || 1.3);
+          e.curseMul = Math.max(e.curseMul, a.mul || 1.3);
           if (a.slow) e.slowT = Math.max(e.slowT, a.slow);
           this.fx.push({ type: 'curse', x: e.x, row: e.row, t: 0.5, life: 0.5 });
         }
@@ -1133,14 +1134,17 @@ class Battle {
       this.fx.push({ type: 'stun', x: target.x, row: target.row, t: 0.5, life: 0.5 });
     }
     // 저주: 정해진 시간 동안 받는 피해가 늘어난다. 정화로 풀린다.
+    // 만료된 강한 저주가 뒤이은 약한 저주에 얹히면 안 된다.
     if (ab.curse) {
+      if (target.curseT <= 0) target.curseMul = 1;
       target.curseT = Math.max(target.curseT, ab.curse.dur);
-      target.curseMul = Math.max(target.curseMul > 1 ? target.curseMul : 1, ab.curse.mul);
+      target.curseMul = Math.max(target.curseMul, ab.curse.mul);
       this.fx.push({ type: 'curse', x: target.x, row: target.row, t: 0.5, life: 0.5 });
       sfx('curse');
     }
     // 부식: 갑주를 벗겨 뒤따르는 타격을 살린다.
     if (ab.sunder) {
+      if (target.sunderT <= 0) target.sunderAmt = 0;
       target.sunderT = Math.max(target.sunderT, ab.sunder.dur);
       target.sunderAmt = Math.max(target.sunderAmt, ab.sunder.amount);
       this.fx.push({ type: 'sunder', x: target.x, row: target.row, t: 0.45, life: 0.45 });
