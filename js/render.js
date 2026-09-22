@@ -236,6 +236,33 @@ class Renderer {
       const sc = cs * (0.7 + ((i * 13) % 5) / 10);
       ctx.save();
       ctx.translate(x, y);
+      if (pal.citadel) {                // 3막: 뼈와 부서진 기둥이 깔린 땅
+        ctx.fillStyle = pal.prop;
+        ctx.strokeStyle = pal.prop;
+        ctx.lineCap = 'round';
+        if (kind === 0) {               // 갈비뼈
+          ctx.lineWidth = 3 * sc;
+          for (let r = -2; r <= 2; r++) {
+            ctx.beginPath();
+            ctx.arc(r * 7 * sc, -2 * sc, 11 * sc, Math.PI * 1.15, Math.PI * 1.85);
+            ctx.stroke();
+          }
+        } else if (kind === 1) {        // 부러진 기둥
+          ctx.fillRect(-9 * sc, -40 * sc, 18 * sc, 40 * sc);
+          ctx.beginPath();
+          ctx.moveTo(-9 * sc, -40 * sc); ctx.lineTo(2 * sc, -52 * sc);
+          ctx.lineTo(9 * sc, -36 * sc); ctx.closePath(); ctx.fill();
+        } else {                        // 땅에 박힌 부러진 검
+          ctx.lineWidth = 4 * sc;
+          ctx.beginPath();
+          ctx.moveTo(2 * sc, 0); ctx.lineTo(-4 * sc, -26 * sc); ctx.stroke();
+          ctx.lineWidth = 3 * sc;
+          ctx.beginPath();
+          ctx.moveTo(-12 * sc, -22 * sc); ctx.lineTo(4 * sc, -30 * sc); ctx.stroke();
+        }
+        ctx.restore();
+        continue;
+      }
       if (kind === 0) {                 // 마른 나무
         ctx.strokeStyle = pal.prop; ctx.lineWidth = 4 * sc; ctx.lineCap = 'round';
         ctx.beginPath();
@@ -263,7 +290,7 @@ class Renderer {
   }
 
   /* --------------------------- 본진 --------------------------- */
-  drawCastle(c, isEnemy) {
+  drawCastle(c, isEnemy, stageIndex) {
     const ctx = this.ctx;
     const x = this.screenX(c.x);
     if (x < -240 || x > this.w + 240) return;
@@ -306,6 +333,44 @@ class Renderer {
       ctx.beginPath();
       ctx.moveTo(0, -hgt - 52 * s); ctx.lineTo(38 * s, -hgt - 44 * s);
       ctx.lineTo(0, -hgt - 30 * s); ctx.closePath(); ctx.fill();
+    } else if (fieldPalette(stageIndex).citadel) {
+      /* 3막 요새: 검은 돌의 첨탑. 성문 자리에 심연이 열려 있다. */
+      ctx.fillStyle = '#241f2e';
+      ctx.fillRect(-wdt / 2, -hgt, wdt, hgt);
+      ctx.fillStyle = '#191524';                        // 돌결
+      for (let r = 0; r < 7; r++) {
+        ctx.fillRect(-wdt / 2, -hgt + 12 * s + r * 20 * s, wdt, 3 * s);
+      }
+      ctx.fillStyle = '#2f2840';                        // 뾰족한 첨탑 흉벽
+      for (let i = 0; i < 5; i++) {
+        const bx = -wdt / 2 + i * 23 * s;
+        ctx.beginPath();
+        ctx.moveTo(bx, -hgt); ctx.lineTo(bx + 11 * s, -hgt - 34 * s);
+        ctx.lineTo(bx + 22 * s, -hgt); ctx.closePath(); ctx.fill();
+      }
+      const pulse = 0.6 + 0.4 * Math.sin((this.sceneTime || 0) * 1.6);
+      ctx.fillStyle = '#0d0a14';                        // 열린 심연
+      ctx.beginPath(); ctx.ellipse(0, -30 * s, 22 * s, 32 * s, 0, 0, 7); ctx.fill();
+      ctx.strokeStyle = 'rgba(163,102,255,' + pulse + ')';
+      ctx.lineWidth = 3 * s;
+      ctx.beginPath(); ctx.ellipse(0, -30 * s, 22 * s, 32 * s, 0, 0, 7); ctx.stroke();
+      ctx.globalAlpha = 0.35 * pulse;
+      ctx.fillStyle = '#a366ff';
+      ctx.beginPath(); ctx.ellipse(0, -30 * s, 34 * s, 46 * s, 0, 0, 7); ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = '#a366ff';                        // 벽에 박힌 눈
+      for (let i = -1; i <= 1; i += 2) {
+        ctx.beginPath();
+        ctx.ellipse(i * 34 * s, -108 * s, 6 * s, 9 * s, 0, 0, 7); ctx.fill();
+      }
+      ctx.fillStyle = '#5b2f74';                        // 찢긴 깃발
+      ctx.beginPath();
+      ctx.moveTo(-wdt / 2, -hgt - 10 * s);
+      ctx.lineTo(-wdt / 2 - 32 * s, -hgt + 4 * s);
+      ctx.lineTo(-wdt / 2 - 14 * s, -hgt + 10 * s);
+      ctx.lineTo(-wdt / 2 - 28 * s, -hgt + 24 * s);
+      ctx.lineTo(-wdt / 2, -hgt + 22 * s);
+      ctx.closePath(); ctx.fill();
     } else {
       /* 오크 요새: 통나무 방벽 */
       ctx.fillStyle = '#4a3a28';
@@ -1156,8 +1221,8 @@ class Renderer {
     }
     this.drawBackground(battle.stageIndex);
     this.drawProps(battle.stageIndex);
-    this.drawCastle(battle.allyCastle, false);
-    this.drawCastle(battle.enemyCastle, true);
+    this.drawCastle(battle.allyCastle, false, battle.stageIndex);
+    this.drawCastle(battle.enemyCastle, true, battle.stageIndex);
 
     const all = battle.allies.concat(battle.enemies);
     all.sort((a, b) => (a.row - b.row) || (a.x - b.x));
@@ -3912,8 +3977,8 @@ const FIELD_PALETTES = [
     ridgeFar: '#3c4a5e', ridge: '#2a3546', ground: '#454f5c', groundDark: '#2b333e', speck: '#3a4451',
     weather: 'rain', storm: true },
   /* 6 · 잿빛 심연: 해가 지워진 하늘에서 재가 내린다 (3막) */
-  { sky0: '#241f31', sky1: '#584a63', cloud: 'rgba(150,130,175,.3)',
-    ridgeFar: '#33293f', ridge: '#221b2c', ground: '#332b3d', groundDark: '#1f1926', speck: '#2a2333',
+  { sky0: '#2b2440', sky1: '#6b5a7e', cloud: 'rgba(170,150,200,.32)',
+    ridgeFar: '#3d3152', ridge: '#2a2239', ground: '#413753', groundDark: '#2a2338', speck: '#352c46',
     weather: 'ash', voidOrb: true },
   /* 7 · 잿불 회랑: 바닥이 식지 않아 불티가 떠오른다 (3막) */
   { sky0: '#4a2320', sky1: '#a4593a', cloud: 'rgba(255,190,150,.28)',
@@ -3930,6 +3995,8 @@ FIELD_PALETTES[5].orb = '#8fa4bb'; FIELD_PALETTES[5].orbGlow = 'rgba(160,185,215
 FIELD_PALETTES[5].moon = true;
 FIELD_PALETTES[6].orb = '#7a4fa8'; FIELD_PALETTES[6].orbGlow = 'rgba(150,90,220,.3)';
 FIELD_PALETTES[7].orb = '#ffb06a'; FIELD_PALETTES[7].orbGlow = 'rgba(255,150,80,.45)';
+// 3막 전장은 적 요새도 검은 첨탑으로 바뀐다
+[5, 6, 7].forEach(i => { FIELD_PALETTES[i].citadel = true; });
 FIELD_PALETTES.forEach(p => { p.prop = p.groundDark; });
 
 /* 전장별 배경. 3막 전장은 stage.pal 로 자기 하늘을 지정하고,

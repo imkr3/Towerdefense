@@ -93,5 +93,24 @@ const SFX = {
                 setTimeout(() => this.tone(f, 0.2, 'square', 0.22), i * 130)); },
   lose:     function () { [440, 370, 294, 196].forEach((f, i) =>
                 setTimeout(() => this.tone(f, 0.24, 'sawtooth', 0.18), i * 150)); },
-  gold:     function () { this.tone(880, 0.06, 'square', 0.12, 1320); }
+  gold:     function () { this.tone(880, 0.06, 'square', 0.12, 1320); },
+  /* --- 3막 --- */
+  // 연쇄 번개: 높은 곳에서 탁 튀고 짧게 지직거린다
+  chain:    function () { this.tone(1500, 0.07, 'square', 0.12, 2400);
+                          this.noise(0.09, 3200, 0.1, 6); },
+  // 저주: 아래로 미끄러지는 낮은 소리
+  curse:    function () { this.tone(220, 0.34, 'sine', 0.16, 90);
+                          this.tone(311, 0.3, 'triangle', 0.08, 130); },
+  // 보호막 파훼: 유리 깨지는 소리
+  shatter:  function () { this.noise(0.16, 4200, 0.16, 8);
+                          this.tone(1760, 0.1, 'triangle', 0.1, 880); },
+  // 부식: 쉭 하고 녹는다
+  sunder:   function () { this.noise(0.22, 1800, 0.11, 2); },
+  // 회피: 스치는 바람
+  evade:    function () { this.noise(0.1, 3000, 0.07, 5); },
+  // 처형: 묵직하게 내리찍는다
+  execute:  function () { this.noise(0.18, 900, 0.26, 2);
+                          this.tone(160, 0.22, 'sawtooth', 0.18, 60); },
+  // 약탈: 동전이 굴러 떨어진다
+  steal:    function () { this.tone(760, 0.12, 'square', 0.12, 240); }
 };

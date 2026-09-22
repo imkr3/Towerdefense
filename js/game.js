@@ -11,7 +11,9 @@ const KILL_GOLD_RATE = 0.20; // 처치 보상 배율
 
 /* 효과음 헬퍼: 브라우저에서만 동작하고, 같은 소리가 몰릴 때는 솎아낸다 */
 const _sfxAt = {};
-const _sfxGap = { slash: 90, hit: 90, arrow: 110, boom: 140, die: 120, deploy: 40, gold: 200 };
+const _sfxGap = { slash: 90, hit: 90, arrow: 110, boom: 140, die: 120, deploy: 40, gold: 200,
+                 chain: 140, curse: 400, shatter: 220, sunder: 400, evade: 200,
+                 execute: 260, steal: 320 };
 function sfx(name) {
   if (typeof SFX === 'undefined' || !SFX.ready || !SFX.on) return;
   const now = (typeof performance !== 'undefined') ? performance.now() : Date.now();
@@ -1070,6 +1072,7 @@ class Battle {
         target.stunT <= 0 && Math.random() < target.ab.evade) {
       this.fx.push({ type: 'miss', x: target.x, row: target.row,
                      ally: target.side === 'ally', t: 0.5, life: 0.5 });
+      sfx('evade');
       return 0;
     }
     // 처형: 빈사 상태를 단숨에 끊는다. 성채에는 통하지 않는다.
@@ -1077,11 +1080,13 @@ class Battle {
         target.hp / target.maxHp <= ab.execute.below) {
       dmg *= ab.execute.mul;
       crit = true;
+      sfx('execute');
     }
     // 보호막 파괴: 남은 방벽을 먼저 깎아낸다
     if (ab.shieldbreak && !target.isCastle && target.barrier > 0) {
       target.barrier = Math.max(0, target.barrier - dmg * ab.shieldbreak);
       this.fx.push({ type: 'shatter', x: target.x, row: target.row, t: 0.35, life: 0.35 });
+      sfx('shatter');
     }
     const dealt = target.takeDamage(dmg) || 0;
     if (target.isCastle) {
@@ -1105,6 +1110,7 @@ class Battle {
         this.money -= taken;
         this.fx.push({ type: 'steal', x: src.x, row: src.row, v: Math.round(taken),
                        t: 0.6, life: 0.6 });
+        sfx('steal');
       }
     }
     if (target.isCastle || target.dead) return dealt;
@@ -1131,12 +1137,14 @@ class Battle {
       target.curseT = Math.max(target.curseT, ab.curse.dur);
       target.curseMul = Math.max(target.curseMul > 1 ? target.curseMul : 1, ab.curse.mul);
       this.fx.push({ type: 'curse', x: target.x, row: target.row, t: 0.5, life: 0.5 });
+      sfx('curse');
     }
     // 부식: 갑주를 벗겨 뒤따르는 타격을 살린다.
     if (ab.sunder) {
       target.sunderT = Math.max(target.sunderT, ab.sunder.dur);
       target.sunderAmt = Math.max(target.sunderAmt, ab.sunder.amount);
       this.fx.push({ type: 'sunder', x: target.x, row: target.row, t: 0.45, life: 0.45 });
+      sfx('sunder');
     }
     if (ab.push && !target.ab.kbImmune) {
       target.x = Math.max(60, Math.min(WORLD - 60, target.x + src.dir * ab.push * 0.01 * 60));
@@ -1169,7 +1177,7 @@ class Battle {
       this.hitOne(dmg, e, src, false);
       from = e;
     }
-    if (hits.length) sfx('hit');
+    if (hits.length) sfx('chain');
   }
 
   areaHit(dmg, cx, radius, foes, foeCastle, src, crit) {
