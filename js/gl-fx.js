@@ -612,6 +612,84 @@ class GLFx {
         break;
       }
 
+      /* 부서지는 파도 — 작살잡이·리바이어던, 그리고 대해일 */
+      case 'tidal':
+      case 'greatwave': {
+        const wide = kind === 'greatwave';
+        const W = R * (wide ? 1.6 : 1);
+        for (let i = 0, n = N(wide ? 190 : 120); i < n; i++) {   // 말려 올라가는 물마루
+          const t = i / n;
+          const a = -Math.PI * 0.95 + t * Math.PI * 0.9;
+          const rr = W * rnd(0.55, 1);
+          const px = x + Math.cos(a) * rr;
+          const py = y - 10 * sc + Math.sin(a) * rr * 0.42;
+          this.add(px, py, Math.cos(a) * 90 * sc, Math.sin(a) * 60 * sc,
+                   rnd(0.35, 0.7), rnd(16, 34) * sc * big, 6 * sc, col, 0.7, 1.8, a, 0, 260, 1.1);
+        }
+        for (let i = 0, n = N(wide ? 150 : 90); i < n; i++) {    // 흰 물보라
+          const a = rnd(-Math.PI, 0), sp = rnd(120, 520) * sc;
+          this.add(x + rnd(-W * 0.5, W * 0.5), y - rnd(0, 30) * sc,
+                   Math.cos(a) * sp * 0.6, Math.sin(a) * sp,
+                   rnd(0.3, 0.75), rnd(5, 13) * sc, 1, white, 0.95, 2, a, rnd(-4, 4), 780);
+        }
+        for (let i = 0, n = N(40); i < n; i++) {                 // 바닥에 남는 물자국
+          this.add(x + rnd(-W, W), y + rnd(-4, 6) * sc, 0, 0, rnd(0.4, 0.8),
+                   rnd(30, 70) * sc, 8 * sc, col, 0.55, 1, 0, 0, 0, 1.3);
+        }
+        break;
+      }
+
+      /* 빨아들이는 소용돌이 — 해무 마녀, 크라켄의 먹물 */
+      case 'maelstrom': {
+        for (let arm = 0; arm < 3; arm++) {                      // 감겨 드는 세 갈래
+          const n = N(70);
+          for (let i = 0; i < n; i++) {
+            const t = i / n;
+            const a = t * 5.2 + arm * 2.09;
+            const rr = R * (1 - t) * 1.15;
+            const px = x + Math.cos(a) * rr;
+            const py = y - 34 * sc + Math.sin(a) * rr * 0.42;
+            // 안쪽으로 빨려 드는 속도
+            this.add(px, py, -Math.cos(a) * rr * 1.6, -Math.sin(a) * rr * 0.7,
+                     rnd(0.35, 0.65), rnd(10, 24) * sc * big, 4 * sc, col, 0.8, 2.4,
+                     a + 1.57, 0, 0, 1.1);
+          }
+        }
+        for (let i = 0, n = N(60); i < n; i++) {                 // 중심에서 터지는 빛
+          const a = rnd(0, TAU), sp = rnd(30, 200) * sc;
+          this.add(x, y - 34 * sc, Math.cos(a) * sp, Math.sin(a) * sp * 0.5,
+                   rnd(0.25, 0.5), rnd(4, 10) * sc, 1, white, 1, 2, a, 0, 0);
+        }
+        this.add(x, y - 34 * sc, 0, 0, 0.4, 20 * sc, 130 * sc * big, col, 0.55, 1.6, 0, 0, 0, 1.6);
+        break;
+      }
+
+      /* 내려앉는 심연의 손아귀 — 심연의 군주 */
+      case 'voidfall': {
+        for (let f = -2; f <= 2; f++) {                          // 다섯 갈래로 내리꽂힌다
+          const n = N(46);
+          for (let i = 0; i < n; i++) {
+            const t = i / n;
+            const px = x + f * R * 0.34 * (1 - t * 0.55);
+            const py = y - R * 1.7 * (1 - t);
+            this.add(px, py, 0, 340 * sc, rnd(0.3, 0.6), rnd(16, 30) * sc * big, 5 * sc,
+                     col, 0.75, 2.6, 1.57, 0, 0, 1);
+          }
+        }
+        for (let i = 0, n = N(120); i < n; i++) {                // 바닥에서 솟는 검은 기운
+          const a = rnd(0, TAU), rr = rnd(0, R);
+          this.add(x + Math.cos(a) * rr, y + Math.sin(a) * rr * 0.25,
+                   0, -rnd(60, 240) * sc, rnd(0.4, 0.9), rnd(8, 22) * sc, 2 * sc,
+                   col, 0.7, 2.2, 1.57, 0, -40, 1.2);
+        }
+        for (let i = 0, n = N(36); i < n; i++) {                 // 갈라진 바닥의 테두리
+          const a = i / n * TAU;
+          this.add(x + Math.cos(a) * R, y + Math.sin(a) * R * 0.25, 0, 0,
+                   rnd(0.35, 0.7), rnd(30, 60) * sc, 8 * sc, white, 0.5, 1, a, 0, 0, 1.2);
+        }
+        break;
+      }
+
       /* 교차 참격 */
       case 'slash': {
         const cy = y - 34 * sc;

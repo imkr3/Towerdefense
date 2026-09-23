@@ -293,6 +293,7 @@ const CHAPTERS = [
   { name: '1장', sub: '국경 전선', from: 0, to: 10 },
   { name: '2장', sub: '왕도 수호', from: 10, to: 20 },
   { name: '2막', sub: '신화의 끝', from: 20, to: 30 },
+  { name: '3막', sub: '심연의 침공', from: 30, to: 40 },
   { name: '무한', sub: '끝없는 웨이브', endless: true }
 ];
 let mapChapter = -1;       // -1: 진행 중인 장을 자동으로 고른다

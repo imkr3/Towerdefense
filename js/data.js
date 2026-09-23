@@ -586,6 +586,57 @@ SEASON_UNITS.push(
     cost:150,cooldown:7,kb:2,ranged:true,
     abText:'값싼 원거리',
     desc:'공방에서 찍어 낸 소총을 든 민병. 싸고 멀리 쏜다.'}),
+  /* ---------------- 시즌 6 · 심연의 성소 ----------------
+   * 3막에서 바다가 밀려 올라오자, 그 바다를 지키던 쪽도 함께 올라왔다.
+   * 전선을 밀고 당겨 자리를 바꾸는 것이 이 시즌의 결이다. */
+  mk({id:'leviathan',castFx:'tidal',name:'리바이어던',short:'리바이어던',role:'해신',shape:'leviathan',
+    season:'abyss',rarity:'UR',gacha:true,unlockStage:999,
+    body:'#2f4a5c',accent:'#7fe3d0',tunic:'#1f3342',hp:1900,atk:120,range:112,speed:22,interval:2.2,
+    cost:560,cooldown:46,kb:1,scale:1.5,
+    ab:{tide:{radius:210,push:36,slow:2.5},interval:5,kbImmune:true},
+    abText:'5초마다 조류 · 주변 적을 밀어내고 2.5초 둔화 · 넉백 면역',
+    desc:'전선을 통째로 뒤로 밀어낸다. 밀린 적은 다시 걸어와야 하고, 그 사이 뒷줄이 마음껏 쏜다. 다만 혼자서는 느리고 한 번에 하나밖에 못 친다.'}),
+  mk({id:'seawitch',castFx:'maelstrom',name:'해무 마녀',short:'해무마녀',role:'소용돌이',shape:'seawitch',
+    season:'abyss',rarity:'SSR',gacha:true,unlockStage:999,
+    body:'#3f3a5c',accent:'#9ad8ff',tunic:'#2b2740',hp:950,atk:130,range:320,speed:24,interval:1.9,
+    cost:470,cooldown:38,kb:2,ranged:true,area:true,areaRadius:90,scale:1.3,
+    ab:{pull:34,slow:1.4},
+    abText:'범위 · 맞은 적을 끌어당긴다 · 둔화 · 몸이 약함',
+    desc:'흩어진 적을 한 덩어리로 끌어모은다. 모인 자리에 범위 공격과 연쇄 번개가 떨어지면 판이 뒤집히지만, 혼자 세워 두면 제일 먼저 쓰러진다.'}),
+  mk({id:'reefwarden',name:'산호 방벽병',short:'산호방벽',role:'불굴',shape:'reefwarden',
+    season:'abyss',rarity:'SR',gacha:true,unlockStage:999,
+    body:'#2b3038',accent:'#f0a58e',tunic:'#4a6b72',hp:2400,atk:70,range:62,speed:24,interval:1.7,
+    cost:380,cooldown:26,kb:1,scale:1.2,
+    ab:{kbImmune:true,barrier:190,radius:150,interval:6},
+    abText:'넉백 면역 · 6초마다 바로 곁의 아군에게 보호막 190',
+    desc:'산호가 들러붙은 방벽을 세우고 버틴다. 밀려나지 않으니 역류하는 전장에서 값을 한다.'}),
+  mk({id:'harpooner',castFx:'tidal',name:'작살잡이',short:'작살잡이',role:'관통',shape:'harpooner',
+    season:'abyss',rarity:'SR',gacha:true,unlockStage:999,
+    body:'#2b3038',accent:'#bfe9ff',tunic:'#3f5f6b',hp:900,atk:155,range:420,speed:32,interval:2.2,
+    cost:360,cooldown:22,kb:2,ranged:true,
+    ab:{pierce:true,pull:26},
+    abText:'일직선 관통 · 꿰뚫린 적을 끌어당긴다',
+    desc:'줄 달린 작살을 던져 줄 선 적을 한 번에 꿰고, 그대로 당겨 온다.'}),
+  mk({id:'tidepriest',name:'조수 사제',short:'조수사제',role:'정화',shape:'tidepriest',
+    season:'abyss',rarity:'R',gacha:true,unlockStage:999,
+    body:'#2b3038',accent:'#a4f6cc',tunic:'#dceff0',hp:620,atk:30,range:70,speed:32,interval:1.6,
+    cost:240,cooldown:12,kb:2,
+    ab:{heal:95,cleanse:true,radius:210,interval:3.2},
+    abText:'주변 아군 회복 + 중독·화상·둔화 정화',
+    desc:'짠물로 상처를 씻는다. 독과 불, 발에 감긴 물살까지 함께 씻어 낸다.'}),
+  mk({id:'stormcaller',castFx:'tesla',name:'해풍 술사',short:'해풍술사',role:'방전',shape:'stormcaller',
+    season:'abyss',rarity:'R',gacha:true,unlockStage:999,
+    body:'#2b3038',accent:'#b7f0ff',tunic:'#3a4a6b',hp:560,atk:62,range:280,speed:34,interval:1.5,
+    cost:230,cooldown:10,kb:2,ranged:true,
+    ab:{chain:{n:2,fall:.55,range:110}},
+    abText:'방전 · 2번 옮겨 붙는다',
+    desc:'바닷바람에 실린 전기를 던진다. 뭉친 적일수록 잘 듣는다.'}),
+  mk({id:'sailor',name:'수병',role:'근접',shape:'sailor',
+    season:'abyss',rarity:'N',gacha:true,unlockStage:999,
+    body:'#2b3038',accent:'#e0e6ea',tunic:'#3f6b7a',hp:520,atk:58,range:84,speed:48,interval:1.0,
+    cost:130,cooldown:6,kb:2,
+    abText:'값싼 갈고리 창',
+    desc:'갑판에서 끌려 나온 뱃사람. 싸고 빨리 선다.'}),
   // 소환 전용
   mk({id:'turret',name:'증기 포탑',role:'소환물',shape:'turret',unlockStage:999,
     body:'#6b5a48',accent:'#ffb347',tunic:'#4a4038',hp:900,atk:55,range:300,speed:0,interval:.8,
@@ -606,6 +657,8 @@ SEASON_UNITS.forEach(u => { UNIT_BY_ID[u.id] = u; });
 UNIT_BY_ID.zeus.active={name:'천둥의 칙령',kind:'thunderseal',cd:48,radius:180,mul:3.0,stun:.8,desc:'가장 가까운 적 주변 번개 피해·0.8초 기절.'};
 UNIT_BY_ID.thor.active={name:'묠니르 강타',kind:'thunderseal',cd:45,radius:190,mul:2.6,stun:.6,desc:'가장 가까운 적 주변 충격파 피해·0.6초 기절.'};
 UNIT_BY_ID.anubis.active={name:'사자의 결계',kind:'underworld',cd:50,radius:250,barrier:240,desc:'주변 아군에게 보호막·중독과 화상 정화.'};
+UNIT_BY_ID.leviathan.active={name:'대해일',kind:'greatwave',cd:52,radius:320,mul:2.2,push:150,slow:3.5,desc:'전선 전체를 밀어내고 3.5초 둔화.'};
+UNIT_BY_ID.seawitch.active={name:'대소용돌이',kind:'maelstrom',cd:46,radius:260,mul:2.4,pull:170,slow:2.5,desc:'주변 적을 한곳으로 끌어모으고 피해·둔화.'};
 
 function rollSummon(s, pick) {
   s.pity = (s.pity || 0) + 1;
@@ -637,7 +690,11 @@ const SEASONS = [
   { id: 'clockwork', name: '태엽 공방', sub: '증기와 톱니',
     color: '#d9a066', accent: '#6b4a24',
     desc: '연기 자욱한 공방에서 발명가들이 기계 군단을 끌고 나왔다.',
-    units: ['inventor', 'steammech', 'airship', 'teslaknight', 'clocksoldier', 'mechanic', 'rifleman'] }
+    units: ['inventor', 'steammech', 'airship', 'teslaknight', 'clocksoldier', 'mechanic', 'rifleman'] },
+  { id: 'abyss', name: '심연의 성소', sub: '가라앉은 바다',
+    color: '#7fe3d0', accent: '#1f4a55',
+    desc: '바다가 뭍으로 올라오자, 그 바다를 지키던 쪽도 함께 올라왔다.',
+    units: ['leviathan', 'seawitch', 'reefwarden', 'harpooner', 'tidepriest', 'stormcaller', 'sailor'] }
 ];
 
 /* 소환 풀: 시즌 병종 + (다른 시즌은 낮은 확률로) */
@@ -771,6 +828,79 @@ const ENEMIES = {
                 { at: 0.50, t: 'roar',   name: '전장의 포효', r: 420, stun: 1.3, push: 100 },
                 { at: 0.30, t: 'enrage', name: '대군주의 분노', atk: 1.25, rate: 0.8, speed: 1.25 },
                 { at: 0.12, t: 'summon', name: '최후의 군세', id: 'orcberserk', n: 2 }
+              ] },
+
+  /* ---------------- 3막 · 심연의 침공 ----------------
+   * 바다가 밀려 올라오면서 가라앉았던 것들이 뭍으로 걸어 나온다.
+   * 오크 군단과 달리 하나하나가 전선을 비트는 재주를 갖고 있다. */
+  drowned:  { name: '익사병', body: '#4a6b70', accent: '#9fd4cf', tunic: '#35525a', shape: 'drowned',
+              hp: 2600, atk: 200, range: 66, speed: 46, interval: 1.2, kb: 2, gold: 46,
+              abText: '물에 불은 몸 · 값싼 머릿수' },
+  deepspawn:{ name: '심연 유생', body: '#54486b', accent: '#9de08e', tunic: '#3b3350', shape: 'deepspawn',
+              hp: 2400, atk: 180, range: 62, speed: 58, interval: 1.0, kb: 2, gold: 52, scale: .9,
+              ab: { split: { id: 'drowned', n: 2 } },
+              abText: '쓰러지면 익사병 2기로 갈라진다 · 갈라진 것은 다시 갈라지지 않는다' },
+  reefcrab: { name: '산호 게', body: '#a2564a', accent: '#f0c7a0', tunic: '#7d3c34', shape: 'reefcrab',
+              hp: 10500, atk: 380, range: 70, speed: 20, interval: 1.8, kb: 1, gold: 140, scale: 1.35,
+              ab: { kbImmune: true, armor: 0.3, thorns: 0.2 },
+              abText: '넉백 면역 · 갑주 30% · 근접 피해 20% 반격' },
+  siren:    { name: '세이렌', body: '#3f5a70', accent: '#7fe3d0', tunic: '#2e4356', shape: 'siren',
+              hp: 2700, atk: 125, range: 270, speed: 30, interval: 2.4, kb: 2, gold: 105, ranged: true,
+              area: true, areaRadius: 80,
+              ab: { weaken: { mul: 0.6, dur: 4 }, slow: 1.5 },
+              abText: '범위 노래 · 맞은 아군의 공격력 -40%(4초) · 둔화' },
+  tidecaller:{name: '조수 술사', body: '#41607a', accent: '#8fd8ff', tunic: '#2f4a60', shape: 'tidecaller',
+              hp: 4400, atk: 160, range: 130, speed: 26, interval: 2.2, kb: 2, gold: 150, scale: 1.1,
+              ab: { tide: { radius: 240, push: 46, slow: 2.2, dmg: 135 }, interval: 5 },
+              abText: '5초마다 조류 · 주변 아군에게 범위 피해 · 밀어내고 둔화' },
+  abyssmaw: { name: '심연 아귀', body: '#2f3a4a', accent: '#ffd35a', tunic: '#233040', shape: 'abyssmaw',
+              hp: 2900, atk: 290, range: 64, speed: 108, interval: 0.8, kb: 3, gold: 78,
+              ab: { drainGold: 14, lifesteal: 0.35 },
+              abText: '때릴 때마다 군자금 14 약탈 · 흡혈 35%' },
+  thunderling:{name:'뇌전 해파리', body: '#5a4a7a', accent: '#b7f0ff', tunic: '#3f3358', shape: 'thunderling',
+              hp: 2200, atk: 130, range: 265, speed: 34, interval: 1.8, kb: 2, gold: 95, ranged: true, scale: .95,
+              ab: { chain: { n: 2, fall: 0.55, range: 120 } },
+              abText: '방전이 2번 옮겨 붙는다 · 뭉친 전열에 치명적' },
+  conchward:{ name: '소라 나팔수', body: '#6b5a7a', accent: '#e0c2ff', tunic: '#4a3d58', shape: 'conchward',
+              hp: 5400, atk: 0, range: 0, speed: 26, interval: 3, kb: 2, gold: 165,
+              ab: { ward: { radius: 250, cut: 0.25 }, interval: 4, noAttack: true, standoff: 260 },
+              abText: '주변 적이 받는 피해 -25% · 싸우지 않는다. 먼저 끊어야 한다' },
+
+  kraken:   { name: '심연의 크라켄', body: '#4a3f6b', accent: '#7fe3d0', tunic: '#332c4d', shape: 'kraken',
+              hp: 38000, atk: 880, range: 195, speed: 19, interval: 2.4, kb: 1, gold: 520,
+              area: true, areaRadius: 160, scale: 1.95, boss: true,
+              ab: { summon: { id: 'deepspawn', n: 2 }, interval: 8, slow: 2 },
+              special: { t: 'meteor', name: '먹물 세례', cd: 9, n: 3, dmg: 380, radius: 130,
+                         warn: 1.0, kind: 'maelstrom' },
+              phases: [
+                { at: 0.70, t: 'summon', name: '촉수의 포옹', id: 'deepspawn', n: 3 },
+                { at: 0.45, t: 'frost',  name: '심연의 조류', r: 420, dur: 4.5 },
+                { at: 0.25, t: 'roar',   name: '먹빛 포효', r: 380, stun: 1.2, push: 95 },
+                { at: 0.12, t: 'enrage', name: '바다의 광란', atk: 1.25, rate: 0.75, speed: 1.35 }
+              ] },
+  stormwitch:{name: '뇌우의 마녀', body: '#3a4a6b', accent: '#b7f0ff', tunic: '#2a3652', shape: 'stormwitch',
+              hp: 30000, atk: 560, range: 320, speed: 24, interval: 2.0, kb: 1, gold: 460,
+              ranged: true, scale: 1.65, boss: true,
+              ab: { chain: { n: 3, fall: 0.7, range: 140 }, stun: { chance: 0.15, dur: 0.6 } },
+              special: { t: 'meteor', name: '낙뢰', cd: 8, n: 4, dmg: 300, radius: 95,
+                         warn: 0.9, stun: 0.5, kind: 'lightning' },
+              phases: [
+                { at: 0.65, t: 'shield', name: '폭풍의 장막', ratio: 0.22 },
+                { at: 0.40, t: 'summon', name: '해파리 떼', id: 'thunderling', n: 3 },
+                { at: 0.20, t: 'enrage', name: '천둥의 격노', atk: 1.3, rate: 0.72 }
+              ] },
+  abysslord:{ name: '심연의 군주', body: '#2b2a44', accent: '#8f6bff', tunic: '#1f1e33', shape: 'abysslord',
+              hp: 54000, atk: 1050, range: 200, speed: 16, interval: 2.6, kb: 1, gold: 900,
+              area: true, areaRadius: 180, scale: 2.1, boss: true,
+              ab: { armor: 0.25, push: 45, summon: { id: 'drowned', n: 2 }, interval: 9 },
+              special: { t: 'meteor', name: '심연의 손아귀', cd: 10, n: 3, dmg: 460, radius: 135,
+                         warn: 1.1, stun: 0.6, kind: 'voidfall' },
+              phases: [
+                { at: 0.80, t: 'summon', name: '가라앉은 근위', id: 'reefcrab', n: 1 },
+                { at: 0.60, t: 'frost',  name: '만조', r: 460, dur: 5 },
+                { at: 0.42, t: 'roar',   name: '군주의 포효', r: 440, stun: 1.4, push: 110 },
+                { at: 0.26, t: 'drain',  name: '생명의 조수', r: 360, dmg: 200, ratio: 0.8 },
+                { at: 0.12, t: 'enrage', name: '심연의 개방', atk: 1.3, rate: 0.75, speed: 1.3 }
               ] }
 };
 
@@ -873,6 +1003,32 @@ STAGES.push(
     W(2,'orcshield',5,2),W(26,'lich',1),W(52,'frostgiant',1),W(82,'drake',1),W(114,'warlord',1),W(148,'warchief',2,5),W(182,'spiderqueen',1),W(216,'golem',3,5),W(248,'warlord',1),W(276,'hellhound',10,.8)]}
 );
 
+/* 3막: 심연의 침공 (31~40전장). 바다가 밀려 올라오면서 가라앉았던 것들이 뭍으로
+ * 올라온다. 오크 군단과 달리 전선 자체를 밀고 당기고 가호를 씌우기 때문에,
+ * 화력만 쌓은 편성으로는 풀리지 않는다. */
+STAGES.push(
+  {name:'밀려온 해안',hint:'심연 유생은 쓰러지면 갈라진다 · 범위 공격으로 한 번에',baseHp:96000,money:470,rate:58,reward:2400,enemyMul:2.7,waves:[
+    W(2,'drowned',10,.9),W(20,'deepspawn',6,1.4),W(40,'abyssmaw',7,1),W(62,'drowned',12,.8),W(86,'deepspawn',8,1.2),W(110,'siren',4,2.2),W(134,'dark',7,1.6),W(160,'abyssmaw',9,.9),W(186,'golem',3,4),W(212,'drowned',14,.7)]},
+  {name:'산호의 방벽',hint:'산호 게는 근접 반격 · 중독과 원거리로 녹인다',baseHp:100000,money:475,rate:59,reward:2500,enemyMul:2.8,waves:[
+    W(2,'drowned',10,.9),W(20,'reefcrab',3,3),W(44,'siren',5,2),W(68,'reefcrab',4,2.6),W(94,'orcshield',7,1.6),W(120,'abyssmaw',10,.8),W(148,'reefcrab',4,2.6),W(176,'thunderling',6,1.8),W(204,'siegeram',3,4),W(232,'reefcrab',5,2.4)]},
+  {name:'세이렌의 여울',hint:'조수 술사가 전열을 밀어낸다 · 넉백 면역과 장거리로',baseHp:104000,money:480,rate:60,reward:2600,enemyMul:2.9,waves:[
+    W(2,'drowned',12,.8),W(20,'tidecaller',3,3),W(46,'siren',6,1.8),W(72,'wolf',12,.7),W(98,'tidecaller',4,2.6),W(126,'abyssmaw',10,.8),W(154,'siren',6,1.8),W(182,'dark',8,1.5),W(212,'reefcrab',3,3),W(242,'tidecaller',4,2.6)]},
+  {name:'★ 크라켄의 소용돌이',hint:'먹물 낙하 예고를 피하고 유생을 먼저 정리',baseHp:112000,money:490,rate:61,reward:3200,boss:true,enemyMul:3.1,waves:[
+    W(2,'deepspawn',7,1.3),W(22,'drowned',12,.8),W(46,'kraken',1),W(74,'abyssmaw',10,.8),W(102,'deepspawn',9,1.2),W(130,'tidecaller',4,2.6),W(158,'kraken',1),W(190,'drowned',14,.7),W(220,'reefcrab',4,2.6),W(250,'kraken',1)]},
+  {name:'조수의 회랑',hint:'소라 나팔수의 가호를 먼저 끊는다 · 뒷줄 폭격과 관통',baseHp:116000,money:495,rate:62,reward:2900,enemyMul:3.6,waves:[
+    W(2,'drowned',12,.8),W(22,'conchward',3,3),W(46,'reefcrab',4,2.6),W(74,'siren',6,1.8),W(102,'conchward',4,3),W(130,'orcshield',6,1.6),W(160,'abyssmaw',11,.8),W(190,'conchward',4,3),W(220,'golem',3,3.5),W(250,'reefcrab',5,2.4)]},
+  {name:'★ 뇌우의 등대',hint:'방전은 뭉친 전열에 치명적 · 흩어 세우고 낙뢰를 피한다',baseHp:120000,money:500,rate:63,reward:3400,boss:true,enemyMul:4.6,waves:[
+    W(2,'thunderling',6,1.6),W(22,'wolf',14,.6),W(46,'stormwitch',1),W(74,'thunderling',8,1.4),W(102,'abyssmaw',12,.7),W(132,'hellhound',12,.7),W(162,'stormwitch',1),W(194,'thunderling',9,1.3),W(224,'dark',9,1.4),W(256,'thunderling',10,1.2)]},
+  {name:'침묵한 나팔',hint:'비싼 병종은 과녁이 된다 · 값싼 병력으로 가호를 끊어라',baseHp:124000,money:505,rate:64,reward:3100,enemyMul:5.8,waves:[
+    W(2,'drowned',14,.7),W(22,'conchward',3,3),W(48,'deepspawn',9,1.2),W(76,'reefcrab',4,2.6),W(104,'conchward',4,2.8),W(134,'golem',4,3.5),W(164,'tidecaller',5,2.4),W(196,'conchward',5,2.6),W(228,'warlord',1),W(254,'reefcrab',5,2.4),W(286,'siren',8,1.6)]},
+  {name:'심연의 아가리',hint:'군자금을 약탈당한다 · 오래 끌지 말고 밀어낸다',baseHp:130000,money:515,rate:66,reward:3300,enemyMul:5.2,waves:[
+    W(2,'abyssmaw',8,.9),W(22,'drowned',14,.7),W(48,'reefcrab',4,2.6),W(76,'abyssmaw',14,.6),W(106,'tidecaller',5,2.4),W(136,'reefcrab',5,2.4),W(166,'kraken',1),W(198,'abyssmaw',16,.6),W(228,'orcshield',8,1.5),W(258,'kraken',1),W(292,'reefcrab',6,2.2)]},
+  {name:'공허의 계단',hint:'갑주가 두껍고 소환한 아군이 시든다 · 중독·화상과 진짜 병력으로',baseHp:92000,money:525,rate:67,reward:3600,enemyMul:4.0,waves:[
+    W(2,'drowned',12,.8),W(24,'siren',6,1.8),W(50,'reefcrab',3,3),W(80,'golem',3,3.5),W(110,'conchward',4,2.8),W(140,'stormwitch',1),W(172,'reefcrab',4,2.6),W(204,'siegeram',3,3.5),W(236,'abysslord',1),W(270,'reefcrab',5,2.4)]},
+  {name:'★ 심연의 군주',hint:'가호·역류·결계가 겹친다 · 값싼 전열로 나팔수를 끊고 단일 화력으로 군주를 깬다',baseHp:152000,money:540,rate:69,reward:5000,boss:true,enemyMul:3.9,waves:[
+    W(2,'drowned',14,.7),W(24,'conchward',4,2.8),W(52,'kraken',1),W(84,'reefcrab',5,2.4),W(114,'stormwitch',1),W(146,'tidecaller',5,2.6),W(178,'abysslord',1),W(212,'deepspawn',12,1),W(244,'abyssmaw',16,.6),W(278,'abysslord',1)]}
+);
+
 
 /* 전장 특성. 어려운 전장에는 특성이 붙어서, 스탯 높은 병종을 몰아 넣는 것만으로는
  * 풀리지 않고 그 특성을 받아칠 병종을 챙겨야 한다. */
@@ -886,13 +1042,22 @@ const STAGE_MODS = {
   curse:    { name: '저주', desc: '소환된 아군이 초당 10%씩 시들고, 회복·흡혈이 절반',
               counter: '소환·치유에 기대지 않는 진짜 병력', color: '#5f8f5a' },
   blitz:    { name: '질주', desc: '적 이동 속도 +45% · 공격 속도 +20%',
-              counter: '둔화 · 넉백 면역 방패 · 튼튼한 앞줄', color: '#d0605a' }
+              counter: '둔화 · 넉백 면역 방패 · 튼튼한 앞줄', color: '#d0605a' },
+  undertow: { name: '역류', desc: '아군 이동 속도 -30% · 밀려나는 거리 1.7배',
+              counter: '넉백 면역 · 제자리 병종 · 장거리 사격', color: '#4fa8b8' },
+  warded:   { name: '결계', desc: '적이 범위 공격에서 받는 피해 55% 감소 (단일 타격은 그대로)',
+              counter: '단일 고화력 · 관통 · 파쇄 · 처형', color: '#b79cf0' }
 };
 const HARD_STAGE_MODS = {
   9: ['ironclad'], 14: ['blitz'], 16: ['horde'], 17: ['ironclad'],
   19: ['horde', 'ironclad'],
   21: ['horde'], 23: ['horde', 'giantslayer', 'curse'], 24: ['blitz'], 26: ['blitz', 'giantslayer', 'curse'],
-  27: ['horde', 'ironclad'], 29: ['giantslayer', 'curse', 'horde', 'blitz']
+  27: ['horde', 'ironclad'], 29: ['giantslayer', 'curse', 'horde', 'blitz'],
+  // 3막. 새 특성 둘(역류·결계)이 여기서 처음 나온다.
+  31: ['ironclad'], 32: ['undertow'], 33: ['horde'], 34: ['warded'], 35: ['blitz'],
+  36: ['warded', 'giantslayer'], 37: ['horde', 'undertow'],
+  38: ['ironclad', 'curse'],
+  39: ['undertow', 'warded', 'giantslayer', 'horde']
 };
 STAGES.forEach((st, i) => { if (!st.mods && HARD_STAGE_MODS[i]) st.mods = HARD_STAGE_MODS[i]; });
 // 전설·신화 풀이 넓어질수록 몰아 넣기만 한 편성도 두루 갖춘다. 조합이 필요한
@@ -904,7 +1069,7 @@ STAGES[19].enemyMul = 1.74;
  * 초반은 짧게 붙고, 뒤로 갈수록·보스 전장일수록 조금씩 길어진다. */
 STAGES.forEach((st, i) => {
   if (st.len) return;
-  const base = i < 20 ? 1300 + 12 * i : 1520 + 10 * (i - 20);
+  const base = i < 20 ? 1300 + 12 * i : i < 30 ? 1520 + 10 * (i - 20) : 1650 + 12 * (i - 30);
   st.len = base + (st.boss ? 140 : 0);
 });
 
@@ -919,9 +1084,15 @@ const ENDLESS_POOL = [
   { id: 'powder',   from: 7 },  { id: 'orcshield',from: 8 },
   { id: 'orcberserk', from: 9 },{ id: 'wraith',   from: 10 },
   { id: 'dark',     from: 11 }, { id: 'golem',    from: 13 },
-  { id: 'totem',    from: 14 }
+  { id: 'totem',    from: 14 },
+  // 3막의 심연 병력도 뒤로 갈수록 섞여 든다
+  { id: 'drowned',  from: 5 },  { id: 'deepspawn', from: 8 },
+  { id: 'abyssmaw', from: 10 }, { id: 'siren',    from: 12 },
+  { id: 'thunderling', from: 14 }, { id: 'reefcrab', from: 16 },
+  { id: 'tidecaller', from: 17 }
 ];
-const ENDLESS_BOSSES = ['lich', 'troll', 'frostgiant', 'drake', 'warlord'];
+const ENDLESS_BOSSES = ['lich', 'troll', 'frostgiant', 'drake', 'warlord',
+                        'kraken', 'stormwitch', 'abysslord'];
 
 /* 무한 전장 적 배율. 웨이브마다 7%씩 붙고, 25웨이브를 넘기면 거기에
  * 웨이브당 4%씩 곱으로 불어난다. 상한이 없으니 언젠가는 반드시 무너진다. */
@@ -1009,8 +1180,10 @@ const ACHIEVEMENTS = [
     test: s => s.cleared >= 20 },
   { id: 'star30',   name: '별 수집가',    desc: '별 30개 획득',                gold: 1500, stone: 2,
     test: s => totalStars(s) >= 30 },
-  { id: 'star60',   name: '완전 제압',    desc: '모든 전장 별 3개',            gold: 6000, stone: 8,
+  { id: 'star60',   name: '별의 수확',    desc: '별 60개 획득',                gold: 6000, stone: 8,
     test: s => totalStars(s) >= 60 },
+  { id: 'starall',  name: '완전 제압',    desc: '모든 전장 별 3개',            gold: 15000, stone: 15,
+    test: s => totalStars(s) >= STAGES.length * 3 },
   { id: 'kill1000', name: '천 명의 적',   desc: '누적 1000 처치',              gold: 1000, stone: 1,
     test: s => (s.totalKills || 0) >= 1000 },
   { id: 'kill5000', name: '전장의 주인',  desc: '누적 5000 처치',              gold: 3000, stone: 3,
@@ -1021,7 +1194,7 @@ const ACHIEVEMENTS = [
     test: s => (s.pulls || 0) >= 100 },
   { id: 'legend',   name: '신화의 계약',  desc: '전설 이상 병종 보유',              gold: 2000, stone: 2,
     test: s => SEASON_UNITS.some(u => (u.rarity === 'SSR' || u.rarity === 'UR') && s.owned && s.owned[u.id]) },
-  { id: 'allseason',name: '세 신화',      desc: '세 시즌에서 전설 이상을 각각 보유',    gold: 8000, stone: 10,
+  { id: 'allseason',name: '만신전',      desc: '모든 시즌에서 전설 이상을 각각 보유',    gold: 8000, stone: 10,
     test: s => SEASONS.every(sn => sn.units.some(id => {
       const u = UNIT_BY_ID[id];
       return u && (u.rarity === 'SSR' || u.rarity === 'UR') && s.owned && s.owned[id];
@@ -1029,6 +1202,9 @@ const ACHIEVEMENTS = [
   { id: 'maxlv',    name: '정예 조련',    desc: '병종 하나를 15레벨로',        gold: 2500, stone: 3,
     test: s => Object.keys(s.levels || {}).some(k => s.levels[k] >= 15) },
   { id:'campaign30',name:'세 신화의 정복자',desc:'30전장 모두 돌파',gold:5000,stone:5,test:s=>s.cleared>=30 },
+  { id:'campaign40',name:'심연의 종결자',desc:'40전장 모두 돌파',gold:12000,stone:12,test:s=>s.cleared>=40 },
+  { id:'abyssdeep',name:'가라앉은 왕관',desc:'심연의 성소에서 전설 이상 보유',gold:3000,stone:3,
+    test:s=>!!(s.owned&&(s.owned.leviathan||s.owned.seawitch)) },
   { id: 'endless10',name: '끝없는 전장',  desc: '무한 전장 10웨이브 돌파',       gold: 2000, stone: 3,
     test: s => (s.endlessBest || 0) >= 10 },
   { id: 'endless25',name: '불굴의 성채',  desc: '무한 전장 25웨이브 돌파',       gold: 7000, stone: 8,
@@ -1101,10 +1277,17 @@ function upgradeCost(key, level) {
 
 /* Tactical descriptions shared by the campaign and enemy codex. */
 function enemyTactic(e) {
+  const a = e.ab || {};
   if (e.boss) return '보스 · 왕명을 아껴 폭격 후 회복';
+  if (a.ward) return '가호 지원 · 뒷줄 폭격과 관통으로 먼저 끊기';
+  if (a.tide) return '전열을 밀어낸다 · 넉백 면역과 장거리로';
+  if (a.split) return '쓰러지면 갈라진다 · 범위 공격으로 한 번에';
+  if (a.drainGold) return '군자금 약탈 · 오래 끌지 말고 빨리 끊기';
   if (e.ab && e.ab.armor) return '중장갑 · 중독과 화상으로 지속 피해';
   if (e.ab && e.ab.heal) return '치유 지원 · 범위 공격으로 후열 압박';
   if (e.ab && e.ab.deathBomb) return '사망 폭발 · 저렴한 전열로 피해 분산';
+  if (a.weaken) return '아군 공격력 저하 · 정화와 사거리로 먼저 끊기';
+  if (a.chain) return '방전 연쇄 · 전열을 뭉치지 말 것';
   if (e.speed >= 85) return '고속 돌격 · 방패병과 둔화로 저지';
   if (e.ranged) return '원거리 · 방어 병종 뒤에 장거리 배치';
   if (e.area) return '광역 공격 · 소수 정예와 치유 조합';

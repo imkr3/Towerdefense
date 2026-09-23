@@ -102,7 +102,11 @@ const COUNTERS = {
   horde:    ['zeus', 'frost', 'pyro', 'catapult', 'knight', 'shield', 'spear'],
   blitz:    ['shield', 'frostlancer', 'frost', 'skadi', 'spartan', 'colossus', 'medusa'],
   giantslayer: ['spear', 'shield', 'venom', 'catapult', 'sniper', 'pyro', 'musketeer', 'frost'],
-  curse: ['knight', 'shield', 'spear', 'venom', 'pyro', 'frost']
+  curse: ['knight', 'shield', 'spear', 'venom', 'pyro', 'frost'],
+  // 역류: 밀려나지 않는 몸과, 애초에 걸을 필요가 없는 장거리
+  undertow: ['colossus', 'reefwarden', 'longbow', 'sniper', 'haetae', 'catapult', 'merchant'],
+  // 결계: 범위가 반만 들어가니 한 놈씩 정확히 깨는 단일 화력
+  warded: ['thor', 'duelist', 'sniper', 'saja', 'knight', 'rogue', 'frostlancer']
 };
 function counterLoadout(g, index) {
   const st = g.STAGES[index];
@@ -244,18 +248,22 @@ const EXPECT = [
 /* 제대로 편성하는 플레이어: 특성 전장에는 그 특성을 받아칠 공략 편성을 든다.
  * 이 플레이어는 충분히 키웠을 때 캠페인을 거의 다, 2막을 전부 넘어야 한다. */
 const SMART_ACT1 = { up: 6, lv: 10, min: 19 };
-const SMART_ACT2 = { up: 8, lv: 12 };
+const SMART_ACT2 = { up: 8, lv: 12, from: 20, to: 30 };
+/* 3막(31~40전장)은 병영을 끝까지 올리고 사관학교로 상한을 밀어 올린 사람을 위한 구간이다. */
+const SMART_ACT3 = { up: 10, lv: 15, from: 30, to: 40 };
 
 /* 진짜 어려운 전장. 전설·신화를 다 가져도 몰아 넣기만 해서는 못 넘고,
  * 특성에 맞춘 공략 편성이라야 넘는다. HARD_SEEDS 판 중 이긴 횟수로 본다. */
 const LEGEND_PROOF = [
   { stage: 18, up: 6, lv: 10 }, { stage: 20, up: 6, lv: 10 },
-  { stage: 27, up: 8, lv: 12 }, { stage: 28, up: 8, lv: 12 }, { stage: 30, up: 8, lv: 12 }
+  { stage: 27, up: 8, lv: 12 }, { stage: 28, up: 8, lv: 12 }, { stage: 30, up: 8, lv: 12 },
+  { stage: 36, up: 10, lv: 15 }, { stage: 37, up: 10, lv: 15 }, { stage: 40, up: 10, lv: 15 }
 ];
 /* 시즌마다 대표 셋. 어느 시즌을 뽑든 비슷한 값어치여야 한다. */
 const SEASON_TRIOS = [
   ['hades', 'zeus', 'artemis'], ['odin', 'thor', 'valkyrie'], ['ra', 'anubis', 'pharaoh'],
-  ['gumiho', 'saja', 'dokkaebi'], ['inventor', 'steammech', 'mechanic']
+  ['gumiho', 'saja', 'dokkaebi'], ['inventor', 'steammech', 'mechanic'],
+  ['leviathan', 'seawitch', 'reefwarden']
 ];
 const SEASON_SPREAD = 2;
 const LEGEND_PROOF_MAX = 1;      // 전설만 편성이 이길 수 있는 최대 판 수
@@ -276,6 +284,9 @@ const BASIC_STAGES = 3;
 /* 2막(21~30전장)을 캠페인 완주 수준(강화5/Lv8)으로 돌파해도 되는 최대 개수.
  * 이걸 넘으면 2막이 자체 성장 구간 노릇을 못 한다. */
 const EXT_ENTRY_MAX = 6;
+
+/* 3막(31~40전장)을 2막 완주 수준(강화8/Lv12)으로 돌파해도 되는 최대 개수. */
+const ACT3_ENTRY_MAX = 6;
 
 function check() {
   let failed = 0;
@@ -335,7 +346,7 @@ function check() {
 
   // 2막은 캠페인을 막 끝낸 수준으로 "들어갈 수는" 있되 쓸어담지는 못해야 한다.
   const entryEngine=loadEngine(12345), entryRows=[];
-  for(let i=20;i<entryEngine.STAGES.length;i++)entryRows.push(runStage(entryEngine,i,5,8,false,false));
+  for(let i=20;i<30;i++)entryRows.push(runStage(entryEngine,i,5,8,false,false));
   printTable(entryRows,5,8);
   if(!entryRows[0].win){console.error('  ✗ 21전장은 기존 캠페인 완주 강화 수준으로 진입 가능해야 함');failed++;}
   const entryWins=entryRows.filter(r=>r.win).length;
@@ -365,12 +376,26 @@ function check() {
     if (wins < SMART_ACT1.min) { console.error(`  ✗ 공략 편성 캠페인: ${wins}/20 (최소 ${SMART_ACT1.min})`); failed++; }
     else console.log(`  ✓ 공략 편성 캠페인: ${wins}/20 (강화 ${SMART_ACT1.up}/Lv${SMART_ACT1.lv})`);
   }
-  for (const seed of [12345, 98765]) {
-    const g = loadEngine(seed), rows = [];
-    for (let i = 20; i < g.STAGES.length; i++) rows.push(runStage(g, i, SMART_ACT2.up, SMART_ACT2.lv, false, 'smart'));
-    printTable(rows, SMART_ACT2.up, SMART_ACT2.lv);
-    if (rows.some(r => !r.win || r.seconds > 400)) { console.error('  ✗ 2막: 공략 편성으로 충분히 키우면 400초 안에 전부 넘어야 한다 (seed ' + seed + ')'); failed++; }
-    else console.log('  ✓ 2막 공략 편성 완주 (seed ' + seed + ')');
+  for (const act of [{ tag: '2막', e: SMART_ACT2 }, { tag: '3막', e: SMART_ACT3 }]) {
+    for (const seed of [12345, 98765]) {
+      const g = loadEngine(seed), rows = [];
+      const to = Math.min(act.e.to, g.STAGES.length);
+      for (let i = act.e.from; i < to; i++) rows.push(runStage(g, i, act.e.up, act.e.lv, false, 'smart'));
+      printTable(rows, act.e.up, act.e.lv);
+      if (rows.some(r => !r.win || r.seconds > 420)) { console.error('  ✗ ' + act.tag + ': 공략 편성으로 충분히 키우면 420초 안에 전부 넘어야 한다 (seed ' + seed + ')'); failed++; }
+      else console.log('  ✓ ' + act.tag + ' 공략 편성 완주 (seed ' + seed + ')');
+    }
+  }
+  // 3막 진입 관문: 2막을 막 끝낸 수준(강화 8/Lv12)으로는 앞 몇 전장까지만
+  {
+    const g = loadEngine(12345), rows = [];
+    for (let i = 30; i < Math.min(40, g.STAGES.length); i++) rows.push(runStage(g, i, 8, 12, false, 'smart'));
+    const wins = printTable(rows, 8, 12);
+    if (!rows[0].win) { console.error('  ✗ 31전장은 2막 완주 수준으로 진입 가능해야 함'); failed++; }
+    else if (wins > ACT3_ENTRY_MAX) {
+      console.error(`  ✗ 3막이 너무 무르다: 2막 완주 수준으로 ${wins}/10 돌파 (최대 ${ACT3_ENTRY_MAX})`);
+      failed++;
+    } else console.log(`  ✓ 3막 진입 관문: 2막 완주 수준으로 ${wins}/10 돌파 (최대 ${ACT3_ENTRY_MAX})`);
   }
   // 진짜 어려운 전장은 전설·신화를 몰아 넣는 것만으로는 안 된다
   for (const h of LEGEND_PROOF) {
@@ -463,6 +488,7 @@ if (args[0] === '--check') {
   printHard(runHard(upLv, unitLv, 12345, 0, 20), upLv, unitLv);
   if (args[3]) { printHard(runHard(+args[3], +args[4], 12345, 0, 20), +args[3], +args[4]); }
   printHard(runHard(8, 12, 12345, 20, 30), 8, 12);
+  printHard(runHard(10, 15, 12345, 30, 40), 10, 15);
 } else if (args[0] === '--legend') {
   // node tools/sim.js --legend [강화Lv] [병종Lv]
   // 전장 편성 / 무지성 전설 편성 / 조합 편성을 나란히 찍는다

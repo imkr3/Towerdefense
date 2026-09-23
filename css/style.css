@@ -688,7 +688,8 @@ button:focus-visible{outline:3px solid #48b9ee;outline-offset:3px;}
   .sd-name{font-size:15px}.stage-detail{padding:9px;gap:4px}.sd-btns .btn{padding:8px 6px;font-size:13px}
   .sd-foe{width:40px}.sd-hint{font-size:10.5px}
 }
-@media(max-width:780px){.chapter-tab .ch-sub{display:none}#scr-map .bar .progress-wrap{flex-basis:130px}}
+@media(max-width:900px){.chapter-tab .ch-sub{display:none}}
+@media(max-width:780px){#scr-map .bar .progress-wrap{flex-basis:130px}}
 
 /* ================= 편성: 위 칸 10개 + 아래 보유 병종 ================= */
 .formation-top{flex-shrink:0;padding:8px 12px 4px;background:#172532;border-bottom:1px solid #506276}

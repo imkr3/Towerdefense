@@ -51,6 +51,9 @@ const CURSE_HEAL = 0.5;       // 저주: 아군 회복·흡혈 배율
 const CURSE_WITHER = 0.1;     // 저주: 소환물이 초당 잃는 최대 체력 비율
 const SLOW_SPEED_MUL = 0.45; // 둔화 시 이동
 const SLOW_RATE_MUL = 1.7;   // 둔화 시 공격 간격
+const UNDERTOW_SPEED = 0.7;  // 역류: 아군 이동 배율
+const UNDERTOW_KB = 1.7;     // 역류: 아군이 밀려나는 거리 배율
+const WARD_AREA = 0.55;      // 결계: 적이 범위 공격에서 받는 피해 배율
 
 /* ------------------------------- 병사 ------------------------------- */
 class Fighter {
@@ -82,6 +85,7 @@ class Fighter {
     this.engaged = false;
     this.healMul = 1;           // 저주 전장에서는 절반
     this.weakT = 0; this.weakMul = 1;   // 무당의 액막이: 이 적이 주는 피해가 준다
+    this.wardT = 0; this.wardMul = 1;   // 소라 나팔수의 가호: 받는 피해가 준다
     this.charmT = 0;                    // 구미호의 홀림: 제 편을 친다
     this.spin = 0;                      // 증기 거상: 쏠수록 빨라진다
     this.scale = stats.scale || 1;
@@ -149,6 +153,7 @@ class Fighter {
     if (this.dead) return 0;
     dmg = Math.max(0, dmg);
     if (this.vulnT > 0) dmg *= this.vulnMul;                          // 낙인
+    if (this.wardT > 0) dmg *= this.wardMul;                          // 나팔수의 가호
     if (this.ab.armor && !pierceArmor) dmg *= (1 - Math.min(0.75, this.ab.armor));   // 두꺼운 갑주
     if (this.barrier > 0) {
       const absorbed = Math.min(this.barrier, dmg);
@@ -287,7 +292,9 @@ class Battle {
       if (seen[w.e]) return;
       seen[w.e] = true;
       const spec = ENEMIES[w.e];
-      if (!spec || (spec.ab && spec.ab.hold)) return;    // 토템처럼 박혀 있는 건 제외
+      // 토템처럼 박혀 있는 것과 싸우지 않는 지원 병력(소라 나팔수)은 제외한다.
+      // 전선에 닿지 않는 채로 쌓이기만 해서 전장이 끝나지 않는다.
+      if (!spec || (spec.ab && (spec.ab.hold || spec.ab.noAttack))) return;
       const ab = spec.ab || {};
       // 장거리 공성은 증원에서 아예 뺀다. 전선이 닿지 않는 자리에서 쏘기만 하니
       // 죽지 않고 계속 쌓여 전장을 영영 멈춰 세운다.
@@ -386,6 +393,12 @@ class Battle {
           if(a.charm&&!e.boss){e.charmT=Math.max(e.charmT,a.charm);this.fx.push({type:'charm',x:e.x,row:e.row,t:.7,life:.7});}
           if(a.execute)this.tryExecute(e,a.execute);
           if(a.push&&!e.ab.kbImmune&&!e.dead){e.x=Math.max(60,Math.min(WORLD-60,e.x+f.dir*a.push));e.kbTimer=Math.max(e.kbTimer,.3);}
+          // 소용돌이: 흩어진 적을 한 점으로 빨아들인다. 보스와 넉백 면역은 버틴다.
+          if(a.pull&&!e.ab.kbImmune&&!e.boss&&!e.dead){
+            const d=target.x-e.x;
+            e.x=Math.max(60,Math.min(WORLD-60,e.x+Math.sign(d)*Math.min(a.pull,Math.abs(d))));
+            e.kbTimer=Math.max(e.kbTimer,.2);
+          }
           if(a.burn){if(e.burnT<=0)e.burnDps=0;e.burnT=Math.max(e.burnT,a.burn);e.burnDps=Math.max(e.burnDps,24*f.abMul);}
         }
       }
@@ -534,6 +547,16 @@ class Battle {
         this.areaHit(b.dmg * f.abMul, f.x, b.radius, foes, foeCastle, null, false);
         this.fx.push({ type: 'boom', x: f.x, r: b.radius, t: 0.35, life: 0.35 });
       }
+      // 분열: 쓰러지면 더 작은 것들이 기어 나온다. 한 번 쪼개진 것은 다시 쪼개지지 않는다.
+      if (isEnemySide && f.ab.split && !f.summoned && !f.splitOf) {
+        const sp = f.ab.split;
+        for (let i = 0; i < (sp.n || 2); i++) {
+          const m = this.spawnEnemy(sp.id, f.x + (i - (sp.n || 2) / 2) * 26);
+          m.splitOf = f.s;
+          m.wave = f.wave;
+        }
+        this.fx.push({ type: 'spawn', x: f.x, row: f.row, t: 0.4, life: 0.4 });
+      }
       if (isEnemySide) {
         this.coins += Math.round((f.gold || 0) * KILL_GOLD_RATE * this.goldMul);
         this.kills++;
@@ -621,6 +644,7 @@ class Battle {
       if (f.vulnT > 0) { f.vulnT -= dt; if (f.vulnT <= 0) f.vulnMul = 1; }
       if (f.reCd > 0) f.reCd -= dt;
       if (f.weakT > 0) { f.weakT -= dt; if (f.weakT <= 0) f.weakMul = 1; }
+      if (f.wardT > 0) { f.wardT -= dt; if (f.wardT <= 0) f.wardMul = 1; }
       f.bob += dt * (f.speedNow / 22);
 
       const burning = f.burnT > 0;
@@ -651,10 +675,10 @@ class Battle {
       // 기절
       if (f.stunT > 0) { f.stunT -= dt; continue; }
 
-      // 넉백
+      // 넉백. 역류 전장에서는 아군이 더 멀리 밀려난다.
       if (f.kbTimer > 0) {
         f.kbTimer -= dt;
-        f.x -= f.dir * 150 * dt;
+        f.x -= f.dir * 150 * (isAlly && this.mods.undertow ? UNDERTOW_KB : 1) * dt;
         f.x = Math.max(60, Math.min(WORLD - 60, f.x));
         continue;
       }
@@ -681,8 +705,9 @@ class Battle {
         }
       } else if (!f.ab.hold && this.canAdvance(f, foes)) {
         f.spin = 0;                                 // 걸으면 식는다
-        f.moving = f.speedNow > 0;
-        f.x += f.dir * f.speedNow * dt;
+        const sp = f.speedNow * (isAlly && this.mods.undertow ? UNDERTOW_SPEED : 1);
+        f.moving = sp > 0;
+        f.x += f.dir * sp * dt;
         f.x = Math.max(60, Math.min(WORLD - 60, f.x));
       }
     }
@@ -703,7 +728,7 @@ class Battle {
   supportTick(f, mates, dt, isAlly) {
     const ab = f.ab;
     if (!ab.heal && !ab.gold && !ab.summon && !ab.barrier && !ab.haste && !ab.cleanse &&
-        !ab.rally) return;
+        !ab.rally && !ab.tide && !ab.ward) return;
     if (ab.gold && isAlly) {
       this.money = Math.min(this.walletMax, this.money + ab.gold * dt);
     }
@@ -722,6 +747,40 @@ class Battle {
       f.auraPulse = 0.5;
       this.fx.push({ type: 'aura', x: f.x, row: f.row, r: ab.rally.radius,
                      t: 0.5, life: 0.5, color: f.s.accent });
+    }
+
+    if (ab.tide) {
+      // 조류: 주변의 적을 통째로 뒤로 밀어내고 둔화시킨다. 넉백 면역은 밀리지 않지만
+      // 물살에 발이 묶이는 것까지는 피하지 못한다.
+      const foes = this.foesOf(f.side);
+      let touched = false;
+      for (const e of foes) {
+        if (e.dead || Math.abs(e.x - f.x) > ab.tide.radius) continue;
+        touched = true;
+        if (ab.tide.slow) e.slowT = Math.max(e.slowT, ab.tide.slow);
+        if (!e.ab.kbImmune) {
+          e.x = Math.max(60, Math.min(WORLD - 60, e.x + f.dir * ab.tide.push));
+          e.kbTimer = Math.max(e.kbTimer, 0.28);
+        }
+        if (ab.tide.dmg) this.hitOne(ab.tide.dmg * f.abMul, e, f, false);
+      }
+      if (touched) sfx('boom');
+      f.auraPulse = 0.5;
+      this.fx.push({ type: 'wave', x: f.x, row: f.row, r: ab.tide.radius, dir: f.dir,
+                     t: 0.5, life: 0.5, color: f.s.accent });
+    }
+
+    if (ab.ward) {
+      // 가호: 주변 아군이 받는 피해를 줄인다. 근원을 먼저 끊지 않으면 앞줄이 녹지 않는다.
+      for (const m of mates) {
+        if (m.dead || m === f) continue;
+        if (Math.abs(m.x - f.x) > ab.ward.radius) continue;
+        m.wardT = Math.max(m.wardT, (ab.interval || 3) + 0.6);
+        m.wardMul = Math.min(m.wardMul, 1 - ab.ward.cut);
+      }
+      f.auraPulse = 0.5;
+      this.fx.push({ type: 'aura', x: f.x, row: f.row, r: ab.ward.radius,
+                     t: 0.5, life: 0.5, color: '#b79cf0' });
     }
 
     if (ab.cleanse) {
@@ -1160,6 +1219,28 @@ class Battle {
       target.x += src.dir * ab.push * 0.01 * 60;
       target.kbTimer = Math.max(target.kbTimer, 0.12);
     }
+    // 끌어당김: 밀어내기의 반대. 흩어진 적을 한 덩어리로 모아 범위 공격과
+    // 연쇄 번개가 몰아치게 만든다. 넉백 면역은 꿈쩍도 하지 않는다.
+    if (ab.pull && !target.ab.kbImmune && !target.boss) {
+      // 사거리 안쪽까지만 당긴다. 이미 붙어 있는 적을 도로 밀어내면
+      // 앞줄이 때리던 것을 빼앗는 꼴이 되므로, 바깥에 있을 때만 움직인다.
+      const to = src.x + src.dir * (src.attackRange * 0.55 + src.radius);
+      const away = (target.x - to) * src.dir;
+      if (away > 0) {
+        target.x -= src.dir * Math.min(ab.pull, away);
+        target.x = Math.max(60, Math.min(WORLD - 60, target.x));
+        this.fx.push({ type: 'chill', x: target.x, row: target.row, t: 0.25, life: 0.25 });
+      }
+    }
+    // 군자금 약탈: 맞을 때마다 보급이 샌다. 오래 붙잡고 있을수록 손해다.
+    if (ab.drainGold && src.side === 'enemy' && target.side === 'ally') {
+      const stolen = Math.min(this.money, ab.drainGold);
+      if (stolen > 0) {
+        this.money -= stolen;
+        this.fx.push({ type: 'coin', x: target.x, row: target.row, v: -Math.round(stolen),
+                       t: 0.8, life: 0.8 });
+      }
+    }
     if (ab.weaken) {                              // 액막이: 이 적이 주는 피해가 준다
       target.weakT = Math.max(target.weakT, ab.weaken.dur);
       target.weakMul = Math.min(target.weakMul, ab.weaken.mul);
@@ -1229,6 +1310,8 @@ class Battle {
   }
 
   areaHit(dmg, cx, radius, foes, foeCastle, src, crit) {
+    // 결계 전장: 적은 범위 공격만 덜 아프게 받는다. 한 놈씩 정확히 깨야 한다.
+    if (this.mods.warded && foes === this.enemies) dmg *= WARD_AREA;
     for (const e of foes) {
       if (e.dead) continue;
       if (Math.abs(e.x - cx) <= radius + e.radius) this.hitOne(dmg, e, src, crit);

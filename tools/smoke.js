@@ -83,10 +83,18 @@ async function runSize(browser, size) {
   const expansionMap=await page.evaluate(()=>{
     save.cleared=20;mapChapter=2;mapSel=-1;renderMap();const cards=[...document.querySelectorAll('#stage-list .stage')];
     const res={count:cards.length,open:!cards[0].disabled&&cards[0].dataset.stage==='20',locked:cards[1].disabled};
-    mapChapter=3;renderMap();res.endless=!!document.querySelector('#endless-slot .e-btn');
+    // 무한은 장 목록의 맨 끝이다. 막이 늘어도 번호를 손으로 고치지 않게 찾아서 연다.
+    mapChapter=CHAPTERS.findIndex(c=>c.endless);renderMap();
+    res.endless=!!document.querySelector('#endless-slot .e-btn');
+    // 마지막 막도 10개짜리 진군로여야 한다
+    const last=CHAPTERS.filter(c=>!c.endless).length-1;
+    mapChapter=last;mapSel=-1;save.cleared=STAGES.length;renderMap();
+    res.lastAct=document.querySelectorAll('#stage-list .stage').length;
+    res.acts=CHAPTERS.length;
     return res;
   });
-  if(expansionMap.count!==10||!expansionMap.open||!expansionMap.locked||!expansionMap.endless)throw Error('Expansion progression or endless unlock broken: '+JSON.stringify(expansionMap));
+  if(expansionMap.count!==10||!expansionMap.open||!expansionMap.locked||!expansionMap.endless||
+     expansionMap.lastAct!==10||expansionMap.acts<5)throw Error('Expansion progression or endless unlock broken: '+JSON.stringify(expansionMap));
   await page.evaluate(n=>{save.cleared=n;mapChapter=-1;mapSel=-1;renderMap();},originalProgress);
   const mapFit=await page.evaluate(()=>{
     const r=document.querySelector('#btn-sortie').getBoundingClientRect(), d=document.querySelector('#stage-detail').getBoundingClientRect();
@@ -140,6 +148,18 @@ async function runSize(browser, size) {
   await page.reload(); await page.click('#btn-start'); await page.click('#btn-units');
   if(!await page.evaluate(()=>save.loadout.length===5&&save.presets[0].length===5))throw Error('Loadout or preset lost after reload');
   await page.evaluate(()=>{for(const id of ['runeguard','musketeer','purifier','frostlancer']){const cv=document.createElement('canvas');drawUnitIcon(cv,UNIT_BY_ID[id],60);}});
+  // 병종이든 적이든 그리기 코드가 없거나 터지면 여기서 잡힌다. 새 캐릭터를 넣고
+  // 그리기만 빼먹는 실수가 가장 흔하다.
+  const drawFails=await page.evaluate(()=>{
+    const bad=[];
+    const all=UNITS.map(u=>['unit',u.id,u]).concat(Object.keys(ENEMIES).map(k=>['enemy',k,ENEMIES[k]]));
+    for(const [kind,id,st] of all){
+      try{const cv=document.createElement('canvas');drawUnitIcon(cv,st,56);}
+      catch(e){bad.push(kind+' '+id+': '+e.message);}
+    }
+    return bad;
+  });
+  if(drawFails.length)failures.push(size.name+': 그리기 실패 '+drawFails.join(' / '));
 
   const cards = await page.$$eval('#units-list .unit-card', e => e.length);
   if (cards < 20) failures.push(size.name + ': 훈련소 목록이 부족하다 (' + cards + ')');

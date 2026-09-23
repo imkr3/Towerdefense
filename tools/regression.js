@@ -139,10 +139,23 @@ test('Shared active cooldown and stun block skill spam',()=>{
   const b=heroBattle('odin');b.heroCooldowns.odin=0;b.heroGlobalCd=1;assert.equal(b.canHeroActive('odin'),false);
   b.heroGlobalCd=0;b.allies[0].stunT=1;assert.equal(b.canHeroActive('odin'),false);
 });
-test('Thirty stages retain the existing endless unlock threshold',()=>{
+test('Forty stages retain the existing endless unlock threshold',()=>{
   const {STAGES,ENDLESS_UNLOCK_STAGE}=vm.runInContext('({STAGES,ENDLESS_UNLOCK_STAGE})',ctx);
-  assert.equal(STAGES.length,30);assert.equal(ENDLESS_UNLOCK_STAGE,20);
+  assert.equal(STAGES.length,40);assert.equal(ENDLESS_UNLOCK_STAGE,20);
   assert.ok(STAGES.slice(20).every(s=>s.waves.length>=8&&s.reward>900));
+});
+test('Act III keeps climbing past the end of Act II',()=>{
+  const {STAGES,STAGE_MODS}=vm.runInContext('({STAGES,STAGE_MODS})',ctx);
+  const act2=STAGES.slice(20,30),act3=STAGES.slice(30);
+  assert.equal(act3.length,10);
+  // 요새도 보상도 2막을 넘어서야 하고, 웨이브는 2막만큼 두꺼워야 한다
+  assert.ok(Math.min(...act3.map(s=>s.baseHp))>Math.max(...act2.map(s=>s.baseHp)));
+  assert.ok(Math.min(...act3.map(s=>s.reward))>Math.max(...act2.map(s=>s.reward)));
+  assert.ok(act3.every(s=>s.waves.length>=8&&s.hint&&s.len>=1650));
+  // 3막에서 처음 나오는 특성 둘은 실제로 쓰여야 한다
+  const used=new Set();act3.forEach(s=>(s.mods||[]).forEach(m=>used.add(m)));
+  assert.ok(used.has('undertow')&&used.has('warded'));
+  Object.keys(STAGE_MODS).forEach(k=>assert.ok(STAGE_MODS[k].counter,k+' 받아치는 법이 없다'));
 });
 test('First expansion victory advances from 20 to 21 and retains old stars',()=>{
   const s=save();s.stars[19]=3;const b=new Battle(20,s);b.finish('win');
@@ -339,11 +352,99 @@ test('A squad brings at most five legends and mythics', () => {
   assert.equal(ids.filter(id => U[id].rarity === 'UR' || U[id].rarity === 'SSR').length, 5);
   assert.ok(ids.includes('spear')); assert.ok(!ids.includes('zeus'));
 });
-test('Five seasons, every summon points at a real unit', () => {
+test('Six seasons, every summon points at a real unit', () => {
   const { SEASONS } = vm.runInContext('({SEASONS})', ctx);
-  assert.equal(SEASONS.length, 5);
+  assert.equal(SEASONS.length, 6);
   for (const sn of SEASONS) for (const id of sn.units) { assert.ok(U[id], id); assert.equal(U[id].season, sn.id); }
   for (const u of UNITS) if (u.ab && u.ab.summon) assert.ok(U[u.ab.summon.id], u.id);
+  // 시즌마다 신화 하나와 전설 하나는 있어야 배너가 배너 노릇을 한다
+  for (const sn of SEASONS) {
+    const rs = sn.units.map(id => U[id].rarity);
+    assert.ok(rs.includes('UR'), sn.id + ' 신화 없음');
+    assert.ok(rs.includes('SSR'), sn.id + ' 전설 없음');
+  }
+});
+
+/* ---------- 3막 · 심연의 새 규칙 ---------- */
+test('Tide shoves foes back, slows them, and leaves knockback-immune ones standing', () => {
+  const b=battle(), lev=b.makeAlly(U.leviathan,500); lev.abCd=0;
+  const soft=new Fighter(E.goblin,'enemy',600), hard=new Fighter(E.golem,'enemy',620);
+  b.enemies.push(soft,hard);
+  b.supportTick(lev,b.allies,0,true);
+  assert.ok(soft.x>600, '밀려나야 한다');
+  assert.equal(hard.x,620, '넉백 면역은 제자리');
+  assert.ok(soft.slowT>0 && hard.slowT>0, '둘 다 물살에 묶인다');
+});
+test('The tidecaller wave also deals damage to what it shoves', () => {
+  const b=battle(), tc=b.spawnEnemy('tidecaller',900); tc.abCd=0;
+  const a=b.makeAlly(U.spear,800); b.allies.push(a);
+  b.supportTick(tc,b.enemies,0,false);
+  assert.ok(a.hp<a.maxHp, '조류에 맞아야 한다');
+  assert.ok(a.x<800, '아군 쪽으로 밀린다');
+});
+test('Pull drags a struck enemy toward the attacker but never a boss', () => {
+  const b=battle(), w=b.makeAlly(U.seawitch,500);
+  const e=new Fighter(E.goblin,'enemy',760); b.enemies.push(e);
+  const boss=b.spawnEnemy('troll',760);
+  b.hitOne(1,e,w,false); b.hitOne(1,boss,w,false);
+  assert.ok(e.x<760, '끌려와야 한다');
+  assert.equal(boss.x,760, '보스는 버틴다');
+});
+test('Pull never shoves a foe that is already inside the line back out', () => {
+  const b=battle(), w=b.makeAlly(U.seawitch,500);
+  const near=new Fighter(E.goblin,'enemy',540); b.enemies.push(near);
+  b.hitOne(1,near,w,false);
+  assert.equal(near.x,540,'붙어 있는 적은 그대로 둔다');
+});
+test('A split spawns smaller foes once, and the halves do not split again', () => {
+  const b=battle(), e=b.spawnEnemy('deepspawn',900);
+  e.dead=true; b.reap(b.enemies,b.allies,b.allyCastle,true);
+  const halves=b.enemies.filter(x=>x.splitOf);
+  assert.equal(halves.length,2);
+  halves.forEach(h=>{h.dead=true;});
+  b.reap(b.enemies,b.allies,b.allyCastle,true);
+  assert.equal(b.enemies.filter(x=>x.splitOf&&!x.dead).length,0,'다시 갈라지면 안 된다');
+});
+test('The abyss maw steals war funds and can never push them below zero', () => {
+  const b=battle(), m=b.spawnEnemy('abyssmaw',600), a=b.makeAlly(U.spear,560);
+  b.allies.push(a); b.money=10;
+  b.hitOne(1,a,m,false); assert.equal(b.money,0);
+  b.hitOne(1,a,m,false); assert.equal(b.money,0);
+});
+test('A conch ward softens damage for its side only, and expires', () => {
+  const b=battle(), w=b.spawnEnemy('conchward',900), o=b.spawnEnemy('goblin',880);
+  w.abCd=0; b.supportTick(w,b.enemies,0,false);
+  assert.ok(o.wardT>0 && o.wardMul<1);
+  const before=o.hp; o.takeDamage(100);
+  assert.ok(o.maxHp-o.hp<100 && o.hp<before, '가호만큼 덜 받는다');
+  b.step(b.enemies,b.allies,b.allyCastle,o.wardT+0.1,false);
+  assert.equal(o.wardMul,1,'시간이 지나면 풀린다');
+});
+test('The veil trait halves area damage only, leaving single hits alone', () => {
+  const stage={baseHp:10000,money:900,rate:0,waves:[],reward:0,mods:['warded']};
+  const b=new Battle(0,save(),stage), a=b.makeAlly(U.mage,500);
+  const hit=new Fighter(E.ogre,'enemy',520), solo=new Fighter(E.ogre,'enemy',2000);
+  b.enemies.push(hit,solo);
+  b.areaHit(1000,520,60,b.enemies,b.enemyCastle,a,false);
+  b.hitOne(1000,solo,a,false);
+  assert.ok(hit.maxHp-hit.hp<1000*0.6, '범위는 깎인다');
+  assert.equal(solo.maxHp-solo.hp,1000,'단일 타격은 그대로');
+});
+test('The undertow trait slows allies and shoves them further, not the enemy', () => {
+  const plain={baseHp:10000,money:900,rate:0,waves:[],reward:0};
+  const drag=Object.assign({},plain,{mods:['undertow']});
+  const walk=stage=>{const b=new Battle(0,save(),stage);const a=b.makeAlly(U.spear,300);b.allies.push(a);
+    b.step(b.allies,b.enemies,b.enemyCastle,1,true);return a.x-300;};
+  assert.ok(walk(drag)<walk(plain)*0.75,'역류에서는 느리다');
+  const push=stage=>{const b=new Battle(0,save(),stage);const a=b.makeAlly(U.spear,300);a.kbTimer=1;
+    b.allies.push(a);b.step(b.allies,b.enemies,b.enemyCastle,1,true);return 300-a.x;};
+  assert.ok(push(drag)>push(plain)*1.5,'역류에서는 더 멀리 밀린다');
+});
+test('Non-fighting support never joins the endless reinforcement pool', () => {
+  const b=new Battle(0,save(),{baseHp:10000,money:900,rate:0,reward:0,
+    waves:[{t:1,e:'conchward',n:1,gap:1},{t:2,e:'drowned',n:1,gap:1}]});
+  assert.ok(!b.reinfPool.includes('conchward'));
+  assert.ok(b.reinfPool.includes('drowned'));
 });
 
 console.log(count + ' regression checks passed');
