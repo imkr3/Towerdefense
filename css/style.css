@@ -799,3 +799,33 @@ button:focus-visible{outline:3px solid #48b9ee;outline-offset:3px;}
 .stage-mods{position:absolute;top:-7px;right:-7px;display:flex;gap:1px}
 .stage-mods i{display:block;width:9px;height:9px;border-radius:50%;border:1px solid #fff}
 #scr-map .stage.hard{box-shadow:0 0 0 3px #8e3a4055,0 3px 10px #142c3740}
+.formation-sum .over-cap b{color:#ff8a8a}
+
+/* ================= 2.2 다듬기 ================= */
+/* 화면 전환: 살짝 떠오르며 나타난다 */
+.screen.active{animation:screenIn .22s ease-out}
+@keyframes screenIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+#scr-battle.screen.active,#scr-title.screen.active{animation:fadeIn .25s ease-out}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+/* 알림: 아래 버튼을 가리지 않게 위쪽 알약으로 */
+.toast{top:calc(58px + var(--st));bottom:auto;z-index:160;border-radius:20px;border:1px solid #d2ad6580;
+  background:#142b39f0;color:#f6ecd4;padding:8px 18px;max-width:82vw;text-align:center;line-height:1.35;
+  box-shadow:0 8px 24px #0a172955;transform:translate(-50%,-8px);transition:opacity .2s,transform .2s}
+.toast.show{transform:translate(-50%,0)}
+/* 전투 카드: 레벨은 작게, 역할은 자리가 날 때만 */
+.card .c-lv{font-size:8px;padding:1px 4px;letter-spacing:.02em}
+.card .c-name{max-height:24px}
+@media(max-height:450px){.card .c-role{display:none}.card .c-name{margin-top:1px}}
+/* 버튼 누름감 */
+.btn:active,.tab:active,.chapter-tab:active,.f-tile:active{transform:translateY(1px) scale(.985)}
+/* 훈련소 상단 줄: 경고색 대신 차분하게 */
+.cap-line{color:#43545c;font-weight:700}
+.cap-line b{color:#274954}
+/* 타이틀 이어하기 */
+.continue-btn{display:flex;flex-direction:column;align-items:center;gap:1px;padding:7px 10px;
+  background:linear-gradient(135deg,#2c5d4e,#1f4a5a);color:#f3e6c8;border-color:#7fb8a6}
+.continue-btn .cont-k{font-size:12.5px;font-weight:900;letter-spacing:.06em}
+.continue-btn .cont-v{font-size:10.5px;opacity:.85;font-weight:600;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 소환 탭이 다섯 개라 글자를 줄인다 */
+.season-tab .s-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:780px){.season-tab .s-sub{display:none}}

@@ -511,6 +511,12 @@ class Renderer {
     if (f.poisonT > 0) statusDot(ctx, x - 8 * s, y - 80 * s, s, '#9de08e');
     if (f.slowT > 0) statusDot(ctx, x, y - 80 * s, s, '#8fd8ff');
     if (f.stunT > 0) statusDot(ctx, x + 8 * s, y - 80 * s, s, '#ffd166');
+    if (f.weakT > 0) statusDot(ctx, x - 24 * s, y - 80 * s, s, '#c77dff');
+    if (f.charmT > 0) heart(ctx, x, y - 90 * s + Math.sin(f.bob * 3) * 2 * s, 5 * s, '#ff7ab8');
+    if (f.spin > 0.05) {                                   // 예열: 굴뚝 위 열기 막대
+      ctx.fillStyle = 'rgba(0,0,0,.4)'; rectPath(ctx, x - 16 * s, y - 80 * s, 32 * s, 3 * s); ctx.fill();
+      ctx.fillStyle = '#ff8c42'; rectPath(ctx, x - 16 * s, y - 80 * s, 32 * s * Math.min(1, f.spin / f.ab.spinup.max), 3 * s); ctx.fill();
+    }
   }
 
   drawShots(battle) {
@@ -554,6 +560,11 @@ class Renderer {
       const y = this.rowY(e.row || 0) - 28 * cs;
       if(e.type==='mythic') {
         const k=1-p, radius=Math.min(e.r*this.zoom,260*cs), ground=this.rowY(e.row);
+        // WebGL 이 살아 있으면 같은 자리에 파티클 폭발을 한 번 얹는다
+        if (this.glfx && this.glfx.ok && !e._emitted) {
+          e._emitted = true;
+          this.glfx.emit(e.kind, x, ground, { color: this.rgbOf(e.color), radius: e.r * this.zoom, scale: cs, big: true });
+        }
         ctx.save();ctx.translate(x,ground);ctx.strokeStyle=e.color;ctx.fillStyle=e.color;ctx.globalAlpha=Math.min(1,p*2);
         // Ground seals and rising sparks are bounded, with no full-screen flash.
         for(let ring=0;ring<3;ring++){
@@ -567,6 +578,21 @@ class Renderer {
         }else if(e.kind==='runeveil'){
           for(let i=0;i<8;i++){const a=i*Math.PI/4+k*.7,xx=Math.cos(a)*radius*.7,yy=-45*cs+Math.sin(a)*22*cs;
             ctx.beginPath();ctx.moveTo(xx,yy-10*cs);ctx.lineTo(xx-5*cs,yy);ctx.lineTo(xx+5*cs,yy+5*cs);ctx.lineTo(xx,yy+10*cs);ctx.stroke();}
+        }else if(e.kind==='foxbead'){                // 여우 구슬: 도는 구슬 아홉
+          for(let i=0;i<9;i++){const a=i*Math.PI*2/9+k*3,rr=radius*.55;ctx.beginPath();ctx.arc(Math.cos(a)*rr,-50*cs+Math.sin(a)*rr*.25,(5+Math.sin(k*9+i)*2)*cs,0,7);ctx.fill();}
+          ctx.globalAlpha=p*.3;ctx.beginPath();ctx.arc(0,-50*cs,26*cs*(1+k),0,7);ctx.fill();
+        }else if(e.kind==='reaproll'){               // 명부: 펼쳐지는 두루마리
+          const w=radius*1.2*Math.min(1,k*2.5);ctx.globalAlpha=p*.85;ctx.fillStyle='#efe3c4';ctx.fillRect(-w/2,-120*cs,w,34*cs);
+          ctx.fillStyle='#17171d';for(let i=0;i<Math.floor(w/(14*cs));i++)ctx.fillRect(-w/2+6*cs+i*14*cs,-114*cs,3*cs,22*cs);
+          ctx.fillStyle=e.color;
+        }else if(e.kind==='overdrive'){              // 과부하: 도는 톱니
+          ctx.save();ctx.translate(0,-60*cs);ctx.rotate(k*6);ctx.beginPath();
+          for(let i=0;i<20;i++){const a=i/20*Math.PI*2,rr=i%2?30*cs:40*cs;ctx.lineTo(Math.cos(a)*rr,Math.sin(a)*rr);}
+          ctx.closePath();ctx.lineWidth=4*cs;ctx.stroke();ctx.restore();
+        }else if(e.kind==='steamburst'){             // 증기 폭발: 뭉게구름
+          ctx.globalAlpha=p*.4;ctx.fillStyle='#e8e6e0';
+          for(let i=0;i<7;i++){const a=-Math.PI+i/6*Math.PI;ctx.beginPath();ctx.arc(Math.cos(a)*radius*.7*k,-20*cs+Math.sin(a)*radius*.35*k,(20+k*30)*cs,0,7);ctx.fill();}
+          ctx.fillStyle=e.color;
         }else if(e.kind==='underworld'){
           ctx.globalAlpha=p*.65;ctx.lineWidth=5*cs;ctx.beginPath();ctx.ellipse(0,-55*cs,45*cs,65*cs,0,0,7);ctx.stroke();
           for(let i=-1;i<=1;i++){ctx.beginPath();ctx.moveTo(i*20*cs,0);ctx.bezierCurveTo(i*50*cs,-30*cs,-i*15*cs,-70*cs,i*30*cs,-115*cs);ctx.stroke();}
@@ -639,6 +665,31 @@ class Renderer {
         ctx.lineWidth = 2.4 * cs;
         const rr = e.r * this.zoom * (1 - p);
         ctx.beginPath(); ctx.ellipse(x, y + 14 * cs, rr, rr * 0.28, 0, 0, 7); ctx.stroke();
+        ctx.globalAlpha = 1;
+      } else if (e.type === 'charm') {                 // 홀림: 떠오르는 하트
+        ctx.globalAlpha = Math.min(1, p * 1.5);
+        heart(ctx, x, y - 40 * cs - (1 - p) * 26 * cs, 7 * cs * (1 + (1 - p) * 0.4), '#ff7ab8');
+        ctx.globalAlpha = 1;
+      } else if (e.type === 'coin') {                  // 도깨비 방망이: 금화와 +금액
+        const rise = (1 - p) * 34 * cs;
+        ctx.globalAlpha = Math.min(1, p * 2);
+        ctx.fillStyle = '#ffd35a';
+        ctx.beginPath(); ctx.ellipse(x, y - 30 * cs - rise, 6 * cs, 5 * cs, 0, 0, 7); ctx.fill();
+        ctx.font = 'bold ' + Math.round(12 * cs) + 'px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.lineWidth = 3 * cs; ctx.strokeStyle = 'rgba(0,0,0,.6)';
+        ctx.strokeText('+' + e.v, x + 14 * cs, y - 26 * cs - rise);
+        ctx.fillText('+' + e.v, x + 14 * cs, y - 26 * cs - rise);
+        ctx.textAlign = 'left';
+        ctx.globalAlpha = 1;
+      } else if (e.type === 'reap') {                  // 저승사자: 거둬 가는 넋
+        const k2 = 1 - p;
+        ctx.globalAlpha = p;
+        ctx.strokeStyle = '#9fd3ff';
+        ctx.lineWidth = 3 * cs;
+        ctx.beginPath(); ctx.moveTo(x - 20 * cs, y - 10 * cs); ctx.lineTo(x + 20 * cs, y - 34 * cs); ctx.stroke();
+        ctx.fillStyle = 'rgba(210,235,255,.8)';
+        ctx.beginPath(); ctx.ellipse(x, y - 40 * cs - k2 * 50 * cs, 7 * cs, 10 * cs, 0, 0, 7); ctx.fill();
         ctx.globalAlpha = 1;
       } else if (e.type === 'chill') {
         ctx.strokeStyle = 'rgba(143,216,255,' + p + ')';
@@ -983,6 +1034,67 @@ class Renderer {
         ctx.stroke();
         break;
       }
+      case 'foxfire': {                    // 나선 여우불
+        for (let i = 0, n = this.qn(10); i < n; i++) {
+          const a = i / n * Math.PI * 2 + k * 4;
+          const rr = R * (0.2 + k * 0.5);
+          ctx.globalAlpha = p * 0.8;
+          ctx.fillStyle = i % 2 ? e.color : '#ffffff';
+          ctx.beginPath();
+          ctx.arc(x + Math.cos(a) * rr, y - k * 40 * cs + Math.sin(a) * rr * 0.35, (5 + (i % 3) * 2) * cs * big, 0, 7);
+          ctx.fill();
+        }
+        break;
+      }
+      case 'inkslash': {                   // 푸른 넋의 일섬
+        const L = 60 * cs * big;
+        ctx.globalAlpha = p * 0.6; ctx.strokeStyle = e.color; ctx.lineWidth = 10 * cs * big;
+        ctx.beginPath(); ctx.moveTo(x - L, y + 4 * cs); ctx.lineTo(x + L * (0.4 + k), y - 4 * cs); ctx.stroke();
+        ctx.globalAlpha = p; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2.6 * cs * big;
+        ctx.beginPath(); ctx.moveTo(x - L, y + 4 * cs); ctx.lineTo(x + L * (0.4 + k), y - 4 * cs); ctx.stroke();
+        break;
+      }
+      case 'goldburst': {                  // 금화 분수
+        ctx.fillStyle = '#ffd35a';
+        for (let i = 0, n = this.qn(12); i < n; i++) {
+          const a = -Math.PI * 0.15 - i / n * Math.PI * 0.7;
+          const d = k * 60 * cs;
+          ctx.globalAlpha = p;
+          ctx.beginPath();
+          ctx.ellipse(x + Math.cos(a) * d, y + Math.sin(a) * d + k * k * 40 * cs, 4 * cs, 3 * cs, a, 0, 7);
+          ctx.fill();
+        }
+        break;
+      }
+      case 'tesla': {                      // 갈라지는 전광
+        ctx.strokeStyle = e.color; ctx.lineWidth = 3 * cs * big;
+        for (let b = 0; b < 3; b++) {
+          ctx.globalAlpha = p;
+          ctx.beginPath(); ctx.moveTo(x, y);
+          let px = x, py = y;
+          for (let j = 0; j < 5; j++) {
+            px += (b - 1) * 10 * cs + 8 * cs; py += (Math.sin(j * 3.1 + b + k * 20) * 12) * cs;
+            ctx.lineTo(px, py);
+          }
+          ctx.stroke();
+        }
+        ctx.globalAlpha = p; ctx.fillStyle = '#ffffff';
+        ctx.beginPath(); ctx.arc(x, y, 7 * cs * (1 + k), 0, 7); ctx.fill();
+        break;
+      }
+      case 'steamburst': {                 // 증기 뭉게
+        ctx.fillStyle = '#e8e6e0';
+        for (let i = 0, n = this.qn(8); i < n; i++) {
+          const a = -Math.PI + i / (n - 1) * Math.PI;
+          ctx.globalAlpha = p * 0.35;
+          ctx.beginPath();
+          ctx.arc(x + Math.cos(a) * R * 0.6 * k, gy - 20 * cs + Math.sin(a) * R * 0.3 * k, (14 + k * 22) * cs, 0, 7);
+          ctx.fill();
+        }
+        ctx.globalAlpha = p; ctx.fillStyle = e.color;
+        ctx.beginPath(); ctx.arc(x, gy - 20 * cs, 9 * cs * (1 - k), 0, 7); ctx.fill();
+        break;
+      }
       case 'holy': {
         ctx.globalAlpha = p * 0.55;
         ctx.fillStyle = e.color;
@@ -1219,6 +1331,234 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
       legs(S); torso(S,3.8*s); head(S,'icehorn');
       armWeapon(S,-.2,()=>{line(S,0,0,49*s,-12*s,3*s,acc);
         tri(S,56*s,-14*s,41*s,-23*s,43*s,-5*s,acc);},9*s);
+      break;
+    /* ---------------------- 요괴록 ---------------------- */
+    case 'gumiho': {
+      // 아홉 꼬리: 뒤로 부채꼴, 천천히 살랑인다
+      for (let i = 0; i < 9; i++) {
+        const a = -2.2 + i * 0.16 + Math.sin(phase * 0.9 + i) * 0.06;
+        ctx.strokeStyle = S.flash ? '#fff' : (i % 2 ? '#fff4ea' : acc);
+        ctx.lineWidth = 5 * s;
+        ctx.beginPath();
+        ctx.moveTo(-6 * s, -24 * s);
+        ctx.quadraticCurveTo(Math.cos(a) * 22 * s - 6 * s, -24 * s + Math.sin(a) * 22 * s,
+                             Math.cos(a) * 38 * s - 6 * s, -24 * s + Math.sin(a) * 34 * s);
+        ctx.stroke();
+      }
+      robe(S, 19 * s, -42 * s, tun);
+      ctx.fillStyle = S.flash ? '#fff' : '#f3e6da';          // 저고리
+      ctx.fillRect(-7 * s, -42 * s, 14 * s, 12 * s);
+      legsHidden(S); head(S, 'foxears', 8.5 * s);
+      armWeapon(S, -0.3 + atk * 0.8, () => orb(S, 8 * s, -2 * s, 5 * s, S.flash ? '#fff' : acc), 6 * s);
+      ctx.globalAlpha = 0.6;                                   // 떠도는 여우불
+      for (let i = 0; i < 3; i++) {
+        const a = phase * 1.3 + i * 2.1;
+        orb(S, Math.cos(a) * 20 * s, -62 * s + Math.sin(a) * 6 * s, 2.6 * s, S.flash ? '#fff' : acc);
+      }
+      ctx.globalAlpha = 1;
+      break;
+    }
+    case 'saja':
+      robe(S, 17 * s, -44 * s, tun);
+      ctx.fillStyle = S.flash ? '#fff' : '#2c2c36';            // 도포 깃
+      ctx.fillRect(-2 * s, -42 * s, 4 * s, 30 * s);
+      legsHidden(S); torso(S, 3 * s);
+      head(S, 'gat', 8.5 * s);
+      ctx.fillStyle = S.flash ? '#fff' : '#f4f1ea';            // 흰 얼굴
+      ctx.beginPath(); ctx.arc(1 * s, -49 * s, 6.5 * s, 0, 7); ctx.fill();
+      armWeapon(S, -0.2 + atk * 1.2, () => {                   // 명부 두루마리
+        ctx.fillStyle = S.flash ? '#fff' : '#efe3c4';
+        ctx.fillRect(2 * s, -10 * s, 7 * s, 20 * s);
+        ctx.fillStyle = S.flash ? '#fff' : '#8e2f3a';
+        ctx.fillRect(1 * s, -12 * s, 9 * s, 3 * s); ctx.fillRect(1 * s, 9 * s, 9 * s, 3 * s);
+      }, 4 * s);
+      break;
+    case 'dokkaebi':
+      legs(S, 20 * s); torso(S, 6 * s);
+      ctx.fillStyle = S.flash ? '#fff' : '#d9b36b';            // 호피 두렁이
+      ctx.fillRect(-9 * s, -24 * s, 18 * s, 7 * s);
+      ctx.fillStyle = S.flash ? '#fff' : '#3a2a1a';
+      for (let i = -1; i <= 1; i++) ctx.fillRect((i * 5 - 1) * s, -24 * s, 2 * s, 7 * s);
+      head(S, 'horn', 10 * s);
+      armWeapon(S, -1.1 + atk * 1.9, () => {                   // 도깨비방망이
+        line(S, 0, 0, 22 * s, 0, 5 * s, S.flash ? '#fff' : '#7b4a2a');
+        ctx.fillStyle = S.flash ? '#fff' : '#8a5a2a';
+        ctx.beginPath(); ctx.ellipse(32 * s, 0, 13 * s, 8 * s, 0, 0, 7); ctx.fill();
+        ctx.fillStyle = S.flash ? '#fff' : acc;
+        for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc((26 + i * 6) * s, -6 * s + (i % 2) * 10 * s, 1.8 * s, 0, 7); ctx.fill(); }
+      }, 8 * s);
+      break;
+    case 'haetae': {
+      // 네 발 짐승: 몸통 + 갈기 + 뿔 하나
+      const st2 = moving ? Math.sin(phase * 2) * 5 * s : 0;
+      ctx.strokeStyle = col; ctx.lineWidth = 5 * s;
+      for (const lx of [-16, -8, 10, 18]) {
+        const off = (lx < 0 ? st2 : -st2);
+        ctx.beginPath(); ctx.moveTo(lx * s, -16 * s); ctx.lineTo(lx * s + off, 0); ctx.stroke();
+      }
+      ctx.fillStyle = col;
+      ctx.beginPath(); ctx.ellipse(0, -24 * s, 26 * s, 13 * s, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = S.flash ? '#fff' : acc;                  // 비늘 무늬
+      for (let i = -2; i <= 2; i++) { ctx.beginPath(); ctx.arc(i * 8 * s, -30 * s, 3 * s, 0, 7); ctx.fill(); }
+      ctx.fillStyle = tun;                                     // 갈기
+      ctx.beginPath(); ctx.arc(22 * s, -36 * s, 13 * s, 0, 7); ctx.fill();
+      ctx.fillStyle = col;
+      ctx.beginPath(); ctx.arc(27 * s, -36 * s, 9 * s, 0, 7); ctx.fill();
+      tri(S, 26 * s, -45 * s, 30 * s, -58 * s, 32 * s, -44 * s, S.flash ? '#fff' : acc);
+      ctx.fillStyle = '#2b2118';
+      ctx.beginPath(); ctx.arc(31 * s, -38 * s, 1.8 * s, 0, 7); ctx.fill();
+      ctx.strokeStyle = tun; ctx.lineWidth = 4 * s;           // 꼬리
+      ctx.beginPath(); ctx.moveTo(-24 * s, -28 * s);
+      ctx.quadraticCurveTo(-36 * s, -40 * s + Math.sin(phase) * 3 * s, -30 * s, -48 * s); ctx.stroke();
+      break;
+    }
+    case 'mudang':
+      robe(S, 18 * s, -40 * s, S.flash ? '#fff' : '#f2e3c6');
+      ctx.fillStyle = S.flash ? '#fff' : acc;                  // 붉은 쾌자
+      ctx.beginPath(); ctx.moveTo(-9 * s, -40 * s); ctx.lineTo(9 * s, -40 * s);
+      ctx.lineTo(12 * s, -14 * s); ctx.lineTo(-12 * s, -14 * s); ctx.closePath(); ctx.fill();
+      legsHidden(S); head(S, 'jeonrip', 8 * s);
+      armWeapon(S, -0.6 + atk * 1.2, () => {                   // 방울
+        line(S, 0, 0, 10 * s, -8 * s, 2 * s, S.flash ? '#fff' : '#c9a227');
+        ctx.fillStyle = S.flash ? '#fff' : '#e8c65a';
+        for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc((10 + i * 3) * s, (-12 + i * 3) * s, 2.4 * s, 0, 7); ctx.fill(); }
+      }, 5 * s);
+      break;
+    case 'hwarang':
+      legs(S); torso(S); head(S, 'hwarang');
+      armWeapon(S, -0.6 + atk * 1.7, () => {
+        line(S, 0, 0, 38 * s, -4 * s, 2.6 * s, S.flash ? '#fff' : '#dfe6ee');
+        line(S, -2 * s, -4 * s, -2 * s, 4 * s, 3 * s, S.flash ? '#fff' : acc);
+      }, 7 * s);
+      break;
+    case 'pojol':
+      legs(S); torso(S); head(S, 'jeonrip');
+      armWeapon(S, -0.35, () => {
+        line(S, 0, 0, 44 * s, -9 * s, 3 * s, S.flash ? '#fff' : '#6b4b2a');
+        ctx.fillStyle = S.flash ? '#fff' : acc;                // 붉은 술
+        ctx.beginPath(); ctx.arc(38 * s, -6 * s, 3 * s, 0, 7); ctx.fill();
+        tri(S, 46 * s, -9 * s, 38 * s, -14 * s, 38 * s, -4 * s, S.flash ? '#fff' : '#c8ced6');
+      }, 10 * s);
+      break;
+
+    /* ---------------------- 태엽 공방 ---------------------- */
+    case 'inventor':
+      cape(S, -1, S.flash ? '#fff' : '#3b2a1e', 1.1);
+      ctx.save();                                              // 등의 톱니
+      ctx.translate(-12 * s, -38 * s); ctx.rotate(phase * 0.8);
+      gear(S, 0, 0, 8 * s, S.flash ? '#fff' : acc);
+      ctx.restore();
+      legs(S); torso(S, 4.6 * s); head(S, 'goggles', 9 * s);
+      armWeapon(S, -0.5 + atk * 1.0, () => {                   // 번개 렌치
+        line(S, 0, 0, 22 * s, -4 * s, 4 * s, S.flash ? '#fff' : '#9aa3ab');
+        ctx.strokeStyle = S.flash ? '#fff' : '#9aa3ab'; ctx.lineWidth = 4 * s;
+        ctx.beginPath(); ctx.arc(26 * s, -5 * s, 5 * s, -2.2, 2.2); ctx.stroke();
+        if (atk > 0.2) orb(S, 30 * s, -5 * s, 3 * s, S.flash ? '#fff' : '#9fe6ff');
+      }, 6 * s);
+      break;
+    case 'steammech': {
+      const O = Object.assign({}, S, { lw: 7 * s });
+      legs(O, 22 * s);
+      ctx.fillStyle = tun;                                     // 보일러 몸통
+      ctx.beginPath(); roundRectPath(ctx, -16 * s, -54 * s, 32 * s, 36 * s, 8 * s); ctx.fill();
+      ctx.fillStyle = S.flash ? '#fff' : '#b08d57';            // 리벳 띠
+      ctx.fillRect(-16 * s, -40 * s, 32 * s, 4 * s);
+      ctx.fillStyle = S.flash ? '#fff' : (S.raw && atk > 0 ? '#ffd27a' : acc);  // 화구
+      ctx.beginPath(); ctx.arc(0, -30 * s, 5 * s, 0, 7); ctx.fill();
+      ctx.fillStyle = S.flash ? '#fff' : '#3a332c';            // 굴뚝
+      ctx.fillRect(-12 * s, -70 * s, 7 * s, 18 * s);
+      ctx.fillStyle = 'rgba(220,220,220,.5)';                 // 연기
+      for (let i = 0; i < 3; i++) {
+        const k = ((phase * 0.6 + i / 3) % 1);
+        ctx.globalAlpha = 0.5 * (1 - k);
+        ctx.beginPath(); ctx.arc(-9 * s - k * 10 * s, -72 * s - k * 22 * s, (4 + k * 7) * s, 0, 7); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = col;                                     // 조종석
+      ctx.beginPath(); ctx.arc(8 * s, -58 * s, 7 * s, 0, 7); ctx.fill();
+      armWeapon(O, -0.15 - atk * 0.2, () => {                  // 포신
+        ctx.fillStyle = S.flash ? '#fff' : '#4a4038';
+        ctx.fillRect(0, -6 * s, 36 * s, 12 * s);
+        ctx.fillStyle = S.flash ? '#fff' : acc;
+        ctx.fillRect(34 * s, -7 * s, 5 * s, 14 * s);
+      }, 6 * s);
+      break;
+    }
+    case 'airship': {
+      const bobY = Math.sin(phase * 1.1) * 3 * s - 40 * s;     // 떠 있다
+      ctx.fillStyle = 'rgba(0,0,0,.18)';
+      ctx.beginPath(); ctx.ellipse(0, 0, 20 * s, 4 * s, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = S.flash ? '#fff' : '#b8a27a';            // 기구
+      ctx.beginPath(); ctx.ellipse(0, bobY - 22 * s, 30 * s, 14 * s, 0, 0, 7); ctx.fill();
+      ctx.strokeStyle = S.flash ? '#fff' : '#6b4b2a'; ctx.lineWidth = 1.6 * s;
+      for (let i = -1; i <= 1; i++) { ctx.beginPath(); ctx.ellipse(0, bobY - 22 * s, 30 * s * (1 - Math.abs(i) * 0.45), 14 * s, 0, -1.57, 1.57); ctx.stroke(); }
+      ctx.beginPath(); ctx.moveTo(-12 * s, bobY - 10 * s); ctx.lineTo(-8 * s, bobY);
+      ctx.moveTo(12 * s, bobY - 10 * s); ctx.lineTo(8 * s, bobY); ctx.stroke();
+      ctx.fillStyle = col;                                      // 곤돌라
+      ctx.beginPath(); roundRectPath(ctx, -12 * s, bobY, 24 * s, 9 * s, 3 * s); ctx.fill();
+      ctx.fillStyle = S.flash ? '#fff' : '#2b3038';            // 조종사
+      ctx.beginPath(); ctx.arc(2 * s, bobY - 3 * s, 4 * s, 0, 7); ctx.fill();
+      ctx.save(); ctx.translate(-30 * s, bobY - 22 * s); ctx.rotate(phase * 6);  // 프로펠러
+      line(S, 0, -7 * s, 0, 7 * s, 2.2 * s, S.flash ? '#fff' : acc); ctx.restore();
+      if (atk > 0.3) { ctx.fillStyle = S.flash ? '#fff' : '#2b2118';          // 떨어지는 폭탄
+        ctx.beginPath(); ctx.arc(4 * s, bobY + 14 * s + (1 - atk) * 20 * s, 3.4 * s, 0, 7); ctx.fill(); }
+      break;
+    }
+    case 'teslaknight':
+      legs(S, 20 * s); torso(S, 6 * s); head(S, 'greathelm', 9.5 * s);
+      ctx.fillStyle = S.flash ? '#fff' : '#6b7a8a';            // 등 코일
+      ctx.fillRect(-14 * s, -48 * s, 6 * s, 20 * s);
+      ctx.strokeStyle = S.flash ? '#fff' : '#b08d57'; ctx.lineWidth = 1.6 * s;
+      for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.moveTo(-15 * s, (-46 + i * 5) * s); ctx.lineTo(-7 * s, (-44 + i * 5) * s); ctx.stroke(); }
+      orb(S, -11 * s, -52 * s, 2.6 * s, S.flash ? '#fff' : acc);
+      armWeapon(S, -0.45 + atk * 1.5, () => {
+        line(S, 0, 0, 40 * s, -8 * s, 3.4 * s, S.flash ? '#fff' : '#9aa3ab');
+        tri(S, 46 * s, -9 * s, 36 * s, -15 * s, 37 * s, -3 * s, S.flash ? '#fff' : acc);
+        if (atk > 0.1 || Math.sin(phase * 5) > 0.7) {
+          ctx.strokeStyle = S.flash ? '#fff' : acc; ctx.lineWidth = 1.5 * s;
+          ctx.beginPath(); ctx.moveTo(44 * s, -9 * s); ctx.lineTo(50 * s, -15 * s); ctx.lineTo(48 * s, -6 * s); ctx.lineTo(55 * s, -10 * s); ctx.stroke();
+        }
+      }, 9 * s);
+      break;
+    case 'clocksoldier':
+      legs(S); torso(S, 5 * s);
+      ctx.save(); ctx.translate(-9 * s, -34 * s); ctx.rotate(phase * 1.4);   // 태엽 열쇠
+      line(S, 0, 0, -8 * s, 0, 2.6 * s, S.flash ? '#fff' : acc);
+      ctx.fillStyle = S.flash ? '#fff' : acc; ctx.fillRect(-12 * s, -4 * s, 4 * s, 8 * s);
+      ctx.restore();
+      head(S, 'kepi', 8.5 * s);
+      armWeapon(S, -0.3 + atk * 1.3, () => {
+        line(S, 0, 0, 30 * s, -4 * s, 3 * s, S.flash ? '#fff' : '#9aa3ab');
+      }, 7 * s);
+      break;
+    case 'mechanic':
+      legs(S); torso(S); head(S, 'goggles', 8.5 * s);
+      armWeapon(S, -0.7 + atk * 1.4, () => {                   // 렌치
+        line(S, 0, 0, 20 * s, -2 * s, 3.4 * s, S.flash ? '#fff' : '#9aa3ab');
+        ctx.strokeStyle = S.flash ? '#fff' : '#9aa3ab'; ctx.lineWidth = 3.4 * s;
+        ctx.beginPath(); ctx.arc(24 * s, -3 * s, 4.5 * s, -2.3, 2.3); ctx.stroke();
+      }, 5 * s);
+      ctx.fillStyle = S.flash ? '#fff' : acc;                  // 공구 가방
+      ctx.fillRect(-12 * s, -26 * s, 7 * s, 8 * s);
+      break;
+    case 'rifleman':
+      legs(S); torso(S); head(S, 'kepi');
+      armWeapon(S, -0.12 - atk * 0.12, () => {
+        line(S, -6 * s, 0, 34 * s, -2 * s, 4 * s, S.flash ? '#fff' : '#6b4b2a');
+        line(S, 12 * s, -2 * s, 40 * s, -3 * s, 2.4 * s, S.flash ? '#fff' : '#4a4f55');
+        if (atk > 0.6) tri(S, 42 * s, -3 * s, 52 * s, -8 * s, 51 * s, 2 * s, S.flash ? '#fff' : '#ffd166');
+      }, 8 * s);
+      break;
+    case 'turret':
+      ctx.fillStyle = S.flash ? '#fff' : '#4a4038';            // 받침
+      ctx.beginPath(); ctx.moveTo(-18 * s, 0); ctx.lineTo(18 * s, 0); ctx.lineTo(10 * s, -16 * s); ctx.lineTo(-10 * s, -16 * s); ctx.closePath(); ctx.fill();
+      ctx.save(); ctx.translate(0, -8 * s); ctx.rotate(phase * 0.5);
+      gear(S, 0, 0, 7 * s, S.flash ? '#fff' : '#b08d57'); ctx.restore();
+      ctx.fillStyle = col;                                      // 포탑 머리
+      ctx.beginPath(); ctx.arc(0, -24 * s, 11 * s, 0, 7); ctx.fill();
+      ctx.fillStyle = S.flash ? '#fff' : '#2f2a24';
+      ctx.fillRect(4 * s, -28 * s - atk * 1 * s, 24 * s - atk * 5 * s, 8 * s);
+      if (atk > 0.5) orb(S, 30 * s, -24 * s, 3.4 * s, S.flash ? '#fff' : acc);
       break;
     case 'spear':
       legs(S); torso(S); head(S, 'cap');
@@ -2468,6 +2808,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
 /* 걸을 때 반대쪽 팔을 흔드는 인간형 병종 */
 const HUMANOID = {
   skadi:1,bastet:1,runeguard:1, musketeer:1, purifier:1, frostlancer:1,
+  pojol:1, hwarang:1, dokkaebi:1, teslaknight:1, clocksoldier:1, mechanic:1, rifleman:1,
   spear: 1, shield: 1, archer: 1, venom: 1, bomber: 1, knight: 1, duelist: 1,
   longbow: 1, rogue: 1, engineer: 1, skeleton: 1,
   goblin: 1, orcspear: 1, ballista: 1, powder: 1, dark: 1, orcberserk: 1
@@ -2737,6 +3078,52 @@ function head(S, type, radius) {
   ctx.strokeStyle = S.acc;
 
   switch (type) {
+    case 'gat':                                  // 검은 갓
+      ctx.fillStyle = S.flash ? '#fff' : '#111116';
+      ctx.fillRect(-r - 9 * s, cy - 6 * s, (r + 9 * s) * 2, 2.4 * s);
+      ctx.beginPath(); roundRectPath(ctx, -r * 0.7, cy - 15 * s, r * 1.4, 10 * s, 2 * s); ctx.fill();
+      ctx.strokeStyle = S.flash ? '#fff' : '#111116'; ctx.lineWidth = 1 * s;
+      ctx.beginPath(); ctx.moveTo(-r * 0.6, cy - 4 * s); ctx.lineTo(-2 * s, cy + 9 * s); ctx.stroke();
+      break;
+    case 'jeonrip':                              // 전립 (붉은 술)
+      ctx.fillStyle = S.flash ? '#fff' : '#1c1c22';
+      ctx.beginPath(); ctx.ellipse(0, cy - 5 * s, r + 7 * s, 3 * s, 0, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(0, cy - 6 * s, r * 0.85, Math.PI, 0); ctx.fill();
+      ctx.fillStyle = S.flash ? '#fff' : '#c0392b';
+      ctx.beginPath(); ctx.arc(0, cy - 6 * s - r * 0.85, 2.6 * s, 0, 7); ctx.fill();
+      break;
+    case 'foxears':
+      tri(S, -r * 0.9, cy - r * 0.4, -r * 0.2, cy - r * 0.9, -r * 0.8, cy - r * 1.9, S.flash ? '#fff' : '#f3e6da');
+      tri(S, r * 0.2, cy - r * 0.9, r * 0.9, cy - r * 0.4, r * 0.8, cy - r * 1.9, S.flash ? '#fff' : '#f3e6da');
+      ctx.fillStyle = S.flash ? '#fff' : '#1c1c22';            // 흑단 머리
+      ctx.beginPath(); ctx.arc(0, cy - 1 * s, r + 1 * s, Math.PI * 0.95, Math.PI * 2.05); ctx.fill();
+      ctx.fillRect(-r - 1 * s, cy - 1 * s, 4 * s, 16 * s);
+      ctx.fillStyle = S.flash ? '#fff' : S.acc;
+      ctx.beginPath(); ctx.arc(r * 0.5, cy - r * 0.6, 2 * s, 0, 7); ctx.fill();
+      break;
+    case 'hwarang':                              // 상투 + 꽃
+      ctx.fillStyle = S.flash ? '#fff' : '#1c1c22';
+      ctx.beginPath(); ctx.arc(0, cy - 1 * s, r + 0.5 * s, Math.PI, 0); ctx.fill();
+      ctx.beginPath(); ctx.arc(-1 * s, cy - r - 2 * s, 3.4 * s, 0, 7); ctx.fill();
+      ctx.fillStyle = S.flash ? '#fff' : '#f08aa8';
+      for (let i = 0; i < 5; i++) { const a = i * 1.256; ctx.beginPath(); ctx.arc(-6 * s + Math.cos(a) * 2.4 * s, cy - r + Math.sin(a) * 2.4 * s, 1.8 * s, 0, 7); ctx.fill(); }
+      break;
+    case 'goggles':
+      ctx.fillStyle = S.flash ? '#fff' : '#5a3b26';            // 가죽 모자
+      ctx.beginPath(); ctx.arc(0, cy - 1 * s, r + 1 * s, Math.PI, 0); ctx.fill();
+      ctx.fillStyle = S.flash ? '#fff' : '#b08d57';
+      ctx.fillRect(-r - 1 * s, cy - 4 * s, (r + 1 * s) * 2, 3 * s);
+      ctx.fillStyle = S.flash ? '#fff' : '#9fe6ff';            // 고글 렌즈
+      ctx.beginPath(); ctx.arc(2 * s, cy - 3 * s, 3 * s, 0, 7); ctx.arc(8 * s, cy - 3 * s, 3 * s, 0, 7); ctx.fill();
+      break;
+    case 'kepi':
+      ctx.fillStyle = S.flash ? '#fff' : S.tun;
+      ctx.beginPath(); roundRectPath(ctx, -r, cy - r - 3 * s, r * 2, r * 0.9, 2 * s); ctx.fill();
+      ctx.fillStyle = S.flash ? '#fff' : '#1c1c22';
+      ctx.fillRect(0, cy - 3 * s, r + 4 * s, 2.2 * s);
+      ctx.fillStyle = S.flash ? '#fff' : S.acc;
+      ctx.beginPath(); ctx.arc(0, cy - r + 0.5 * s, 1.8 * s, 0, 7); ctx.fill();
+      break;
     case 'cap':
       ctx.beginPath(); ctx.arc(0, cy - 1 * s, r + 1.5 * s, Math.PI, 0); ctx.fill();
       ctx.fillRect(-r - 3 * s, cy - 2 * s, (r + 3 * s) * 2, 2.6 * s);
@@ -3062,6 +3449,30 @@ function tri(S, x1, y1, x2, y2, x3, y3, col) {
   ctx.beginPath();
   ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.lineTo(x3, y3);
   ctx.closePath(); ctx.fill();
+}
+
+/* 하트 (홀림) */
+function heart(ctx, x, y, r, color) {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(x, y + r);
+  ctx.bezierCurveTo(x - r * 1.6, y - r * 0.2, x - r * 0.8, y - r * 1.4, x, y - r * 0.5);
+  ctx.bezierCurveTo(x + r * 0.8, y - r * 1.4, x + r * 1.6, y - r * 0.2, x, y + r);
+  ctx.fill();
+}
+
+/* 톱니바퀴 */
+function gear(S, x, y, r, color) {
+  const { ctx, s } = S;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  for (let i = 0; i < 16; i++) {
+    const a = i / 16 * Math.PI * 2, rr = i % 2 ? r : r * 1.3;
+    ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+  }
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = 'rgba(0,0,0,.35)';
+  ctx.beginPath(); ctx.arc(x, y, r * 0.4, 0, 7); ctx.fill();
 }
 
 function rectPath(ctx, x, y, w, h) { ctx.beginPath(); ctx.rect(x, y, w, h); }

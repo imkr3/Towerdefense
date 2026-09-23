@@ -42,10 +42,22 @@ function commitLoadout(msg) {
   renderFormation();
 }
 
+function heroCount(list) { return list.filter(id => isHeroUnit(UNIT_BY_ID[id])).length; }
+
+/* 전설·신화를 하나 더 넣어도 되나 (out: 그 자리에서 빠질 병종) */
+function heroRoom(id, out) {
+  if (!isHeroUnit(UNIT_BY_ID[id])) return true;
+  const n = heroCount(save.loadout) - (out && isHeroUnit(UNIT_BY_ID[out]) ? 1 : 0);
+  if (n < HERO_SLOT_MAX) return true;
+  toast('전설·신화는 편성에 ' + HERO_SLOT_MAX + '명까지다');
+  return false;
+}
+
 /* 칸 index 에 병종 id 를 놓는다. 이미 편성된 병종이면 자리를 바꾼다. */
 function placeUnit(id, index) {
   const L = save.loadout;
   const cur = L.indexOf(id);
+  if (cur < 0 && !heroRoom(id, L[index])) return 'blocked';
   if (cur >= 0) {
     if (index >= L.length) { L.splice(cur, 1); L.push(id); }
     else if (cur !== index) { const t = L[index]; L[index] = id; L[cur] = t; }
@@ -73,6 +85,7 @@ function toggleUnit(id) {
     return;
   }
   if (save.loadout.length >= LOADOUT_MAX) { toast('칸이 가득 찼다. 칸 위에 끌어 놓으면 바꾼다'); return; }
+  if (!heroRoom(id)) return;
   save.loadout.push(id);
   SFX.deploy();
   buzz(8);
@@ -86,6 +99,7 @@ function autoFillLoadout() {
   let n = 0;
   for (const u of pool) {
     if (save.loadout.length >= LOADOUT_MAX) break;
+    if (isHeroUnit(u) && heroCount(save.loadout) >= HERO_SLOT_MAX) continue;
     save.loadout.push(u.id);
     n++;
   }
@@ -101,7 +115,7 @@ function unitMatchesFilter(u) {
 
 function renderFormation() {
   if (!$('#scr-formation').classList.contains('active')) return;
-  $('#formation-coins').textContent = save.coins;
+  $('#formation-coins').textContent = fmtNum(save.coins);
   renderFormationSlots();
   renderFormationPool();
   renderFormationSide();
@@ -152,7 +166,7 @@ function renderFormationSlots() {
     '<span>편성 <b>' + n + ' / ' + LOADOUT_MAX + '</b></span>' +
     '<span>평균 비용 <b>' + (n ? Math.round(cost / n) : 0) + '</b></span>' +
     '<span>근접 <b>' + (n - ranged) + '</b> · 원거리 <b>' + ranged + '</b></span>' +
-    '<span>전설·신화 <b>' + heroes + '</b></span>';
+    '<span' + (heroes > HERO_SLOT_MAX ? ' class="over-cap"' : '') + '>전설·신화 <b>' + heroes + ' / ' + HERO_SLOT_MAX + '</b></span>';
 }
 
 function renderFormationPool() {
@@ -380,6 +394,7 @@ function dragUp(e) {
     const index = Number(slot.dataset.slot);
     const res = placeUnit(src.id, index);
     if (res === null) { toast('칸이 가득 찼다'); renderFormation(); return; }
+    if (res === 'blocked') { renderFormation(); return; }
     SFX.deploy();
     buzz(12);
     const out = (res !== 'move' && res !== 'add') ? UNIT_BY_ID[res] : null;

@@ -114,7 +114,7 @@ jobs:
             APK="android/app/build/outputs/apk/$BUILD/app-$BUILD.apk"
             "$SDK_TOOLS/apksigner" verify --print-certs "$APK" > "$RUNNER_TEMP/apk-cert.txt"
             "$SDK_TOOLS/aapt" dump badging "$APK" > "$RUNNER_TEMP/apk-badging.txt"
-            head -1 "$RUNNER_TEMP/apk-badging.txt" | grep -F "versionName='$APP_VERSION'" | grep -F "versionCode='21000'"
+            head -1 "$RUNNER_TEMP/apk-badging.txt" | grep -F "versionName='$APP_VERSION'" | grep -F "versionCode='22000'"
             if [ "$BUILD" = release ]; then
               EXPECTED=$(printf '%s' "$CERT_SHA256" | tr -d ':[:space:]' | tr '[:upper:]' '[:lower:]')
               ACTUAL=$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$RUNNER_TEMP/apk-cert.txt")

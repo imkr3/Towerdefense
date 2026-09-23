@@ -44,7 +44,7 @@ function loadEngine(seed) {
     vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), ctx, { filename: f });
   }
   return vm.runInContext(
-    '({Battle, STAGES, UNITS, UNIT_BY_ID, ROSTER_UNITS, LOADOUT_MAX, unitLevelCap, unitTrainCost, UPGRADES})',
+    '({Battle, STAGES, UNITS, UNIT_BY_ID, ROSTER_UNITS, LOADOUT_MAX, HERO_SLOT_MAX, unitLevelCap, unitTrainCost, UPGRADES})',
     ctx);
 }
 
@@ -75,11 +75,13 @@ function basicLoadout(g) {
  * 남는 칸은 영웅(SR)으로 채운다. 전장 병종은 하나도 없다. */
 function legendLoadout(g) {
   const rank = { UR: 0, SSR: 1, SR: 2 };
-  return g.UNITS
+  // 전설·신화는 편성에 HERO_SLOT_MAX 명까지. 남는 칸은 영웅(SR)으로 채운다.
+  const sorted = g.UNITS
     .filter(u => u.gacha && rank[u.rarity] !== undefined)
-    .sort((a, b) => (rank[a.rarity] - rank[b.rarity]) || (b.cost - a.cost))
-    .slice(0, g.LOADOUT_MAX)
-    .map(u => u.id);
+    .sort((a, b) => (rank[a.rarity] - rank[b.rarity]) || (b.cost - a.cost));
+  const heroes = sorted.filter(u => u.rarity !== 'SR').slice(0, g.HERO_SLOT_MAX);
+  const rest = sorted.filter(u => u.rarity === 'SR');
+  return heroes.concat(rest).slice(0, g.LOADOUT_MAX).map(u => u.id);
 }
 
 /* 조합 편성: 전장 병종으로 몸통을 세우고, 전설·신화는 역할에 맞는 셋만 얹는다.
@@ -131,8 +133,16 @@ function runStage(g, index, upLv, unitLv, trace, gacha, basic) {
   const unlocked = g.ROSTER_UNITS.filter(u => u.unlockStage <= index + 1);
   const loadout = basic ? basicLoadout(g)
     : gacha === 'legend' ? legendLoadout(g)
+    : (typeof gacha === 'string' && gacha.indexOf('trio:') === 0)
+      ? unlocked.slice().sort((a, b) => b.cost - a.cost).slice(0, g.LOADOUT_MAX - 3).map(u => u.id).concat(gacha.slice(5).split('+'))
+    : (typeof gacha === 'string' && gacha.indexOf('legend-') === 0)
+      ? g.UNITS.filter(u => u.gacha && (u.rarity === 'UR' || u.rarity === 'SSR' || u.rarity === 'SR') && u.id !== gacha.slice(7))
+          .sort((a, b) => ({ UR: 0, SSR: 1, SR: 2 }[a.rarity] - { UR: 0, SSR: 1, SR: 2 }[b.rarity]) || (b.cost - a.cost))
+          .slice(0, g.LOADOUT_MAX).map(u => u.id)
     : gacha === 'combo' ? comboLoadout(g, index)
     : gacha === 'counter' ? counterLoadout(g, index)
+    : (typeof gacha === 'string' && gacha.indexOf('with:') === 0)
+      ? unlocked.slice().sort((a, b) => b.cost - a.cost).slice(0, g.LOADOUT_MAX - 1).map(u => u.id).concat([gacha.slice(5)])
     : gacha === 'smart' ? (g.STAGES[index].mods ? counterLoadout(g, index) : unlocked.slice()
         .sort((a, b) => b.cost - a.cost).slice(0, g.LOADOUT_MAX).map(u => u.id))
     : gacha ? gachaLoadout(g, index)
@@ -242,6 +252,12 @@ const LEGEND_PROOF = [
   { stage: 18, up: 6, lv: 10 }, { stage: 20, up: 6, lv: 10 },
   { stage: 27, up: 8, lv: 12 }, { stage: 28, up: 8, lv: 12 }, { stage: 30, up: 8, lv: 12 }
 ];
+/* 시즌마다 대표 셋. 어느 시즌을 뽑든 비슷한 값어치여야 한다. */
+const SEASON_TRIOS = [
+  ['hades', 'zeus', 'artemis'], ['odin', 'thor', 'valkyrie'], ['ra', 'anubis', 'pharaoh'],
+  ['gumiho', 'saja', 'dokkaebi'], ['inventor', 'steammech', 'mechanic']
+];
+const SEASON_SPREAD = 2;
 const LEGEND_PROOF_MAX = 1;      // 전설만 편성이 이길 수 있는 최대 판 수
 const COUNTER_MIN = 4;           // 공략 편성이 이겨야 하는 최소 판 수
 
@@ -329,6 +345,18 @@ function check() {
   } else {
     console.log(`  ✓ 2막 진입 관문: 캠페인 완주 수준으로 ${entryWins}/10 돌파 (최대 ${EXT_ENTRY_MAX})`);
   }
+  // 시즌끼리 격차: 시즌마다 대표 셋(신화·전설·영웅)을 전장 7 에 얹어 본다
+  {
+    const wins = SEASON_TRIOS.map(t => {
+      const g = loadEngine(12345); let w = 0;
+      for (let i = 0; i < 20; i++) w += runStage(g, i, 3, 5, false, 'trio:' + t.join('+')).win ? 1 : 0;
+      return w;
+    });
+    const spread = Math.max(...wins) - Math.min(...wins);
+    const tag = SEASON_TRIOS.map((t, i) => t[0] + ' ' + wins[i]).join(' · ');
+    if (spread > SEASON_SPREAD) { console.error(`  ✗ 시즌 격차 ${spread} (최대 ${SEASON_SPREAD}): ${tag}`); failed++; }
+    else console.log(`  ✓ 시즌 균형 (강화 3/Lv5) ${tag}`);
+  }
   // 제대로 편성하는 플레이어는 충분히 키우면 넘는다
   {
     const g = loadEngine(12345), rows = [];
@@ -403,6 +431,32 @@ if (args[0] === '--check') {
   const g = loadEngine(12345), rows = [];
   for (let i = from; i < to; i++) rows.push(runStage(g, i, upLv, unitLv, false, 'smart'));
   printTable(rows, upLv, unitLv);
+} else if (args[0] === '--solo') {
+  // node tools/sim.js --solo <강화> <Lv> id,id,...  전장 편성 9 + 그 병종 하나
+  const upLv = +args[1], unitLv = +args[2];
+  const base = runAll(upLv, unitLv, 12345, false, 20).filter(r => r.win).length;
+  console.log('  전장 편성 ' + base);
+  for (const id of args[3].split(',')) {
+    const w = runAll(upLv, unitLv, 12345, 'with:' + id, 20).filter(r => r.win).length;
+    console.log('  + ' + id.padEnd(14) + w + '  (' + (w - base >= 0 ? '+' : '') + (w - base) + ')');
+  }
+} else if (args[0] === '--minus') {
+  // node tools/sim.js --minus <강화> <Lv> id,...  전설만 편성에서 하나씩 뺐을 때
+  const upLv = +args[1], unitLv = +args[2];
+  console.log('  전설만 ' + runAll(upLv, unitLv, 12345, 'legend', 20).filter(r => r.win).length);
+  for (const id of args[3].split(','))
+    console.log('  - ' + id.padEnd(12) + runAll(upLv, unitLv, 12345, 'legend-' + id, 20).filter(r => r.win).length);
+} else if (args[0] === '--combo') {
+  // node tools/sim.js --combo <강화> <Lv> a+b+c,d+e+f  전장 7 + 셋
+  const upLv = +args[1], unitLv = +args[2];
+  for (const trio of args[3].split(',')) {
+    const g = loadEngine(12345); let w = 0;
+    for (let i = 0; i < 20; i++) {
+      const save0 = trio.split('+');
+      w += runStage(g, i, upLv, unitLv, false, 'trio:' + save0.join('+')).win ? 1 : 0;
+    }
+    console.log('  ' + trio.padEnd(30) + w);
+  }
 } else if (args[0] === '--hard') {
   // node tools/sim.js --hard [강화Lv] [병종Lv]
   const upLv = parseInt(args[1] || '5', 10), unitLv = parseInt(args[2] || '8', 10);

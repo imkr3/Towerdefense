@@ -4,6 +4,8 @@
  * ======================================================================= */
 
 const LOADOUT_MAX = 10;      // 전투에 들고 갈 수 있는 병종 수
+const HERO_SLOT_MAX = 5;     // 그 가운데 전설·신화는 이만큼까지 — 몰아 넣기만 해서는 안 된다
+function isHeroUnit(u) { return !!u && (u.rarity === 'SSR' || u.rarity === 'UR'); }
 
 const UNIT_DEFAULTS = {
   hp: 100, atk: 10, range: 60, speed: 40, interval: 1.0,
@@ -488,6 +490,109 @@ SEASON_UNITS.push(
     body:'#39364e',accent:'#e9bf65',tunic:'#287d7a',hp:1100,atk:76,range:70,speed:80,interval:.9,
     cost:280,cooldown:17,kb:3,ab:{crit:{chance:.2,mul:1.8},lifesteal:.12},abText:'치명타 20% · 흡혈 12%',desc:'고양이 귀와 황금 발톱을 지닌 수호신. 낮은 자세로 전선의 빈틈을 파고든다.'})
 );
+/* ---------------- 시즌 4 · 요괴록 (한국 설화) ----------------
+ * 신이 아니라 옛이야기 속 요괴와 저승의 관리들. 싸움을 비트는 쪽이다:
+ * 적을 홀리고(구미호), 명부에 오른 적을 거두고(저승사자), 판돈을 불린다(도깨비). */
+SEASON_UNITS.push(
+  mk({id:'gumiho',name:'구미호',role:'홀림',shape:'gumiho',castFx:'foxfire',season:'yokai',rarity:'UR',gacha:true,unlockStage:999,
+    body:'#f3e6da',accent:'#ff7ab8',tunic:'#b8324b',hp:1500,atk:120,range:250,speed:34,interval:2.0,
+    cost:540,cooldown:45,kb:2,ranged:true,area:true,areaRadius:70,scale:1.15,
+    ab:{charm:{chance:.25,dur:3}},
+    abText:'여우불 · 맞은 적 25%를 3초 홀림(제 편을 침, 보스 제외) · 여우 구슬',
+    desc:'아홉 꼬리의 여우. 여우불에 홀린 적은 잠시 제 편을 친다. 몰려오는 무리를 서로 싸우게 만들지만, 스스로 적을 쓰러뜨리는 힘은 크지 않다.',
+    active:{name:'여우 구슬',kind:'foxbead',cd:50,radius:220,mul:1.6,charm:4,desc:'가장 가까운 적 주변 피해·4초 홀림(보스 제외). 성채에는 피해 없음.'}}),
+  mk({id:'saja',name:'저승사자',role:'명부',shape:'saja',castFx:'inkslash',season:'yokai',rarity:'SSR',gacha:true,unlockStage:999,
+    body:'#e9e4dc',accent:'#9fd3ff',tunic:'#17171d',hp:1700,atk:120,range:95,speed:32,interval:1.6,
+    cost:440,cooldown:36,kb:1,scale:1.15,
+    ab:{execute:.2},
+    abText:'명부 · 체력 20% 이하인 적을 즉시 거둠(보스 제외) · 명부 호명',
+    desc:'검은 갓을 쓴 저승의 관리. 명부에 이름이 오른 적은 한 번의 손짓으로 데려간다. 단단한 적을 깎아 줄 동료가 있어야 제 몫을 한다.',
+    active:{name:'명부 호명',kind:'reaproll',cd:48,radius:240,mul:1.4,execute:.35,desc:'가장 가까운 적 주변 피해 뒤, 체력 35% 이하는 즉시 거둠(보스 제외).'}}),
+  mk({id:'dokkaebi',name:'도깨비',role:'방망이',shape:'dokkaebi',castFx:'goldburst',season:'yokai',rarity:'SR',gacha:true,unlockStage:999,
+    body:'#4f8a6a',accent:'#f2c14e',tunic:'#7b4a2a',hp:1500,atk:100,range:80,speed:36,interval:1.3,
+    cost:330,cooldown:20,kb:1,area:true,areaRadius:80,scale:1.15,
+    ab:{bounty:{chance:.3,gold:18}},
+    abText:'범위 · 때릴 때 30% 확률로 군자금 +18',
+    desc:'"금 나와라 뚝딱!" 방망이를 휘두를 때마다 이따금 금이 쏟아진다.'}),
+  mk({id:'haetae',name:'해치',role:'수호수',shape:'haetae',castFx:'shockwave',season:'yokai',rarity:'SR',gacha:true,unlockStage:999,
+    body:'#e4d6b0',accent:'#3e9c8f',tunic:'#b98a3a',hp:2600,atk:60,range:70,speed:26,interval:1.5,
+    cost:320,cooldown:22,kb:1,scale:1.2,
+    ab:{kbImmune:true,thorns:.3},
+    abText:'넉백 면역 · 근접 피해 30% 되돌림',
+    desc:'옳고 그름을 가리는 상상의 짐승. 밀리지 않고, 저를 친 자에게 그대로 돌려준다.'}),
+  mk({id:'mudang',name:'무당',role:'액막이',shape:'mudang',castFx:'holy',season:'yokai',rarity:'R',gacha:true,unlockStage:999,
+    body:'#2b3038',accent:'#e84d6b',tunic:'#f2e3c6',hp:520,atk:40,range:230,speed:34,interval:1.6,
+    cost:240,cooldown:12,kb:2,ranged:true,
+    ab:{weaken:{mul:.7,dur:4}},
+    abText:'액막이 방울 · 맞은 적의 공격력 -30% (4초)',
+    desc:'방울과 부채로 액을 막는다. 무서운 적일수록 이 방울 소리가 반갑다.'}),
+  mk({id:'hwarang',name:'화랑',role:'풍류 검객',shape:'hwarang',castFx:'slash',season:'yokai',rarity:'R',gacha:true,unlockStage:999,
+    body:'#2b3038',accent:'#f4d06f',tunic:'#3a7ca5',hp:780,atk:68,range:70,speed:60,interval:.85,
+    cost:230,cooldown:10,kb:2,
+    ab:{lifesteal:.15},
+    abText:'빠른 검 · 흡혈 15%',
+    desc:'꽃처럼 차려입은 젊은 검객. 빠르게 파고들어 벤 만큼 회복한다.'}),
+  mk({id:'pojol',name:'포졸',role:'육모방망이',shape:'pojol',season:'yokai',rarity:'N',gacha:true,unlockStage:999,
+    body:'#2b3038',accent:'#c0392b',tunic:'#2f3e5c',hp:600,atk:40,range:95,speed:44,interval:1.2,
+    cost:145,cooldown:6,kb:2,
+    abText:'값싼 창 · 긴 사거리',
+    desc:'고을을 지키던 포졸. 싸고 빠르게 전열을 채운다.'})
+);
+
+/* ---------------- 시즌 5 · 태엽 공방 (증기와 톱니) ----------------
+ * 신화도 요괴도 아닌 발명가들. 세워 두고(포탑), 예열하고(증기 거상),
+ * 뒷줄을 노린다(비행선). 손이 많이 가지만 갖춰지면 단단하다. */
+SEASON_UNITS.push(
+  mk({id:'inventor',name:'대발명가',role:'공방장',shape:'inventor',castFx:'tesla',season:'clockwork',rarity:'UR',gacha:true,unlockStage:999,
+    body:'#e9d3b0',accent:'#ffb347',tunic:'#5a3b26',hp:1300,atk:90,range:240,speed:28,interval:1.8,
+    cost:540,cooldown:45,kb:2,ranged:true,scale:1.1,
+    ab:{summon:{id:'turret',n:1,max:3},interval:7},
+    abText:'7초마다 포탑 설치(최대 3) · 과부하',
+    desc:'톱니와 증기로 전장을 설계한다. 제자리에 박힌 포탑이 쉬지 않고 쏜다. 앞줄이 버텨 주면 포탑이 늘고, 무너지면 아무것도 못 세운다.',
+    active:{name:'과부하',kind:'overdrive',cd:50,radius:320,haste:{mul:.55,dur:6},desc:'주변 아군 공격 속도 크게 증가(6초)·기절 해제.'}}),
+  mk({id:'steammech',name:'증기 거상',role:'예열 포격',shape:'steammech',castFx:'steamburst',season:'clockwork',rarity:'SSR',gacha:true,unlockStage:999,
+    body:'#8a7a66',accent:'#ff8c42',tunic:'#4a4038',hp:2600,atk:70,range:250,speed:20,interval:1.2,
+    cost:470,cooldown:38,kb:1,ranged:true,area:true,areaRadius:75,scale:1.35,
+    ab:{spinup:{per:.1,max:1.2}},
+    abText:'예열 · 쏠수록 빨라짐(최대 2.2배) · 걸으면 식음 · 증기 폭발',
+    desc:'굴뚝에서 연기를 뿜는 걸어 다니는 포대. 처음엔 느리지만 멈춰 서서 쏠수록 불을 뿜는다. 전선이 자주 흔들리면 영영 예열되지 않는다.',
+    active:{name:'증기 폭발',kind:'steamburst',cd:46,radius:200,mul:2.2,push:90,desc:'가장 가까운 적 주변 피해·크게 밀쳐 냄.'}}),
+  mk({id:'airship',name:'비행선 폭격수',short:'비행선',role:'뒷줄 폭격',shape:'airship',castFx:'firestorm',season:'clockwork',rarity:'SR',gacha:true,unlockStage:999,
+    body:'#6b4b2a',accent:'#ff9f43',tunic:'#b8a27a',hp:700,atk:120,range:380,speed:30,interval:2.4,
+    cost:360,cooldown:24,kb:2,ranged:true,area:true,areaRadius:70,
+    ab:{backline:true,burn:{dps:30,dur:3}},
+    abText:'뒷줄 폭격 · 사거리 안 가장 먼 적 · 화상',
+    desc:'하늘에서 폭탄을 떨군다. 앞줄 너머의 주술사와 투석기를 노린다.'}),
+  mk({id:'teslaknight',name:'테슬라 기사',short:'테슬라',role:'방전',shape:'teslaknight',castFx:'tesla',season:'clockwork',rarity:'SR',gacha:true,unlockStage:999,
+    body:'#2b3038',accent:'#7fe3ff',tunic:'#3b4a5c',hp:1500,atk:90,range:80,speed:34,interval:1.3,
+    cost:340,cooldown:22,kb:1,scale:1.1,
+    ab:{chain:{n:2,fall:.6,range:110},stun:{chance:.12,dur:.6}},
+    abText:'방전 · 2번 튕김 · 12% 기절',
+    desc:'등에 코일을 짊어진 기사. 창끝에서 튄 전기가 옆의 적까지 태운다.'}),
+  mk({id:'clocksoldier',name:'태엽 병정',short:'태엽병정',role:'자폭 톱니',shape:'clocksoldier',season:'clockwork',rarity:'R',gacha:true,unlockStage:999,
+    body:'#b08d57',accent:'#e0c080',tunic:'#6b4f2e',hp:700,atk:45,range:70,speed:40,interval:1.1,
+    cost:200,cooldown:9,kb:2,
+    ab:{deathBomb:{dmg:160,radius:95}},
+    abText:'쓰러지면 톱니 폭발(범위 160)',
+    desc:'태엽을 감아 움직이는 병정. 부서질 때 톱니가 사방으로 튄다.'}),
+  mk({id:'mechanic',name:'정비공',role:'수리',shape:'mechanic',season:'clockwork',rarity:'R',gacha:true,unlockStage:999,
+    body:'#2b3038',accent:'#f5c542',tunic:'#3e5f7a',hp:560,atk:28,range:70,speed:36,interval:1.4,
+    cost:230,cooldown:12,kb:2,
+    ab:{heal:70,radius:180,interval:3.5},
+    abText:'주변 아군 수리(회복) · 약한 렌치',
+    desc:'렌치 하나로 사람도 기계도 고친다. 포탑과 거상 곁에 두면 오래 버틴다.'}),
+  mk({id:'rifleman',name:'소총수',role:'원거리',shape:'rifleman',season:'clockwork',rarity:'N',gacha:true,unlockStage:999,
+    body:'#2b3038',accent:'#b0b6bd',tunic:'#5a6b3a',hp:280,atk:50,range:300,speed:40,interval:1.3,
+    cost:150,cooldown:7,kb:2,ranged:true,
+    abText:'값싼 원거리',
+    desc:'공방에서 찍어 낸 소총을 든 민병. 싸고 멀리 쏜다.'}),
+  // 소환 전용
+  mk({id:'turret',name:'증기 포탑',role:'소환물',shape:'turret',unlockStage:999,
+    body:'#6b5a48',accent:'#ffb347',tunic:'#4a4038',hp:900,atk:55,range:300,speed:0,interval:.8,
+    cost:0,cooldown:0,kb:1,ranged:true,
+    ab:{hold:true,kbImmune:true},
+    desc:'대발명가가 세운 포탑. 움직이지 않고 쏘기만 한다.'})
+);
 // 전설·신화는 한 명씩만 전장에 설 수 있다. 머릿수로 밀어붙이는 병종이 아니라
 // 판을 바꾸는 특수 병종이기 때문이다.
 SEASON_UNITS.forEach(u => {
@@ -524,7 +629,15 @@ const SEASONS = [
   { id: 'nile', name: '나일의 왕가', sub: '이집트 신화',
     color: '#e8c65a', accent: '#8a6a1f',
     desc: '모래 아래 잠들어 있던 사자의 신과 사제들이 깨어났다.',
-    units: ['ra', 'bastet', 'anubis', 'rapriest', 'pharaoh', 'scarab', 'desertarcher'] }
+    units: ['ra', 'bastet', 'anubis', 'rapriest', 'pharaoh', 'scarab', 'desertarcher'] },
+  { id: 'yokai', name: '요괴록', sub: '한국 설화',
+    color: '#e0707a', accent: '#8e1f2f',
+    desc: '달 밝은 밤, 옛이야기 속 요괴와 저승의 관리들이 왕국 편에 섰다.',
+    units: ['gumiho', 'saja', 'dokkaebi', 'haetae', 'mudang', 'hwarang', 'pojol'] },
+  { id: 'clockwork', name: '태엽 공방', sub: '증기와 톱니',
+    color: '#d9a066', accent: '#6b4a24',
+    desc: '연기 자욱한 공방에서 발명가들이 기계 군단을 끌고 나왔다.',
+    units: ['inventor', 'steammech', 'airship', 'teslaknight', 'clocksoldier', 'mechanic', 'rifleman'] }
 ];
 
 /* 소환 풀: 시즌 병종 + (다른 시즌은 낮은 확률로) */
@@ -752,7 +865,7 @@ STAGES.push(
     W(2,'orcshield',4,2),W(22,'siegeram',2,5),W(46,'ballista',6,2),W(72,'frostgiant',1),W(100,'orcshield',6,1.8),W(126,'orccatapult',3,5),W(154,'warchief',2,5),W(184,'frostgiant',1),W(214,'dark',7,1.8)]},
   {name:'★ 영원의 겨울 왕좌',hint:'연속 광역 공격 뒤 왕명으로 회복',baseHp:44000,money:440,rate:54,reward:1600,boss:true,enemyMul:3.0,waves:[
     W(2,'wolf',8,1),W(24,'frostgiant',1),W(52,'troll',1),W(78,'orcshield',6,1.8),W(104,'frostgiant',1),W(136,'golem',2,5),W(164,'warchief',2,5),W(192,'frostgiant',1),W(224,'orcberserk',8,1)]},
-  {name:'불타는 태양 회랑',hint:'화상을 정화하며 화룡을 견제',baseHp:45500,money:445,rate:55,reward:1500,enemyMul:2.85,waves:[
+  {name:'불타는 태양 회랑',hint:'화상을 정화하며 화룡을 견제',baseHp:45500,money:445,rate:55,reward:1500,enemyMul:3.3,waves:[
     W(2,'hellhound',9,.8),W(26,'powder',6,1.8),W(52,'drake',1),W(80,'plaguer',6,2),W(108,'orcshield',6,1.8),W(138,'drake',1),W(170,'hellhound',10,.8),W(200,'siegeram',2,4),W(230,'dark',7,1.5)]},
   {name:'황금 일식의 제단',hint:'치유·가속 토템을 범위 공격으로 압박',baseHp:47500,money:450,rate:56,reward:1650,boss:true,enemyMul:3.05,waves:[
     W(2,'orcshield',5,2),W(26,'totem',2,6),W(50,'shaman',5,3),W(78,'warlord',1),W(108,'golem',2,5),W(140,'drake',1),W(174,'warchief',3,5),W(208,'orcberserk',8,1),W(240,'lich',2,8)]},
@@ -782,6 +895,10 @@ const HARD_STAGE_MODS = {
   27: ['horde', 'ironclad'], 29: ['giantslayer', 'curse', 'horde', 'blitz']
 };
 STAGES.forEach((st, i) => { if (!st.mods && HARD_STAGE_MODS[i]) st.mods = HARD_STAGE_MODS[i]; });
+// 전설·신화 풀이 넓어질수록 몰아 넣기만 한 편성도 두루 갖춘다. 조합이 필요한
+// 1막 전장은 적 배율을 따로 올려 둔다.
+STAGES[17].enemyMul = 2.0;
+STAGES[19].enemyMul = 1.74;
 
 /* 전장 길이. 예전엔 모두 2000 이라 병사가 적과 부딪히기까지 40초 넘게 걸어야 했다.
  * 초반은 짧게 붙고, 뒤로 갈수록·보스 전장일수록 조금씩 길어진다. */

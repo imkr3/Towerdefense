@@ -31,7 +31,8 @@ function syncLoadout() {
   const known = new Set(save.knownUnits || unlocked.map(u => u.id));
   save.loadout = [...new Set(save.loadout || [])].filter(id => unlocked.some(u => u.id === id));
   unlocked.forEach(u => {
-    if (!known.has(u.id) && save.loadout.length < LOADOUT_MAX && !save.loadout.includes(u.id)) {
+    if (!known.has(u.id) && save.loadout.length < LOADOUT_MAX && !save.loadout.includes(u.id) &&
+        !(isHeroUnit(u) && save.loadout.filter(id => isHeroUnit(UNIT_BY_ID[id])).length >= HERO_SLOT_MAX)) {
       save.loadout.push(u.id);
     }
   });
@@ -119,6 +120,9 @@ function askConfirm(title, text, onYes) {
   SFX.ui();
 }
 
+/* 12345 -> 12,345 */
+function fmtNum(n) { return Math.floor(n || 0).toLocaleString('en-US'); }
+
 let toastTimer = null;
 function toast(msg) {
   let t = $('.toast');
@@ -202,7 +206,7 @@ function renderQuest(tab) {
   refreshDaily();
   questTab = tab || questTab || 'daily';
   $('#quest-stones').textContent = save.stones;
-  $('#quest-gold').textContent = save.coins;
+  $('#quest-gold').textContent = fmtNum(save.coins);
   $$('#quest-tabs .season-tab').forEach(b =>
     b.classList.toggle('on', b.dataset.qtab === questTab));
 
@@ -316,7 +320,7 @@ function trailPoint(k, n) {
 }
 
 function renderMap() {
-  $('#map-coins').textContent = save.coins;
+  $('#map-coins').textContent = fmtNum(save.coins);
   updateQuestBadge();
   const pct = (save.cleared / STAGES.length) * 100;
   $('#map-progress').style.width = pct + '%';
@@ -501,7 +505,7 @@ function starMarks(n) {
 
 /* ------------------------------ 강화 ------------------------------ */
 function renderShop() {
-  $('#shop-coins').textContent = save.coins;
+  $('#shop-coins').textContent = fmtNum(save.coins);
   const box = $('#shop-list');
   box.innerHTML = '';
   Object.keys(UPGRADES).forEach(key => {
@@ -539,7 +543,7 @@ function renderShop() {
 let trainingFilter = 'ally';
 function renderTraining() {
   const hardCap = UNIT_LEVEL_HARD_CAP + (save.upgrades.academy || 0);
-  $('#train-coins').textContent = save.coins;
+  $('#train-coins').textContent = fmtNum(save.coins);
   const cap = unitLevelCap(save.cleared, save.upgrades.academy);
   $('#train-cap').innerHTML =
     '레벨 상한 <b>' + cap + '</b>' +
@@ -790,7 +794,7 @@ function showPullResult(results) {
 
 function renderGacha() {
   $('#gacha-stones').textContent = save.stones;
-  $('#gacha-gold').textContent = save.coins;
+  $('#gacha-gold').textContent = fmtNum(save.coins);
   $('#tab-stones').textContent = save.stones;
   $('#pity-left').textContent = Math.max(0, GACHA.pity - save.pity);
 
@@ -838,7 +842,7 @@ function renderGacha() {
   const rate = $('#rate-box');
   let total = 0;
   RARITY_ORDER.forEach(k => { total += RARITY[k].weight; });
-  rate.innerHTML = '<div class="rate-title">기본 등급 확률 · 확정 소환 제외</div>' +
+  rate.innerHTML = '<div class="rate-title">기본 확률 (확정 제외)</div>' +
     RARITY_ORDER.slice().reverse().map(k =>
       '<div class="rate-row r-' + k + '"><span>' + RARITY[k].name + '</span><span>' +
       (RARITY[k].weight / total * 100).toFixed(1) + '%</span></div>').join('') +
@@ -949,7 +953,7 @@ function buildCards() {
     b.setAttribute('aria-label', u.name + ' 출진, 비용 ' + u.cost);
     b.innerHTML =
       '<canvas class="c-ico"></canvas>' +
-      '<div class="c-lv">레벨 ' + (save.levels[u.id] || 1) + '</div>' +
+      '<div class="c-lv">Lv' + (save.levels[u.id] || 1) + '</div>' +
       '<div class="c-name">' + (u.short || u.name) + '</div>' +
       '<div class="c-role">' + u.role + '</div>' +
       '<div class="c-cost">' + u.cost + '</div>' +
@@ -1349,8 +1353,13 @@ function drawTitle(dt) {
 
 function refreshTitleBadges() {
   $('#badge-progress').textContent = '돌파 ' + save.cleared + ' / ' + STAGES.length;
-  $('#badge-gold').textContent = '💰 ' + save.coins;
+  $('#badge-gold').textContent = '💰 ' + fmtNum(save.coins);
   $('#badge-stones').textContent = '🔮 ' + save.stones;
+  // 이어하기: 지금 도전할 전장으로 바로 들어간다 (첫 판은 진군도에서 안내를 보고 시작)
+  const cont = $('#btn-continue');
+  const next = save.cleared < STAGES.length ? save.cleared : -1;
+  cont.hidden = !(save.cleared >= 1 && next >= 0);
+  if (!cont.hidden) $('#continue-stage').textContent = (next + 1) + '. ' + STAGES[next].name;
 }
 
 function init() {
@@ -1387,6 +1396,10 @@ function init() {
   $('#btn-start').addEventListener('click', () => {
     if (SaveStore.blocked) { $('#modal-save').classList.add('show'); return; }
     show('scr-map');
+  });
+  $('#btn-continue').addEventListener('click', () => {
+    if (SaveStore.blocked) { $('#modal-save').classList.add('show'); return; }
+    if (save.cleared < STAGES.length) startBattle(save.cleared);
   });
   $('#btn-howto').addEventListener('click', () => $('#modal-howto').classList.add('show'));
   $$('[data-close]').forEach(b => b.addEventListener('click',

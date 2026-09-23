@@ -267,4 +267,83 @@ test('Stage traits: armored, horde, hero hunters and curse', () => {
   cu.step(cu.allies, [], cu.enemyCastle, 1, true); assert.ok(sk.hp < sk.maxHp * 0.95);
 });
 
+/* ---------------- 요괴록 · 태엽 공방 ---------------- */
+const rnd = v => { const r = ctx.Math.random; ctx.Math.random = () => v; return () => { ctx.Math.random = r; }; };
+test('Gumiho charms non-boss foes into hitting their own side', () => {
+  const b = hero('gumiho'), g = b.makeAlly(U.gumiho, 400);
+  const a = new Fighter(E.orcspear, 'enemy', 600), c = new Fighter({ ...E.goblin, hp: 5000 }, 'enemy', 640);
+  b.enemies.push(a, c);
+  const undo = rnd(0); b.hitOne(1, a, g, false); undo();
+  assert.ok(a.charmT > 0);
+  const hp = c.hp; a.cd = 0; b.step(b.enemies, b.allies, b.allyCastle, 0.05, false);
+  assert.ok(c.hp < hp, 'charmed foe strikes its ally'); assert.equal(a.x, 600, 'charmed foe does not advance');
+  const boss = new Fighter(E.troll, 'enemy', 600); boss.boss = true;
+  const undo2 = rnd(0); b.hitOne(1, boss, g, false); undo2(); assert.equal(boss.charmT, 0);
+});
+test('Reaper executes low non-boss foes but never bosses', () => {
+  const b = hero('saja'), r = b.makeAlly(U.saja, 400);
+  const e = new Fighter({ ...E.goblin, hp: 1000 }, 'enemy', 480); e.hp = 230; b.hitOne(40, e, r, false);
+  assert.equal(e.dead, true);
+  const boss = new Fighter({ ...E.troll, hp: 1000 }, 'enemy', 480); boss.boss = true; boss.hp = 150;
+  b.hitOne(10, boss, r, false); assert.equal(boss.dead, false);
+});
+test('Dokkaebi bounty adds war funds, capped by the wallet', () => {
+  const b = hero('dokkaebi'), d = b.makeAlly(U.dokkaebi, 400); b.money = 0;
+  const undo = rnd(0); b.hitOne(1, new Fighter({ ...E.goblin, hp: 5000 }, 'enemy', 480), d, false); undo();
+  assert.equal(b.money, U.dokkaebi.ab.bounty.gold);
+  b.money = b.walletMax; const u2 = rnd(0); b.hitOne(1, new Fighter({ ...E.goblin, hp: 5000 }, 'enemy', 480), d, false); u2();
+  assert.equal(b.money, b.walletMax);
+});
+test('Mudang weakens the damage a foe deals, then wears off', () => {
+  const b = hero('mudang'), m = b.makeAlly(U.mudang, 400), e = new Fighter(E.orcspear, 'enemy', 500);
+  const full = b.rollDamage(e).dmg; b.hitOne(1, e, m, false);
+  assert.ok(Math.abs(b.rollDamage(e).dmg - full * 0.7) < 1e-9);
+  b.step([e], [], b.allyCastle, 5, false); assert.equal(e.weakMul, 1);
+});
+test('Steam colossus spins up while firing and cools when it walks', () => {
+  const b = hero('steammech'), m = b.makeAlly(U.steammech, 400); b.allies.push(m);
+  const e = new Fighter({ ...E.goblin, hp: 99999 }, 'enemy', 560); b.enemies.push(e);
+  const i0 = m.intervalNow;
+  for (let k = 0; k < 40; k++) { m.cd = 0; b.step(b.allies, b.enemies, b.enemyCastle, 0.01, true); }
+  assert.ok(Math.abs(m.spin - U.steammech.ab.spinup.max) < 1e-9); assert.ok(m.intervalNow < i0 / 2);
+  b.enemies.length = 0; b.step(b.allies, b.enemies, b.enemyCastle, 0.01, true); assert.equal(m.spin, 0);
+});
+test('Airship bombs the farthest foe in range, others the nearest', () => {
+  const b = hero('airship'), a = b.makeAlly(U.airship, 400), k = b.makeAlly(U.spear, 400);
+  const near = new Fighter(E.goblin, 'enemy', 450), far = new Fighter(E.goblin, 'enemy', 700);
+  assert.equal(b.findTarget(a, [near, far], b.enemyCastle), far);
+  assert.equal(b.findTarget(k, [near, far], b.enemyCastle), near);
+});
+test('Inventor builds at most three turrets, and turrets hold position', () => {
+  const b = hero('inventor'), inv = b.makeAlly(U.inventor, 300); b.allies.push(inv);
+  for (let k = 0; k < 6; k++) { inv.abCd = 0; b.supportTick(inv, b.allies, 0.01, true); }
+  const t = b.allies.filter(x => x.s.id === 'turret');
+  assert.equal(t.length, 3); assert.ok(t.every(x => x.summoned && x.ab.hold));
+});
+test('Overdrive hastes nearby allies and clears stuns', () => {
+  const b = heroBattle('inventor'); b.heroCooldowns.inventor = 0;
+  const s2 = b.makeAlly(U.spear, 620); s2.stunT = 2; b.allies.push(s2);
+  assert.equal(b.useHeroActive('inventor'), true);
+  assert.ok(s2.hasteT > 0 && s2.hasteMul < 1); assert.equal(s2.stunT, 0);
+});
+test('Clockwork soldier explodes when destroyed', () => {
+  const b = hero('clocksoldier'), c = b.makeAlly(U.clocksoldier, 500); b.allies.push(c);
+  const e = new Fighter({ ...E.goblin, hp: 5000 }, 'enemy', 540); b.enemies.push(e);
+  c.dead = true; const hp = e.hp; b.reap(b.allies, b.enemies, b.enemyCastle, false);
+  assert.ok(e.hp < hp);
+});
+test('A squad brings at most five legends and mythics', () => {
+  const s = save(); ['hades','odin','ra','gumiho','inventor','zeus','thor'].forEach(id => { s.owned[id] = 1; });
+  s.loadout = ['hades','odin','ra','gumiho','inventor','zeus','thor','spear'];
+  const b = new Battle(0, s); const ids = b.roster.map(u => u.id);
+  assert.equal(ids.filter(id => U[id].rarity === 'UR' || U[id].rarity === 'SSR').length, 5);
+  assert.ok(ids.includes('spear')); assert.ok(!ids.includes('zeus'));
+});
+test('Five seasons, every summon points at a real unit', () => {
+  const { SEASONS } = vm.runInContext('({SEASONS})', ctx);
+  assert.equal(SEASONS.length, 5);
+  for (const sn of SEASONS) for (const id of sn.units) { assert.ok(U[id], id); assert.equal(U[id].season, sn.id); }
+  for (const u of UNITS) if (u.ab && u.ab.summon) assert.ok(U[u.ab.summon.id], u.id);
+});
+
 console.log(count + ' regression checks passed');

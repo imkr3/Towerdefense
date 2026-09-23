@@ -81,6 +81,9 @@ class Fighter {
     this.age = 0;
     this.engaged = false;
     this.healMul = 1;           // 저주 전장에서는 절반
+    this.weakT = 0; this.weakMul = 1;   // 무당의 액막이: 이 적이 주는 피해가 준다
+    this.charmT = 0;                    // 구미호의 홀림: 제 편을 친다
+    this.spin = 0;                      // 증기 거상: 쏠수록 빨라진다
     this.scale = stats.scale || 1;
     this.radius = 26 * this.scale;
 
@@ -120,6 +123,7 @@ class Fighter {
     let v = this.s.interval * this.rateMul;
     if (this.slowT > 0) v *= SLOW_RATE_MUL;
     if (this.hasteT > 0) v *= this.hasteMul;
+    if (this.spin > 0) v /= (1 + this.spin);
     if (this.ab.enrage) {                       // 피가 깎일수록 빨라진다
       const missing = 1 - this.hp / this.maxHp;
       v /= (1 + (this.ab.enrage - 1) * missing);
@@ -316,7 +320,9 @@ class Battle {
     const unlocked = this.unlockedUnits();
     const picked = [...new Set(this.save.loadout || [])].filter(id => unlocked.some(u => u.id === id));
     const list = picked.length ? picked.map(id => UNIT_BY_ID[id]) : unlocked.slice(0, LOADOUT_MAX);
-    return list.slice(0, LOADOUT_MAX);
+    // 전설·신화는 앞에서부터 HERO_SLOT_MAX 명까지만 데려간다
+    let heroes = 0;
+    return list.filter(u => !isHeroUnit(u) || ++heroes <= HERO_SLOT_MAX).slice(0, LOADOUT_MAX);
   }
 
   canDeploy(id) {
@@ -359,15 +365,16 @@ class Battle {
     const f=this.heroCaster(id), u=UNIT_BY_ID[id];
     return !!(this.state==='play' && u && u.active && this.roster.some(r=>r.id===id) && f &&
       f.stunT<=0 && f.kbTimer<=0 && (this.heroCooldowns[id]||0)<=0 && this.heroGlobalCd<=0 &&
-      (u.active.barrier || this.heroTarget(f)));
+      (u.active.barrier || u.active.haste || this.heroTarget(f)));
   }
   useHeroActive(id) {
     if(!this.canHeroActive(id)) return false;
-    const f=this.heroCaster(id), a=f.s.active, target=a.barrier?f:this.heroTarget(f);
+    const f=this.heroCaster(id), a=f.s.active, buff=a.barrier||a.haste, target=buff?f:this.heroTarget(f);
     this.heroCooldowns[id]=a.cd; this.heroGlobalCd=6;
-    if(a.barrier) {
+    if(buff) {
       for(const m of this.allies) if(!m.dead && Math.abs(m.x-f.x)<=a.radius) {
-        m.giveBarrier(a.barrier*f.abMul);m.poisonT=0;m.poisonDps=0;m.burnT=0;m.burnDps=0;
+        if(a.barrier){m.giveBarrier(a.barrier*f.abMul);m.poisonT=0;m.poisonDps=0;m.burnT=0;m.burnDps=0;}
+        if(a.haste){m.hasteMul=m.hasteT>0?Math.min(m.hasteMul,a.haste.mul):a.haste.mul;m.hasteT=Math.max(m.hasteT,a.haste.dur);m.stunT=0;}
       }
     } else {
       this._chaining = true;          // 액티브의 광역 타격이 대상마다 연쇄를 다시 일으키지 않게
@@ -376,6 +383,9 @@ class Battle {
         if(!e.dead) {
           if(a.slow)e.slowT=Math.max(e.slowT,a.slow);
           if(a.stun)e.stunT=Math.max(e.stunT,a.stun);
+          if(a.charm&&!e.boss){e.charmT=Math.max(e.charmT,a.charm);this.fx.push({type:'charm',x:e.x,row:e.row,t:.7,life:.7});}
+          if(a.execute)this.tryExecute(e,a.execute);
+          if(a.push&&!e.ab.kbImmune&&!e.dead){e.x=Math.max(60,Math.min(WORLD-60,e.x+f.dir*a.push));e.kbTimer=Math.max(e.kbTimer,.3);}
           if(a.burn){if(e.burnT<=0)e.burnDps=0;e.burnT=Math.max(e.burnT,a.burn);e.burnDps=Math.max(e.burnDps,24*f.abMul);}
         }
       }
@@ -610,6 +620,7 @@ class Battle {
       if (f.rallyT > 0) { f.rallyT -= dt; if (f.rallyT <= 0) f.rallyMul = 1; }
       if (f.vulnT > 0) { f.vulnT -= dt; if (f.vulnT <= 0) f.vulnMul = 1; }
       if (f.reCd > 0) f.reCd -= dt;
+      if (f.weakT > 0) { f.weakT -= dt; if (f.weakT <= 0) f.weakMul = 1; }
       f.bob += dt * (f.speedNow / 22);
 
       const burning = f.burnT > 0;
@@ -648,6 +659,13 @@ class Battle {
         continue;
       }
 
+      // 홀린 적은 제 편을 친다. 앞으로 나가지도 않는다.
+      if (f.charmT > 0) {
+        f.charmT -= dt;
+        this.charmedTick(f, list, dt);
+        continue;
+      }
+
       // 지원 능력 (표적과 무관하게 주기적으로 발동)
       this.supportTick(f, list, dt, isAlly);
 
@@ -659,8 +677,10 @@ class Battle {
           f.cd = f.intervalNow;
           f.swing = 0.22;
           this.attack(f, target, foes, foeCastle);
+          if (f.ab.spinup) f.spin = Math.min(f.ab.spinup.max, f.spin + f.ab.spinup.per);
         }
       } else if (!f.ab.hold && this.canAdvance(f, foes)) {
+        f.spin = 0;                                 // 걸으면 식는다
         f.moving = f.speedNow > 0;
         f.x += f.dir * f.speedNow * dt;
         f.x = Math.max(60, Math.min(WORLD - 60, f.x));
@@ -752,8 +772,15 @@ class Battle {
         if (isAlly) {
           const u = UNIT_BY_ID[ab.summon.id];
           if (u) {
+            // 포탑처럼 수가 정해진 소환물은 그 이상 세우지 않는다
+            if (ab.summon.max) {
+              let mine = 0;
+              for (const a of this.allies) if (!a.dead && a.summonedBy === f) mine++;
+              if (mine >= ab.summon.max) break;
+            }
             const m = this.makeAlly(u, sx);
             m.summoned = true;
+            m.summonedBy = f;
             this.allies.push(m);
           }
         } else {
@@ -997,11 +1024,13 @@ class Battle {
     if (f.ab.noAttack) return null;
     const reach = f.attackRange + f.radius;
     let best = null, bestD = Infinity;
+    // 비행선 폭격: 사거리 안에서 가장 먼(뒷줄) 적을 노린다
+    const back = !!f.ab.backline;
     for (const e of foes) {
       if (e.dead) continue;
       const d = (e.x - f.x) * f.dir;
       if (d < -f.radius || d > reach + e.radius) continue;
-      if (d < bestD) { bestD = d; best = e; }
+      if (back ? (best === null || d > -bestD) : d < bestD) { bestD = back ? -d : d; best = e; }
     }
     if (best) return best;
     if (!foeCastle.dead) {
@@ -1014,6 +1043,7 @@ class Battle {
   rollDamage(f) {
     let dmg = f.atk;
     if (f.rallyT > 0) dmg *= f.rallyMul;                // 오딘의 지휘
+    if (f.weakT > 0) dmg *= f.weakMul;                  // 액막이에 걸린 적
     let crit = false;
     if (f.ab.crit && Math.random() < f.ab.crit.chance) {
       dmg = Math.round(dmg * f.ab.crit.mul);
@@ -1130,6 +1160,46 @@ class Battle {
       target.x += src.dir * ab.push * 0.01 * 60;
       target.kbTimer = Math.max(target.kbTimer, 0.12);
     }
+    if (ab.weaken) {                              // 액막이: 이 적이 주는 피해가 준다
+      target.weakT = Math.max(target.weakT, ab.weaken.dur);
+      target.weakMul = Math.min(target.weakMul, ab.weaken.mul);
+    }
+    if (ab.charm && !target.boss && Math.random() < ab.charm.chance) {
+      target.charmT = Math.max(target.charmT, ab.charm.dur);
+      this.fx.push({ type: 'charm', x: target.x, row: target.row, t: 0.7, life: 0.7 });
+    }
+    if (ab.bounty && src.side === 'ally' && Math.random() < ab.bounty.chance) {
+      this.money = Math.min(this.walletMax, this.money + ab.bounty.gold);
+      this.fx.push({ type: 'coin', x: target.x, row: target.row, v: ab.bounty.gold, t: 0.8, life: 0.8 });
+    }
+    if (ab.execute) this.tryExecute(target, ab.execute);
+  }
+
+  /* 저승사자: 명부에 오른(체력이 낮은) 적은 그 자리에서 거둔다. 보스는 예외. */
+  tryExecute(target, pct) {
+    if (target.dead || target.isCastle || target.boss) return false;
+    if (target.hp > target.maxHp * pct) return false;
+    target.hp = 0;
+    target.dead = true;
+    this.fx.push({ type: 'reap', x: target.x, row: target.row, t: 0.6, life: 0.6 });
+    return true;
+  }
+
+  /* 홀린 적: 가장 가까운 제 편을 친다 */
+  charmedTick(f, list, dt) {
+    f.cd -= dt;
+    let best = null, bd = Infinity;
+    const reach = Math.max(80, f.attackRange);
+    for (const e of list) {
+      if (e === f || e.dead) continue;
+      const d = Math.abs(e.x - f.x);
+      if (d <= reach && d < bd) { bd = d; best = e; }
+    }
+    if (!best || f.cd > 0) return;
+    f.cd = f.intervalNow;
+    f.swing = 0.22;
+    this.hitOne(f.atk, best, null, false);
+    this.fx.push({ type: 'hit', x: best.x, row: best.row, dir: -f.dir, t: 0.2, life: 0.2 });
   }
 
   /* 제우스의 연쇄 번개. 맞은 적에서 가까운 적으로 줄줄이 옮겨 가며 약해진다.

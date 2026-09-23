@@ -500,6 +500,118 @@ class GLFx {
         break;
       }
 
+      /* 여우불: 나선을 그리며 피어오르는 분홍 불꽃 (구미호) */
+      case 'foxfire':
+      case 'foxbead': {
+        const bead = kind === 'foxbead';
+        const rings = bead ? 3 : 2;
+        for (let r0 = 0; r0 < rings; r0++) {
+          const n = N(bead ? 40 : 26);
+          for (let i = 0; i < n; i++) {
+            const a = i / n * TAU + r0;
+            const rr = R * (0.35 + r0 * 0.3);
+            this.add(x + Math.cos(a) * rr, y - 20 * sc + Math.sin(a) * rr * 0.3,
+                     -Math.sin(a) * 90 * sc, rnd(-180, -60) * sc,
+                     rnd(0.5, 1.0), rnd(12, 22) * sc * big, 2 * sc,
+                     i % 3 ? col : white, 0.9, 1.3, 0, rnd(-4, 4), -40, 1.6);
+          }
+        }
+        for (let i = 0, n = N(bead ? 9 : 5); i < n; i++) {     // 떠도는 도깨비불 구슬
+          const a = rnd(0, TAU);
+          this.add(x + Math.cos(a) * R * 0.5, y - rnd(30, 90) * sc, Math.cos(a) * 30, rnd(-60, -20),
+                   rnd(0.8, 1.3), 16 * sc * big, 6 * sc, white, 1, 1, 0, 0, 0, 1.2);
+          this.add(x + Math.cos(a) * R * 0.5, y - rnd(30, 90) * sc, Math.cos(a) * 30, rnd(-60, -20),
+                   rnd(0.8, 1.3), 34 * sc * big, 10 * sc, col, 0.7, 1, 0, 0, 0, 1.2);
+        }
+        if (bead) this.add(x, y - 50 * sc, 0, 0, 0.6, 30 * sc, 200 * sc, col, 0.8, 1, 0, 0, 0, 1.5);
+        break;
+      }
+
+      /* 먹선 일섬: 가로로 긋는 푸른 넋의 선과 흩어지는 혼불 (저승사자) */
+      case 'inkslash':
+      case 'reaproll': {
+        const roll = kind === 'reaproll';
+        const cy = y - 30 * sc;
+        const L = (roll ? R * 1.1 : 110 * sc) * big;
+        for (let s2 = 0; s2 < (roll ? 3 : 1); s2++) {
+          const n = N(40), yy = cy + (s2 - (roll ? 1 : 0)) * 22 * sc;
+          for (let i = 0; i < n; i++) {
+            const t = i / (n - 1) * 2 - 1;
+            this.add(x + t * L, yy + t * 6 * sc, 0, 0, rnd(0.25, 0.45),
+                     22 * sc * (1 - Math.abs(t) * 0.7), 4 * sc, i % 2 ? col : white, 0.9, 3, 0.05, 0, 0, 1.4);
+          }
+        }
+        for (let i = 0, n = N(roll ? 60 : 26); i < n; i++) {   // 올라가는 혼불
+          this.add(x + rnd(-L, L), cy + rnd(-10, 20) * sc, rnd(-20, 20), rnd(-160, -60) * sc,
+                   rnd(0.6, 1.2), rnd(6, 13) * sc, 2 * sc, i % 3 ? white : col, 0.85, 1, 0, 0, -30, 1.8);
+        }
+        break;
+      }
+
+      /* 금화 분수 (도깨비) */
+      case 'goldburst': {
+        const gold = [1, 0.82, 0.3];
+        for (let i = 0, n = N(60); i < n; i++) {
+          const a = rnd(-Math.PI * 0.85, -Math.PI * 0.15), sp = rnd(160, 420) * sc;
+          this.add(x, y - 20 * sc, Math.cos(a) * sp, Math.sin(a) * sp, rnd(0.5, 0.9),
+                   rnd(7, 12) * sc * big, rnd(5, 9) * sc, i % 4 ? gold : white, 1, 0.55, 0, rnd(-9, 9), 900, 3);
+        }
+        this.add(x, y - 20 * sc, 0, 0, 0.25, 20 * sc, 110 * sc * big, col, 0.8, 1, 0, 0, 0, 1.3);
+        break;
+      }
+
+      /* 테슬라 방전: 옆으로 갈라지는 전광 (대발명가 · 테슬라 기사) */
+      case 'tesla': {
+        const cy = y - 40 * sc;
+        for (let b = 0; b < 4; b++) {
+          let px = x, py = cy;
+          const dir = b % 2 ? 1 : -1, segs = N(18);
+          for (let k = 0; k < segs; k++) {
+            const nx = px + dir * rnd(6, 14) * sc * big, ny = py + rnd(-12, 12) * sc;
+            const steps = 3;
+            for (let t = 0; t < steps; t++) {
+              this.add(px + (nx - px) * t / steps, py + (ny - py) * t / steps, 0, 0,
+                       rnd(0.12, 0.25), 9 * sc, 3 * sc, t ? col : white, 1, 1, 0, 0, 0, 1);
+            }
+            px = nx; py = ny;
+          }
+        }
+        for (let i = 0, n = N(36); i < n; i++) {
+          const a = rnd(0, TAU), sp = rnd(100, 320) * sc;
+          this.add(x, cy, Math.cos(a) * sp, Math.sin(a) * sp, rnd(0.2, 0.45), rnd(4, 8) * sc, 1,
+                   white, 1, 2.4, a, 0, 300, 2);
+        }
+        this.add(x, cy, 0, 0, 0.2, 18 * sc, 90 * sc * big, col, 0.9, 1, 0, 0, 0, 1.3);
+        break;
+      }
+
+      /* 증기 폭발: 퍼지는 흰 김과 주황 불티 (증기 거상) */
+      case 'steamburst':
+      case 'overdrive': {
+        const steam = [0.92, 0.92, 0.9];
+        const od = kind === 'overdrive';
+        for (let i = 0, n = N(od ? 50 : 70); i < n; i++) {
+          const a = rnd(-Math.PI, 0), sp = rnd(80, 260) * sc;
+          this.add(x + rnd(-R, R) * 0.3, y - 10 * sc, Math.cos(a) * sp, Math.sin(a) * sp * 0.6,
+                   rnd(0.6, 1.2), rnd(18, 30) * sc * big, rnd(50, 80) * sc, od ? col : steam, 0.35, 1, 0, 0, -40, 1.3);
+        }
+        for (let i = 0, n = N(50); i < n; i++) {
+          const a = rnd(-Math.PI, 0), sp = rnd(200, 520) * sc;
+          this.add(x, y - 16 * sc, Math.cos(a) * sp, Math.sin(a) * sp, rnd(0.3, 0.7),
+                   rnd(4, 9) * sc, 1, i % 3 ? col : white, 1, 2.2, a, 0, 700, 2);
+        }
+        if (od) {                                          // 과부하: 톱니 고리
+          for (let i = 0, n = N(48); i < n; i++) {
+            const a = i / n * TAU;
+            this.add(x + Math.cos(a) * R, y - 30 * sc + Math.sin(a) * R * 0.3,
+                     -Math.sin(a) * R * 1.4, Math.cos(a) * R * 0.4, rnd(0.5, 0.8),
+                     (i % 2 ? 16 : 8) * sc, 3 * sc, col, 0.9, 1.6, a, 0, 0, 1.2);
+          }
+        }
+        this.add(x, y - 20 * sc, 0, 0, 0.35, 30 * sc, 160 * sc * big, white, 0.6, 1.8, 0, 0, 0, 1.5);
+        break;
+      }
+
       /* 교차 참격 */
       case 'slash': {
         const cy = y - 34 * sc;
