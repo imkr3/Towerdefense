@@ -50,6 +50,8 @@ async function runSize(browser, size) {
 
   await page.goto(PAGE);
   // 어느 정도 진행한 저장 상태를 심어 모든 화면을 확인한다
+  // 기본 흐름은 한국어로 돈다. 영어는 맨 끝에 따로 확인한다.
+  await page.evaluate(() => localStorage.setItem('stick-kingdom-settings-v1', JSON.stringify({ lang: 'ko' })));
   await page.evaluate(() => localStorage.setItem('stick-kingdom-save-v1', JSON.stringify({
     cleared: 13, coins: 60000, stones: 30, tutorial: true,
     upgrades: { wallet: 3, income: 3, power: 3, vitality: 3, castle: 3 },
@@ -77,12 +79,22 @@ async function runSize(browser, size) {
   await page.waitForTimeout(250);
   await shot(page, 'map-' + size.w);
   const originalProgress=await page.evaluate(()=>save.cleared);
+  // 진군도는 장(章)마다 10개씩 보여 준다. 2막 첫 전장이 열리고 다음은 잠겨야 한다.
   const expansionMap=await page.evaluate(()=>{
-    save.cleared=20;renderMap();const cards=[...document.querySelectorAll('#stage-list .stage')];
-    return {count:cards.length,open:!cards[20].disabled,locked:cards[21].disabled,endless:!!document.querySelector('#endless-slot .e-btn')};
+    save.cleared=20;mapChapter=2;mapSel=-1;renderMap();const cards=[...document.querySelectorAll('#stage-list .stage')];
+    const res={count:cards.length,open:!cards[0].disabled&&cards[0].dataset.stage==='20',locked:cards[1].disabled};
+    mapChapter=3;renderMap();res.endless=!!document.querySelector('#endless-slot .e-btn');
+    return res;
   });
-  if(expansionMap.count!==30||!expansionMap.open||!expansionMap.locked||!expansionMap.endless)throw Error('Expansion progression or endless unlock broken');
-  await page.evaluate(n=>{save.cleared=n;renderMap();},originalProgress);
+  if(expansionMap.count!==10||!expansionMap.open||!expansionMap.locked||!expansionMap.endless)throw Error('Expansion progression or endless unlock broken: '+JSON.stringify(expansionMap));
+  await page.evaluate(n=>{save.cleared=n;mapChapter=-1;mapSel=-1;renderMap();},originalProgress);
+  const mapFit=await page.evaluate(()=>{
+    const r=document.querySelector('#btn-sortie').getBoundingClientRect(), d=document.querySelector('#stage-detail').getBoundingClientRect();
+    const nodes=[...document.querySelectorAll('#stage-list .stage')].map(n=>n.getBoundingClientRect()), t=document.querySelector('#trail').getBoundingClientRect();
+    return {go:r.bottom<=d.bottom+1&&r.height>20,nodes:nodes.every(n=>n.left>=t.left-2&&n.right<=t.right+2&&n.top>=t.top-2&&n.bottom<=t.bottom+2)};
+  });
+  if(!mapFit.go)failures.push(size.name+': 출진 버튼이 전장 정보 칸 밖으로 밀렸다');
+  if(!mapFit.nodes)failures.push(size.name+': 진군로 전장이 칸 밖으로 나갔다');
 
 
   // 병영
@@ -96,11 +108,37 @@ async function runSize(browser, size) {
   await page.click('#btn-units');
   await page.waitForTimeout(350);
   await shot(page, 'training-' + size.w);
+  // 편성: 칸끼리 끌면 자리가 바뀌고, 보유 카드를 칸에 끌어 놓으면 들어가고, 칸을 끌어내면 빠진다.
+  await page.click('#btn-open-formation');
+  await page.waitForTimeout(150);
+  await shot(page, 'formation-' + size.w);
+  const drag=async(from,to)=>{
+    const a=await page.locator(from).boundingBox(), b=await page.locator(to).boundingBox();
+    await page.mouse.move(a.x+a.width/2,a.y+a.height/2); await page.mouse.down();
+    await page.mouse.move(a.x+a.width/2+12,a.y+a.height/2+4,{steps:2});
+    await page.mouse.move(b.x+b.width/2,b.y+b.height/2,{steps:6}); await page.mouse.up();
+    await page.waitForTimeout(60);
+  };
   const beforeOrder=await page.evaluate(()=>save.loadout.slice());
-  await page.getByRole('button',{name:'창병 뒤로',exact:true}).click();
-  if(!await page.evaluate(ids=>save.loadout[1]===ids[0]&&save.loadout[0]===ids[1],beforeOrder))throw Error('Loadout reorder failed');
+  await drag('.f-slot[data-slot="0"]','.f-slot[data-slot="1"]');
+  if(!await page.evaluate(ids=>save.loadout[1]===ids[0]&&save.loadout[0]===ids[1],beforeOrder))throw Error('Loadout drag reorder failed');
+  await drag('.f-tile[data-unit="knight"]','.f-slot[data-slot="2"]');
+  if(!await page.evaluate(()=>save.loadout[2]==='knight'))throw Error('Drag from pool into slot failed');
+  await drag('.f-slot[data-slot="2"]','#formation-pool');
+  if(await page.evaluate(()=>save.loadout.includes('knight')))throw Error('Dragging a slot out did not remove it');
+  await page.click('.f-tile[data-unit="knight"]');
+  if(!await page.evaluate(()=>save.loadout.includes('knight')))throw Error('Tapping a pool card did not add it');
+  await page.click('.f-slot[data-slot="0"] .fs-remove');
+  if(await page.evaluate(ids=>save.loadout.includes(ids[1]),beforeOrder))throw Error('Slot remove button failed');
+  await page.evaluate(()=>{save.loadout=['spear','shield','archer','venom','mage'];saveGame(save);renderFormation();});
+  await page.click('.fp-row:nth-child(1) .fp-btn:nth-of-type(2)');
+  await page.evaluate(()=>{save.loadout=['spear'];saveGame(save);renderFormation();});
+  await page.click('.fp-row:nth-child(1) .fp-btn:nth-of-type(1)');
+  if(!await page.evaluate(()=>save.loadout.length===5))throw Error('Preset save/load failed');
+  const slotsFit=await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth&&document.querySelector('#formation-slots').getBoundingClientRect().right<=innerWidth);
+  if(!slotsFit)failures.push(size.name+': 편성 칸이 화면을 넘친다');
   await page.reload(); await page.click('#btn-start'); await page.click('#btn-units');
-  if(!await page.evaluate(ids=>save.loadout[1]===ids[0],beforeOrder))throw Error('Loadout order lost after reload');
+  if(!await page.evaluate(()=>save.loadout.length===5&&save.presets[0].length===5))throw Error('Loadout or preset lost after reload');
   await page.evaluate(()=>{for(const id of ['runeguard','musketeer','purifier','frostlancer']){const cv=document.createElement('canvas');drawUnitIcon(cv,UNIT_BY_ID[id],60);}});
 
   const cards = await page.$$eval('#units-list .unit-card', e => e.length);
@@ -134,7 +172,19 @@ async function runSize(browser, size) {
   if (!(await page.$eval('#scr-map', e => e.classList.contains('active')))) failures.push(size.name + ': 임무 뒤로 가기 오류');
 
   // 전투
-  await page.click('#stage-list .stage:nth-child(14)');
+  // 설정: 크기와 스위치가 기기에 남는다
+  await page.click('#btn-map-settings');
+  await page.fill('#set-bgm', '30');
+  await page.click('#set-shake');
+  await page.click('#modal-settings [data-close]');
+  if(!await page.evaluate(()=>{const d=JSON.parse(localStorage.getItem('stick-kingdom-settings-v1'));return d.bgm===0.3&&d.shake===false;}))failures.push(size.name+': 설정이 저장되지 않았다');
+  await page.evaluate(()=>{Settings.set('shake',true);});
+
+  // 전장을 한 번 누르면 고르고, 출진 버튼으로 나간다 (고른 전장을 또 누르면 바로 출진)
+  await page.evaluate(()=>{mapChapter=-1;mapSel=12;renderMap();});
+  await page.click('#stage-list .stage[data-stage="13"]');
+  if(!await page.evaluate(()=>mapSel===13&&$('#scr-map').classList.contains('active')))failures.push(size.name+': 전장 선택 오류');
+  await page.click('#btn-sortie');
   await page.waitForTimeout(300);
   await page.evaluate(() => window.__androidBack());
   if (!(await page.$eval('#modal-confirm', e => e.classList.contains('show')))) failures.push(size.name + ': Android 전투 포기 확인 누락');
@@ -215,6 +265,25 @@ async function runSize(browser, size) {
     await page.evaluate(()=>{renderer.render(battle,1/60);});
     await shot(page,'active-'+id+'-'+size.w);
   }
+
+  // 영어: 화면에 한글이 남지 않고, 번역이 전투를 멈추지 않는다
+  await page.evaluate(()=>{Settings.set('lang','en');});
+  await page.reload();
+  await page.waitForTimeout(250);
+  const hangulLeft=async()=>page.evaluate(()=>{const out=[];const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let n;
+    while((n=w.nextNode()))if(/[가-힣]/.test(n.nodeValue)&&n.parentElement.offsetParent!==null)out.push(n.nodeValue.trim());return out;});
+  let left=await hangulLeft();
+  await page.click('#btn-start'); await page.waitForTimeout(150); left=left.concat(await hangulLeft());
+  await page.click('#btn-formation'); await page.waitForTimeout(150); left=left.concat(await hangulLeft());
+  await shot(page,'formation-en-'+size.w);
+  await page.click('#btn-formation-back');
+  await page.click('#btn-sortie');
+  await page.waitForTimeout(1200);
+  left=left.concat(await hangulLeft());
+  const enAlive=await page.evaluate(()=>battle.time>0.5);
+  if(!enAlive)failures.push(size.name+': 영어로 전투가 돌지 않는다');
+  if(left.length)failures.push(size.name+': 영어 화면에 한글이 남았다 '+JSON.stringify([...new Set(left)].slice(0,8)));
+  await shot(page,'battle-en-'+size.w);
 
   errors.forEach(e => failures.push(size.name + ': ' + e));
   console.log('  ' + (errors.length ? '✗' : '✓') + ' ' + size.name +

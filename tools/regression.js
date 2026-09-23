@@ -5,7 +5,8 @@ const path = require('node:path');
 const vm = require('node:vm');
 const ctx = vm.createContext({ console, Math, JSON, saveGame() {} });
 for (const file of ['data', 'game']) vm.runInContext(fs.readFileSync(path.join(__dirname, '../js/' + file + '.js'), 'utf8'), ctx);
-const { Battle, Fighter, UNITS, UNIT_BY_ID: U, ENEMIES: E, makeEndlessStage } = vm.runInContext('({Battle, Fighter, UNITS, UNIT_BY_ID, ENEMIES, makeEndlessStage})', ctx);
+const { Battle, Fighter, UNITS, UNIT_BY_ID: U, ENEMIES: E, makeEndlessStage, STAGES } = vm.runInContext('({Battle, Fighter, UNITS, UNIT_BY_ID, ENEMIES, makeEndlessStage, STAGES})', ctx);
+const world = () => vm.runInContext('({WORLD, ENEMY_BASE_X, ENEMY_SPAWN_X})', ctx);
 function save() { return {cleared:20, coins:0, upgrades:{}, stars:{}, owned:{}, levels:{}, loadout:['spear','merchant','duelist']}; }
 function battle(stage) { return new Battle(0, save(), stage || {baseHp:10000,money:900,rate:0,waves:[],reward:0}); }
 let count = 0;
@@ -210,6 +211,27 @@ test('Hero actives do not re-trigger chain lightning on every target', () => {
   for (let i=0;i<6;i++) b.enemies.push(new Fighter({...E.ogre,hp:99999},'enemy',z.x+60+i*20));
   b.heroCooldowns.zeus=0; b.heroGlobalCd=0;
   assert.equal(b.useHeroActive('zeus'),true); assert.equal(b._chaining,false);
+});
+
+test('Every stage has its own shorter battlefield, bosses a little longer', () => {
+  for (const st of STAGES) { assert.ok(st.len >= 1200 && st.len < 2000, st.name + ' len ' + st.len); }
+  assert.ok(STAGES[0].len < STAGES[18].len);
+  assert.ok(STAGES[4].len > STAGES[3].len);                     // 보스 전장
+});
+test('A battle moves the enemy fort to the end of its own field', () => {
+  const b = new Battle(0, save()); let w = world();
+  assert.equal(w.WORLD, STAGES[0].len); assert.equal(b.enemyCastle.x, STAGES[0].len - 96);
+  const b2 = new Battle(19, save()); w = world();
+  assert.equal(w.WORLD, STAGES[19].len); assert.equal(b2.enemyCastle.x, w.ENEMY_BASE_X);
+  const e = b2.spawnEnemy('goblin'); assert.ok(e.x <= w.ENEMY_SPAWN_X && e.x > w.ENEMY_SPAWN_X - 50);
+  battle(); assert.equal(world().WORLD, 2000);                   // 길이 없는 임시 전장은 예전 길이
+});
+test('Units track age and engagement for animation only', () => {
+  const b = battle(), a = b.makeAlly(U.spear, 500); b.allies.push(a);
+  b.step(b.allies, [], b.enemyCastle, 0.1, true);
+  assert.ok(Math.abs(a.age - 0.1) < 1e-9); assert.equal(a.engaged, false);
+  const e = new Fighter(E.goblin, 'enemy', 530); b.enemies.push(e);
+  b.step(b.allies, b.enemies, b.enemyCastle, 0.1, true); assert.equal(a.engaged, true);
 });
 
 console.log(count + ' regression checks passed');

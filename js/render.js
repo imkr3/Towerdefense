@@ -63,6 +63,10 @@ class Renderer {
 
   /* 프레임 시간을 지켜보며 이펙트 품질(파티클 수)을 조절한다. */
   trackFrame(dt) {
+    // 설정에서 품질을 못 박았으면 따라간다
+    const q = (typeof Settings !== 'undefined') ? Settings.get('quality') : 'auto';
+    if (q === 'high') { this.fxq = 1; return; }
+    if (q === 'low') { this.fxq = 0; return; }
     const ms = Math.min(120, dt * 1000);
     this._frameMs += (ms - this._frameMs) * 0.12;
     if (this._qCool > 0) { this._qCool -= dt; return; }
@@ -355,14 +359,42 @@ class Renderer {
     const y = this.rowY(f.row);
     const moving = !!f.moving && f.stunT <= 0;
     const atk = Math.max(0, Math.min(1, f.swing / 0.22));
+    // 휘두르기 직전 뒤로 젖히는 준비 동작. 공격 간격이 짧은 병종은 짧게.
+    const windLen = Math.min(0.3, (f.intervalNow || f.s.interval || 1) * 0.35);
+    const wind = (f.engaged && !moving && atk === 0 && f.stunT <= 0 && f.kbTimer <= 0 && f.s.atk > 0 && f.cd < windLen)
+      ? 1 - Math.max(0, f.cd) / windLen : 0;
     // 휘두를 때 앞으로 파고들었다가 되돌아온다
-    const lunge = atk > 0 ? Math.sin(atk * Math.PI) * 7 * this.cs : 0;
+    const lunge = atk > 0 ? Math.sin(atk * Math.PI) * 7 * this.cs : -wind * 3 * this.cs;
     // 멈춰 있을 때는 숨쉬기
-    const breathe = (!moving && atk === 0) ? Math.sin(f.bob * 0.9) * 1.2 * this.cs : 0;
+    const breathe = (!moving && atk === 0 && wind === 0) ? Math.sin(f.bob * 0.9) * 1.2 * this.cs : 0;
+    // 막 나온 병사는 땅에서 튀어 오르듯 커진다
+    const age = f.age === undefined ? 9 : f.age;
+    const spawnK = Math.min(1, age / 0.3);
+    const pop = spawnK < 1 ? easeOutBack(spawnK) : 1;
+    // 승패가 갈리면 이긴 쪽이 제자리에서 뛴다
+    const won = this.outcome && ((this.outcome === 'win') === (f.side === 'ally'));
+    const hop = won ? Math.abs(Math.sin(this.clock * 7 + f.bob)) * 9 * this.cs : 0;
+    // 넉백: 뒤로 튕기며 살짝 뜬다
+    const kbK = f.kbTimer > 0 ? Math.min(1, f.kbTimer / 0.42) : 0;
+    const kbLift = kbK > 0 ? Math.sin(kbK * Math.PI) * 7 * this.cs : 0;
+
+    if (age < 0.4) {                                     // 출진 먼지 고리
+      const k = age / 0.4;
+      ctx.save();
+      ctx.globalAlpha = (1 - k) * 0.55;
+      ctx.strokeStyle = f.side === 'ally' ? '#e8f4ff' : '#f3d2c2';
+      ctx.lineWidth = 2.5 * this.cs;
+      ctx.beginPath(); ctx.ellipse(x, y + 1, (12 + k * 30) * s, (3 + k * 6) * s, 0, 0, 7); ctx.stroke();
+      ctx.restore();
+    }
 
     ctx.save();
-    ctx.translate(x + f.dir * lunge, y + breathe);
+    ctx.translate(x + f.dir * lunge, y + breathe - hop - kbLift);
     ctx.scale(f.dir, 1);
+    if (spawnK < 1) {
+      ctx.globalAlpha = Math.min(1, spawnK * 2.5);
+      ctx.scale(pop, pop);
+    }
     ctx.strokeStyle = f.side === 'ally' ? '#9cdef0' : '#efab91';
     ctx.lineWidth = 1.2 * s;
     ctx.beginPath(); ctx.ellipse(0, 2, 20 * s, 5 * s, 0, 0, 7); ctx.stroke();
@@ -415,8 +447,17 @@ class Renderer {
     ctx.save();
     const stride = moving ? Math.abs(Math.sin(f.bob)) : 0;
     const recoil = Math.min(1, f.hitFlash / 0.18);
-    ctx.translate(-recoil * 2.5 * s, -stride * 2 * s);
-    ctx.rotate((moving ? Math.sin(f.bob) * 0.025 : 0) - recoil * 0.045);
+    const heavy = f.scale >= 1.3 || f.boss;
+    // 걸을 때는 앞으로 기울이고(빠를수록 더), 큰 몸은 좌우로 흔들린다
+    const lean = moving ? (f.s.speed > 70 ? 0.11 : 0.05) : 0;
+    const sway = moving && heavy ? Math.sin(f.bob) * 0.05 : (moving ? Math.sin(f.bob) * 0.025 : 0);
+    // 치는 순간 앞으로 숙였다가, 준비할 땐 뒤로 젖힌다
+    const strike = atk > 0 ? Math.sin(atk * Math.PI) * 0.1 : 0;
+    ctx.translate(-recoil * 2.5 * s - wind * 2 * s, -stride * (heavy ? 1.2 : 2.4) * s);
+    ctx.rotate(lean + sway + strike - wind * 0.1 - recoil * 0.06 - kbK * 0.35);
+    // 맞으면 잠깐 눌렸다가 돌아온다, 준비 동작은 살짝 움츠린다
+    const squash = recoil * 0.07 + wind * 0.04;
+    if (squash > 0) ctx.scale(1 + squash, 1 - squash);
     if (atk > 0 && !f.s.ranged) {
       ctx.save();
       ctx.globalAlpha = Math.sin(atk * Math.PI) * 0.65;
@@ -425,11 +466,12 @@ class Renderer {
       ctx.beginPath(); ctx.arc(10 * s, -32 * s, 24 * s, -1.2 + atk, 0.9 + atk); ctx.stroke();
       ctx.restore();
     }
-    drawBody(ctx, f.s, s, false, f.kbTimer > 0, f.bob, moving, atk);
+    drawBody(ctx, f.s, s, false, f.kbTimer > 0, f.bob, moving, atk, wind, won);
     if (f.hitFlash > 0) {
-      ctx.globalAlpha = Math.min(0.5, f.hitFlash * 3.2);
-      drawBody(ctx, f.s, s, true, f.kbTimer > 0, f.bob, moving, atk);
-      ctx.globalAlpha = 1;
+      const a0 = ctx.globalAlpha;
+      ctx.globalAlpha = a0 * Math.min(0.5, f.hitFlash * 3.2);
+      drawBody(ctx, f.s, s, true, f.kbTimer > 0, f.bob, moving, atk, wind, won);
+      ctx.globalAlpha = a0;
     }
     ctx.restore();
 
@@ -627,15 +669,31 @@ class Renderer {
       } else if (e.type === 'corpse') {
         // 쓰러지는 연출
         const k = 1 - p;                              // 0 -> 1 로 진행
+        // 뒤로 밀리며 넘어가고(가속), 바닥에 닿으면 한 번 튄 뒤 가라앉는다
+        const fallT = Math.min(1, k / 0.42);
+        let ang = fallT * fallT * 1.5;
+        if (k > 0.42) ang = 1.5 - Math.sin(Math.min(1, (k - 0.42) / 0.2) * Math.PI) * 0.12;
+        const sink = k > 0.6 ? (k - 0.6) / 0.4 : 0;
+        const sc = cs * (e.scale || 1);
         ctx.save();
-        ctx.globalAlpha = Math.min(1, p * 1.6);
-        ctx.translate(x, this.rowY(e.row));
+        ctx.globalAlpha = Math.min(1, p * 1.8);
+        ctx.translate(x - e.dir * fallT * 10 * sc, this.rowY(e.row) + sink * 6 * sc);
         ctx.scale(e.dir, 1);
-        ctx.rotate(-Math.min(1, k * 1.4) * 1.45);
-        drawBody(ctx, e.st, cs * (e.scale || 1), false, false, 0, false, 0);
+        ctx.rotate(-ang);
+        drawBody(ctx, e.st, sc, false, true, 0, false, 0);
         ctx.restore();
+        if (k > 0.4 && k < 0.7) {                       // 쓰러질 때 이는 흙먼지
+          const d = (k - 0.4) / 0.3;
+          ctx.globalAlpha = (1 - d) * 0.4;
+          ctx.fillStyle = '#d8ccb0';
+          ctx.beginPath();
+          ctx.ellipse(x - e.dir * 38 * sc, this.rowY(e.row), (10 + d * 22) * sc, (3 + d * 4) * sc, 0, 0, 7);
+          ctx.fill();
+          ctx.globalAlpha = 1;
+        }
         ctx.globalAlpha = 1;
       } else if (e.type === 'dmg') {
+        if (!this.showDmg) continue;
         const rise = (1 - p) * 34 * cs + (e.dy || 0);
         ctx.globalAlpha = Math.min(1, p * 2);
         ctx.font = 'bold ' + Math.round((e.crit ? 17 : 13) * cs) + 'px sans-serif';
@@ -659,7 +717,7 @@ class Renderer {
         ctx.fillStyle = '#ffe9a8';
         ctx.font = 'bold ' + Math.round(26 * cs) + 'px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('왕 의 명 령', this.w / 2, this.groundY - 60 * cs);
+        ctx.fillText(tr('왕 의 명 령'), this.w / 2, this.groundY - 60 * cs);
         ctx.textAlign = 'left';
         ctx.globalAlpha = 1;
       } else if (e.type === 'cast') {
@@ -955,11 +1013,15 @@ class Renderer {
 
   render(battle, dt, fxDt) {
     this.trackFrame(dt);
+    this.outcome = battle.state === 'win' ? 'win' : (battle.state === 'play' ? null : 'lose');
+    this.clock = (this.clock || 0) + dt;             // 전투가 끝나 시간이 멈춰도 도는 시계
+    this.showDmg = typeof Settings === 'undefined' || Settings.get('dmgNums');
     const camBefore = this.cam;
     this.follow(battle, dt);
     const ctx = this.ctx;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const sh = reduced ? 0 : (battle.shake || 0);
+    const shakeOn = typeof Settings === 'undefined' || Settings.get('shake');
+    const sh = (reduced || !shakeOn) ? 0 : (battle.shake || 0);
     this.sceneTime = battle.time;
     let shakeX = 0, shakeY = 0;
     ctx.save();
@@ -1040,7 +1102,7 @@ class Renderer {
       ctx.strokeStyle = 'rgba(0,0,0,.8)';
       ctx.strokeText(battle.patternName, this.w / 2, this.h * 0.3 - rise);
       ctx.fillStyle = '#ffcf70';
-      ctx.fillText(battle.patternName, this.w / 2, this.h * 0.3 - rise);
+      ctx.fillText(tr(battle.patternName), this.w / 2, this.h * 0.3 - rise);
       ctx.textAlign = 'left';
       ctx.globalAlpha = 1;
     }
@@ -1051,7 +1113,7 @@ class Renderer {
       ctx.fillStyle = 'rgba(255,235,210,' + p + ')';
       ctx.font = 'bold ' + Math.round(this.h * 0.075) + 'px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('보스 등장', this.w / 2, this.h * 0.44);
+      ctx.fillText(tr('보스 등장'), this.w / 2, this.h * 0.44);
       ctx.font = 'bold ' + Math.round(this.h * 0.045) + 'px sans-serif';
       ctx.fillText(battle.bossName || '', this.w / 2, this.h * 0.5);
       ctx.textAlign = 'left';
@@ -1083,9 +1145,14 @@ class Renderer {
  *  졸라맨 캐릭터 드로잉
  *  발끝 y = 0, 머리 꼭대기 ≈ -58*s. 항상 +x 방향(앞)을 본다.
  * ======================================================================= */
-function drawBody(ctx, st, s, flash, hurt, phase, moving, atk) {
+function easeOutBack(k) {
+  const c = 1.9;
+  return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2);
+}
+
+function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
   const S = {
-    ctx: ctx, s: s,
+    ctx: ctx, s: s, wind: wind || 0, cheer: !!cheer,
     col: flash ? '#ffffff' : st.body,
     acc: flash ? '#ffffff' : st.accent,
     tun: flash ? '#ffffff' : (st.tunic || st.body),
@@ -2435,12 +2502,16 @@ function legs(S, hipY) {
 /* 무기를 들지 않은 쪽 팔은 걸음에 맞춰 흔든다 */
 function armSwing(S) {
   const { ctx, s } = S;
-  const sw = S.moving ? Math.sin(S.phase + Math.PI) * 9 * s : 2 * s;
   ctx.strokeStyle = S.col;
   ctx.lineWidth = S.lw * 0.85;
   ctx.beginPath();
   ctx.moveTo(0, -38 * s);
-  ctx.quadraticCurveTo(sw * 0.5, -31 * s, sw, -22 * s);
+  if (S.cheer) {                                   // 만세
+    ctx.quadraticCurveTo(-6 * s, -50 * s, -4 * s, -60 * s);
+  } else {
+    const sw = S.moving ? Math.sin(S.phase + Math.PI) * 9 * s : (S.wind ? -6 * s * S.wind : 2 * s);
+    ctx.quadraticCurveTo(sw * 0.5, -31 * s, sw, -22 * s);
+  }
   ctx.stroke();
 }
 
@@ -2476,6 +2547,8 @@ function arm(S, hx, hy) {
 
 function armWeapon(S, angle, drawWeapon, gripY) {
   const { ctx, s } = S;
+  // 준비 동작에서 무기를 뒤로 치켜든다. 이기면 번쩍 든다.
+  angle -= S.wind * 0.6 + (S.cheer ? 0.9 : 0);
   const gx = 12 * s, gy = -34 * s - (gripY || 0) * 0.15;
   // 휘두르는 궤적
   if (S.atk > 0.08) {
@@ -2539,12 +2612,13 @@ function bow(S, x, y, r, color) {
   ctx.strokeStyle = color; ctx.lineWidth = 3 * s;
   ctx.beginPath(); ctx.arc(x, y, r, -1.3, 1.3); ctx.stroke();
   const bx = x + Math.cos(1.3) * r, by = r * Math.sin(1.3);
-  const pull = 7 * s * S.atk;
+  // 쏘기 전에 시위를 당기고, 놓는 순간 튕겨 돌아온다
+  const pull = S.wind > 0 ? 9 * s * S.wind : -2 * s * Math.sin(S.atk * Math.PI * 3) * S.atk;
   ctx.strokeStyle = S.flash ? '#fff' : '#e6e0d0'; ctx.lineWidth = 1.4 * s;
   ctx.beginPath();
   ctx.moveTo(bx, y - by); ctx.lineTo(x - r * 0.5 - pull, y); ctx.lineTo(bx, y + by);
   ctx.stroke();
-  if (S.atk > 0.15) {
+  if (S.wind > 0.15) {
     ctx.strokeStyle = S.flash ? '#fff' : '#6b4b2a'; ctx.lineWidth = 2 * s;
     ctx.beginPath();
     ctx.moveTo(x - r * 0.5 - pull, y); ctx.lineTo(x + r * 0.8, y); ctx.stroke();
@@ -3021,6 +3095,9 @@ function drawUnitIcon(canvas, stats, size) {
   drawBody(ctx, stats, s, false, false, 0, false, 0);
   ctx.restore();
 }
+
+/* 캔버스에 쓰는 글자 번역. i18n.js 가 없으면(비교판 등) 그대로 */
+function tr(s) { return typeof t === 'function' ? t(s) : s; }
 
 const FIELD_PALETTES = [
   { sky0: '#9dc4dd', sky1: '#e4e2cf', cloud: 'rgba(255,255,255,.8)',

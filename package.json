@@ -1,10 +1,10 @@
 {
   "name": "stick-kingdom-war",
-  "version": "1.9.0",
+  "version": "2.0.0",
   "private": true,
   "description": "막대 왕국 전쟁 - 가로 화면 중세 라인 배틀 타워디펜스",
   "scripts": {
-    "lint": "node --check js/save-store.js && node --check js/audio.js && node --check js/data.js && node --check js/game.js && node --check js/render.js && node --check js/main.js && node --check sw.js",
+    "lint": "node --check js/settings.js && node --check js/i18n.js && node --check js/formation.js && node --check js/save-store.js && node --check js/audio.js && node --check js/data.js && node --check js/game.js && node --check js/render.js && node --check js/main.js && node --check sw.js",
     "assets": "node tools/check-assets.js",
     "balance": "node tools/sim.js --check",
     "sim": "node tools/sim.js",

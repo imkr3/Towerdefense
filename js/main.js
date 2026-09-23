@@ -73,6 +73,8 @@ function normalizeSave(raw) {
     if (typeof s.pity !== 'number') s.pity = 0;
     if (typeof s.pulls !== 'number') s.pulls = 0;
     if (!seasonById(s.season)) s.season = 'olympus';
+    if (!Array.isArray(s.presets)) s.presets = [];
+    s.presets = s.presets.slice(0, 3).map(p => Array.isArray(p) ? p.filter(id => typeof id === 'string' && UNIT_BY_ID[id]).slice(0, LOADOUT_MAX) : []);
     return s;
 }
 
@@ -100,9 +102,11 @@ function show(id) {
   if (id === 'scr-map') renderMap();
   if (id === 'scr-shop') renderShop();
   if (id === 'scr-units') renderTraining();
+  if (id === 'scr-formation') renderFormation();
   if (id === 'scr-gacha') renderGacha();
   if (id === 'scr-quest') { checkAchievements(); renderQuest(); }
   if (id === 'scr-battle' && renderer) renderer.resize();
+  if (id !== 'scr-battle') BGM.play(id === 'scr-title' ? 'title' : 'map');
 }
 
 /* 브라우저 기본 confirm 대신 게임 톤에 맞춘 확인창 */
@@ -278,9 +282,41 @@ function renderQuest(tab) {
 let questTab = 'daily';
 
 /* ------------------------------ 지도 ------------------------------ */
+/* 30개 전장을 긴 목록으로 늘어놓던 것을 장(章) 단위 진군로로 바꿨다.
+ * 한 장에 10개, 화면 하나에 다 들어가고 스크롤이 없다. 전장을 누르면 오른쪽에
+ * 정보가 뜨고, 거기서 편성을 고치거나 바로 출진한다. */
+const CHAPTERS = [
+  { name: '1장', sub: '국경 전선', from: 0, to: 10 },
+  { name: '2장', sub: '왕도 수호', from: 10, to: 20 },
+  { name: '2막', sub: '신화의 끝', from: 20, to: 30 },
+  { name: '무한', sub: '끝없는 공세', endless: true }
+];
+let mapChapter = -1;       // -1: 진행 중인 장을 자동으로 고른다
+let mapSel = -1;           // 고른 전장
+
+function chapterOf(i) {
+  for (let c = 0; c < CHAPTERS.length; c++) {
+    const ch = CHAPTERS[c];
+    if (!ch.endless && i >= ch.from && i < ch.to) return c;
+  }
+  return 0;
+}
+
+/* 전장 길이를 말로. 숫자보다 감이 온다. */
+function stageLenLabel(st) {
+  const len = st.len || 2000;
+  return len < 1420 ? '짧은 전장' : len < 1620 ? '보통 전장' : '긴 전장';
+}
+
+/* 진군로 위 점 위치(%). 가로 화면에 맞춘 완만한 S 자 */
+function trailPoint(k, n) {
+  const x = 7 + (86 * k) / Math.max(1, n - 1);
+  const y = 50 + Math.sin(k * 1.15 + 0.4) * 27;
+  return { x: x, y: y };
+}
+
 function renderMap() {
   $('#map-coins').textContent = save.coins;
-  renderEndlessSlot();
   updateQuestBadge();
   const pct = (save.cleared / STAGES.length) * 100;
   $('#map-progress').style.width = pct + '%';
@@ -290,41 +326,145 @@ function renderMap() {
     save.cleared + ' / ' + STAGES.length + ' <span class="gold-txt">★ ' +
     totalStars + ' / ' + (STAGES.length * 3) + '</span>';
 
+  const current = Math.min(save.cleared, STAGES.length - 1);
+  if (mapChapter < 0) mapChapter = chapterOf(current);
+  if (mapSel < 0 || mapSel > save.cleared) mapSel = current;
+
+  // 장 탭
+  const tabs = $('#chapter-tabs');
+  tabs.innerHTML = '';
+  CHAPTERS.forEach((ch, c) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    const open = ch.endless ? save.cleared >= ENDLESS_UNLOCK_STAGE : ch.from <= save.cleared;
+    let stars = 0;
+    if (!ch.endless) for (let i = ch.from; i < ch.to; i++) stars += save.stars[i] || 0;
+    b.className = 'chapter-tab' + (c === mapChapter ? ' on' : '') + (open ? '' : ' locked');
+    b.setAttribute('aria-pressed', String(c === mapChapter));
+    b.innerHTML = '<span class="ch-name">' + (open ? '' : '🔒 ') + ch.name + '</span>' +
+      '<span class="ch-sub">' + ch.sub + '</span>' +
+      (ch.endless ? '<span class="ch-star">' + (save.endlessBest || 0) + '</span>'
+                  : '<span class="ch-star">★ ' + stars + '/' + ((ch.to - ch.from) * 3) + '</span>');
+    b.addEventListener('click', () => {
+      mapChapter = c;
+      if (!ch.endless && (mapSel < ch.from || mapSel >= ch.to)) mapSel = Math.min(save.cleared, ch.to - 1);
+      SFX.ui();
+      renderMap();
+    });
+    tabs.appendChild(b);
+  });
+
+  const ch = CHAPTERS[mapChapter];
   const list = $('#stage-list');
+  const path = $('#trail-path');
+  const endless = $('#endless-slot');
   list.innerHTML = '';
-  STAGES.forEach((st, i) => {
+  path.innerHTML = '';
+  $('#trail').classList.toggle('endless-mode', !!ch.endless);
+  if (ch.endless) {
+    renderEndlessSlot();
+    renderStageDetail(-1);
+    return;
+  }
+  endless.innerHTML = '';
+
+  const n = ch.to - ch.from;
+  let d = '', done = '';
+  for (let k = 0; k < n; k++) {
+    const p = trailPoint(k, n);
+    d += (k ? ' L ' : 'M ') + p.x.toFixed(2) + ' ' + p.y.toFixed(2);
+    if (ch.from + k <= save.cleared) done += (k ? ' L ' : 'M ') + p.x.toFixed(2) + ' ' + p.y.toFixed(2);
+  }
+  path.innerHTML = '<path class="tp-all" d="' + d + '"/><path class="tp-done" d="' + done + '"/>';
+
+  for (let k = 0; k < n; k++) {
+    const i = ch.from + k, st = STAGES[i];
     const locked = i > save.cleared;
     const cleared = i < save.cleared;
+    const p = trailPoint(k, n);
     const el = document.createElement('button');
     el.type = 'button';
     el.disabled = locked;
+    el.dataset.stage = String(i);
     el.className = 'stage' + (locked ? ' locked' : '') + (cleared ? ' cleared' : '') +
-                   (st.boss ? ' boss' : '') + (i === save.cleared ? ' current' : '');
+                   (st.boss ? ' boss' : '') + (i === save.cleared ? ' current' : '') +
+                   (i === mapSel ? ' sel' : '');
+    el.style.left = p.x + '%';
+    el.style.top = p.y + '%';
     el.style.setProperty('--field', FIELD_PALETTES[i % FIELD_PALETTES.length].ridge);
+    el.setAttribute('aria-label', (i + 1) + '. ' + (locked ? '잠김' : st.name));
     el.innerHTML =
-      '<div class="stage-no">' + (locked ? '🔒' : (i + 1)) + '</div>' +
-      '<div class="stage-info">' +
-        '<div class="stage-name">' + (locked ? '???' : st.name) + '</div>' +
-        '<div class="stage-meta">' + (locked ? '이전 전장을 먼저 돌파해야 한다' :
-            ('적 요새 ' + st.baseHp.toLocaleString() + ' · 보상 💰' + st.reward + (st.hint ? '<br>' + st.hint : ''))) + '</div>' +
-      '</div>' +
-      '<div class="stage-mark">' +
-        (locked ? '' : (cleared || i < save.cleared
-          ? starMarks(save.stars[i] || 0) : '▶')) + '</div>';
+      '<span class="stage-no">' + (locked ? '🔒' : (st.boss ? '♛' : (i + 1))) + '</span>' +
+      '<span class="stage-mark">' + (cleared ? starMarks(save.stars[i] || 0) : (i === save.cleared ? '▶' : '')) + '</span>';
     if (!locked) {
-      const intel = document.createElement('div');
-      intel.className = 'stage-intel';
-      const types = [...new Set(st.waves.map(w => w.e))];
-      intel.textContent = types.slice(0, 3).map(id => ENEMIES[id].name).join(' · ') + (types.length > 3 ? ' 외 ' + (types.length - 3) + '종' : '');
-      el.querySelector('.stage-info').appendChild(intel);
-      el.addEventListener('click', () => startBattle(i));
+      el.addEventListener('click', () => {
+        if (mapSel === i) { startBattle(i); return; }   // 한 번 더 누르면 출진
+        mapSel = i;
+        SFX.ui();
+        $$('#stage-list .stage').forEach(b => b.classList.toggle('sel', b === el));
+        renderStageDetail(i);
+      });
     }
     list.appendChild(el);
-  });
+  }
+  renderStageDetail(mapSel >= ch.from && mapSel < ch.to ? mapSel : -1);
+}
 
-  // 처음 도전할 스테이지가 보이도록 스크롤
-  const next = list.children[Math.min(save.cleared, STAGES.length - 1)];
-  if (next) setTimeout(() => next.scrollIntoView({ block: 'center' }), 30);
+function renderStageDetail(i) {
+  const box = $('#stage-detail');
+  box.innerHTML = '';
+  const ch = CHAPTERS[mapChapter];
+  if (ch.endless || i < 0) {
+    box.innerHTML = ch.endless
+      ? '<div class="sd-name">무한 전장</div><p class="sd-hint">총 45공세. 파도가 갈수록 촘촘해지고 5파도마다 보스가 나온다.</p>'
+      : '<div class="sd-name">' + ch.name + ' · ' + ch.sub + '</div><p class="sd-hint">이전 장을 먼저 돌파해야 한다.</p>';
+    const fb = document.createElement('button');
+    fb.className = 'btn ghost sd-formation';
+    fb.textContent = '편성';
+    fb.addEventListener('click', () => openFormation(ch.endless ? 'endless' : null));
+    box.appendChild(fb);
+    return;
+  }
+  const st = STAGES[i];
+  const types = [...new Set(st.waves.map(w => w.e))];
+  const head = document.createElement('div');
+  head.innerHTML =
+    '<div class="sd-no">' + (st.boss ? '보스 전장' : '전장') + ' ' + (i + 1) + '</div>' +
+    '<div class="sd-name">' + st.name + '</div>' +
+    '<div class="sd-stars">' + starMarks(save.stars[i] || 0) + '</div>' +
+    (st.hint ? '<p class="sd-hint">' + st.hint + '</p>' : '') +
+    '<div class="sd-meta">' +
+      '<span>적 요새 ' + st.baseHp.toLocaleString() + '</span>' +
+      '<span>보상 💰' + st.reward + '</span>' +
+      '<span>' + stageLenLabel(st) + '</span>' +
+    '</div>';
+  box.appendChild(head);
+  const foes = document.createElement('div');
+  foes.className = 'sd-foes';
+  types.slice(0, 8).forEach(id => {
+    const e = ENEMIES[id];
+    const f = document.createElement('span');
+    f.className = 'sd-foe' + (e.boss ? ' boss' : '');
+    f.title = e.name;
+    f.innerHTML = '<canvas></canvas><small>' + e.name + '</small>';
+    drawUnitIcon(f.querySelector('canvas'), e, 30);
+    foes.appendChild(f);
+  });
+  box.appendChild(foes);
+  const btns = document.createElement('div');
+  btns.className = 'sd-btns';
+  const fb = document.createElement('button');
+  fb.className = 'btn ghost sd-formation';
+  fb.textContent = '편성 (' + save.loadout.length + '/' + LOADOUT_MAX + ')';
+  fb.addEventListener('click', () => openFormation(i));
+  const go = document.createElement('button');
+  go.className = 'btn primary sd-go';
+  go.id = 'btn-sortie';
+  go.textContent = '출진 ▶';
+  go.addEventListener('click', () => startBattle(i));
+  btns.appendChild(fb);
+  btns.appendChild(go);
+  box.appendChild(btns);
 }
 
 function renderEndlessSlot() {
@@ -401,23 +541,6 @@ function renderTraining() {
     ' · 편성 <b>' + save.loadout.length + ' / ' + LOADOUT_MAX + '</b>' +
     ' <span class="hint">카드는 편성한 병종만 나온다</span>';
 
-  const strip = $('#loadout-strip');
-  strip.innerHTML = '';
-  for (let i = 0; i < LOADOUT_MAX; i++) {
-    const u = UNIT_BY_ID[save.loadout[i]], slot = document.createElement('div');
-    slot.className = 'loadout-slot' + (u ? ' filled' : '');
-    if (!u) { slot.textContent = (i + 1) + ' · 빈 자리'; strip.appendChild(slot); continue; }
-    slot.innerHTML = '<canvas></canvas><strong>' + (i+1) + '. ' + u.name + '</strong><small>' + u.role + ' · 비용 ' + u.cost + '</small>';
-    drawUnitIcon(slot.querySelector('canvas'),u,38);
-    const controls = document.createElement('div'); controls.className='slot-controls';
-    for (const [delta,label] of [[-1,'앞으로'],[1,'뒤로']]) {
-      const btn=document.createElement('button'); btn.textContent=delta<0?'◀':'▶';
-      btn.setAttribute('aria-label',u.name+' '+label); btn.disabled=i+delta<0 || i+delta>=save.loadout.length;
-      btn.onclick=()=>{[save.loadout[i],save.loadout[i+delta]]=[save.loadout[i+delta],save.loadout[i]];saveGame(save);renderTraining();};
-      controls.appendChild(btn);
-    }
-    slot.appendChild(controls); strip.appendChild(slot);
-  }
   const box = $('#units-list');
   box.innerHTML = '';
   const ownedSeason = SEASON_UNITS.filter(u => u.gacha && save.owned[u.id]);
@@ -783,8 +906,12 @@ function beginBattle() {
   if (renderer) { renderer.syncGlSize(); renderer.resetFx(); }
   playAccum = 0;
   $('#result').classList.remove('show');
-  $('#btn-speed').textContent = '▶▶ 1x';
+  battle.speed = Settings.get('keepSpeed') ? Settings.get('speed') : 1;
+  $('#btn-speed').textContent = '▶▶ ' + battle.speed + 'x';
   $('#btn-pause').textContent = '⏸';
+  bossMusic = false;
+  bossMusicT = 0;
+  BGM.play('battle');
   setPaused(false);
   autoTimer = 0;
   refreshAutoBtn();
@@ -993,6 +1120,7 @@ function showEndlessResult() {
 }
 
 /* ------------------------------ 루프 ------------------------------ */
+let bossMusic = false, bossMusicT = 0;
 function loop(ts) {
   requestAnimationFrame(loop);
   if (!lastTs) lastTs = ts;
@@ -1012,7 +1140,13 @@ function loop(ts) {
   else battle.updateFx(dt * 0.4);
   renderer.render(battle, dt, (paused || $('.modal.show')) ? dt * 0.4 : dt);
   updateHud();
+  // 보스가 서면 곡을 바꾼다. 매 프레임 적을 훑을 필요는 없다.
+  if (!bossMusic && battle.state === 'play' && (bossMusicT -= dt) <= 0) {
+    bossMusicT = 0.5;
+    if (battle.aliveBoss()) { bossMusic = true; BGM.play('boss'); }
+  }
   if (before === 'play' && battle.state !== 'play') {
+    BGM.stop(0.6);
     const ended = battle;
     resultTimer = setTimeout(() => {
       if (battle === ended && $('#scr-battle').classList.contains('active')) showResult();
@@ -1223,10 +1357,13 @@ function init() {
     }
   }
   SFX.init();
-  SFX.on = save.sound !== false;
-  $('#btn-sound').textContent = save.sound !== false ? '🔊 효과음 켜짐' : '🔇 효과음 꺼짐';
+  // 예전 저장의 '효과음 끔' 은 효과음 크기 0 으로 옮긴다
+  if (save.sound === false) { Settings.set('sfx', 0); save.sound = true; saveGame(save); }
+  SFX.setVolume(Settings.get('sfx'));
+  BGM.setVolume(Settings.get('bgm'));
+  BGM.play('title');
   // 모바일은 사용자 조작이 한 번 있어야 오디오가 열린다
-  const wake = () => { SFX.init(); SFX.resume(); };
+  const wake = () => { SFX.init(); SFX.resume(); BGM.resume(); };
   ['pointerdown', 'touchstart', 'keydown'].forEach(ev =>
     window.addEventListener(ev, wake, { once: true, passive: true }));
   titleAnim.cv = $('#title-bg');
@@ -1314,6 +1451,7 @@ function init() {
   $('#btn-speed').addEventListener('click', () => {
     battle.speed = battle.speed === 1 ? 2 : (battle.speed === 2 ? 3 : 1);
     $('#btn-speed').textContent = '▶▶ ' + battle.speed + 'x';
+    Settings.set('speed', battle.speed);
     SFX.ui();
   });
   $('#btn-pause').addEventListener('click', () => {
@@ -1327,13 +1465,8 @@ function init() {
     if (!battle.canCommand()) { toast('왕명은 아직 준비되지 않았다'); return; }
     battle.useCommand();
   });
-  $('#btn-sound').addEventListener('click', () => {
-    save.sound = !save.sound;
-    SFX.on = save.sound;
-    saveGame(save);
-    $('#btn-sound').textContent = save.sound ? '🔊 효과음 켜짐' : '🔇 효과음 꺼짐';
-    if (save.sound) SFX.ui();
-  });
+  initSettings();
+  initFormation();
   $('#btn-retry').addEventListener('click', () => {
     if (battle && battle.endless) startEndless();
     else startBattle(battle.stageIndex);
@@ -1361,6 +1494,8 @@ function init() {
   }));
   document.addEventListener('visibilitychange', () => {
     if (document.hidden && battle && battle.state === 'play') setPaused(true);
+    // 앱이 뒤로 가면 음악도 멈춘다 (배터리)
+    if (SFX.ctx) { if (document.hidden) SFX.ctx.suspend(); else SFX.ctx.resume(); }
     lastTs = 0;
   });
   window.addEventListener('keydown', e => {
@@ -1378,6 +1513,75 @@ function init() {
 
 document.addEventListener('DOMContentLoaded', init);
 
+/* ------------------------------ 설정 ------------------------------ */
+function refreshSettingsUI() {
+  const d = Settings.d;
+  $$('#modal-settings .seg').forEach(seg => {
+    const key = seg.id.replace('set-', '');
+    seg.querySelectorAll('button').forEach(b => {
+      b.classList.toggle('on', b.dataset.v === d[key]);
+      b.setAttribute('aria-pressed', String(b.dataset.v === d[key]));
+    });
+  });
+  for (const k of ['bgm', 'sfx']) {
+    $('#set-' + k).value = Math.round(d[k] * 100);
+    $('#set-' + k + '-v').textContent = Math.round(d[k] * 100);
+  }
+  for (const k of ['vibrate', 'dmgNums', 'shake', 'keepSpeed']) {
+    $('#set-' + k).setAttribute('aria-checked', String(!!d[k]));
+  }
+}
+
+function openSettings() {
+  refreshSettingsUI();
+  $('#modal-settings').classList.add('show');
+  if (battle && battle.state === 'play' && $('#scr-battle').classList.contains('active')) setPaused(true);
+  SFX.ui();
+}
+
+function initSettings() {
+  $('#btn-settings').addEventListener('click', openSettings);
+  $('#btn-map-settings').addEventListener('click', openSettings);
+  $('#btn-battle-settings').addEventListener('click', openSettings);
+  $$('#set-lang button').forEach(b => b.addEventListener('click', () => {
+    if (Settings.get('lang') === b.dataset.v) return;
+    if (battle && battle.state === 'play' && $('#scr-battle').classList.contains('active')) {
+      toast('전투 중에는 언어를 바꿀 수 없다');
+      return;
+    }
+    Settings.set('lang', b.dataset.v);
+    saveGame(save);
+    // 글자는 화면 곳곳과 병종 자료에 박혀 있어서, 다시 여는 편이 확실하다
+    location.reload();
+  }));
+  $$('#set-quality button').forEach(b => b.addEventListener('click', () => {
+    Settings.set('quality', b.dataset.v);
+    refreshSettingsUI();
+    SFX.ui();
+  }));
+  $('#set-bgm').addEventListener('input', e => {
+    const v = Number(e.target.value) / 100;
+    Settings.set('bgm', v);
+    BGM.setVolume(v);
+    $('#set-bgm-v').textContent = e.target.value;
+  });
+  $('#set-sfx').addEventListener('input', e => {
+    const v = Number(e.target.value) / 100;
+    Settings.set('sfx', v);
+    SFX.setVolume(v);
+    $('#set-sfx-v').textContent = e.target.value;
+  });
+  $('#set-sfx').addEventListener('change', () => SFX.ui());
+  for (const k of ['vibrate', 'dmgNums', 'shake', 'keepSpeed']) {
+    $('#set-' + k).addEventListener('click', () => {
+      Settings.set(k, !Settings.get(k));
+      refreshSettingsUI();
+      if (k === 'vibrate') buzz(20);
+      SFX.ui();
+    });
+  }
+}
+
 /* 안드로이드 뒤로 가기 처리. true 를 돌려주면 앱이 닫히지 않는다. */
 window.__androidBack = function () {
   const open = document.querySelector('.modal.show');
@@ -1394,6 +1598,7 @@ window.__androidBack = function () {
     $('#btn-quit').click();
     return true;
   }
+  if (active.id === 'scr-formation') { if (fmDrag) { dragEnd(); return true; } show(fmBack); return true; }
   if (['scr-shop','scr-units','scr-gacha','scr-quest'].includes(active.id)) { show('scr-map'); return true; }
   if (active.id === 'scr-map') { show('scr-title'); return true; }
   return false;   // 타이틀에서는 앱 종료
@@ -1454,7 +1659,7 @@ window.receiveSaveBackup = function(raw) {
     askConfirm('진행도 복원', '전장 ' + candidate.cleared + '개 돌파 · 골드 ' + candidate.coins +
       ' · 소환석 ' + candidate.stones + '. 이 데이터로 교체할까요? 현재 저장은 자동 백업에 남깁니다.', () => {
       if (!SaveStore.write(candidate, true)) { toast(SaveStore.error); return; }
-      save=candidate; SFX.on=save.sound !== false;
+      save=candidate;
       $('#modal-save').classList.remove('show'); $('#save-warning').hidden=true;
       show('scr-title'); toast('진행도를 복원했습니다.');
     });

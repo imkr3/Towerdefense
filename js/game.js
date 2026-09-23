@@ -2,11 +2,19 @@
  *  막대 왕국 전쟁 - 전투 엔진 (라인 배틀 + 특수 능력)
  * ======================================================================= */
 
-const WORLD = 2000;          // 전장 가로 길이(월드 좌표)
+/* 전장 가로 길이(월드 좌표). 전장마다 다르다(STAGES[i].len).
+ * 적 요새·적 출진 위치가 길이에 매여 있어서 전투를 만들 때 함께 맞춘다. */
+const WORLD_DEFAULT = 2000;
+let WORLD = WORLD_DEFAULT;
 const ALLY_BASE_X = 96;      // 아군 성채 위치
-const ENEMY_BASE_X = WORLD - 96;
+let ENEMY_BASE_X = WORLD - 96;
 const ALLY_SPAWN_X = 150;
-const ENEMY_SPAWN_X = WORLD - 150;
+let ENEMY_SPAWN_X = WORLD - 150;
+function setWorld(len) {
+  WORLD = len || WORLD_DEFAULT;
+  ENEMY_BASE_X = WORLD - 96;
+  ENEMY_SPAWN_X = WORLD - 150;
+}
 const KILL_GOLD_RATE = 0.20; // 처치 보상 배율
 
 /* 효과음 헬퍼: 브라우저에서만 동작하고, 같은 소리가 몰릴 때는 솎아낸다 */
@@ -65,6 +73,9 @@ class Fighter {
     this.swing = 0;
     this.dead = false;
     this.moving = false;
+    // 그림에만 쓰는 값: 나온 지 얼마나 됐나, 지금 누군가와 맞붙어 있나
+    this.age = 0;
+    this.engaged = false;
     this.scale = stats.scale || 1;
     this.radius = 26 * this.scale;
 
@@ -218,6 +229,7 @@ class Battle {
     this.heroCooldowns = {};
     this.heroGlobalCd = 0;
 
+    setWorld(this.stage.len);
     const castleHp = Math.round(4000 * (1 + 0.10 * (up.castle || 0)));
     this.allyCastle = new Castle('ally', castleHp, ALLY_BASE_X);
     this.enemyCastle = new Castle('enemy', this.stage.baseHp, ENEMY_BASE_X);
@@ -567,6 +579,8 @@ class Battle {
     for (const f of list) {
       if (f.dead) continue;
       f.moving = false;
+      f.engaged = false;
+      f.age += dt;
       if (f.hitFlash > 0) f.hitFlash -= dt;
       if (f.swing > 0) f.swing -= dt;
       if (f.slowT > 0) f.slowT -= dt;
@@ -613,6 +627,7 @@ class Battle {
 
       const target = this.findTarget(f, foes, foeCastle);
       if (target) {
+        f.engaged = true;
         f.cd -= dt;
         if (f.cd <= 0) {
           f.cd = f.intervalNow;

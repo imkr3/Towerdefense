@@ -33,34 +33,65 @@
     <div class="title-btns">
       <button class="btn big" id="btn-start">출 진</button>
       <button class="btn ghost" id="btn-howto">교전 수칙</button>
-      <button class="btn ghost" id="btn-sound">🔊 효과음 켜짐</button>
-    <button class="btn ghost" id="btn-full">전체화면 · 가로 고정</button>
+      <button class="btn ghost" id="btn-settings">⚙ 설정 · 언어 / 소리</button>
+      <button class="btn ghost" id="btn-full">전체화면 · 가로 고정</button>
       <button class="btn ghost" id="btn-save-manager">저장 관리 · 백업 / 복원</button>
       <button class="btn ghost danger" id="btn-reset">기록 초기화</button>
     </div>
   </div>
-  <p class="ver">왕국 방어선 · 전 20 전장</p>
+  <p class="ver">왕국 방어선 · 전 30 전장</p>
 </section>
 
 <!-- ===================== 스테이지 선택 ===================== -->
 <section id="scr-map" class="screen">
   <header class="bar">
-    <button class="icon-btn" data-goto="scr-title">◀</button>
+    <button class="icon-btn" data-goto="scr-title" aria-label="타이틀로">◀</button>
     <div class="bar-title">왕국 진군도</div>
+    <div class="progress-wrap">
+      <div class="progress"><div class="progress-fill" id="map-progress"></div></div>
+      <span id="map-progress-txt">0 / 20</span>
+    </div>
     <div class="coin-chip">💰 <span id="map-coins">0</span></div>
+    <button class="icon-btn" id="btn-map-settings" aria-label="설정">⚙</button>
   </header>
-  <div class="progress-wrap">
-    <div class="progress"><div class="progress-fill" id="map-progress"></div></div>
-    <span id="map-progress-txt">0 / 20</span>
+  <!-- 30개 전장을 한 줄로 늘어놓지 않고 장(章)으로 나눈다 -->
+  <nav class="chapter-tabs" id="chapter-tabs" aria-label="장 선택"></nav>
+  <div class="map-body">
+    <div class="trail" id="trail">
+      <svg class="trail-path" id="trail-path" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
+      <div class="stage-list" id="stage-list"></div>
+      <div class="endless-slot" id="endless-slot"></div>
+    </div>
+    <aside class="stage-detail" id="stage-detail" aria-live="polite"></aside>
   </div>
-  <div class="endless-slot" id="endless-slot"></div>
-  <div class="stage-list" id="stage-list"></div>
   <nav class="tabbar">
+    <button class="tab" id="btn-formation">편성</button>
     <button class="tab" id="btn-shop">강화 병영</button>
     <button class="tab" id="btn-units">훈련소</button>
     <button class="tab gacha-tab" id="btn-gacha">소환의 제단 <span class="stone-badge" id="tab-stones">0</span></button>
     <button class="tab" id="btn-quest">임무 · 업적 <span class="quest-badge" id="tab-quest">0</span></button>
   </nav>
+</section>
+
+<!-- ===================== 편성 ===================== -->
+<section id="scr-formation" class="screen">
+  <header class="bar">
+    <button class="icon-btn" id="btn-formation-back" aria-label="뒤로">◀</button>
+    <div class="bar-title">편성</div>
+    <div class="coin-chip">💰 <span id="formation-coins">0</span></div>
+  </header>
+  <div class="formation-top">
+    <div class="formation-slots" id="formation-slots" aria-label="출진 편성"></div>
+    <div class="formation-sum" id="formation-sum"></div>
+  </div>
+  <div class="formation-bottom">
+    <div class="formation-pool-wrap">
+      <nav class="pool-filters" id="pool-filters" aria-label="병종 분류"></nav>
+      <div class="formation-pool" id="formation-pool" aria-label="보유 병종"></div>
+    </div>
+    <aside class="formation-side" id="formation-side"></aside>
+  </div>
+  <p class="formation-hint" id="formation-hint">카드를 끌어 위 칸에 놓는다 · 칸끼리 끌면 순서가 바뀐다 · 칸을 아래로 끌어내면 뺀다</p>
 </section>
 
 <!-- ===================== 강화 상점 ===================== -->
@@ -81,7 +112,7 @@
     <div class="coin-chip">💰 <span id="train-coins">0</span></div>
   </header>
   <div class="cap-line"><span id="train-cap"></span></div>
-  <div id="loadout-strip" aria-label="출진 순서와 편성"></div>
+  <button class="btn ghost open-formation" id="btn-open-formation">편성 화면 열기 · 끌어서 배치</button>
   <nav id="training-filters" class="training-filters" aria-label="병종 목록 필터"><button class="on" data-filter="all" aria-pressed="true">전체</button><button data-filter="team" aria-pressed="false">내 편성</button><button data-filter="ally" aria-pressed="false">왕국군</button><button data-filter="enemy" aria-pressed="false">적 도감</button></nav>
   <div class="scroll grid" id="units-list"></div>
 </section>
@@ -149,6 +180,7 @@
   <div class="hud-top">
     <div class="hud-left">
       <button class="icon-btn small" id="btn-quit" aria-label="전투 나가기">✕</button>
+      <button class="icon-btn small" id="btn-battle-settings" aria-label="설정">⚙</button>
       <div class="stage-tag" id="battle-stage">1. 국경 초소</div>
     </div>
     <div class="hud-right">
@@ -210,6 +242,36 @@
   </div>
 </div>
 
+<!-- ===================== 설정 ===================== -->
+<div class="modal" id="modal-settings">
+  <div class="modal-card settings-card">
+    <h3>설정</h3>
+    <div class="set-grid">
+      <span class="set-label">언어 · Language</span>
+      <div class="seg" id="set-lang" role="group" aria-label="언어 · Language">
+        <button type="button" data-v="ko">한국어</button><button type="button" data-v="en">English</button>
+      </div>
+      <label class="set-label" for="set-bgm">배경 음악</label>
+      <div class="set-range"><input type="range" id="set-bgm" min="0" max="100" step="5"><output id="set-bgm-v">50</output></div>
+      <label class="set-label" for="set-sfx">효과음</label>
+      <div class="set-range"><input type="range" id="set-sfx" min="0" max="100" step="5"><output id="set-sfx-v">80</output></div>
+      <span class="set-label">이펙트 품질</span>
+      <div class="seg" id="set-quality" role="group" aria-label="이펙트 품질">
+        <button type="button" data-v="auto">자동</button><button type="button" data-v="high">높음</button><button type="button" data-v="low">절전</button>
+      </div>
+      <span class="set-label">진동</span>
+      <button type="button" class="switch" id="set-vibrate" role="switch" aria-checked="true" aria-label="진동"></button>
+      <span class="set-label">피해 숫자</span>
+      <button type="button" class="switch" id="set-dmgNums" role="switch" aria-checked="true" aria-label="피해 숫자"></button>
+      <span class="set-label">화면 흔들림</span>
+      <button type="button" class="switch" id="set-shake" role="switch" aria-checked="true" aria-label="화면 흔들림"></button>
+      <span class="set-label">전투 속도 기억</span>
+      <button type="button" class="switch" id="set-keepSpeed" role="switch" aria-checked="true" aria-label="전투 속도 기억"></button>
+    </div>
+    <button class="btn primary" data-close>닫기</button>
+  </div>
+</div>
+
 <!-- ===================== 확인 ===================== -->
 <div class="modal" id="modal-confirm">
   <div class="modal-card confirm-card">
@@ -264,12 +326,15 @@
   </div>
 </div>
 
+<script src="js/settings.js"></script>
 <script src="js/audio.js"></script>
 <script src="js/data.js"></script>
+<script src="js/i18n.js"></script>
 <script src="js/save-store.js"></script>
 <script src="js/gl-fx.js"></script>
 <script src="js/game.js"></script>
 <script src="js/render.js"></script>
 <script src="js/main.js"></script>
+<script src="js/formation.js"></script>
 </body>
 </html>
