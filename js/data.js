@@ -492,6 +492,8 @@ SEASON_UNITS.push(
 // 판을 바꾸는 특수 병종이기 때문이다.
 SEASON_UNITS.forEach(u => {
   if (u.gacha && (u.rarity === 'SSR' || u.rarity === 'UR')) u.maxActive = 1;
+  // 영웅(SR)도 줄지어 세울 수는 없다. 둘까지.
+  else if (u.gacha && u.rarity === 'SR' && !u.maxActive) u.maxActive = 2;
 });
 UNITS.push.apply(UNITS, SEASON_UNITS);
 SEASON_UNITS.forEach(u => { UNIT_BY_ID[u.id] = u; });
@@ -731,7 +733,7 @@ const STAGES = [
 
 /* 1막 난이도 곡선. 초반은 기본 병종으로 넘어가야 하니 거의 건드리지 않고,
  * 뒤로 갈수록 같은 적이 더 억세진다. */
-STAGES.forEach((st, i) => { if (!st.enemyMul) st.enemyMul = +(1 + 0.016 * i).toFixed(3); });
+STAGES.forEach((st, i) => { if (!st.enemyMul) st.enemyMul = +(1 + 0.012 * i + 0.0016 * i * i).toFixed(3); });
 
 /* 2막: 기존 20전장 인덱스는 유지하여 저장과 별 기록을 보존한다. */
 const ENDLESS_UNLOCK_STAGE = 20;
@@ -742,22 +744,44 @@ STAGES.push(
     W(2,'orcshield',3,2),W(20,'lich',1),W(40,'plaguer',5,2),W(60,'wraith',6,1.4),W(84,'lich',1),W(108,'dark',5,2),W(134,'totem',2,4),W(158,'lich',1),W(182,'orcberserk',7,1)]},
   {name:'가시 왕관의 성문',hint:'가시 반격은 원거리 병종으로 대응',baseHp:35000,money:410,rate:50,reward:1100,enemyMul:1.94,waves:[
     W(2,'orcshield',4,2),W(22,'shaman',3,3),W(44,'golem',2,5),W(66,'siegeram',2,5),W(92,'orcshield',5,2),W(116,'ballista',5,2),W(140,'warchief',2,5),W(168,'dark',6,2),W(196,'troll',1)]},
-  {name:'★ 명계의 삼중 봉인',hint:'리치 소환과 거미 여왕의 독에 대비',baseHp:38000,money:420,rate:51,reward:1350,boss:true,enemyMul:2.12,waves:[
+  {name:'★ 명계의 삼중 봉인',hint:'리치 소환과 거미 여왕의 독에 대비',baseHp:38000,money:420,rate:51,reward:1350,boss:true,enemyMul:3.2,waves:[
     W(2,'wraith',5,2),W(24,'lich',1),W(48,'spiderqueen',1),W(70,'plaguer',6,1.8),W(96,'troll',1),W(122,'lich',1),W(148,'orcshield',5,2),W(174,'spiderqueen',1),W(204,'wraith',8,1)]},
   {name:'눈보라 추격전',hint:'빠른 늑대 기수를 둔화로 저지',baseHp:39500,money:425,rate:52,reward:1250,enemyMul:2.29,waves:[
     W(2,'wolf',10,.8),W(24,'dark',5,2),W(48,'frostgiant',1),W(72,'wolf',10,.8),W(96,'orccatapult',2,5),W(120,'orcberserk',7,1.2),W(148,'frostgiant',1),W(180,'golem',2,5),W(208,'wolf',12,.7)]},
   {name:'얼어붙은 공성로',hint:'공성 병기를 막을 보호막 전열 필요',baseHp:41000,money:430,rate:53,reward:1320,enemyMul:2.46,waves:[
     W(2,'orcshield',4,2),W(22,'siegeram',2,5),W(46,'ballista',6,2),W(72,'frostgiant',1),W(100,'orcshield',6,1.8),W(126,'orccatapult',3,5),W(154,'warchief',2,5),W(184,'frostgiant',1),W(214,'dark',7,1.8)]},
-  {name:'★ 영원의 겨울 왕좌',hint:'연속 광역 공격 뒤 왕명으로 회복',baseHp:44000,money:440,rate:54,reward:1600,boss:true,enemyMul:2.66,waves:[
+  {name:'★ 영원의 겨울 왕좌',hint:'연속 광역 공격 뒤 왕명으로 회복',baseHp:44000,money:440,rate:54,reward:1600,boss:true,enemyMul:3.0,waves:[
     W(2,'wolf',8,1),W(24,'frostgiant',1),W(52,'troll',1),W(78,'orcshield',6,1.8),W(104,'frostgiant',1),W(136,'golem',2,5),W(164,'warchief',2,5),W(192,'frostgiant',1),W(224,'orcberserk',8,1)]},
   {name:'불타는 태양 회랑',hint:'화상을 정화하며 화룡을 견제',baseHp:45500,money:445,rate:55,reward:1500,enemyMul:2.85,waves:[
     W(2,'hellhound',9,.8),W(26,'powder',6,1.8),W(52,'drake',1),W(80,'plaguer',6,2),W(108,'orcshield',6,1.8),W(138,'drake',1),W(170,'hellhound',10,.8),W(200,'siegeram',2,4),W(230,'dark',7,1.5)]},
   {name:'황금 일식의 제단',hint:'치유·가속 토템을 범위 공격으로 압박',baseHp:47500,money:450,rate:56,reward:1650,boss:true,enemyMul:3.05,waves:[
     W(2,'orcshield',5,2),W(26,'totem',2,6),W(50,'shaman',5,3),W(78,'warlord',1),W(108,'golem',2,5),W(140,'drake',1),W(174,'warchief',3,5),W(208,'orcberserk',8,1),W(240,'lich',2,8)]},
-  {name:'★ 세 신화의 종착지',hint:'보스 연속 공세에 액티브와 왕명을 나눠 사용',baseHp:51000,money:465,rate:58,reward:2200,boss:true,enemyMul:3.35,waves:[
+  {name:'★ 세 신화의 종착지',hint:'보스 러시에 액티브와 왕명을 나눠 사용',baseHp:51000,money:465,rate:58,reward:2200,boss:true,enemyMul:3.8,waves:[
     W(2,'orcshield',5,2),W(26,'lich',1),W(52,'frostgiant',1),W(82,'drake',1),W(114,'warlord',1),W(148,'warchief',2,5),W(182,'spiderqueen',1),W(216,'golem',3,5),W(248,'warlord',1),W(276,'hellhound',10,.8)]}
 );
 
+
+/* 전장 특성. 어려운 전장에는 특성이 붙어서, 스탯 높은 병종을 몰아 넣는 것만으로는
+ * 풀리지 않고 그 특성을 받아칠 병종을 챙겨야 한다. */
+const STAGE_MODS = {
+  ironclad: { name: '중갑', desc: '모든 적이 방어 60% — 받는 피해가 크게 준다 (중독·화상은 그대로)',
+              counter: '토르(파쇄) · 중독 · 화상 · 태양 낙인', color: '#8fa3b5' },
+  horde:    { name: '물량', desc: '적이 1.8배 많이 몰려온다 (하나하나는 약하다)',
+              counter: '범위 공격 · 연쇄 번개 · 값싼 방패 벽', color: '#c98a4b' },
+  giantslayer: { name: '영웅 사냥꾼', desc: '적이 비용 350 이상인 아군(영웅·전설·신화)에게 3배 피해',
+              counter: '값싼 병력을 많이 · 소환물 · 비싼 병종은 뒤에', color: '#9b6bd1' },
+  curse:    { name: '저주', desc: '소환된 아군이 초당 10%씩 시들고, 회복·흡혈이 절반',
+              counter: '소환·치유에 기대지 않는 진짜 병력', color: '#5f8f5a' },
+  blitz:    { name: '질주', desc: '적 이동 속도 +45% · 공격 속도 +20%',
+              counter: '둔화 · 넉백 면역 방패 · 튼튼한 앞줄', color: '#d0605a' }
+};
+const HARD_STAGE_MODS = {
+  9: ['ironclad'], 14: ['blitz'], 16: ['horde'], 17: ['ironclad'],
+  19: ['horde', 'ironclad'],
+  21: ['horde'], 23: ['horde', 'giantslayer', 'curse'], 24: ['blitz'], 26: ['blitz', 'giantslayer', 'curse'],
+  27: ['horde', 'ironclad'], 29: ['giantslayer', 'curse', 'horde', 'blitz']
+};
+STAGES.forEach((st, i) => { if (!st.mods && HARD_STAGE_MODS[i]) st.mods = HARD_STAGE_MODS[i]; });
 
 /* 전장 길이. 예전엔 모두 2000 이라 병사가 적과 부딪히기까지 40초 넘게 걸어야 했다.
  * 초반은 짧게 붙고, 뒤로 갈수록·보스 전장일수록 조금씩 길어진다. */
@@ -768,7 +792,7 @@ STAGES.forEach((st, i) => {
 });
 
 /* =======================================================================
- *  무한 전장 - 끝없이 밀려오는 파도
+ *  무한 전장 - 끝없이 밀려오는 웨이브
  * ======================================================================= */
 const ENDLESS_POOL = [
   { id: 'goblin',   from: 0 },  { id: 'orcspear', from: 0 },
@@ -782,26 +806,41 @@ const ENDLESS_POOL = [
 ];
 const ENDLESS_BOSSES = ['lich', 'troll', 'frostgiant', 'drake', 'warlord'];
 
-/* round 번째 무한 전장을 만든다. 파도가 갈수록 촘촘하고 강해진다. */
+/* 무한 전장 적 배율. 웨이브마다 7%씩 붙고, 25웨이브를 넘기면 거기에
+ * 웨이브당 4%씩 곱으로 불어난다. 상한이 없으니 언젠가는 반드시 무너진다. */
+function endlessMul(w) {
+  return (1 + 0.07 * w) * Math.pow(1.04, Math.max(0, w - 25));
+}
+
+/* 무한 전장 w 번째 웨이브(0부터). t 초에 시작한다.
+ * 적 종류는 웨이브가 지날수록 넓어지고, 5웨이브마다 보스가 함께 온다. */
+function endlessWave(w, t) {
+  const tier = Math.floor(w / 2);
+  const pool = ENDLESS_POOL.filter(e => e.from <= tier);
+  const pick = pool[(w * 7 + 3) % pool.length].id;
+  const n = 3 + Math.min(9, Math.floor(w / 2));
+  const gap = Math.max(0.55, 1.6 - w * 0.03);
+  const mul = endlessMul(w);
+  const waves = [Object.assign(W(t, pick, n, gap), { wave: w, mul: mul })];
+  if ((w + 1) % 5 === 0) {
+    const bi = (Math.floor((w + 1) / 5) - 1) % ENDLESS_BOSSES.length;
+    waves.push(Object.assign(W(t + 4, ENDLESS_BOSSES[bi], 1), { wave: w, mul: mul }));
+  }
+  return { waves: waves, next: t + Math.max(7, 16 - w * 0.25) };
+}
+
+/* 무한 전장. 웨이브 수를 주면 그만큼 미리 적어 두고(검사용),
+ * 안 주면 끝없이 이어진다 — 엔진이 모자랄 때마다 endlessWave 로 더 붙인다. */
 function makeEndlessStage(waveCount) {
   const waves = [];
   let t = 2;
-  for (let w = 0; w < (waveCount || 40); w++) {
-    const tier = Math.floor(w / 2);
-    const pool = ENDLESS_POOL.filter(e => e.from <= tier);
-    const pick = pool[(w * 7 + 3) % pool.length].id;
-    const n = 3 + Math.min(9, Math.floor(w / 2));
-    const gap = Math.max(0.55, 1.6 - w * 0.03);
-    waves.push(Object.assign(W(t, pick, n, gap), { wave: w }));
-    // 5 파도마다 보스
-    if ((w + 1) % 5 === 0) {
-      const bi = Math.min(ENDLESS_BOSSES.length - 1, Math.floor((w + 1) / 5) - 1);
-      waves.push(Object.assign(W(t + 4, ENDLESS_BOSSES[bi], 1), { wave: w }));
-    }
-    t += Math.max(7, 16 - w * 0.25);
+  for (let w = 0; w < (waveCount || 0); w++) {
+    const spec = endlessWave(w, t);
+    spec.waves.forEach(x => waves.push(x));
+    t = spec.next;
   }
   return {
-    name: '무한 전장', endless: true, len: 1600,
+    name: '무한 전장', endless: true, infinite: !waveCount, len: 1600,
     baseHp: 99999999,          // 적 요새는 부술 수 없다. 버티는 것이 전부다
     money: 320, rate: 40, reward: 0,
     waves: waves
@@ -821,7 +860,7 @@ const MISSION_DEFS = [
   { id: 'cmd2',    text: '왕의 명령 2회 사용',  need: 2,  stat: 'commands',gold: 400, stone: 1 },
   { id: 'train2',  text: '병종 훈련 2회',       need: 2,  stat: 'trains',  gold: 350, stone: 1 },
   { id: 'boss1',   text: '보스 1체 처치',       need: 1,  stat: 'bosses',  gold: 600, stone: 1 },
-  { id: 'endless5',text: '무한 전장 5파도 돌파', need: 5,  stat: 'endless', gold: 800, stone: 1 }
+  { id: 'endless5',text: '무한 전장 5웨이브 돌파', need: 5,  stat: 'endless', gold: 800, stone: 1 }
 ];
 const DAILY_COUNT = 3;
 
@@ -873,9 +912,9 @@ const ACHIEVEMENTS = [
   { id: 'maxlv',    name: '정예 조련',    desc: '병종 하나를 15레벨로',        gold: 2500, stone: 3,
     test: s => Object.keys(s.levels || {}).some(k => s.levels[k] >= 15) },
   { id:'campaign30',name:'세 신화의 정복자',desc:'30전장 모두 돌파',gold:5000,stone:5,test:s=>s.cleared>=30 },
-  { id: 'endless10',name: '끝없는 전장',  desc: '무한 전장 10파도 돌파',       gold: 2000, stone: 3,
+  { id: 'endless10',name: '끝없는 전장',  desc: '무한 전장 10웨이브 돌파',       gold: 2000, stone: 3,
     test: s => (s.endlessBest || 0) >= 10 },
-  { id: 'endless25',name: '불굴의 성채',  desc: '무한 전장 25파도 돌파',       gold: 7000, stone: 8,
+  { id: 'endless25',name: '불굴의 성채',  desc: '무한 전장 25웨이브 돌파',       gold: 7000, stone: 8,
     test: s => (s.endlessBest || 0) >= 25 }
 ];
 
@@ -901,7 +940,7 @@ const UPGRADES = {
   castle:  { name: '성벽 보수', max: 10, base: 120, step: 1.52,
              desc: '아군 성채 체력 +10%/레벨' },
   logistics:{ name: '병참', max: 10, base: 150, step: 1.55,
-             desc: '모든 병종의 재정비 시간 -3%/레벨' },
+             desc: '모든 병종의 쿨타임 -3%/레벨' },
   treasury:{ name: '전시 국고', max: 10, base: 130, step: 1.5,
              desc: '전투 시작 군자금 +60/레벨' },
   spoils:  { name: '전리품 수거', max: 10, base: 140, step: 1.5,

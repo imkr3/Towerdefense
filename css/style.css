@@ -791,3 +791,11 @@ button:focus-visible{outline:3px solid #48b9ee;outline-offset:3px;}
   .sd-foe small{display:none}.sd-foe{width:32px}.sd-meta span{padding:2px 5px;font-size:10px}
   .sd-btns{bottom:-9px}
 }
+/* 전장 특성 */
+.sd-mods{display:flex;flex-direction:column;gap:4px}
+.sd-mod{border-left:3px solid var(--mc);background:#fff;border-radius:5px;padding:4px 7px;font-size:10.5px;line-height:1.35;color:#31444f}
+.sd-mod b{color:var(--mc);margin-right:5px;filter:brightness(.8)}
+.sd-mod small{display:block;color:#5c6b72;font-size:9.5px}
+.stage-mods{position:absolute;top:-7px;right:-7px;display:flex;gap:1px}
+.stage-mods i{display:block;width:9px;height:9px;border-radius:50%;border:1px solid #fff}
+#scr-map .stage.hard{box-shadow:0 0 0 3px #8e3a4055,0 3px 10px #142c3740}

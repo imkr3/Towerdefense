@@ -207,7 +207,7 @@ function renderFormationSide() {
       '<div class="fi-head"><canvas></canvas><div><div class="fi-name">' + u.name + '</div>' +
       '<div class="fi-role">' + u.role + (u.rarity ? ' · ' + RARITY[u.rarity].name : '') +
       ' · 레벨 ' + (save.levels[u.id] || 1) + '</div></div></div>' +
-      '<div class="fi-stats"><span>💰' + u.cost + '</span><span>대기 ' + u.cooldown + '초</span>' +
+      '<div class="fi-stats"><span>💰' + u.cost + '</span><span>쿨타임 ' + u.cooldown + '초</span>' +
       (u.range ? '<span>사거리 ' + u.range + '</span>' : '') +
       (u.maxActive ? '<span>동시 ' + u.maxActive + '명</span>' : '') + '</div>' +
       (u.abText ? '<div class="fi-ab">◆ ' + u.abText + '</div>' : '') +

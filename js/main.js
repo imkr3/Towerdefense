@@ -264,7 +264,7 @@ function renderQuest(tab) {
       ['승리', st.wins + '회'],
       ['누적 처치', (save.totalKills || 0) + '명'],
       ['보스 처치', st.bossKills + '체'],
-      ['무한 전장 최고 기록', (save.endlessBest || 0) + '파도'],
+      ['무한 전장 최고 기록', (save.endlessBest || 0) + '웨이브'],
       ['소환 횟수', (save.pulls || 0) + '회'],
       ['보유 소환 병종', Object.keys(save.owned).length + ' / ' + SEASON_UNITS.filter(u => u.gacha).length],
       ['훈련 횟수', st.trains + '회'],
@@ -289,7 +289,7 @@ const CHAPTERS = [
   { name: '1장', sub: '국경 전선', from: 0, to: 10 },
   { name: '2장', sub: '왕도 수호', from: 10, to: 20 },
   { name: '2막', sub: '신화의 끝', from: 20, to: 30 },
-  { name: '무한', sub: '끝없는 공세', endless: true }
+  { name: '무한', sub: '끝없는 웨이브', endless: true }
 ];
 let mapChapter = -1;       // -1: 진행 중인 장을 자동으로 고른다
 let mapSel = -1;           // 고른 전장
@@ -387,7 +387,7 @@ function renderMap() {
     el.disabled = locked;
     el.dataset.stage = String(i);
     el.className = 'stage' + (locked ? ' locked' : '') + (cleared ? ' cleared' : '') +
-                   (st.boss ? ' boss' : '') + (i === save.cleared ? ' current' : '') +
+                   (st.boss ? ' boss' : '') + (st.mods ? ' hard' : '') + (i === save.cleared ? ' current' : '') +
                    (i === mapSel ? ' sel' : '');
     el.style.left = p.x + '%';
     el.style.top = p.y + '%';
@@ -395,6 +395,7 @@ function renderMap() {
     el.setAttribute('aria-label', (i + 1) + '. ' + (locked ? '잠김' : st.name));
     el.innerHTML =
       '<span class="stage-no">' + (locked ? '🔒' : (st.boss ? '♛' : (i + 1))) + '</span>' +
+      (st.mods && !locked ? '<span class="stage-mods">' + st.mods.map(m => '<i style="background:' + STAGE_MODS[m].color + '"></i>').join('') + '</span>' : '') +
       '<span class="stage-mark">' + (cleared ? starMarks(save.stars[i] || 0) : (i === save.cleared ? '▶' : '')) + '</span>';
     if (!locked) {
       el.addEventListener('click', () => {
@@ -416,7 +417,7 @@ function renderStageDetail(i) {
   const ch = CHAPTERS[mapChapter];
   if (ch.endless || i < 0) {
     box.innerHTML = ch.endless
-      ? '<div class="sd-name">무한 전장</div><p class="sd-hint">총 45공세. 파도가 갈수록 촘촘해지고 5파도마다 보스가 나온다.</p>'
+      ? '<div class="sd-name">무한 전장</div><p class="sd-hint">웨이브가 끝없이 온다. 웨이브마다 적이 강해지고 5웨이브마다 보스가 나온다. 성채가 무너질 때까지 몇 웨이브를 버티는지 겨룬다.</p>'
       : '<div class="sd-name">' + ch.name + ' · ' + ch.sub + '</div><p class="sd-hint">이전 장을 먼저 돌파해야 한다.</p>';
     const fb = document.createElement('button');
     fb.className = 'btn ghost sd-formation';
@@ -433,6 +434,11 @@ function renderStageDetail(i) {
     '<div class="sd-name">' + st.name + '</div>' +
     '<div class="sd-stars">' + starMarks(save.stars[i] || 0) + '</div>' +
     (st.hint ? '<p class="sd-hint">' + st.hint + '</p>' : '') +
+    (st.mods ? '<div class="sd-mods">' + st.mods.map(m => {
+      const d = STAGE_MODS[m];
+      return '<div class="sd-mod" style="--mc:' + d.color + '"><b>' + d.name + '</b><span>' + d.desc + '</span>' +
+             '<small>대응 · ' + d.counter + '</small></div>';
+    }).join('') + '</div>' : '') +
     '<div class="sd-meta">' +
       '<span>적 요새 ' + st.baseHp.toLocaleString() + '</span>' +
       '<span>보상 💰' + st.reward + '</span>' +
@@ -480,8 +486,8 @@ function renderEndlessSlot() {
   el.className = 'endless-card';
   el.innerHTML =
     '<div class="e-title">무한 전장</div>' +
-    '<div class="e-sub">총 45공세에 도전한다. 증원까지 모두 격파해야 돌파로 인정된다.</div>' +
-    '<div class="e-best">최고 기록 <b>' + (save.endlessBest || 0) + '</b> 파도</div>' +
+    '<div class="e-sub">끝이 없는 웨이브. 웨이브마다 적이 강해진다. 성채가 무너질 때까지 버텨라.</div>' +
+    '<div class="e-best">최고 기록 <b>' + (save.endlessBest || 0) + '</b> 웨이브</div>' +
     '<button class="btn primary e-btn">도전</button>';
   el.querySelector('.e-btn').addEventListener('click', () => startEndless());
   slot.appendChild(el);
@@ -577,7 +583,7 @@ function renderTraining() {
             (u.atk ? '<span class="stat hl">공격 ' + Math.round(u.atk * mul * (1 + .06 * (save.upgrades.power || 0))) + '</span>' : '') +
             (u.range ? '<span class="stat">사거리 ' + u.range + '</span>' : '') +
             '<span class="stat">속도 ' + u.speed + '</span>' +
-            '<span class="stat">대기 ' + u.cooldown + '초</span>' +
+            '<span class="stat">쿨타임 ' + u.cooldown + '초</span>' +
             (u.maxActive ? '<span class="stat">동시 출진 ' + u.maxActive + '명</span>' : '') +
           '</div>' +
           '<div class="btn-row">' +
@@ -890,8 +896,8 @@ function drawBanner(sn) {
 
 /* ------------------------------ 전투 ------------------------------ */
 function startEndless() {
-  battle = new Battle(0, save, makeEndlessStage(45));
-  $('#battle-stage').textContent = '무한 전장 · 최고 ' + (save.endlessBest || 0) + '파도';
+  battle = new Battle(0, save, makeEndlessStage());
+  $('#battle-stage').textContent = '무한 전장 · 최고 ' + (save.endlessBest || 0) + '웨이브';
   beginBattle();
 }
 
@@ -899,6 +905,8 @@ function startBattle(index) {
   battle = new Battle(index, save);
   $('#battle-stage').textContent = (index + 1) + '. ' + battle.stage.name;
   beginBattle();
+  // 특성 전장은 시작하자마자 무엇이 다른지 크게 알린다
+  if (battle.stage.mods) battle.announce('전장 특성 · ' + battle.stage.mods.map(m => STAGE_MODS[m].name).join(' · '), 3.2);
 }
 
 function beginBattle() {
@@ -908,7 +916,7 @@ function beginBattle() {
   $('#result').classList.remove('show');
   battle.speed = Settings.get('keepSpeed') ? Settings.get('speed') : 1;
   $('#btn-speed').textContent = '▶▶ ' + battle.speed + 'x';
-  $('#btn-pause').textContent = '⏸';
+  $('#btn-pause').textContent = '❚❚';
   bossMusic = false;
   bossMusicT = 0;
   BGM.play('battle');
@@ -950,7 +958,7 @@ function buildCards() {
     drawUnitIcon(b.querySelector('.c-ico'), u, 38);
     b.addEventListener('click', () => {
       if (!canBattleInput()) return;
-      if (battle.cooldowns[u.id] > 0) { toast('아직 재정비 중'); return; }
+      if (battle.cooldowns[u.id] > 0) { toast('아직 쿨타임이다'); return; }
       if (battle.money < u.cost) { toast('군자금이 부족하다'); return; }
       if (!battle.deploy(u.id)) toast('동시 출진 한도에 도달했다');
     });
@@ -981,7 +989,7 @@ function canBattleInput() {
 }
 function setPaused(value) {
   paused = value;
-  $('#btn-pause').textContent = paused ? '▶' : '⏸';
+  $('#btn-pause').textContent = paused ? '▶' : '❚❚';
   $('#btn-pause').setAttribute('aria-label', paused ? '전투 재개' : '일시정지');
   $('#pause-label').hidden = !paused;
 }
@@ -1017,7 +1025,7 @@ function updateHud() {
   const money = Math.floor(battle.money);
   $('#kill-count').textContent = battle.kills;
   // 증원이 돌기 시작하면 남은 적을 셀 수 없다
-  $('#foe-left').textContent = battle.reinforcing() ? '∞' : battle.foesLeft();
+  $('#foe-left').textContent = (battle.endless || battle.reinforcing()) ? '∞' : battle.foesLeft();
   const cmdBtn = $('#btn-command');
   const ready = battle.canCommand();
   cmdBtn.disabled = !canBattleInput() || !ready;
@@ -1029,10 +1037,13 @@ function updateHud() {
   $('#enemy-hp-txt').textContent = Math.ceil(enemyPct) + '%';
   $('#castle-status').classList.toggle('critical', allyPct < 30);
   const wave = battle.nextWave();
-  $('#wave-preview').textContent = wave
+  // 무한 전장은 지금 몇 웨이브째이고 적이 얼마나 세졌는지를 먼저 보여 준다
+  const endlessTag = battle.endless
+    ? '웨이브 ' + battle.currentWave() + ' · 적 ×' + endlessMul(battle.currentWave() - 1).toFixed(1) + ' · ' : '';
+  $('#wave-preview').textContent = endlessTag + (wave
     ? (wave.boss ? '보스 예고 · ' : (wave.reinforce ? '끝없는 증원 · ' : '다음 증원 · ')) +
       wave.name + ' ' + wave.seconds + '초'
-    : '최종 공세 · 남은 적을 격파하라';
+    : '마지막 웨이브 · 남은 적을 처치하라');
   $('#wave-preview').classList.toggle('boss-warning', !!wave && wave.boss);
   $('#battle-clock').textContent = Math.floor(battle.time / 60) + ':' + String(Math.floor(battle.time % 60)).padStart(2, '0');
   cmdBtn.classList.toggle('ready', ready);
@@ -1107,9 +1118,9 @@ function showResult() {
 function showEndlessResult() {
   $('#result-title').textContent = battle.newRecord ? '신기록!' : '전투 종료';
   $('#result-stars').innerHTML =
-    '<span class="wave-count">' + (battle.wavesCleared || 0) + '</span> 파도';
+    '<span class="wave-count">' + (battle.wavesCleared || 0) + '</span> 웨이브';
   const lines = [];
-  lines.push('최고 기록 ' + (save.endlessBest || 0) + ' 파도');
+  lines.push('최고 기록 ' + (save.endlessBest || 0) + ' 웨이브');
   lines.push('획득 골드 💰 ' + battle.coins +
              (battle.stoneGain ? '  ·  소환석 🔮 ' + battle.stoneGain : ''));
   lines.push('처치 ' + battle.kills);

@@ -234,4 +234,37 @@ test('Units track age and engagement for animation only', () => {
   b.step(b.allies, b.enemies, b.enemyCastle, 0.1, true); assert.equal(a.engaged, true);
 });
 
+test('Endless never runs out: waves keep coming and keep getting stronger', () => {
+  const b = new Battle(0, save(), makeEndlessStage());
+  assert.ok(b.queue.length >= 24);
+  for (let i = 0; i < 400 && b.endlessW < 40; i++) { b.qi = b.queue.length; b.extendEndless(); }
+  assert.ok(b.endlessW >= 40);
+  const byWave = {}; b.queue.forEach(e => { byWave[e.wave] = e.mul; });
+  assert.ok(byWave[39] > byWave[20] && byWave[20] > byWave[0]);
+  assert.ok(byWave[39] > 3);                                   // 40웨이브쯤이면 세 배를 넘는다
+  // 대기열이 비어도 무한 전장은 끝나지 않는다
+  const c = new Battle(0, save(), makeEndlessStage());
+  c.qi = c.queue.length; c.enemies.length = 0; c.update(1/30);
+  assert.equal(c.state, 'play'); assert.ok(c.queue.length - c.qi >= 24);
+  const e = c.spawnEnemy('goblin', undefined, vm.runInContext('endlessMul(30)', ctx));
+  assert.ok(e.maxHp > E.goblin.hp * 3);
+});
+test('Stage traits: armored, horde, hero hunters and curse', () => {
+  const mk = mods => battle({ baseHp: 10000, money: 900, rate: 0, reward: 0, mods: mods,
+                              waves: [{ t: 0, e: 'goblin', n: 5, gap: 1 }, { t: 5, e: 'troll', n: 1, gap: 1 }] });
+  const ir = mk(['ironclad']), g = ir.spawnEnemy('goblin', 900);
+  assert.equal(g.ab.armor, 0.6); assert.equal(E.goblin.ab && E.goblin.ab.armor, undefined);
+  const h = mk(['horde']); assert.equal(h.queue.filter(q => q.e === 'goblin').length, 9);
+  assert.equal(h.queue.filter(q => q.e === 'troll').length, 1);
+  const hg = h.spawnEnemy('goblin', 900); assert.equal(hg.maxHp, Math.round(E.goblin.hp * 0.6));
+  const hunt = mk(['giantslayer']), orc = hunt.spawnEnemy('goblin', 520);
+  const cheap = hunt.makeAlly(U.spear, 500), pricey = hunt.makeAlly(U.thor, 500);
+  let a = cheap.hp; hunt.hitOne(10, cheap, orc, false); assert.equal(a - cheap.hp, 10);
+  a = pricey.hp; hunt.hitOne(10, pricey, orc, false); assert.equal(a - pricey.hp, 30);
+  const cu = mk(['curse']), sk = cu.makeAlly(U.skeleton, 500); sk.summoned = true; cu.allies.push(sk);
+  const kn = cu.makeAlly(U.knight, 480); cu.allies.push(kn);
+  kn.hp = 100; kn.heal(100); assert.equal(kn.hp, 150);
+  cu.step(cu.allies, [], cu.enemyCastle, 1, true); assert.ok(sk.hp < sk.maxHp * 0.95);
+});
+
 console.log(count + ' regression checks passed');

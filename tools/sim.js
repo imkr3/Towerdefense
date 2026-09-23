@@ -44,7 +44,7 @@ function loadEngine(seed) {
     vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), ctx, { filename: f });
   }
   return vm.runInContext(
-    '({Battle, STAGES, UNITS, ROSTER_UNITS, LOADOUT_MAX, unitLevelCap, unitTrainCost, UPGRADES})',
+    '({Battle, STAGES, UNITS, UNIT_BY_ID, ROSTER_UNITS, LOADOUT_MAX, unitLevelCap, unitTrainCost, UPGRADES})',
     ctx);
 }
 
@@ -93,6 +93,35 @@ function comboLoadout(g, index) {
   return core.concat(['odin', 'ra', 'thor']).slice(0, g.LOADOUT_MAX);
 }
 
+/* 공략 편성: 전장 특성을 받아칠 병종을 먼저 챙기고 나머지는 전장 병종으로 채운다.
+ * "특정 조합이면 풀린다" 를 재는 쪽이다. 소환 병종은 전부 가졌다고 본다. */
+const COUNTERS = {
+  ironclad: ['thor', 'venom', 'pyro', 'rapriest', 'ra'],
+  horde:    ['zeus', 'frost', 'pyro', 'catapult', 'knight', 'shield', 'spear'],
+  blitz:    ['shield', 'frostlancer', 'frost', 'skadi', 'spartan', 'colossus', 'medusa'],
+  giantslayer: ['spear', 'shield', 'venom', 'catapult', 'sniper', 'pyro', 'musketeer', 'frost'],
+  curse: ['knight', 'shield', 'spear', 'venom', 'pyro', 'frost']
+};
+function counterLoadout(g, index) {
+  const st = g.STAGES[index];
+  const hunted = (st.mods || []).includes('giantslayer');
+  // 영웅 사냥꾼이 있으면 비싼 병종은 과녁일 뿐이다
+  const ok = id => { const u = g.UNIT_BY_ID[id];
+    return u && (u.gacha || u.unlockStage <= index + 1) && !(hunted && u.cost >= 350); };
+  const picks = [];
+  const mods = st.mods || [];
+  // 특성마다 앞에서부터 번갈아 하나씩 — 두 특성이 겹치면 양쪽을 고루 챙긴다
+  for (let k = 0; k < 7 && picks.length < g.LOADOUT_MAX; k++) {
+    for (const m of mods) {
+      const id = (COUNTERS[m] || [])[k];
+      if (id && ok(id) && !picks.includes(id) && picks.length < g.LOADOUT_MAX) picks.push(id);
+    }
+  }
+  const rest = g.ROSTER_UNITS.filter(u => u.unlockStage <= index + 1 && !picks.includes(u.id) && !(hunted && u.cost >= 350))
+    .sort((a, b) => b.cost - a.cost).map(u => u.id);
+  return picks.concat(rest).slice(0, g.LOADOUT_MAX);
+}
+
 function runStage(g, index, upLv, unitLv, trace, gacha, basic) {
   const academy = Math.min(5, Math.floor(upLv / 2));
   const cap = g.unitLevelCap(index, academy);
@@ -103,6 +132,9 @@ function runStage(g, index, upLv, unitLv, trace, gacha, basic) {
   const loadout = basic ? basicLoadout(g)
     : gacha === 'legend' ? legendLoadout(g)
     : gacha === 'combo' ? comboLoadout(g, index)
+    : gacha === 'counter' ? counterLoadout(g, index)
+    : gacha === 'smart' ? (g.STAGES[index].mods ? counterLoadout(g, index) : unlocked.slice()
+        .sort((a, b) => b.cost - a.cost).slice(0, g.LOADOUT_MAX).map(u => u.id))
     : gacha ? gachaLoadout(g, index)
     : unlocked.slice()
       .sort((a, b) => b.cost - a.cost)
@@ -139,6 +171,7 @@ function runStage(g, index, upLv, unitLv, trace, gacha, basic) {
         String(Math.round(b.enemyCastle.hp / b.enemyCastle.maxHp * 100)).padStart(3) + '%  ' +
         '아군 ' + String(b.allies.length).padStart(2) + '  적 ' +
         String(b.enemies.length).padStart(2) + '  ' +
+        '[' + b.allies.map(a => a.s.id).join(',').slice(0, 90) + '] ' +
         Object.keys(cnt).map(k => k + '×' + cnt[k]).join(' '));
     }
   }
@@ -191,11 +224,26 @@ function printTable(rows, upLv, unitLv) {
  * 기본 병종만으로 초반 전장은 밀 수 있어야 하고, 보스 전장부터는
  * 병영 강화 없이 넘지 못해야 한다. */
 const EXPECT = [
-  { up: 0, lv: 1, min: 4,  max: 10, label: '무강화' },
-  { up: 2, lv: 3, min: 8,  max: 14, label: '중반 강화' },
-  { up: 3, lv: 5, min: 11, max: 17, label: '후반 강화' },
-  { up: 5, lv: 8, min: 20, max: 20, label: '완전 강화' }
+  { up: 0, lv: 1, min: 3,  max: 8,  label: '무강화' },
+  { up: 2, lv: 3, min: 7,  max: 12, label: '중반 강화' },
+  { up: 3, lv: 5, min: 10, max: 15, label: '후반 강화' },
+  // 편성을 생각하지 않고 비싼 병종만 채우면, 다 키워도 특성 전장에서 막힌다
+  { up: 5, lv: 8, min: 13, max: 18, label: '완전 강화 (아무 편성)' }
 ];
+
+/* 제대로 편성하는 플레이어: 특성 전장에는 그 특성을 받아칠 공략 편성을 든다.
+ * 이 플레이어는 충분히 키웠을 때 캠페인을 거의 다, 2막을 전부 넘어야 한다. */
+const SMART_ACT1 = { up: 6, lv: 10, min: 19 };
+const SMART_ACT2 = { up: 8, lv: 12 };
+
+/* 진짜 어려운 전장. 전설·신화를 다 가져도 몰아 넣기만 해서는 못 넘고,
+ * 특성에 맞춘 공략 편성이라야 넘는다. HARD_SEEDS 판 중 이긴 횟수로 본다. */
+const LEGEND_PROOF = [
+  { stage: 18, up: 6, lv: 10 }, { stage: 20, up: 6, lv: 10 },
+  { stage: 27, up: 8, lv: 12 }, { stage: 28, up: 8, lv: 12 }, { stage: 30, up: 8, lv: 12 }
+];
+const LEGEND_PROOF_MAX = 1;      // 전설만 편성이 이길 수 있는 최대 판 수
+const COUNTER_MIN = 4;           // 공략 편성이 이겨야 하는 최소 판 수
 
 /* 전설·신화는 스탯이 아니라 역할로 값을 한다.
  * - 전설·신화만 몽땅 넣은 "무지성" 편성은 전장 병종 편성보다 LEGEND_GAP 이상 앞서면 안 된다
@@ -281,13 +329,28 @@ function check() {
   } else {
     console.log(`  ✓ 2막 진입 관문: 캠페인 완주 수준으로 ${entryWins}/10 돌파 (최대 ${EXT_ENTRY_MAX})`);
   }
-  // Expansion has its own progression gate; original campaign thresholds stay unchanged.
-  for(const seed of [12345,98765]) {
-    const g=loadEngine(seed), rows=[];
-    for(let i=20;i<g.STAGES.length;i++) rows.push(runStage(g,i,8,12,false,false));
-    printTable(rows,8,12);
-    if(rows.some(r=>!r.win || r.seconds>400)){console.error('  ✗ 확장 전장: 충분한 강화로 400초 내 돌파 필요 (seed '+seed+')');failed++;}
-    else console.log('  ✓ 확장 전장 10개 완주 (seed '+seed+')');
+  // 제대로 편성하는 플레이어는 충분히 키우면 넘는다
+  {
+    const g = loadEngine(12345), rows = [];
+    for (let i = 0; i < 20; i++) rows.push(runStage(g, i, SMART_ACT1.up, SMART_ACT1.lv, false, 'smart'));
+    const wins = printTable(rows, SMART_ACT1.up, SMART_ACT1.lv);
+    if (wins < SMART_ACT1.min) { console.error(`  ✗ 공략 편성 캠페인: ${wins}/20 (최소 ${SMART_ACT1.min})`); failed++; }
+    else console.log(`  ✓ 공략 편성 캠페인: ${wins}/20 (강화 ${SMART_ACT1.up}/Lv${SMART_ACT1.lv})`);
+  }
+  for (const seed of [12345, 98765]) {
+    const g = loadEngine(seed), rows = [];
+    for (let i = 20; i < g.STAGES.length; i++) rows.push(runStage(g, i, SMART_ACT2.up, SMART_ACT2.lv, false, 'smart'));
+    printTable(rows, SMART_ACT2.up, SMART_ACT2.lv);
+    if (rows.some(r => !r.win || r.seconds > 400)) { console.error('  ✗ 2막: 공략 편성으로 충분히 키우면 400초 안에 전부 넘어야 한다 (seed ' + seed + ')'); failed++; }
+    else console.log('  ✓ 2막 공략 편성 완주 (seed ' + seed + ')');
+  }
+  // 진짜 어려운 전장은 전설·신화를 몰아 넣는 것만으로는 안 된다
+  for (const h of LEGEND_PROOF) {
+    const [r] = runHard(h.up, h.lv, 0, h.stage - 1, h.stage);
+    const tag = `S${h.stage} ${r.mods} (강화 ${h.up}/Lv${h.lv}) 전설만 ${r.legend}/${HARD_SEEDS.length} · 공략 ${r.counter}/${HARD_SEEDS.length}`;
+    if (r.legend > LEGEND_PROOF_MAX) { console.error(`  ✗ 전설만으로 넘어가 버린다 ${tag}`); failed++; }
+    else if (r.counter < COUNTER_MIN) { console.error(`  ✗ 공략 편성으로도 못 넘는다 ${tag}`); failed++; }
+    else console.log(`  ✓ 조합이 필요한 전장 ${tag}`);
   }
   if (failed) {
     console.error(`\n밸런스 검사 실패 (${failed}건)\n`);
@@ -296,9 +359,56 @@ function check() {
   console.log('\n밸런스 검사 통과\n');
 }
 
+/* 특성이 붙은 어려운 전장만 골라, 세 편성으로 돌린다 */
+const HARD_SEEDS = [12345, 98765, 4242, 777, 31337];
+function runHard(upLv, unitLv, seed, from, to) {
+  const engines = HARD_SEEDS.map(sd => loadEngine(sd));
+  const g0 = engines[0];
+  const rows = [];
+  for (let i = from; i < to; i++) {
+    if (!g0.STAGES[i].mods) continue;
+    const r = { stage: i + 1, name: g0.STAGES[i].name, mods: g0.STAGES[i].mods.join('+') };
+    // 판마다 난수가 다르니 세 번씩 돌려 이긴 횟수를 센다
+    const count = mode => engines.reduce((n, g) => n + (runStage(g, i, upLv, unitLv, false, mode).win ? 1 : 0), 0);
+    r.base = count(false);
+    r.legend = count('legend');
+    r.counter = count('counter');
+    rows.push(r);
+  }
+  return rows;
+}
+function printHard(rows, upLv, unitLv) {
+  const n = HARD_SEEDS.length;
+  console.log(`\n  어려운 전장 (강화 ${upLv} / Lv${unitLv})   이긴 횟수 / ${n}판: 전장편성 · 전설만 · 공략편성`);
+  rows.forEach(r => console.log('  S' + String(r.stage).padStart(2) + '   ' +
+    r.base + ' · ' + r.legend + ' · ' + r.counter + '   ' + r.mods.padEnd(26) + r.name));
+}
+
 const args = process.argv.slice(2);
 if (args[0] === '--check') {
   check();
+} else if (args[0] === '--tune') {
+  // node tools/sim.js --tune <전장번호> <강화Lv> <병종Lv> <배율,배율,...>
+  // 한 전장의 enemyMul 을 바꿔 가며 세 편성의 승수를 본다 (조율용)
+  const i = parseInt(args[1], 10) - 1, upLv = +args[2], unitLv = +args[3];
+  for (const m of args[4].split(',').map(Number)) {
+    const engines = HARD_SEEDS.map(sd => { const g = loadEngine(sd); g.STAGES[i].enemyMul = m; return g; });
+    const count = mode => engines.reduce((n, g) => n + (runStage(g, i, upLv, unitLv, false, mode).win ? 1 : 0), 0);
+    console.log('  S' + (i + 1) + ' ×' + m + '   전장 ' + count(false) + ' · 전설만 ' + count('legend') + ' · 공략 ' + count('counter'));
+  }
+} else if (args[0] === '--smart') {
+  // node tools/sim.js --smart [강화Lv] [병종Lv] [시작] [끝]
+  // 특성 전장에는 공략 편성, 나머지는 전장 편성으로 — "제대로 하는 플레이어"
+  const upLv = +(args[1] || 6), unitLv = +(args[2] || 10), from = +(args[3] || 0), to = +(args[4] || 20);
+  const g = loadEngine(12345), rows = [];
+  for (let i = from; i < to; i++) rows.push(runStage(g, i, upLv, unitLv, false, 'smart'));
+  printTable(rows, upLv, unitLv);
+} else if (args[0] === '--hard') {
+  // node tools/sim.js --hard [강화Lv] [병종Lv]
+  const upLv = parseInt(args[1] || '5', 10), unitLv = parseInt(args[2] || '8', 10);
+  printHard(runHard(upLv, unitLv, 12345, 0, 20), upLv, unitLv);
+  if (args[3]) { printHard(runHard(+args[3], +args[4], 12345, 0, 20), +args[3], +args[4]); }
+  printHard(runHard(8, 12, 12345, 20, 30), 8, 12);
 } else if (args[0] === '--legend') {
   // node tools/sim.js --legend [강화Lv] [병종Lv]
   // 전장 편성 / 무지성 전설 편성 / 조합 편성을 나란히 찍는다
@@ -334,9 +444,10 @@ if (args[0] === '--check') {
   const g = loadEngine(12345);
   // 난수는 한 판 안에서 이어진다. --check 와 같은 결과를 보려면
   // 앞 전장들을 먼저 돌려 난수 흐름을 같은 자리에 맞춰 두어야 한다.
+  const mode = args[4] || false;                // legend | combo | counter
   for (let i = 0; i < stage; i++) runStage(g, i, upLv, unitLv);
-  console.log(`\n  전장 ${stage + 1} 추적 (강화 ${upLv} / 병종 Lv${unitLv})`);
-  printTable([runStage(g, stage, upLv, unitLv, true)], upLv, unitLv);
+  console.log(`\n  전장 ${stage + 1} 추적 (강화 ${upLv} / 병종 Lv${unitLv}${mode ? ' / ' + mode : ''})`);
+  printTable([runStage(g, stage, upLv, unitLv, true, mode)], upLv, unitLv);
 } else {
   const upLv = parseInt(args[0] || '0', 10);
   const unitLv = parseInt(args[1] || '1', 10);

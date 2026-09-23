@@ -168,12 +168,12 @@ const I18N_EN = {
   '★ 영원의 겨울 왕좌': '★ Throne of Endless Winter', '연속 광역 공격 뒤 왕명으로 회복': "Heal with the King's Command after area barrages",
   '불타는 태양 회랑': 'Burning Sun Corridor', '화상을 정화하며 화룡을 견제': 'Cleanse burns while holding off the drake',
   '황금 일식의 제단': 'Altar of the Golden Eclipse', '치유·가속 토템을 범위 공격으로 압박': 'Press healing and haste totems with area attacks',
-  '★ 세 신화의 종착지': "★ The Three Myths' End", '보스 연속 공세에 액티브와 왕명을 나눠 사용': "Spread actives and the King's Command over the boss rush",
+  '★ 세 신화의 종착지': "★ The Three Myths' End", '보스 러시에 액티브와 왕명을 나눠 사용': "Spread actives and the King's Command over the boss rush",
 
   /* ---------------- 임무 · 업적 · 강화 ---------------- */
   '적 60명 처치': 'Defeat 60 enemies', '적 150명 처치': 'Defeat 150 enemies', '전장 2회 승리': 'Win 2 battles', '전장 4회 승리': 'Win 4 battles',
   '별 3개로 승리 1회': 'Win once with 3 stars', '소환 3회': 'Summon 3 times', '왕의 명령 2회 사용': "Use the King's Command twice",
-  '병종 훈련 2회': 'Train units twice', '보스 1체 처치': 'Defeat 1 boss', '무한 전장 5파도 돌파': 'Clear 5 waves in Endless',
+  '병종 훈련 2회': 'Train units twice', '보스 1체 처치': 'Defeat 1 boss', '무한 전장 5웨이브 돌파': 'Survive 5 waves in Endless',
   '첫 승리': 'First Victory', '전장을 하나 돌파한다': 'Clear one battlefield', '국경 수호': 'Border Warden', '5전장 돌파': 'Clear stage 5',
   '왕국의 방패': 'Shield of the Realm', '10전장 돌파': 'Clear stage 10', '대군주 토벌': 'Warlord Slayer', '20전장 전부 돌파': 'Clear all 20 stages',
   '별 수집가': 'Star Collector', '별 30개 획득': 'Earn 30 stars', '완전 제압': 'Total Victory', '모든 전장 별 3개': '3 stars on every stage',
@@ -181,7 +181,7 @@ const I18N_EN = {
   '제단의 손님': 'Altar Guest', '소환 10회': '10 summons', '제단의 단골': 'Altar Regular', '소환 100회': '100 summons',
   '신화의 계약': 'Mythic Pact', '전설 이상 병종 보유': 'Own a Legend or better', '세 신화': 'Three Myths', '세 시즌에서 전설 이상을 각각 보유': 'Own a Legend+ from each season',
   '정예 조련': 'Elite Drill', '병종 하나를 15레벨로': 'Train one unit to Lv 15', '세 신화의 정복자': 'Conqueror of Myths', '30전장 모두 돌파': 'Clear all 30 stages',
-  '끝없는 전장': 'Endless Field', '무한 전장 10파도 돌파': 'Clear 10 waves in Endless', '불굴의 성채': 'Unbreakable Fort', '무한 전장 25파도 돌파': 'Clear 25 waves in Endless',
+  '끝없는 전장': 'Endless Field', '무한 전장 10웨이브 돌파': 'Survive 10 waves in Endless', '불굴의 성채': 'Unbreakable Fort', '무한 전장 25웨이브 돌파': 'Survive 25 waves in Endless',
   '야전 의무대': 'Field Medics', '아군 지원병의 회복량 +6%/레벨 (왕명 제외)': "Support healing +6%/lv (not the King's Command)",
   '해독 훈련': 'Antidote Drill', '아군 중독·화상 피해 -5%/레벨': 'Ally poison/burn damage -5%/lv',
   '출진 보호진': 'Deployment Ward', '직접 출진한 병사에게 보호막 25/레벨 (소환수 제외)': 'Deployed units get a 25/lv shield (not summons)',
@@ -190,7 +190,7 @@ const I18N_EN = {
   '무기 연마': 'Whetstone', '모든 아군 병사의 공격력 +6%/레벨': 'All ally ATK +6%/lv',
   '갑옷 강화': 'Armor Plating', '모든 아군 병사의 체력 +8%/레벨': 'All ally HP +8%/lv',
   '성벽 보수': 'Wall Repair', '아군 성채 체력 +10%/레벨': 'Castle HP +10%/lv',
-  '병참': 'Logistics', '모든 병종의 재정비 시간 -3%/레벨': 'All unit cooldowns -3%/lv',
+  '병참': 'Logistics', '모든 병종의 쿨타임 -3%/레벨': 'All unit cooldowns -3%/lv',
   '전시 국고': 'War Treasury', '전투 시작 군자금 +60/레벨': 'Starting funds +60/lv',
   '전리품 수거': 'Spoils', '적 처치 골드 +8%/레벨': 'Gold from kills +8%/lv',
   '사관학교': 'Academy', '병종 레벨 상한 +1/레벨 (최대 20레벨까지)': 'Unit level cap +1/lv (up to Lv 20)',
@@ -203,13 +203,13 @@ const I18N_EN = {
   '전체화면 · 가로 고정': 'Fullscreen · Landscape', '저장 관리 · 백업 / 복원': 'Save · Backup / Restore', '기록 초기화': 'Reset Progress',
   '왕국 방어선 · 전 30 전장': 'Realm Defense · 30 battlefields',
   '왕국 진군도': 'Campaign Map', '타이틀로': 'To title', '장 선택': 'Chapters', '설정': 'Settings',
-  '국경 전선': 'Border Front', '왕도 수호': 'Royal Capital', '신화의 끝': 'End of Myths', '끝없는 공세': 'Endless Assault',
+  '국경 전선': 'Border Front', '왕도 수호': 'Royal Capital', '신화의 끝': 'End of Myths', '끝없는 웨이브': 'Endless waves',
   '1장': 'Ch.1', '2장': 'Ch.2', '2막': 'Act II', '무한': 'Endless',
   '짧은 전장': 'Short field', '보통 전장': 'Medium field', '긴 전장': 'Long field',
   '보스 전장': 'Boss stage', '출진 ▶': 'March ▶', '잠김': 'Locked',
   '이전 장을 먼저 돌파해야 한다.': 'Clear the previous chapter first.',
-  '총 45공세. 파도가 갈수록 촘촘해지고 5파도마다 보스가 나온다.': '45 assaults. Waves get denser, with a boss every 5 waves.',
-  '총 45공세에 도전한다. 증원까지 모두 격파해야 돌파로 인정된다.': 'Take on 45 assaults. Beat every reinforcement to count as a clear.',
+  '웨이브가 끝없이 온다. 웨이브마다 적이 강해지고 5웨이브마다 보스가 나온다. 성채가 무너질 때까지 몇 웨이브를 버티는지 겨룬다.': 'Waves never stop. Enemies grow stronger every wave, with a boss every 5. How long can your castle hold?',
+  '끝이 없는 웨이브. 웨이브마다 적이 강해진다. 성채가 무너질 때까지 버텨라.': 'Endless waves, each stronger than the last. Hold until your castle falls.',
   '🔒 무한 전장은 20전장을 모두 돌파하면 열린다': '🔒 Endless opens after clearing all 20 stages',
   '도전': 'Challenge', '최고 기록': 'Best',
   '강화 병영': 'Barracks', '훈련소': 'Training', '소환의 제단': 'Summon Altar', '임무 · 업적': 'Missions',
@@ -241,6 +241,20 @@ const I18N_EN = {
   '화면 흔들림': 'Screen shake', '전투 속도 기억': 'Remember battle speed',
   '전투 중에는 언어를 바꿀 수 없다': "Can't change language during battle",
 
+  /* 전장 특성 */
+  '중갑': 'Armored', '모든 적이 방어 60% — 받는 피해가 크게 준다 (중독·화상은 그대로)': 'All foes have 60% armor — damage is heavily cut (poison and burn ignore it)',
+  '토르(파쇄) · 중독 · 화상 · 태양 낙인': 'Thor (breaker) · poison · burn · sun brand',
+  '물량': 'Horde', '적이 1.8배 많이 몰려온다 (하나하나는 약하다)': '1.8× more foes (each one weaker)',
+  '범위 공격 · 연쇄 번개 · 값싼 방패 벽': 'Area attacks · chain lightning · cheap shield walls',
+  '영웅 사냥꾼': 'Hero Hunters', '적이 비용 350 이상인 아군(영웅·전설·신화)에게 3배 피해': 'Foes deal 3× damage to allies costing 350+ (Epic/Legend/Mythic)',
+  '값싼 병력을 많이 · 소환물 · 비싼 병종은 뒤에': 'Many cheap troops · summons · keep pricey units back',
+  '저주': 'Curse', '소환된 아군이 초당 10%씩 시들고, 회복·흡혈이 절반': 'Summoned allies wither 10%/s; healing and lifesteal halved',
+  '소환·치유에 기대지 않는 진짜 병력': 'Real troops that need no summons or healing',
+  '질주': 'Blitz', '적 이동 속도 +45% · 공격 속도 +20%': 'Foe move speed +45% · attack speed +20%',
+  '둔화 · 넉백 면역 방패 · 튼튼한 앞줄': 'Slows · knockback-immune shields · a sturdy front',
+  '전장 특성 · ': 'Battlefield traits · ', '대응 · ': 'Counter · ',
+  '적 ×': 'Foes ×',
+
   /* 동적 문구 */
   '레벨 상한': 'Level cap', ' (전장을 돌파하면 상승)': ' (rises with progress)', ' (최대)': ' (max)',
   '카드는 편성한 병종만 나온다': 'Only squad units appear as cards',
@@ -257,7 +271,7 @@ const I18N_EN = {
   '업적 달성: ': 'Achievement: ', '새 병종 해금: ': 'New unit: ', '신규': 'NEW', '보유 소환 병종': 'Summoned units',
   '기본 등급 확률 · 확정 소환 제외': 'Base rates · excluding guarantees', '신화 확정까지': 'Mythic guaranteed in',
   '신화 강림!!': 'MYTHIC DESCENDS!!', '전설 강림!': 'LEGEND DESCENDS!', '영웅 등장': 'EPIC!', '소환석을 하나 얻었다': 'Got 1 summon stone',
-  '출진 필요': 'Deploy first', '대상 없음': 'No target', '사용': 'Use', '준비': 'Ready', '아직 재정비 중': 'Still on cooldown',
+  '출진 필요': 'Deploy first', '대상 없음': 'No target', '사용': 'Use', '준비': 'Ready', '아직 쿨타임이다': 'Still on cooldown', '쿨타임': 'Cooldown',
   '동시 출진 한도에 도달했다': 'Field limit reached', '왕명은 아직 준비되지 않았다': 'Command not ready yet',
   '자동 출진을 켰다': 'Auto deploy on', '자동 출진을 껐다': 'Auto deploy off', '재개': 'Resumed',
   '전투 포기': 'Abandon battle', '지금까지의 전과를 버리고 진군도로 돌아갈까?': 'Abandon this battle and return to the map?',
@@ -265,7 +279,7 @@ const I18N_EN = {
   '강화를 올리거나 편성을 바꿔 보자.': 'Upgrade or change your squad.', '성채를 더 지키면 별 3개를 받는다.': 'Protect the castle better for 3 stars.',
   '왕국 방어전 전 전장 제패!': 'Every battlefield conquered!', '신기록!': 'New record!',
   '끝없는 증원 · ': 'Endless reinforcements · ', '다음 증원 · ': 'Next reinforcements · ', '보스 예고 · ': 'Boss incoming · ',
-  '최종 공세 · 남은 적을 격파하라': 'Final assault · defeat the rest',
+  '마지막 웨이브 · 남은 적을 처치하라': 'Final wave · defeat the rest',
   '적 증원 시작': 'Reinforcements begin', ' 증원': ' reinforcements', '보스 등장': 'BOSS', '왕 의 명 령': "KING'S COMMAND",
   '획득 골드 💰 ': 'Gold 💰 ', '  ·  남은 성채 ': '  ·  Castle ', '  (별 보너스 ': '  (star bonus ', '  ·  소환석 🔮 ': '  ·  Stones 🔮 ',
   '무한 전장 · 최고 ': 'Endless · best ', '최대 강화 완료': 'Fully upgraded', ' 골드로 강화': ' gold to upgrade',
@@ -277,19 +291,19 @@ const I18N_EN = {
   '. 이 데이터로 교체할까요? 현재 저장은 자동 백업에 남깁니다.': '. Replace with this data? Your current save stays in the auto-backup.',
   '전체화면을 지원하지 않는 기기다': "This device doesn't support fullscreen",
   '백업 파일은 앱 밖에 보관됩니다. 앱을 삭제하기 전에 백업을 따로 저장해 주세요.': 'Backups are stored outside the app. Save one before uninstalling.',
-  '보상': 'Reward', '출진': 'Deploy', '돌파': 'Cleared', '파도': 'waves', '전장': 'Stage', '병종': 'units', '개 칸을 채웠다': ' slots filled',
+  '보상': 'Reward', '출진': 'Deploy', '돌파': 'Cleared', '웨이브': 'waves', '전장': 'Stage', '병종': 'units', '개 칸을 채웠다': ' slots filled',
   '단축키': 'Key', '보유': 'owned', '분': 'm', '레벨 +1 · 💰': 'Lv +1 · 💰'
 };
 
 /* 목록 문단처럼 굵은 글씨가 섞인 덩어리는 통째로 바꾼다 */
 const I18N_EN_HTML = {
   '왼쪽 아래 <b>군자금 막대</b>가 시간이 지나면 저절로 찬다.': 'The <b>war funds bar</b> at the bottom left fills over time.',
-  '아래 <b>카드</b>를 눌러 병사를 내보낸다. 숫자는 비용, 어두워지면 재정비 중이다.': 'Tap a <b>card</b> below to deploy. The number is the cost; dark cards are on cooldown.',
+  '아래 <b>카드</b>를 눌러 병사를 내보낸다. 숫자는 비용, 어두우면 쿨타임 중이다.': 'Tap a <b>card</b> below to deploy. The number is the cost; dark cards are on cooldown.',
   '병사는 알아서 전진한다. <b>오른쪽 끝 적 요새</b>를 무너뜨리면 승리다.': 'Soldiers advance on their own. Destroy the <b>enemy fort on the right</b> to win.',
   '왼쪽 끝 <b>아군 성채</b>가 무너지면 패배다. 성채를 많이 지킬수록 별을 더 받는다.': 'Lose if <b>your castle on the left</b> falls. Keep it healthier for more stars.',
   '화면을 좌우로 밀면 전장을 살펴볼 수 있다.': 'Swipe left and right to look around the field.',
   '군자금은 시간이 지나면 저절로 찬다. 아래쪽 막대가 현재 보유량이다.': 'War funds fill over time. The bar at the bottom shows what you have.',
-  '아래 카드를 눌러 병사를 출진시킨다. 카드마다 비용과 재정비 시간이 있다.': 'Tap cards to deploy soldiers. Each card has a cost and a cooldown.',
+  '아래 카드를 눌러 병사를 출진시킨다. 카드마다 비용과 쿨타임이 있다.': 'Tap cards to deploy soldiers. Each card has a cost and a cooldown.',
   '병사는 알아서 전진해 적과 싸운다. <b>적 요새를 무너뜨리면 승리</b>.': 'Soldiers advance and fight on their own. <b>Destroy the enemy fort to win</b>.',
   '아군 성채가 무너지면 패배. 화면을 좌우로 밀어 전장을 살필 수 있다.': 'Lose if your castle falls. Swipe to scan the field.',
   '체력이 일정 비율 아래로 떨어지면 병사가 뒤로 밀린다. 방패병으로 버티고 뒤에서 화살을 퍼부어라.': 'Units get knocked back at certain HP thresholds. Hold with shields and rain arrows from behind.',
@@ -311,7 +325,8 @@ const I18N_EN_PATTERNS = [
   [/(\d+)\s*레벨/g, 'Lv $1'],
   [/레벨 (\d+)/g, 'Lv $1'],
   [/(\d+(?:\.\d+)?)\s*초/g, '$1s'],
-  [/(\d+)\s*파도/g, '$1 waves'],
+  [/(\d+)\s*웨이브/g, '$1 waves'],
+  [/웨이브 (\d+)/g, 'Wave $1'],
   [/(\d+)\s*병종/g, '$1 units'],
   [/(\d+)\s*회/g, '$1×'],
   [/(\d+)\s*명/g, '$1'],
@@ -407,7 +422,7 @@ function i18nStart() {
 }
 
 if (I18N.lang === 'en') {
-  [UNITS, ENEMIES, STAGES, SEASONS, MISSION_DEFS, ACHIEVEMENTS, UPGRADES, COMMAND, RARITY]
+  [UNITS, ENEMIES, STAGES, SEASONS, MISSION_DEFS, ACHIEVEMENTS, UPGRADES, COMMAND, RARITY, STAGE_MODS]
     .forEach(o => i18nData(o, 0));
   // 무한 전장은 부를 때마다 새로 만든다
   const makeEndlessKo = makeEndlessStage;

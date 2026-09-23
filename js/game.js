@@ -31,7 +31,7 @@ function sfx(name) {
 }
 
 const FX_LIMIT = 200;        // 이펙트가 무한정 쌓이지 않게
-const REINFORCE_FIRST = 10;  // 대본 파도가 끝나고 첫 증원까지
+const REINFORCE_FIRST = 10;  // 대본 웨이브가 끝나고 첫 증원까지
 const REINFORCE_MIN = 3.0;   // 증원 간격 하한
 const REINFORCE_STEP = 0.06; // 증원 한 번마다 적이 세지는 폭
 const REINFORCE_MAX = 1.9;   // 증원 강화 상한 (끝없이 세지면 이길 수가 없다)
@@ -45,6 +45,10 @@ function setCastLimits(n, big) {
   CAST_LIMIT = n;
   CAST_BIG_LIMIT = big;
 }
+const HUNT_COST = 350;        // 영웅 사냥꾼 특성이 노리는 비용
+const HUNT_MUL = 3;
+const CURSE_HEAL = 0.5;       // 저주: 아군 회복·흡혈 배율
+const CURSE_WITHER = 0.1;     // 저주: 소환물이 초당 잃는 최대 체력 비율
 const SLOW_SPEED_MUL = 0.45; // 둔화 시 이동
 const SLOW_RATE_MUL = 1.7;   // 둔화 시 공격 간격
 
@@ -76,6 +80,7 @@ class Fighter {
     // 그림에만 쓰는 값: 나온 지 얼마나 됐나, 지금 누군가와 맞붙어 있나
     this.age = 0;
     this.engaged = false;
+    this.healMul = 1;           // 저주 전장에서는 절반
     this.scale = stats.scale || 1;
     this.radius = 26 * this.scale;
 
@@ -125,7 +130,7 @@ class Fighter {
 
   heal(amount) {
     if (this.dead) return;
-    this.hp = Math.min(this.maxHp, this.hp + amount);
+    this.hp = Math.min(this.maxHp, this.hp + amount * this.healMul);
   }
 
   giveBarrier(amount) {
@@ -256,13 +261,22 @@ class Battle {
     this.speed = 1;
 
     this.queue = [];
-    this.stage.waves.forEach((w, index) => {
-      for (let i = 0; i < w.n; i++) this.queue.push({ t: w.t + i * w.gap, e: w.e, wave: w.wave !== undefined ? w.wave : index });
+    this.mods = {};
+    (this.stage.mods || []).forEach(m => { this.mods[m] = true; });
+    this.stage.waves.forEach((w0, index) => {
+      // 물량: 보스가 아닌 무리는 1.8배로, 더 촘촘하게
+      const w = (this.mods.horde && !(ENEMIES[w0.e] && ENEMIES[w0.e].boss))
+        ? Object.assign({}, w0, { n: Math.ceil(w0.n * 1.8), gap: w0.gap * 0.6 }) : w0;
+      for (let i = 0; i < w.n; i++) this.queue.push({ t: w.t + i * w.gap, e: w.e, wave: w.wave !== undefined ? w.wave : index, mul: w.mul });
     });
     this.queue.sort((a, b) => a.t - b.t);
     this.qi = 0;
+    // 끝없는 무한 전장: 대기열이 줄면 다음 웨이브를 이어 붙인다
+    this.endlessW = 0;
+    this.endlessT = 2;
+    if (this.stage.infinite) this.extendEndless();
 
-    // 증원: 대본 파도가 동나도 적 요새는 병력을 계속 토해낸다.
+    // 증원: 대본 웨이브가 동나도 적 요새는 병력을 계속 토해낸다.
     // 버티기만 해서는 절대 끝나지 않고, 요새를 부수는 수밖에 없다.
     const seen = {}, pool = [], heavy = [];
     this.stage.waves.forEach(w => {
@@ -315,7 +329,9 @@ class Battle {
   makeAlly(u, x) {
     const lm = unitLevelMul(this.levels[u.id] || 1);
     const buff = { hp: this.buff.hp * lm, atk: this.buff.atk * lm };
-    return new Fighter(u, 'ally', x, buff);
+    const f = new Fighter(u, 'ally', x, buff);
+    if (this.mods && this.mods.curse) f.healMul = CURSE_HEAL;
+    return f;
   }
 
   deploy(id) {
@@ -422,9 +438,10 @@ class Battle {
 
     while (this.qi < this.queue.length && this.queue[this.qi].t <= this.time) {
       const entry = this.queue[this.qi];
-      this.spawnEnemy(entry.e).wave = entry.wave;
+      this.spawnEnemy(entry.e, undefined, entry.mul).wave = entry.wave;
       this.qi++;
     }
+    if (this.stage.infinite) this.extendEndless();
     this.tickReinforce(dt);
 
     this.step(this.allies, this.enemies, this.enemyCastle, dt, true);
@@ -442,8 +459,8 @@ class Battle {
 
     if (!this.endless && this.enemyCastle.dead) { this.shake = 16; this.finish('win'); }
     else if (this.allyCastle.dead) { this.shake = 16; this.finish(this.endless ? 'over' : 'lose'); }
-    // 무한 전장은 모든 파도를 버텨내면 그것으로 끝
-    else if (this.endless && this.qi >= this.queue.length && this.enemies.length === 0) {
+    // 웨이브 수가 정해진 무한 전장(검사용)만 다 버티면 끝. 진짜 무한 전장은 성채가 무너질 때까지.
+    else if (this.endless && !this.stage.infinite && this.qi >= this.queue.length && this.enemies.length === 0) {
       this.finish('over');
     }
   }
@@ -451,6 +468,9 @@ class Battle {
   spawnEnemy(id, atX, mul) {
     const spec = ENEMIES[id];
     const st = Object.assign({ range: 60, speed: 40, interval: 1.2, kb: 1, scale: 1 }, spec);
+    const mods = this.mods || {};
+    if (mods.blitz) { st.speed *= 1.45; st.interval *= 0.83; }
+    if (mods.ironclad) st.ab = Object.assign({}, st.ab, { armor: Math.max(0.6, (st.ab && st.ab.armor) || 0) });
     // 전장 자체가 거느린 강화 배율(2막처럼 같은 적이 더 억센 곳)과
     // 증원 배율을 함께 얹는다.
     const total = (this.stage.enemyMul || 1) * (mul && mul > 1 ? mul : 1);
@@ -458,6 +478,7 @@ class Battle {
     const f = new Fighter(st, 'enemy', atX !== undefined ? atX : ENEMY_SPAWN_X - Math.random() * 40, buff);
     f.gold = spec.gold || 0;
     f.boss = !!spec.boss;
+    if (mods.horde && !f.boss) { f.maxHp = Math.round(f.maxHp * 0.6); f.hp = f.maxHp; }
     if (f.boss) { this.bossAlert = 2.6; this.bossName = spec.name; this.shake = 10; sfx('bossIn'); }
     this.enemies.push(f);
     return f;
@@ -534,7 +555,7 @@ class Battle {
       const best = this.save.endlessBest || 0;
       this.newRecord = this.wavesCleared > best;
       if (this.newRecord) this.save.endlessBest = this.wavesCleared;
-      // 파도 수에 따른 보상
+      // 웨이브 수에 따른 보상
       this.coins += this.wavesCleared * 120;
       this.stoneGain = Math.floor(this.wavesCleared / 5);
       this.save.stones = (this.save.stones || 0) + this.stoneGain;
@@ -607,6 +628,11 @@ class Battle {
       }
 
       if (f.ab.regen && !burning) f.heal(f.ab.regen * dt);
+      // 저주: 불려 나온 아군(해골·미라·방벽)은 서서히 시든다
+      if (isAlly && f.summoned && this.mods.curse) {
+        f.hp -= f.maxHp * CURSE_WITHER * dt;
+        if (f.hp <= 0) { f.hp = 0; f.dead = true; continue; }
+      }
 
       // 보스 패턴
       if (f.s.phases || f.s.special) this.bossTick(f, dt);
@@ -739,12 +765,12 @@ class Battle {
   }
 
   /* ------------------- 끝없는 증원 -------------------
-   * 대본 파도를 다 막아도 적 요새는 병력을 계속 내보낸다. 시간이 갈수록
+   * 대본 웨이브를 다 막아도 적 요새는 병력을 계속 내보낸다. 시간이 갈수록
    * 간격이 좁아지고 한 마리 한 마리가 세진다. 버티기만 하는 전략은 반드시
    * 무너지므로, 결국 요새를 부수러 나가야 한다. */
   tickReinforce(dt) {
-    if (this.endless) return;                   // 무한 전장은 자체 파도로 돈다
-    if (this.qi < this.queue.length) return;    // 대본 파도가 남아 있으면 아직
+    if (this.endless) return;                   // 무한 전장은 자체 웨이브로 돈다
+    if (this.qi < this.queue.length) return;    // 대본 웨이브가 남아 있으면 아직
     if (this.enemyCastle.dead) return;
 
     this.reinfT -= dt;
@@ -810,10 +836,10 @@ class Battle {
     }
   }
 
-  announce(name) {
+  announce(name, dur) {
     if (!name) return;
     this.patternName = name;
-    this.patternT = 1.7;
+    this.patternT = dur || 1.7;
   }
 
   /* 보스 기술 한 방. 아군 보스도 같은 코드로 돌아간다. */
@@ -1057,6 +1083,9 @@ class Battle {
       const ta = target.ab;
       if (target.boss || ta.armor || ta.kbImmune) dmg *= src.ab.breaker;
     }
+    // 영웅 사냥꾼: 적이 비싼(비용 350 이상) 아군 — 영웅·전설·신화 — 을 골라 두 배로 친다
+    if (this.mods && this.mods.giantslayer && src && src.side === 'enemy' &&
+        !target.isCastle && target.side === 'ally' && (target.s.cost || 0) >= HUNT_COST) dmg *= HUNT_MUL;
     const dealt = target.takeDamage(dmg, pierce) || 0;
     if (src && src.ab.sunmark && !target.isCastle && !target.dead) {
       target.vulnT = Math.max(target.vulnT, src.ab.sunmark.dur);
@@ -1196,7 +1225,28 @@ class Battle {
     if (this.state !== 'play') this.resultTime = (this.resultTime || 0) + dt;
   }
 
-  /* 무한 전장에서 지금까지 넘긴 파도 수 */
+  /* 무한 전장: 앞으로 나올 적이 이만큼 줄면 다음 웨이브를 붙인다 */
+  extendEndless() {
+    while (this.queue.length - this.qi < 24) {
+      const spec = endlessWave(this.endlessW, this.endlessT);
+      const add = [];
+      spec.waves.forEach(w => {
+        for (let i = 0; i < w.n; i++) add.push({ t: w.t + i * w.gap, e: w.e, wave: w.wave, mul: w.mul });
+      });
+      add.sort((a, b) => a.t - b.t);
+      add.forEach(x => this.queue.push(x));
+      this.endlessT = spec.next;
+      this.endlessW++;
+    }
+  }
+
+  /* 지금 싸우는 무한 전장 웨이브 (1부터) */
+  currentWave() {
+    const e = this.queue[Math.max(0, this.qi - 1)];
+    return e ? e.wave + 1 : 1;
+  }
+
+  /* 무한 전장에서 지금까지 넘긴 웨이브 수 */
   wavesDone() {
     if (!this.endless) return 0;
     const pending = new Set(this.queue.slice(this.qi).map(e => e.wave));
@@ -1215,7 +1265,7 @@ class Battle {
       return { name: ENEMIES[entry.e].name, boss: !!ENEMIES[entry.e].boss,
                seconds: Math.max(0, Math.ceil(entry.t - this.time)) };
     }
-    // 대본 파도가 동나면 그 다음은 언제나 증원이다. 끝이 아니라는 걸 알려 준다.
+    // 대본 웨이브가 동나면 그 다음은 언제나 증원이다. 끝이 아니라는 걸 알려 준다.
     if (this.endless || this.enemyCastle.dead) return null;
     const heavy = this.reinfHeavy.length && (this.reinfWave + 1) % 6 === 0;
     const id = heavy

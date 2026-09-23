@@ -1096,13 +1096,18 @@ class Renderer {
       const q = Math.min(1, battle.patternT / 1.7);
       const rise = (1 - q) * 18;
       ctx.globalAlpha = Math.min(1, q * 2.2);
-      ctx.font = 'bold ' + Math.round(this.h * 0.052) + 'px sans-serif';
+      // 테두리와 글자를 같은 문구로 그린다 (번역 전/후가 섞이면 글자가 뭉개진다)
+      const text = tr(battle.patternName);
+      let fs = Math.round(this.h * 0.052);
+      ctx.font = 'bold ' + fs + 'px sans-serif';
+      const tw = ctx.measureText(text).width;
+      if (tw > this.w * 0.86) { fs = Math.floor(fs * this.w * 0.86 / tw); ctx.font = 'bold ' + fs + 'px sans-serif'; }
       ctx.textAlign = 'center';
       ctx.lineWidth = 4;
       ctx.strokeStyle = 'rgba(0,0,0,.8)';
-      ctx.strokeText(battle.patternName, this.w / 2, this.h * 0.3 - rise);
+      ctx.strokeText(text, this.w / 2, this.h * 0.3 - rise);
       ctx.fillStyle = '#ffcf70';
-      ctx.fillText(tr(battle.patternName), this.w / 2, this.h * 0.3 - rise);
+      ctx.fillText(text, this.w / 2, this.h * 0.3 - rise);
       ctx.textAlign = 'left';
       ctx.globalAlpha = 1;
     }
