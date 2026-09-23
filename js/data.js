@@ -277,28 +277,28 @@ const SEASON_UNITS = [
     id: 'zeus', castFx: 'lightning', name: '제우스', short: '제우스', role: '뇌신', shape: 'zeus',
     season: 'olympus', rarity: 'SSR', gacha: true, unlockStage: 999,
     body: '#e8cfa4', accent: '#ffe14a', tunic: '#f7f2e4',
-    hp: 2600, atk: 370, range: 380, speed: 24, interval: 2.6,
-    cost: 620, cooldown: 58, kb: 1, ranged: true, area: true, areaRadius: 150, scale: 1.35,
-    ab: { stun: { chance: 0.35, dur: 0.8 } },
-    abText: '초장거리 번개 광역 · 35% 확률로 0.8초 기절',
-    desc: '하늘에서 번개를 내리꽂는다. 맞은 자리의 모든 것이 멈춘다.'
+    hp: 900, atk: 150, range: 330, speed: 24, interval: 1.8,
+    cost: 480, cooldown: 40, kb: 2, ranged: true, scale: 1.35, maxActive: 1,
+    ab: { chain: { n: 4, fall: 0.75, range: 130 } },
+    abText: '연쇄 번개 · 4번 튕김 · 몸이 약함',
+    desc: '번개가 적에서 적으로 옮겨 붙는다. 떼로 몰려올수록 무섭지만, 단단한 한 놈 앞에서는 약하고 몸도 가볍다. 앞을 지켜 줄 병력이 있어야 산다.'
   }),
   mk({
     id: 'ares', castFx: 'slash', name: '아레스', short: '아레스', role: '전신', shape: 'ares',
     season: 'olympus', rarity: 'SR', gacha: true, unlockStage: 999,
     body: '#2b3038', accent: '#c0392b', tunic: '#8e2f3a',
-    hp: 2600, atk: 215, range: 88, speed: 34, interval: 1.7,
-    cost: 400, cooldown: 22, kb: 1, area: true, areaRadius: 95, scale: 1.15,
-    ab: { enrage: 1.8, lifesteal: 0.2 },
-    abText: '범위 · 피가 깎일수록 가속 · 흡혈 20%',
+    hp: 1900, atk: 170, range: 88, speed: 34, interval: 1.7,
+    cost: 400, cooldown: 26, kb: 1, area: true, areaRadius: 95, scale: 1.15,
+    ab: { enrage: 1.8, lifesteal: 0.12 },
+    abText: '범위 · 피가 깎일수록 가속 · 흡혈 12%',
     desc: '전쟁 그 자체. 상처가 깊어질수록 창은 더 빨라진다.'
   }),
   mk({
     id: 'artemis', castFx: 'holy', name: '아르테미스', short: '아르테미스', role: '사냥', shape: 'artemis',
     season: 'olympus', rarity: 'SR', gacha: true, unlockStage: 999,
     body: '#2b3038', accent: '#cfe8b0', tunic: '#4a7c4e',
-    hp: 430, atk: 118, range: 390, speed: 44, interval: 1.15,
-    cost: 380, cooldown: 18, kb: 2, ranged: true,
+    hp: 430, atk: 95, range: 390, speed: 44, interval: 1.15,
+    cost: 380, cooldown: 22, kb: 2, ranged: true,
     ab: { pierce: true },
     abText: '일직선 관통 · 1.15초마다 사격',
     desc: '달의 사냥꾼. 화살 한 발이 줄지어 선 적을 전부 꿰뚫는다.'
@@ -329,18 +329,18 @@ const SEASON_UNITS = [
     id: 'thor', castFx: 'shockwave', name: '토르', short: '토르', role: '뇌신', shape: 'thor',
     season: 'ragnarok', rarity: 'SSR', gacha: true, unlockStage: 999,
     body: '#2b3038', accent: '#b9c2cc', tunic: '#8e2f3a',
-    hp: 3900, atk: 430, range: 120, speed: 30, interval: 2.2,
-    cost: 640, cooldown: 60, kb: 1, area: true, areaRadius: 130, scale: 1.4,
-    ab: { stun: { chance: 0.4, dur: 0.8 }, push: 50 },
-    abText: '광역 망치 · 40% 확률로 0.8초 기절 · 밀쳐내기',
-    desc: '묠니르가 떨어질 때마다 전선이 통째로 뒤로 밀린다.'
+    hp: 2200, atk: 190, range: 90, speed: 30, interval: 1.6,
+    cost: 460, cooldown: 36, kb: 1, scale: 1.4, maxActive: 1,
+    ab: { breaker: 1.8, push: 30 },
+    abText: '파쇄 · 갑주 무시 · 보스·중장갑에게 1.8배 · 단일 대상',
+    desc: '묠니르는 갑옷도 성벽도 가리지 않는다. 보스와 중장갑을 깨는 데는 따를 자가 없지만, 한 번에 하나밖에 못 친다. 떼는 다른 병력이 맡아야 한다.'
   }),
   mk({
     id: 'valkyrie', castFx: 'holy', name: '발키리', short: '발키리', role: '전선', shape: 'valkyrie',
     season: 'ragnarok', rarity: 'SR', gacha: true, unlockStage: 999,
     body: '#2b3038', accent: '#f0e6c8', tunic: '#3f6bb5',
-    hp: 1500, atk: 175, range: 82, speed: 58, interval: 1.3,
-    cost: 390, cooldown: 20, kb: 2,
+    hp: 1100, atk: 110, range: 82, speed: 58, interval: 1.3,
+    cost: 390, cooldown: 24, kb: 2,
     ab: { revive: 0.5, heal: 60, radius: 160, interval: 4 },
     abText: '1회 부활 · 주변 아군 회복',
     desc: '쓰러진 자를 거두는 전장의 처녀. 자기 자신도 한 번은 일어난다.'
@@ -349,10 +349,10 @@ const SEASON_UNITS = [
     id: 'fenrir', castFx: 'slash', name: '펜리르', short: '펜리르', role: '맹수', shape: 'fenrir',
     season: 'ragnarok', rarity: 'SR', gacha: true, unlockStage: 999,
     body: '#3a3f48', accent: '#7fd8ff', tunic: '#2a2e36',
-    hp: 1900, atk: 140, range: 66, speed: 130, interval: 0.8,
-    cost: 390, cooldown: 20, kb: 2, scale: 1.25,
-    ab: { lifesteal: 0.4 },
-    abText: '초고속 돌진 · 흡혈 40%',
+    hp: 1100, atk: 100, range: 66, speed: 130, interval: 0.8,
+    cost: 390, cooldown: 24, kb: 2, scale: 1.25,
+    ab: { lifesteal: 0.25 },
+    abText: '초고속 돌진 · 흡혈 25%',
     desc: '사슬을 끊고 나온 늑대. 물어뜯은 만큼 스스로 회복한다.'
   }),
   mk({
@@ -381,20 +381,20 @@ const SEASON_UNITS = [
     id: 'anubis', castFx: 'pillar', name: '아누비스', short: '아누비스', role: '사자', shape: 'anubis',
     season: 'nile', rarity: 'SSR', gacha: true, unlockStage: 999,
     body: '#2a2a30', accent: '#e8c65a', tunic: '#1e1e24',
-    hp: 3300, atk: 330, range: 110, speed: 26, interval: 2.2,
-    cost: 600, cooldown: 55, kb: 1, area: true, areaRadius: 120, scale: 1.35,
-    ab: { summon: { id: 'mummy', n: 2 }, interval: 7 },
-    abText: '광역 · 7초마다 미라 2기 소환',
-    desc: '죽은 자를 세어 보내는 자. 쓰러진 자리마다 미라가 일어선다.'
+    hp: 1800, atk: 80, range: 110, speed: 26, interval: 2,
+    cost: 420, cooldown: 34, kb: 1, scale: 1.35, maxActive: 1,
+    ab: { summon: { id: 'mummy', n: 1 }, interval: 8 },
+    abText: '8초마다 미라 1기 · 본인 화력 약함',
+    desc: '미라를 세워 전열을 대신 막게 한다. 스스로는 거의 싸우지 못하니, 미라 뒤에서 때려 줄 병력과 함께 써야 한다.'
   }),
   mk({
     id: 'rapriest', castFx: 'firestorm', name: '라의 사제', short: '라사제', role: '태양', shape: 'rapriest',
     season: 'nile', rarity: 'SR', gacha: true, unlockStage: 999,
     body: '#2b3038', accent: '#ffb03c', tunic: '#e8c65a',
     hp: 720, atk: 180, range: 300, speed: 30, interval: 2.0,
-    cost: 350, cooldown: 14, kb: 2, ranged: true, area: true, areaRadius: 105,
-    ab: { burn: { dps: 95, dur: 5 } },
-    abText: '태양광 범위 · 화상 95/초 5초',
+    cost: 350, cooldown: 18, kb: 2, ranged: true, area: true, areaRadius: 105,
+    ab: { burn: { dps: 60, dur: 5 } },
+    abText: '태양광 범위 · 화상 60/초 5초',
     desc: '태양을 조각내 던진다. 맞은 자리는 한참을 탄다.'
   }),
   mk({
@@ -438,8 +438,8 @@ const SEASON_UNITS = [
     id: 'pharaoh', name: '파라오 근위대', short: '근위대', role: '수호', shape: 'pharaoh',
     season: 'nile', rarity: 'SR', gacha: true, unlockStage: 999,
     body: '#2b3038', accent: '#e8c65a', tunic: '#2b6b8e',
-    hp: 2900, atk: 165, range: 78, speed: 28, interval: 1.6,
-    cost: 370, cooldown: 20, kb: 1, scale: 1.15,
+    hp: 2300, atk: 112, range: 78, speed: 28, interval: 1.6,
+    cost: 370, cooldown: 24, kb: 1, scale: 1.15,
     ab: { kbImmune: true, barrier: 200, radius: 180, interval: 6 },
     abText: '넉백 면역 · 주변 아군 보호막 200',
     desc: '왕의 무덤을 지키던 창병. 한 걸음도 밀리지 않는다.'
@@ -458,20 +458,26 @@ const SEASON_UNITS = [
 /* 신화: 압도적인 상시 화력 대신 직접 선택하는 전술 능력에 집중한다. */
 SEASON_UNITS.push(
   mk({id:'hades',name:'하데스',role:'명계',shape:'hades',season:'olympus',rarity:'UR',gacha:true,unlockStage:999,
-    body:'#807395',accent:'#c98aff',tunic:'#33213f',hp:2200,atk:210,range:245,speed:25,interval:2.4,
-    cost:760,cooldown:65,kb:2,ranged:true,area:true,areaRadius:80,scale:1.2,maxActive:1,
-    ab:{lifesteal:.1},abText:'범위 공격 · 흡혈 10% · 명계의 문',desc:'검은 왕관과 쌍지창을 든 명계의 군주. 적 무리 아래 영혼의 문을 연다.',
-    active:{name:'명계의 문',kind:'underworld',cd:52,radius:230,mul:2.2,slow:3,desc:'가장 가까운 적 주변 피해·3초 둔화. 성채에는 피해 없음.'}}),
+    body:'#807395',accent:'#c98aff',tunic:'#33213f',hp:2000,atk:170,range:245,speed:25,interval:2.2,
+    cost:560,cooldown:45,kb:2,ranged:true,area:true,areaRadius:80,scale:1.2,maxActive:1,
+    ab:{lifesteal:.1,reanimate:{id:'skeleton',radius:260,cd:1.4,max:8}},
+    abText:'명계 · 주변에서 쓰러진 적을 해골로 일으킴(최대 8) · 명계의 문',
+    desc:'근처에서 쓰러진 적을 해골 병사로 일으킨다. 싸움이 길어질수록 군세가 불어나지만, 스스로는 시체를 만들 힘이 없다. 적을 쓰러뜨려 줄 주력과 함께여야 한다.',
+    active:{name:'명계의 문',kind:'underworld',cd:52,radius:230,mul:2.6,slow:3,desc:'가장 가까운 적 주변 피해·3초 둔화. 성채에는 피해 없음.'}}),
   mk({id:'odin',name:'오딘',role:'룬의 지배자',shape:'odin',season:'ragnarok',rarity:'UR',gacha:true,unlockStage:999,
-    body:'#b4bdc4',accent:'#7be6ff',tunic:'#28495e',hp:2400,atk:190,range:290,speed:27,interval:2.6,
-    cost:780,cooldown:68,kb:2,ranged:true,maxActive:1,scale:1.15,
-    ab:{pierce:true},abText:'관통 · 운명의 룬',desc:'외눈의 현자와 두 까마귀. 금빛 창 궁니르로 운명의 사선을 꿰뚫는다.',
+    body:'#b4bdc4',accent:'#7be6ff',tunic:'#28495e',hp:1600,atk:150,range:290,speed:27,interval:2.2,
+    cost:560,cooldown:45,kb:2,ranged:true,maxActive:1,scale:1.15,
+    ab:{pierce:true,rally:{atk:.35,radius:300},interval:2.5},
+    abText:'지휘 · 주변 아군 공격력 +35% (자신 제외) · 운명의 룬',
+    desc:'궁니르를 들어 전군을 지휘한다. 곁에 선 병사들이 한층 세게 친다. 혼자서는 평범한 창잡이일 뿐 — 거느린 군대가 강할수록 오딘도 강해진다.',
     active:{name:'운명의 룬',kind:'runeveil',cd:48,radius:300,barrier:320,desc:'주변 아군 보호막·중독과 화상 정화. 보호막 중첩 없음.'}}),
   mk({id:'ra',name:'라',role:'태양신',shape:'ra',season:'nile',rarity:'UR',gacha:true,unlockStage:999,
-    body:'#c9a466',accent:'#ffca62',tunic:'#f0e0ae',hp:2000,atk:205,range:260,speed:26,interval:2.5,
-    cost:750,cooldown:65,kb:2,ranged:true,area:true,areaRadius:85,maxActive:1,scale:1.2,
-    ab:{burn:{dps:18,dur:3}},abText:'화상 · 태양의 심판',desc:'매의 머리 위에 태양 원반을 이고 떠오른다. 황금 날개로 전장에 새벽을 부른다.',
-    active:{name:'태양의 심판',kind:'sunfall',cd:55,radius:215,mul:2.4,burn:5,desc:'가장 가까운 적 주변 피해·5초 화상. 성채에는 피해 없음.'}}),
+    body:'#c9a466',accent:'#ffca62',tunic:'#f0e0ae',hp:1500,atk:140,range:260,speed:26,interval:2.2,
+    cost:540,cooldown:45,kb:2,ranged:true,area:true,areaRadius:85,maxActive:1,scale:1.2,
+    ab:{burn:{dps:18,dur:3},sunmark:{vuln:.3,dur:4}},
+    abText:'태양 낙인 · 맞은 적은 4초간 모든 피해 +30% · 태양의 심판',
+    desc:'태양빛으로 적을 낙인찍는다. 낙인 찍힌 적은 누구에게 맞든 더 아프다. 라 혼자서는 약하지만, 주력의 화력을 한 단계 끌어올린다.',
+    active:{name:'태양의 심판',kind:'sunfall',cd:55,radius:215,mul:3,burn:5,desc:'가장 가까운 적 주변 피해·5초 화상·낙인. 성채에는 피해 없음.'}}),
   mk({id:'persephone',name:'페르세포네',role:'봄과 명계',shape:'persephone',season:'olympus',rarity:'SR',gacha:true,unlockStage:999,
     body:'#e2c4cf',accent:'#f6a5d4',tunic:'#713d79',hp:700,atk:75,range:235,speed:32,interval:1.8,
     cost:280,cooldown:18,kb:2,ranged:true,ab:{heal:45,radius:175,interval:4},abText:'주변 회복 · 꽃잎 탄환',desc:'석류와 꽃관을 지닌 봄의 여왕. 명계의 군대에도 생명을 되돌린다.'}),
@@ -482,13 +488,16 @@ SEASON_UNITS.push(
     body:'#39364e',accent:'#e9bf65',tunic:'#287d7a',hp:1100,atk:76,range:70,speed:80,interval:.9,
     cost:280,cooldown:17,kb:3,ab:{crit:{chance:.2,mul:1.8},lifesteal:.12},abText:'치명타 20% · 흡혈 12%',desc:'고양이 귀와 황금 발톱을 지닌 수호신. 낮은 자세로 전선의 빈틈을 파고든다.'})
 );
-// 전설 병종이 무한히 쌓여 전장을 봉쇄하지 않도록 동시 출진을 제한한다.
-SEASON_UNITS.forEach(u => { if (u.gacha && u.rarity === 'SSR') u.maxActive = 2; });
+// 전설·신화는 한 명씩만 전장에 설 수 있다. 머릿수로 밀어붙이는 병종이 아니라
+// 판을 바꾸는 특수 병종이기 때문이다.
+SEASON_UNITS.forEach(u => {
+  if (u.gacha && (u.rarity === 'SSR' || u.rarity === 'UR')) u.maxActive = 1;
+});
 UNITS.push.apply(UNITS, SEASON_UNITS);
 SEASON_UNITS.forEach(u => { UNIT_BY_ID[u.id] = u; });
 
-UNIT_BY_ID.zeus.active={name:'천둥의 칙령',kind:'thunderseal',cd:48,radius:180,mul:1.5,stun:.8,desc:'가장 가까운 적 주변 번개 피해·0.8초 기절.'};
-UNIT_BY_ID.thor.active={name:'묠니르 강타',kind:'thunderseal',cd:45,radius:190,mul:1.3,stun:.6,desc:'가장 가까운 적 주변 충격파 피해·0.6초 기절.'};
+UNIT_BY_ID.zeus.active={name:'천둥의 칙령',kind:'thunderseal',cd:48,radius:180,mul:3.0,stun:.8,desc:'가장 가까운 적 주변 번개 피해·0.8초 기절.'};
+UNIT_BY_ID.thor.active={name:'묠니르 강타',kind:'thunderseal',cd:45,radius:190,mul:2.6,stun:.6,desc:'가장 가까운 적 주변 충격파 피해·0.6초 기절.'};
 UNIT_BY_ID.anubis.active={name:'사자의 결계',kind:'underworld',cd:50,radius:250,barrier:240,desc:'주변 아군에게 보호막·중독과 화상 정화.'};
 
 function rollSummon(s, pick) {
@@ -720,28 +729,32 @@ const STAGES = [
       W(194,'wraith',7,0.9), W(216,'golem',2,6.0) ] }
 ];
 
+/* 1막 난이도 곡선. 초반은 기본 병종으로 넘어가야 하니 거의 건드리지 않고,
+ * 뒤로 갈수록 같은 적이 더 억세진다. */
+STAGES.forEach((st, i) => { if (!st.enemyMul) st.enemyMul = +(1 + 0.016 * i).toFixed(3); });
+
 /* 2막: 기존 20전장 인덱스는 유지하여 저장과 별 기록을 보존한다. */
 const ENDLESS_UNLOCK_STAGE = 20;
 STAGES.push(
-  {name:'검은 강의 나루',hint:'망령 폭발에 대비해 전열을 분산',baseHp:32000,money:400,rate:48,reward:960,enemyMul:1.5,waves:[
+  {name:'검은 강의 나루',hint:'망령 폭발에 대비해 전열을 분산',baseHp:32000,money:400,rate:48,reward:960,enemyMul:1.62,waves:[
     W(2,'orcspear',7,1),W(18,'wraith',5,2),W(38,'dark',3,3),W(58,'lich',1),W(80,'wolf',8,1),W(104,'wraith',6,1.6),W(130,'golem',2,5),W(154,'orcshield',5,2),W(180,'lich',1)]},
-  {name:'망자의 행렬',hint:'소환 병력은 관통과 범위 공격으로 처리',baseHp:33500,money:405,rate:49,reward:1020,boss:true,enemyMul:1.64,waves:[
+  {name:'망자의 행렬',hint:'소환 병력은 관통과 범위 공격으로 처리',baseHp:33500,money:405,rate:49,reward:1020,boss:true,enemyMul:1.77,waves:[
     W(2,'orcshield',3,2),W(20,'lich',1),W(40,'plaguer',5,2),W(60,'wraith',6,1.4),W(84,'lich',1),W(108,'dark',5,2),W(134,'totem',2,4),W(158,'lich',1),W(182,'orcberserk',7,1)]},
-  {name:'가시 왕관의 성문',hint:'가시 반격은 원거리 병종으로 대응',baseHp:35000,money:410,rate:50,reward:1100,enemyMul:1.8,waves:[
+  {name:'가시 왕관의 성문',hint:'가시 반격은 원거리 병종으로 대응',baseHp:35000,money:410,rate:50,reward:1100,enemyMul:1.94,waves:[
     W(2,'orcshield',4,2),W(22,'shaman',3,3),W(44,'golem',2,5),W(66,'siegeram',2,5),W(92,'orcshield',5,2),W(116,'ballista',5,2),W(140,'warchief',2,5),W(168,'dark',6,2),W(196,'troll',1)]},
-  {name:'★ 명계의 삼중 봉인',hint:'리치 소환과 거미 여왕의 독에 대비',baseHp:38000,money:420,rate:51,reward:1350,boss:true,enemyMul:1.96,waves:[
+  {name:'★ 명계의 삼중 봉인',hint:'리치 소환과 거미 여왕의 독에 대비',baseHp:38000,money:420,rate:51,reward:1350,boss:true,enemyMul:2.12,waves:[
     W(2,'wraith',5,2),W(24,'lich',1),W(48,'spiderqueen',1),W(70,'plaguer',6,1.8),W(96,'troll',1),W(122,'lich',1),W(148,'orcshield',5,2),W(174,'spiderqueen',1),W(204,'wraith',8,1)]},
-  {name:'눈보라 추격전',hint:'빠른 늑대 기수를 둔화로 저지',baseHp:39500,money:425,rate:52,reward:1250,enemyMul:2.12,waves:[
+  {name:'눈보라 추격전',hint:'빠른 늑대 기수를 둔화로 저지',baseHp:39500,money:425,rate:52,reward:1250,enemyMul:2.29,waves:[
     W(2,'wolf',10,.8),W(24,'dark',5,2),W(48,'frostgiant',1),W(72,'wolf',10,.8),W(96,'orccatapult',2,5),W(120,'orcberserk',7,1.2),W(148,'frostgiant',1),W(180,'golem',2,5),W(208,'wolf',12,.7)]},
-  {name:'얼어붙은 공성로',hint:'공성 병기를 막을 보호막 전열 필요',baseHp:41000,money:430,rate:53,reward:1320,enemyMul:2.28,waves:[
+  {name:'얼어붙은 공성로',hint:'공성 병기를 막을 보호막 전열 필요',baseHp:41000,money:430,rate:53,reward:1320,enemyMul:2.46,waves:[
     W(2,'orcshield',4,2),W(22,'siegeram',2,5),W(46,'ballista',6,2),W(72,'frostgiant',1),W(100,'orcshield',6,1.8),W(126,'orccatapult',3,5),W(154,'warchief',2,5),W(184,'frostgiant',1),W(214,'dark',7,1.8)]},
-  {name:'★ 영원의 겨울 왕좌',hint:'연속 광역 공격 뒤 왕명으로 회복',baseHp:44000,money:440,rate:54,reward:1600,boss:true,enemyMul:2.46,waves:[
+  {name:'★ 영원의 겨울 왕좌',hint:'연속 광역 공격 뒤 왕명으로 회복',baseHp:44000,money:440,rate:54,reward:1600,boss:true,enemyMul:2.66,waves:[
     W(2,'wolf',8,1),W(24,'frostgiant',1),W(52,'troll',1),W(78,'orcshield',6,1.8),W(104,'frostgiant',1),W(136,'golem',2,5),W(164,'warchief',2,5),W(192,'frostgiant',1),W(224,'orcberserk',8,1)]},
-  {name:'불타는 태양 회랑',hint:'화상을 정화하며 화룡을 견제',baseHp:45500,money:445,rate:55,reward:1500,enemyMul:2.64,waves:[
+  {name:'불타는 태양 회랑',hint:'화상을 정화하며 화룡을 견제',baseHp:45500,money:445,rate:55,reward:1500,enemyMul:2.85,waves:[
     W(2,'hellhound',9,.8),W(26,'powder',6,1.8),W(52,'drake',1),W(80,'plaguer',6,2),W(108,'orcshield',6,1.8),W(138,'drake',1),W(170,'hellhound',10,.8),W(200,'siegeram',2,4),W(230,'dark',7,1.5)]},
-  {name:'황금 일식의 제단',hint:'치유·가속 토템을 범위 공격으로 압박',baseHp:47500,money:450,rate:56,reward:1650,boss:true,enemyMul:2.82,waves:[
+  {name:'황금 일식의 제단',hint:'치유·가속 토템을 범위 공격으로 압박',baseHp:47500,money:450,rate:56,reward:1650,boss:true,enemyMul:3.05,waves:[
     W(2,'orcshield',5,2),W(26,'totem',2,6),W(50,'shaman',5,3),W(78,'warlord',1),W(108,'golem',2,5),W(140,'drake',1),W(174,'warchief',3,5),W(208,'orcberserk',8,1),W(240,'lich',2,8)]},
-  {name:'★ 세 신화의 종착지',hint:'보스 연속 공세에 액티브와 왕명을 나눠 사용',baseHp:51000,money:465,rate:58,reward:2200,boss:true,enemyMul:3.1,waves:[
+  {name:'★ 세 신화의 종착지',hint:'보스 연속 공세에 액티브와 왕명을 나눠 사용',baseHp:51000,money:465,rate:58,reward:2200,boss:true,enemyMul:3.35,waves:[
     W(2,'orcshield',5,2),W(26,'lich',1),W(52,'frostgiant',1),W(82,'drake',1),W(114,'warlord',1),W(148,'warchief',2,5),W(182,'spiderqueen',1),W(216,'golem',3,5),W(248,'warlord',1),W(276,'hellhound',10,.8)]}
 );
 

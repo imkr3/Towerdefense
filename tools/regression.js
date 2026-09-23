@@ -101,8 +101,9 @@ test('Negative damage never heals HP or barrier', () => {
   const f=new Fighter(E.goblin,'enemy',500);f.hp=100;f.giveBarrier(20);f.takeDamage(-50);assert.equal(f.hp,100);assert.equal(f.barrier,20);
 });
 test('Legendary active cap allows replacements after death', () => {
+  // 전설·신화는 한 명씩만 설 수 있다. 쓰러지면 다시 낼 수 있어야 한다.
   const s=save();s.owned.zeus=true;s.loadout=['zeus'];const b=new Battle(0,s,{baseHp:10000,money:900,rate:0,waves:[],reward:0});
-  for(let i=0;i<2;i++){b.money=900;b.cooldowns.zeus=0;assert.equal(b.deploy('zeus'),true);}
+  b.money=900;b.cooldowns.zeus=0;assert.equal(b.deploy('zeus'),true);
   b.money=900;b.cooldowns.zeus=0;assert.equal(b.canDeploy('zeus'),false);b.allies[0].dead=true;assert.equal(b.canDeploy('zeus'),true);
 });
 test('Medical upgrade increases support healing by 6 percent per level', () => {
@@ -146,4 +147,69 @@ test('First expansion victory advances from 20 to 21 and retains old stars',()=>
   const s=save();s.stars[19]=3;const b=new Battle(20,s);b.finish('win');
   assert.equal(s.cleared,21);assert.equal(s.stars[19],3);assert.ok(s.stars[20]>0);
 });
+/* ---------- 전설·신화 고유 능력 ---------- */
+function hero(id) { const b=battle(); const s=b.save; s.owned[id]=1; s.loadout=[id,'spear']; return new Battle(0,s,{baseHp:10000,money:9999,rate:0,waves:[],reward:0}); }
+test('Legendary and mythic units are limited to one on the field', () => {
+  for (const id of ['zeus','thor','anubis','hades','odin','ra']) {
+    assert.equal(U[id].maxActive, 1, id);
+    const b=hero(id); b.money=99999; assert.equal(b.deploy(id),true);
+    b.cooldowns[id]=0; assert.equal(b.canDeploy(id),false, id+' second copy');
+  }
+});
+test('Zeus chain lightning hops to nearby enemies and weakens each hop', () => {
+  const b=battle(), z=b.makeAlly(U.zeus,400);
+  const es=[0,1,2,3,4].map(i=>{const e=new Fighter(E.ogre,'enemy',600+i*60);b.enemies.push(e);return e;});
+  b.hitOne(100,es[0],z,false);
+  const lost=es.map(e=>e.maxHp-e.hp);
+  assert.equal(lost[0],100);
+  for (let i=1;i<5;i++) assert.ok(lost[i]>0 && lost[i]<lost[i-1], 'hop '+i+' '+lost[i]);
+});
+test('Chain lightning does not reach enemies beyond its hop range', () => {
+  const b=battle(), z=b.makeAlly(U.zeus,400);
+  const a=new Fighter(E.ogre,'enemy',600), far=new Fighter(E.ogre,'enemy',600+U.zeus.ab.chain.range+50);
+  b.enemies.push(a,far); b.hitOne(100,a,z,false); assert.equal(far.hp,far.maxHp);
+});
+test('Thor ignores armor and hits bosses and heavy armor harder', () => {
+  const b=battle(), t=b.makeAlly(U.thor,400);
+  const armored=new Fighter({...E.goblin,hp:5000,ab:{armor:0.5}},'enemy',500);
+  const plain=new Fighter({...E.goblin,hp:5000},'enemy',500);
+  b.hitOne(100,armored,t,false); b.hitOne(100,plain,t,false);
+  assert.equal(plain.maxHp-plain.hp,100);
+  assert.equal(armored.maxHp-armored.hp,100*U.thor.ab.breaker);
+});
+test('Odin rallies nearby allies but not himself', () => {
+  const b=battle(), o=b.makeAlly(U.odin,500), near=b.makeAlly(U.spear,560), far=b.makeAlly(U.spear,1400);
+  b.allies.push(o,near,far); o.abCd=0; b.supportTick(o,b.allies,0.01,true);
+  assert.ok(near.rallyMul>1); assert.equal(far.rallyMul,1); assert.equal(o.rallyMul,1);
+  assert.ok(Math.abs(b.rollDamage(near).dmg - near.atk*near.rallyMul) < 1e-9);
+});
+test('Rally wears off when its timer runs out', () => {
+  const b=battle(), s=b.makeAlly(U.spear,500); s.rallyT=0.05; s.rallyMul=1.35;
+  b.step([s],[],b.enemyCastle,0.1,true); assert.equal(s.rallyMul,1);
+});
+test('Ra brands enemies so every source deals more damage', () => {
+  const b=battle(), r=b.makeAlly(U.ra,400), sp=b.makeAlly(U.spear,420);
+  const e=new Fighter({...E.goblin,hp:5000},'enemy',500);
+  b.hitOne(10,e,r,false); const before=e.hp; b.hitOne(100,e,sp,false);
+  assert.equal(before-e.hp, 100*(1+U.ra.ab.sunmark.vuln));
+});
+test('Hades raises fallen enemies as skeletons, with a cap', () => {
+  const b=battle(), h=b.makeAlly(U.hades,500); b.allies.push(h);
+  const max=U.hades.ab.reanimate.max;
+  for (let i=0;i<max+4;i++) { h.reCd=0; const e=new Fighter(E.goblin,'enemy',540); b.reanimate(e); }
+  assert.equal(b.allies.filter(a=>a.raisedBy===h).length, max);
+});
+test('Hades does not raise summoned enemies or enemies out of range', () => {
+  const b=battle(), h=b.makeAlly(U.hades,500); b.allies.push(h);
+  const s=new Fighter(E.goblin,'enemy',520); s.summoned=true; b.reanimate(s);
+  h.reCd=0; b.reanimate(new Fighter(E.goblin,'enemy',500+U.hades.ab.reanimate.radius+100));
+  assert.equal(b.allies.length,1);
+});
+test('Hero actives do not re-trigger chain lightning on every target', () => {
+  const b=hero('zeus'); b.money=99999; b.deploy('zeus'); const z=b.allies[0];
+  for (let i=0;i<6;i++) b.enemies.push(new Fighter({...E.ogre,hp:99999},'enemy',z.x+60+i*20));
+  b.heroCooldowns.zeus=0; b.heroGlobalCd=0;
+  assert.equal(b.useHeroActive('zeus'),true); assert.equal(b._chaining,false);
+});
+
 console.log(count + ' regression checks passed');

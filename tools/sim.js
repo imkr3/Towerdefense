@@ -71,6 +71,28 @@ function basicLoadout(g) {
     .map(u => u.id);
 }
 
+/* 무지성 전설 편성: 전설·신화만 몽땅 넣는다. 한 명씩밖에 못 서니
+ * 남는 칸은 영웅(SR)으로 채운다. 전장 병종은 하나도 없다. */
+function legendLoadout(g) {
+  const rank = { UR: 0, SSR: 1, SR: 2 };
+  return g.UNITS
+    .filter(u => u.gacha && rank[u.rarity] !== undefined)
+    .sort((a, b) => (rank[a.rarity] - rank[b.rarity]) || (b.cost - a.cost))
+    .slice(0, g.LOADOUT_MAX)
+    .map(u => u.id);
+}
+
+/* 조합 편성: 전장 병종으로 몸통을 세우고, 전설·신화는 역할에 맞는 셋만 얹는다.
+ * 오딘(지휘) + 라(낙인)가 주력의 화력을 끌어올리고, 토르가 보스를 깬다. */
+function comboLoadout(g, index) {
+  const core = g.ROSTER_UNITS
+    .filter(u => u.unlockStage <= index + 1)
+    .sort((a, b) => b.cost - a.cost)
+    .slice(0, g.LOADOUT_MAX - 3)
+    .map(u => u.id);
+  return core.concat(['odin', 'ra', 'thor']).slice(0, g.LOADOUT_MAX);
+}
+
 function runStage(g, index, upLv, unitLv, trace, gacha, basic) {
   const academy = Math.min(5, Math.floor(upLv / 2));
   const cap = g.unitLevelCap(index, academy);
@@ -78,10 +100,14 @@ function runStage(g, index, upLv, unitLv, trace, gacha, basic) {
   g.UNITS.forEach(u => { levels[u.id] = Math.min(unitLv, cap); });
 
   const unlocked = g.ROSTER_UNITS.filter(u => u.unlockStage <= index + 1);
-  const loadout = basic ? basicLoadout(g) : (gacha ? gachaLoadout(g, index) : unlocked.slice()
-    .sort((a, b) => b.cost - a.cost)
-    .slice(0, g.LOADOUT_MAX)
-    .map(u => u.id));
+  const loadout = basic ? basicLoadout(g)
+    : gacha === 'legend' ? legendLoadout(g)
+    : gacha === 'combo' ? comboLoadout(g, index)
+    : gacha ? gachaLoadout(g, index)
+    : unlocked.slice()
+      .sort((a, b) => b.cost - a.cost)
+      .slice(0, g.LOADOUT_MAX)
+      .map(u => u.id);
   const owned = {};
   if (gacha) g.UNITS.forEach(u => { if (u.gacha) owned[u.id] = 1; });
 
@@ -165,11 +191,16 @@ function printTable(rows, upLv, unitLv) {
  * 기본 병종만으로 초반 전장은 밀 수 있어야 하고, 보스 전장부터는
  * 병영 강화 없이 넘지 못해야 한다. */
 const EXPECT = [
-  { up: 0, lv: 1, min: 4,  max: 11, label: '무강화' },
-  { up: 2, lv: 3, min: 9,  max: 16, label: '중반 강화' },
-  { up: 3, lv: 5, min: 13, max: 19, label: '후반 강화' },
+  { up: 0, lv: 1, min: 4,  max: 10, label: '무강화' },
+  { up: 2, lv: 3, min: 8,  max: 14, label: '중반 강화' },
+  { up: 3, lv: 5, min: 11, max: 17, label: '후반 강화' },
   { up: 5, lv: 8, min: 20, max: 20, label: '완전 강화' }
 ];
+
+/* 전설·신화는 스탯이 아니라 역할로 값을 한다.
+ * - 전설·신화만 몽땅 넣은 "무지성" 편성은 전장 병종 편성보다 LEGEND_GAP 이상 앞서면 안 된다
+ * - 전장 병종으로 몸통을 세우고 역할에 맞게 얹은 "조합" 편성은 무지성 편성을 이겨야 한다 */
+const LEGEND_GAP = 2;
 
 /* 소환 병종은 특색으로 값을 해야지, 전장 진도를 건너뛰는 열쇠가 되면 안 된다.
  * 최상급만 뽑아 편성했을 때 전장 병종 편성과 이만큼 이상 벌어지면 실패로 본다. */
@@ -205,6 +236,23 @@ function check() {
     const line = `기본 병종 ${r.stage}전장: ${r.win ? '승리' : '패배'} (${r.seconds}초, 성채 ${r.castle}%)`;
     if (r.win) console.log(`  ✓ ${line}`);
     else { console.error(`  ✗ ${line} — 강화 없이 넘을 수 있어야 한다`); failed++; }
+  });
+
+  // 무지성 전설 편성 vs 조합 편성
+  [{ up: 2, lv: 3 }, { up: 3, lv: 5 }].forEach(e => {
+    const base = runAll(e.up, e.lv, 12345, false, 20).filter(r => r.win).length;
+    const legend = runAll(e.up, e.lv, 12345, 'legend', 20).filter(r => r.win).length;
+    const combo = runAll(e.up, e.lv, 12345, 'combo', 20).filter(r => r.win).length;
+    const tag = `(강화 ${e.up}/Lv${e.lv}) 전장 ${base} · 전설만 ${legend} · 조합 ${combo}`;
+    if (legend - base > LEGEND_GAP) {
+      console.error(`  ✗ 무지성 전설 편성이 너무 세다 ${tag} — 전장 편성보다 ${LEGEND_GAP} 넘게 앞선다`);
+      failed++;
+    } else if (combo <= legend) {
+      console.error(`  ✗ 조합 편성이 무지성 전설 편성을 못 이긴다 ${tag}`);
+      failed++;
+    } else {
+      console.log(`  ✓ 전설은 조합으로 산다 ${tag}`);
+    }
   });
 
   // 소환 편성이 전장 편성을 얼마나 앞지르는지
@@ -251,6 +299,17 @@ function check() {
 const args = process.argv.slice(2);
 if (args[0] === '--check') {
   check();
+} else if (args[0] === '--legend') {
+  // node tools/sim.js --legend [강화Lv] [병종Lv]
+  // 전장 편성 / 무지성 전설 편성 / 조합 편성을 나란히 찍는다
+  const upLv = parseInt(args[1] || '2', 10);
+  const unitLv = parseInt(args[2] || '3', 10);
+  console.log('\n  [전장 병종 편성]');
+  printTable(runAll(upLv, unitLv, 12345, false, 20), upLv, unitLv);
+  console.log('  [무지성 전설·신화 편성]');
+  printTable(runAll(upLv, unitLv, 12345, 'legend', 20), upLv, unitLv);
+  console.log('  [조합 편성: 전장 7 + 오딘·라·토르]');
+  printTable(runAll(upLv, unitLv, 12345, 'combo', 20), upLv, unitLv);
 } else if (args[0] === '--gacha') {
   // node tools/sim.js --gacha [강화Lv] [병종Lv]
   // 최상급 소환 병종만 편성했을 때의 곡선. 전장 병종 편성과 나란히 찍는다.

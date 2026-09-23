@@ -197,8 +197,17 @@ async function runSize(browser, size) {
   });
   if(!await page.locator('[data-hero="hades"]').isDisabled())throw Error('Paused hero input enabled');
   await page.evaluate(()=>{paused=false;updateHud();});
-  const skillsOverlap=await page.evaluate(()=>document.querySelector('#hero-abilities').getBoundingClientRect().bottom>document.querySelector('.hud-bottom').getBoundingClientRect().top);
-  if(skillsOverlap)throw Error('Hero abilities overlap deployment cards');
+  // 액티브 칸은 하단 HUD 안에서 카드 줄·왕의 명령과 나란히 서야 한다.
+  // 전장 위로 떠서도, 카드나 왕의 명령을 덮어서도 안 된다.
+  const layout=await page.evaluate(()=>{
+    const r=el=>document.querySelector(el).getBoundingClientRect();
+    const a=r('#hero-abilities'),c=r('#cards'),k=r('#btn-command'),h=r('.hud-bottom');
+    const hit=(p,q)=>p.left<q.right-1&&q.left<p.right-1&&p.top<q.bottom-1&&q.top<p.bottom-1;
+    return {inHud:a.top>=h.top-1&&a.bottom<=h.bottom+1,overCards:hit(a,c),overCmd:hit(a,k),w:a.width,h:a.height};
+  });
+  if(!layout.inHud)throw Error('Hero abilities float over the battlefield');
+  if(layout.overCards||layout.overCmd)throw Error('Hero abilities overlap cards or command: '+JSON.stringify(layout));
+  if(layout.w<40||layout.h<40)throw Error('Hero abilities collapsed: '+JSON.stringify(layout));
   for(const id of ['hades','odin','ra']){
     await page.evaluate(()=>{battle.heroGlobalCd=0;updateHud();});
     await page.click('[data-hero="'+id+'"]');

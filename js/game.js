@@ -83,6 +83,13 @@ class Fighter {
     this.abCd = 0;
     this.auraPulse = 0;
 
+    // 전설·신화 고유 능력용
+    this.rallyT = 0;        // 오딘의 지휘: 공격력이 오른 상태
+    this.rallyMul = 1;
+    this.vulnT = 0;         // 라의 낙인: 받는 피해가 늘어난 상태
+    this.vulnMul = 1;
+    this.reCd = 0;          // 하데스의 부활 대기
+
     // 보스 패턴용
     this.speedMul = 1;      // 광폭화로 빨라진다
     this.rateMul = 1;       // 공격 간격 배율 (작을수록 빠름)
@@ -118,10 +125,11 @@ class Fighter {
     }
   }
 
-  takeDamage(dmg) {
+  takeDamage(dmg, pierceArmor) {
     if (this.dead) return 0;
     dmg = Math.max(0, dmg);
-    if (this.ab.armor) dmg *= (1 - Math.min(0.75, this.ab.armor));   // 두꺼운 갑주
+    if (this.vulnT > 0) dmg *= this.vulnMul;                          // 낙인
+    if (this.ab.armor && !pierceArmor) dmg *= (1 - Math.min(0.75, this.ab.armor));   // 두꺼운 갑주
     if (this.barrier > 0) {
       const absorbed = Math.min(this.barrier, dmg);
       this.barrier -= absorbed;
@@ -334,6 +342,7 @@ class Battle {
         m.giveBarrier(a.barrier*f.abMul);m.poisonT=0;m.poisonDps=0;m.burnT=0;m.burnDps=0;
       }
     } else {
+      this._chaining = true;          // 액티브의 광역 타격이 대상마다 연쇄를 다시 일으키지 않게
       for(const e of this.enemies) if(!e.dead && Math.abs(e.x-target.x)<=a.radius) {
         this.hitOne(f.atk*a.mul,e,f,false);
         if(!e.dead) {
@@ -342,6 +351,7 @@ class Battle {
           if(a.burn){if(e.burnT<=0)e.burnDps=0;e.burnT=Math.max(e.burnT,a.burn);e.burnDps=Math.max(e.burnDps,24*f.abMul);}
         }
       }
+      this._chaining = false;
     }
     this.fx.push({type:'mythic',kind:a.kind,x:target.x,row:target.row,r:a.radius,color:f.s.accent,t:1.15,life:1.15});
     this.shake=Math.max(this.shake,5);f.swing=.22;
@@ -441,6 +451,29 @@ class Battle {
     return f;
   }
 
+  /* 하데스의 명계: 근처에서 쓰러진 적을 해골 병사로 일으킨다.
+   * 싸움이 길어질수록 불어나지만, 혼자서는 시체를 만들 힘이 없다. */
+  reanimate(corpse) {
+    if (corpse.summoned) return;                // 소환물로는 소환물을 만들지 않는다
+    for (const h of this.allies) {
+      const r = h.ab.reanimate;
+      if (!r || h.dead || h.reCd > 0) continue;
+      if (Math.abs(h.x - corpse.x) > r.radius) continue;
+      let raised = 0;
+      for (const a of this.allies) if (!a.dead && a.raisedBy === h) raised++;
+      if (raised >= r.max) continue;
+      const u = UNIT_BY_ID[r.id];
+      if (!u) return;
+      const m = this.makeAlly(u, corpse.x);
+      m.summoned = true;
+      m.raisedBy = h;
+      this.allies.push(m);
+      h.reCd = r.cd;
+      this.fx.push({ type: 'spawn', x: corpse.x, row: m.row, t: 0.4, life: 0.4 });
+      return;
+    }
+  }
+
   /* 아직 정리하지 않은 시체가 남았는가 */
   hasUnreaped() {
     for (const f of this.allies) if (f.dead && !f.reaped) return true;
@@ -461,6 +494,7 @@ class Battle {
       if (isEnemySide) {
         this.coins += Math.round((f.gold || 0) * KILL_GOLD_RATE * this.goldMul);
         this.kills++;
+        this.reanimate(f);
       }
       // 쓰러지는 연출 + 먼지
       this.fx.push({ type: 'corpse', st: f.s, x: f.x, row: f.row, dir: f.dir,
@@ -538,6 +572,9 @@ class Battle {
       if (f.slowT > 0) f.slowT -= dt;
       if (f.hasteT > 0) f.hasteT -= dt;
       if (f.auraPulse > 0) f.auraPulse -= dt;
+      if (f.rallyT > 0) { f.rallyT -= dt; if (f.rallyT <= 0) f.rallyMul = 1; }
+      if (f.vulnT > 0) { f.vulnT -= dt; if (f.vulnT <= 0) f.vulnMul = 1; }
+      if (f.reCd > 0) f.reCd -= dt;
       f.bob += dt * (f.speedNow / 22);
 
       const burning = f.burnT > 0;
@@ -604,13 +641,27 @@ class Battle {
 
   supportTick(f, mates, dt, isAlly) {
     const ab = f.ab;
-    if (!ab.heal && !ab.gold && !ab.summon && !ab.barrier && !ab.haste && !ab.cleanse) return;
+    if (!ab.heal && !ab.gold && !ab.summon && !ab.barrier && !ab.haste && !ab.cleanse &&
+        !ab.rally) return;
     if (ab.gold && isAlly) {
       this.money = Math.min(this.walletMax, this.money + ab.gold * dt);
     }
     f.abCd -= dt;
     if (f.abCd > 0) return;
     f.abCd = ab.interval || 3;
+
+    if (ab.rally) {
+      // 지휘: 주변 아군의 공격력을 올린다. 본인은 받지 않는다 — 혼자서는 약하다.
+      for (const m of mates) {
+        if (m.dead || m === f) continue;
+        if (Math.abs(m.x - f.x) > ab.rally.radius) continue;
+        m.rallyT = Math.max(m.rallyT, (ab.interval || 3) + 0.6);
+        m.rallyMul = Math.max(m.rallyMul, 1 + ab.rally.atk);
+      }
+      f.auraPulse = 0.5;
+      this.fx.push({ type: 'aura', x: f.x, row: f.row, r: ab.rally.radius,
+                     t: 0.5, life: 0.5, color: f.s.accent });
+    }
 
     if (ab.cleanse) {
       for (const m of mates) if (!m.dead && Math.abs(m.x - f.x) <= ab.radius) {
@@ -921,6 +972,7 @@ class Battle {
 
   rollDamage(f) {
     let dmg = f.atk;
+    if (f.rallyT > 0) dmg *= f.rallyMul;                // 오딘의 지휘
     let crit = false;
     if (f.ab.crit && Math.random() < f.ab.crit.chance) {
       dmg = Math.round(dmg * f.ab.crit.mul);
@@ -983,7 +1035,19 @@ class Battle {
 
   /* 단일 대상 타격 + 부가 효과 */
   hitOne(dmg, target, src, crit) {
-    const dealt = target.takeDamage(dmg) || 0;
+    let pierce = false;
+    if (src && src.ab.breaker && !target.isCastle) {
+      // 파쇄: 갑주를 무시하고, 보스·중장갑·넉백 면역에게는 더 세게 들어간다
+      pierce = true;
+      const ta = target.ab;
+      if (target.boss || ta.armor || ta.kbImmune) dmg *= src.ab.breaker;
+    }
+    const dealt = target.takeDamage(dmg, pierce) || 0;
+    if (src && src.ab.sunmark && !target.isCastle && !target.dead) {
+      target.vulnT = Math.max(target.vulnT, src.ab.sunmark.dur);
+      target.vulnMul = Math.max(target.vulnMul, 1 + src.ab.sunmark.vuln);
+    }
+    if (src && src.ab.chain && !target.isCastle && !this._chaining) this.chainFrom(src, target, dmg);
     if (target.isCastle) {
       if (target.side === 'ally') this.shake = Math.max(this.shake, 8);
     } else if (dealt >= 1 && this.dmgFxCount < 14) {
@@ -1022,6 +1086,32 @@ class Battle {
       target.x += src.dir * ab.push * 0.01 * 60;
       target.kbTimer = Math.max(target.kbTimer, 0.12);
     }
+  }
+
+  /* 제우스의 연쇄 번개. 맞은 적에서 가까운 적으로 줄줄이 옮겨 가며 약해진다.
+   * 떼에는 강하고 단단한 한 놈에게는 약하다. */
+  chainFrom(src, first, dmg) {
+    const c = src.ab.chain;
+    const foes = this.foesOf(src.side);
+    const hit = [first];
+    let from = first, d = dmg;
+    this._chaining = true;
+    for (let k = 0; k < c.n; k++) {
+      d *= c.fall;
+      let best = null, bd = Infinity;
+      for (const e of foes) {
+        if (e.dead || hit.indexOf(e) >= 0) continue;
+        const dist = Math.abs(e.x - from.x);
+        if (dist <= c.range && dist < bd) { bd = dist; best = e; }
+      }
+      if (!best) break;
+      this.hitOne(d, best, src, false);
+      this.fx.push({ type: 'beam', x: from.x, x2: best.x, row: best.row, t: 0.16, life: 0.16,
+                     color: src.s.accent });
+      hit.push(best);
+      from = best;
+    }
+    this._chaining = false;
   }
 
   areaHit(dmg, cx, radius, foes, foeCastle, src, crit) {

@@ -165,7 +165,6 @@
     <div class="wave-line"><span id="wave-preview"></span><time id="battle-clock">0:00</time></div>
   </div>
   <div id="pause-label" hidden>일시정지 <small>▶ 또는 Space로 재개</small></div>
-  <div id="hero-abilities" aria-label="캐릭터 액티브 능력" hidden></div>
   <div class="hud-bottom">
     <div class="wallet">
       <div class="wallet-bar"><div class="wallet-fill" id="wallet-fill"></div></div>
@@ -173,6 +172,8 @@
     </div>
     <div class="card-row">
       <div class="cards" id="cards"></div>
+      <!-- 전설·신화 액티브. 전장을 가리지 않도록 왕의 명령 옆에 둔다. -->
+      <div id="hero-abilities" aria-label="전설·신화 액티브 능력" hidden></div>
       <button class="cmd-btn" id="btn-command">
         <span class="cmd-title">왕의<br>명령</span>
         <span class="cmd-cd" id="cmd-cd">75</span>

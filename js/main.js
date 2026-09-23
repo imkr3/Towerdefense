@@ -833,19 +833,15 @@ function buildCards() {
   const abilities=$('#hero-abilities'); abilities.innerHTML='';
   battle.roster.filter(u=>u.active).forEach(u=>{
     const btn=document.createElement('button');btn.className='hero-ability';btn.dataset.hero=u.id;
-    btn.style.setProperty('--hero-color',u.accent);btn.title=u.active.desc;
+    btn.style.setProperty('--hero-color',u.accent);btn.title=u.active.name+' — '+u.active.desc;
+    btn.innerHTML='<span class="ha-name"></span><span class="ha-state"></span>';
+    btn.querySelector('.ha-name').textContent=u.short||u.name;
     btn.onclick=()=>{if(canBattleInput() && battle.useHeroActive(u.id)){SFX.command();toast(u.name+' · '+u.active.name);}};
     abilities.appendChild(btn);
   });
   abilities.hidden=!abilities.children.length;
-  requestAnimationFrame(positionHeroAbilities);
 }
 
-function positionHeroAbilities(){
-  const bar=$('#hero-abilities'), hud=$('.hud-bottom');
-  if(bar && hud) bar.style.bottom=(hud.offsetHeight+5)+'px';
-}
-window.addEventListener('resize',positionHeroAbilities);
 let cardEls = [];
 
 let paused = false;
@@ -887,7 +883,9 @@ function updateHud() {
     const u=UNIT_BY_ID[btn.dataset.hero], alive=battle.heroCaster(u.id);
     const cd=Math.ceil(Math.max(battle.heroCooldowns[u.id]||0,battle.heroGlobalCd));
     btn.disabled=!canBattleInput() || !battle.canHeroActive(u.id);
-    btn.textContent=u.name+' · '+u.active.name+' · '+(!alive?'출진 필요':cd>0?cd+'초':battle.canHeroActive(u.id)?'사용':'대상 없음');
+    const state=!alive?'출진 필요':cd>0?cd+'초':battle.canHeroActive(u.id)?'사용':'대상 없음';
+    const el=btn.querySelector('.ha-state'); if(el && el.textContent!==state) el.textContent=state;
+    btn.setAttribute('aria-label',u.name+' '+u.active.name+' '+state);
   });
   const money = Math.floor(battle.money);
   $('#kill-count').textContent = battle.kills;

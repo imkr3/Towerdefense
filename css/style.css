@@ -615,8 +615,19 @@ button:focus-visible{outline:3px solid #48b9ee;outline-offset:3px;}
 
 .r-UR{--rarity:#68f5e5;border-color:#68f5e5!important}.rare-tag.r-UR,.pull-head.r-UR{color:#68f5e5;background:linear-gradient(120deg,#263d69,#56306a,#245851)}
 .active-desc{color:#97e4ec;font-size:11px;line-height:1.5;margin:3px 0}
-#hero-abilities{position:absolute;right:12px;bottom:128px;max-width:62%;display:flex;gap:5px;overflow-x:auto;padding:4px;z-index:5}#hero-abilities[hidden]{display:none}
-.hero-ability{flex:0 0 auto;border:1px solid var(--hero-color);border-radius:8px;padding:9px 11px;background:#182433ed;color:#fff;font-size:11px;min-height:38px}.hero-ability:disabled{opacity:.6}.hero-ability:not(:disabled){box-shadow:inset 0 -3px var(--hero-color)}
-@media(max-height:420px){#hero-abilities{bottom:105px;max-width:72%}.hero-ability{padding:6px;min-height:32px;font-size:10px}}
+/* 전설·신화 액티브: 하단 HUD 안, 카드 줄과 왕의 명령 사이.
+ * 두 줄로 쌓아 여섯 명까지 들어가고, 전장 위에는 아무것도 얹지 않는다. */
+#hero-abilities{display:grid;grid-auto-flow:column;grid-template-rows:repeat(2,minmax(0,1fr));
+  gap:4px;flex:0 0 auto;align-self:stretch;padding:2px 0 5px}
+#hero-abilities[hidden]{display:none}
+.hero-ability{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:1px;
+  width:66px;min-height:0;padding:3px 4px;border:1px solid var(--hero-color);border-radius:7px;
+  background:#182433ed;color:#fff;font-size:11px;line-height:1.15;cursor:pointer}
+.hero-ability .ha-name{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.hero-ability .ha-state{font-size:10px;color:#cbd8d7;font-variant-numeric:tabular-nums}
+.hero-ability:disabled{opacity:.55;cursor:default}
+.hero-ability:not(:disabled){box-shadow:inset 0 -3px var(--hero-color)}
+.hero-ability:not(:disabled) .ha-state{color:var(--hero-color)}
+@media(max-height:420px){.hero-ability{width:58px;font-size:10px}.hero-ability .ha-state{font-size:9px}}
 /* Keep summon actions visible even when guarantees add more rate information. */
 .gacha-side{min-height:0}.gacha-side .rate-box{flex:1;min-height:45px;overflow-y:auto}.gacha-side>.btn,.gacha-side>.pity-box{flex-shrink:0}
