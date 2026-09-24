@@ -1344,7 +1344,15 @@ function upgradeCost(key, level) {
 
 /* Tactical descriptions shared by the campaign and enemy codex. */
 function enemyTactic(e) {
+  const ab = e.ab || {};
   if (e.boss) return '보스 · 왕명을 아껴 폭격 후 회복';
+  // 뭘 하는 놈인지가 먼저다. 갑주는 그 다음 문제다.
+  if (ab.summon) return '증원 소환 · 불어나기 전에 본체를 끊어라';
+  if (ab.rally) return '주변 적 강화 · 후열부터 도려내라';
+  if (ab.weaken) return '아군 피해 감소 · 사거리 긴 병종으로 먼저 끊어라';
+  if (ab.backline) return '뒷줄 급습 · 원거리 병종을 가려 줄 앞줄이 필요';
+  if (ab.hold) return '고정 포대 · 전진하지 않는다. 몰아쳐서 부숴라';
+  if (ab.thorns) return '근접 반격 · 원거리 공격으로 대응';
   if (e.ab && e.ab.armor) return '중장갑 · 중독과 화상으로 지속 피해';
   if (e.ab && e.ab.heal) return '치유 지원 · 범위 공격으로 후열 압박';
   if (e.ab && e.ab.deathBomb) return '사망 폭발 · 저렴한 전열로 피해 분산';

@@ -123,6 +123,8 @@ Object.keys(D.ENEMIES).forEach(k => {
   if (e.special) needEn(e.special.name, '보스 기술');
   (e.phases || []).forEach(p => needEn(p.name, '보스 페이즈'));
 });
+const enemyTactic = vm.runInContext('enemyTactic', ctx);
+Object.keys(D.ENEMIES).forEach(k => needEn(enemyTactic(D.ENEMIES[k]), '적 대응 힌트'));
 D.STAGES.forEach(st => { needEn(st.name, '전장 이름'); needEn(st.hint, '전장 힌트'); });
 Object.keys(STAGE_MODS).forEach(k => {
   const m = STAGE_MODS[k];
