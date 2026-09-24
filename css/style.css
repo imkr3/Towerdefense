@@ -678,7 +678,14 @@ button:focus-visible{outline:3px solid #48b9ee;outline-offset:3px;}
 .sd-foe canvas{background:#e6dcc4;border-radius:6px}
 .sd-foe.boss canvas{background:#efd0c8}
 .sd-foe small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:46px}
-.sd-btns{display:flex;gap:6px;margin-top:auto;padding-top:4px}
+/* 특성이 여섯 개까지 붙는 3막 전장에서도 출진 단추는 늘 보여야 한다:
+ * 설명만 스크롤하고, 적 목록과 단추는 바닥에 붙여 둔다. */
+.sd-head{flex:1 1 auto;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:6px}
+.sd-foes{flex-shrink:0}
+.sd-modchips{display:flex;flex-wrap:wrap;gap:4px;flex-shrink:0}
+.sd-modchips i{font-style:normal;font-size:10px;font-weight:900;color:#fff;background:var(--mc);
+  border-radius:4px;padding:2px 6px;text-shadow:0 1px 0 #0006}
+.sd-btns{display:flex;gap:6px;margin-top:auto;padding-top:4px;flex-shrink:0}
 .sd-btns .btn{flex:1;padding:10px 8px;font-size:14px}
 .sd-go{flex:1.4!important}
 #scr-map .tabbar .tab{padding:9px 4px}

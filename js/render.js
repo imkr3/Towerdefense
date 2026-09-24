@@ -618,6 +618,20 @@ class Renderer {
           ctx.globalAlpha=p*.4;ctx.fillStyle='#e8e6e0';
           for(let i=0;i<7;i++){const a=-Math.PI+i/6*Math.PI;ctx.beginPath();ctx.arc(Math.cos(a)*radius*.7*k,-20*cs+Math.sin(a)*radius*.35*k,(20+k*30)*cs,0,7);ctx.fill();}
           ctx.fillStyle=e.color;
+        }else if(e.kind==='tidewave'){               // 역류: 겹쳐 밀려드는 물마루
+          ctx.globalAlpha=p*.5;
+          for(let i=0;i<4;i++){const rr=radius*(.3+i*.24)*Math.min(1,k*2.2);
+            ctx.lineWidth=(7-i*1.3)*cs;ctx.beginPath();ctx.ellipse(0,-6*cs,rr,rr*.3,0,0,7);ctx.stroke();}
+          ctx.globalAlpha=p*.8;
+          for(let i=0;i<10;i++){const a=-Math.PI+i/9*Math.PI,d=radius*(.35+k*.75);
+            ctx.beginPath();ctx.ellipse(Math.cos(a)*d,Math.sin(a)*d*.35-k*40*cs,5*cs,9*cs,a,0,7);ctx.fill();}
+        }else if(e.kind==='shellguard'){             // 등껍질: 육각 방패가 펼쳐진다
+          ctx.globalAlpha=p*.85;ctx.lineWidth=5*cs;
+          for(let ring=0;ring<3;ring++){const rr=radius*(.3+ring*.26)*Math.min(1,k*2.4);
+            ctx.beginPath();
+            for(let j=0;j<=6;j++){const a=j*Math.PI/3+ring*.25;const px=Math.cos(a)*rr,py=Math.sin(a)*rr*.34;j?ctx.lineTo(px,py):ctx.moveTo(px,py);}
+            ctx.stroke();}
+          ctx.globalAlpha=p*.35;ctx.beginPath();ctx.ellipse(0,-40*cs,radius*.5,radius*.55,0,0,7);ctx.fill();
         }else if(e.kind==='underworld'){
           ctx.globalAlpha=p*.65;ctx.lineWidth=5*cs;ctx.beginPath();ctx.ellipse(0,-55*cs,45*cs,65*cs,0,0,7);ctx.stroke();
           for(let i=-1;i<=1;i++){ctx.beginPath();ctx.moveTo(i*20*cs,0);ctx.bezierCurveTo(i*50*cs,-30*cs,-i*15*cs,-70*cs,i*30*cs,-115*cs);ctx.stroke();}
@@ -1151,6 +1165,78 @@ class Renderer {
         ctx.fillStyle = '#ffffff';
         ctx.beginPath();
         ctx.arc(x, y, R * 0.14 * (1 + k), 0, 7); ctx.fill();
+        break;
+      }
+      case 'tidewave': {                     // 밀려오는 물마루
+        for (let i = 0, n = this.qn(4); i < n; i++) {
+          const rr = R * (0.25 + k * (0.85 + i * 0.35));
+          ctx.globalAlpha = p * (0.85 - i * 0.17);
+          ctx.strokeStyle = i === 0 ? '#ffffff' : e.color;
+          ctx.lineWidth = (9 - i * 1.8) * cs * big;
+          ctx.beginPath();
+          ctx.ellipse(x, gy, rr, rr * 0.3, 0, 0, 7);
+          ctx.stroke();
+        }
+        ctx.globalAlpha = p * 0.7;           // 튀는 물보라
+        ctx.fillStyle = e.color;
+        for (let i = 0, n = this.qn(12); i < n; i++) {
+          const a = -0.3 - i * 0.24;
+          const d = R * (0.3 + k * 0.9);
+          ctx.beginPath();
+          ctx.ellipse(x + Math.cos(a) * d, gy + Math.sin(a) * d * 0.7 - k * 26 * cs,
+                      4 * cs, 7 * cs, a, 0, 7);
+          ctx.fill();
+        }
+        break;
+      }
+      case 'shellguard': {                   // 육각 충격파
+        ctx.globalAlpha = p;
+        for (let i = 0, n = this.qn(3); i < n; i++) {
+          const rr = R * (0.3 + k * (0.8 + i * 0.4));
+          ctx.strokeStyle = i === 0 ? '#ffffff' : e.color;
+          ctx.lineWidth = (8 - i * 2) * cs * big;
+          ctx.beginPath();
+          for (let j = 0; j <= 6; j++) {
+            const a = j * Math.PI / 3 + k * 0.4;
+            const px = x + Math.cos(a) * rr, py = gy + Math.sin(a) * rr * 0.34;
+            j ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+          }
+          ctx.stroke();
+        }
+        break;
+      }
+      case 'songwave': {                     // 앞으로 퍼지는 음파
+        ctx.strokeStyle = e.color;
+        for (let i = 0, n = this.qn(4); i < n; i++) {
+          ctx.globalAlpha = p * (0.7 - i * 0.14);
+          ctx.lineWidth = (4 - i * 0.6) * cs * big;
+          ctx.beginPath();
+          ctx.arc(x, y, R * (0.2 + k * 0.7) + i * 12 * cs, -1.0, 1.0);
+          ctx.stroke();
+        }
+        break;
+      }
+      case 'abyss': {                        // 솟구치는 촉수와 바닥의 고리
+        ctx.globalAlpha = p * 0.9;
+        ctx.strokeStyle = e.color;
+        ctx.lineWidth = 6 * cs * big;
+        for (let i = 0, n = this.qn(7); i < n; i++) {
+          const ox = (i - (n - 1) / 2) * R * 0.32;
+          const h = (60 + (i % 3) * 30) * cs * Math.min(1, k * 1.8);
+          ctx.beginPath();
+          ctx.moveTo(x + ox, gy);
+          ctx.quadraticCurveTo(x + ox + Math.sin(i + k * 4) * 18 * cs, gy - h * 0.6,
+                               x + ox + Math.sin(i + k * 4) * 30 * cs, gy - h);
+          ctx.stroke();
+        }
+        ctx.globalAlpha = p * 0.65;
+        ctx.lineWidth = 3.4 * cs;
+        for (let i = 0, n = this.qn(2); i < n; i++) {
+          const rr = R * (0.35 + k * (0.7 + i * 0.4));
+          ctx.beginPath();
+          ctx.ellipse(x, gy, rr, rr * 0.28, 0, 0, 7);
+          ctx.stroke();
+        }
         break;
       }
     }
@@ -2829,6 +2915,239 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
       break;
     }
 
+    /* ---------------------- 심해 용궁 ---------------------- */
+    case 'ryujin': {
+      // 용의 머리를 한 왕. 도포 자락이 물살처럼 흐르고 발밑에 조수가 감긴다.
+      ctx.fillStyle = S.flash ? '#fff' : tun;                           // 흐르는 도포
+      ctx.beginPath();
+      ctx.moveTo(0, -46 * s);
+      ctx.quadraticCurveTo(-24 * s, -20 * s, -20 * s + Math.sin(phase) * 4 * s, 0);
+      ctx.lineTo(18 * s + Math.sin(phase + 1) * 4 * s, 0);
+      ctx.quadraticCurveTo(20 * s, -22 * s, 0, -46 * s);
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = S.flash ? '#fff' : acc; ctx.lineWidth = 1.6 * s;  // 비늘 무늬
+      for (let i = 0; i < 3; i++) {
+        ctx.beginPath();
+        ctx.arc(-2 * s, (-34 + i * 11) * s, (7 + i * 4) * s, 0.25, Math.PI - 0.25);
+        ctx.stroke();
+      }
+      legsHidden(S); torso(S, 5 * s);
+      ctx.strokeStyle = S.flash ? '#fff' : acc; ctx.lineWidth = 2.6 * s;  // 발밑에 감기는 물살
+      for (let i = 0; i < 3; i++) {
+        ctx.globalAlpha = 0.5;
+        ctx.beginPath();
+        ctx.ellipse(0, -4 * s - i * 6 * s, (24 + i * 7) * s, (5 + i * 2) * s,
+                    Math.sin(phase * 1.1 + i * 2.1) * 0.18, 0, 7);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+      // 삼지창을 먼저 그린다 — 용 머리가 창대에 가리면 실루엣이 죽는다
+      armWeapon(S, 0.55 - atk * 0.55, () => {                           // 여의주를 얹은 삼지창
+        line(S, -4 * s, 14 * s, 6 * s, -34 * s, 3.2 * s, acc);
+        for (let i = -1; i <= 1; i++) line(S, 6 * s + i * 5 * s, -32 * s, 7 * s + i * 7 * s, -44 * s, 2.2 * s, acc);
+        orb(S, 7 * s, -39 * s, 4 * s, S.flash ? '#fff' : '#eaffff');
+      }, 10 * s);
+      // 용 머리: 둥근 머리 + 앞으로 뻗은 주둥이
+      ctx.fillStyle = col;
+      ctx.beginPath(); ctx.ellipse(-1 * s, -58 * s, 11 * s, 10 * s, 0, 0, 7); ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(6 * s, -64 * s); ctx.lineTo(26 * s, -58 * s);
+      ctx.lineTo(26 * s, -52 * s); ctx.lineTo(6 * s, -50 * s);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = S.flash ? '#fff' : '#eaffff';                     // 이빨
+      for (let i = 0; i < 3; i++) tri(S, (12 + i * 5) * s, -53 * s, (16 + i * 5) * s, -53 * s, (14 + i * 5) * s, -47 * s, S.flash ? '#fff' : '#eaffff');
+      ctx.fillStyle = S.flash ? '#fff' : acc;                           // 뿔 한 쌍
+      tri(S, -8 * s, -66 * s, -18 * s, -86 * s, -1 * s, -70 * s, S.flash ? '#fff' : acc);
+      tri(S, 4 * s, -66 * s, 10 * s, -88 * s, 12 * s, -66 * s, S.flash ? '#fff' : acc);
+      ctx.strokeStyle = S.flash ? '#fff' : acc; ctx.lineWidth = 2.2 * s; // 수염
+      for (let i = -1; i <= 1; i += 2) {
+        ctx.beginPath();
+        ctx.moveTo(18 * s, -54 * s);
+        ctx.quadraticCurveTo(30 * s, (-50 + i * 6) * s + Math.sin(phase + i) * 3 * s,
+                             40 * s, (-40 + i * 12) * s);
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#f7ffb0';                                        // 눈
+      ctx.beginPath(); ctx.arc(4 * s, -61 * s, 2.6 * s, 0, 7); ctx.fill();
+      break;
+    }
+    case 'hyeonmu': {
+      // 거북 장수. 등에 진 껍질이 실루엣의 전부다.
+      legs(S, 17 * s);
+      torso(S, 6 * s);
+      ctx.fillStyle = S.flash ? '#fff' : tun;                           // 등껍질 (뒤로 치우쳐서)
+      ctx.beginPath(); ctx.ellipse(-12 * s, -34 * s, 26 * s, 21 * s, -0.16, 0, 7); ctx.fill();
+      ctx.strokeStyle = S.flash ? '#fff' : '#1c2b22'; ctx.lineWidth = 1.8 * s;
+      ctx.beginPath(); ctx.ellipse(-12 * s, -34 * s, 26 * s, 21 * s, -0.16, 0, 7); ctx.stroke();
+      ctx.strokeStyle = S.flash ? '#fff' : acc; ctx.lineWidth = 1.6 * s;  // 육각 갑판
+      for (let r = 0; r < 2; r++) {
+        for (let i = -1; i <= 1; i++) {
+          const hx = -12 * s + i * 13 * s, hy = -40 * s + r * 13 * s;
+          ctx.beginPath();
+          for (let j = 0; j <= 6; j++) {
+            const a = j * Math.PI / 3 + 0.5;
+            const px = hx + Math.cos(a) * 7 * s, py = hy + Math.sin(a) * 7 * s;
+            j ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+          }
+          ctx.stroke();
+        }
+      }
+      ctx.fillStyle = S.flash ? '#fff' : acc;                           // 등가시
+      for (let i = 0; i < 4; i++) {
+        ctx.beginPath();
+        ctx.moveTo((-32 + i * 11) * s, -50 * s);
+        ctx.lineTo((-28 + i * 11) * s, -64 * s);
+        ctx.lineTo((-23 + i * 11) * s, -49 * s);
+        ctx.closePath(); ctx.fill();
+      }
+      ctx.strokeStyle = col; ctx.lineWidth = 7 * s;                     // 목
+      ctx.beginPath(); ctx.moveTo(4 * s, -44 * s); ctx.lineTo(14 * s, -50 * s); ctx.stroke();
+      ctx.fillStyle = col;                                              // 머리
+      ctx.beginPath(); ctx.ellipse(20 * s, -52 * s, 10 * s, 8 * s, -0.15, 0, 7); ctx.fill();
+      tri(S, 26 * s, -55 * s, 34 * s, -51 * s, 26 * s, -47 * s, col);   // 부리
+      ctx.fillStyle = '#f7ff9a';
+      ctx.beginPath(); ctx.arc(22 * s, -55 * s, 2.2 * s, 0, 7); ctx.fill();
+      armWeapon(S, -0.25 + atk * 0.9, () => {                           // 짧은 언월도
+        line(S, 0, 0, 18 * s, -5 * s, 3.2 * s, S.flash ? '#fff' : '#3d2b18');
+        ctx.fillStyle = S.flash ? '#fff' : '#cfe8dc';
+        ctx.beginPath();
+        ctx.moveTo(17 * s, -7 * s); ctx.quadraticCurveTo(31 * s, -17 * s, 34 * s, -4 * s);
+        ctx.lineTo(18 * s, -1 * s); ctx.closePath(); ctx.fill();
+      }, 8 * s);
+      break;
+    }
+    case 'siren': {
+      // 물고기 꼬리로 떠 있는 가희. 긴 머리가 흐르고 입에서 음파가 퍼진다.
+      const hov = Math.sin(phase * 1.4) * 4 * s;
+      ctx.save(); ctx.translate(0, hov - 10 * s);
+      const swish = Math.sin(phase * 1.6) * 7 * s;
+      ctx.fillStyle = S.flash ? '#fff' : tun;                           // 비늘 꼬리
+      ctx.beginPath();
+      ctx.moveTo(-7 * s, -24 * s);
+      ctx.quadraticCurveTo(-14 * s, -6 * s, -22 * s + swish, 8 * s);
+      ctx.lineTo(-30 * s + swish, -2 * s);                              // 꼬리지느러미
+      ctx.lineTo(-34 * s + swish, 12 * s);
+      ctx.quadraticCurveTo(-12 * s, 14 * s, 6 * s, -24 * s);
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = S.flash ? '#fff' : acc; ctx.lineWidth = 1.4 * s;  // 비늘결
+      for (let i = 0; i < 3; i++) {
+        ctx.beginPath();
+        ctx.arc(-6 * s - i * 6 * s, (-16 + i * 6) * s, 6 * s, -0.4, 2.4);
+        ctx.stroke();
+      }
+      torso(S, 4 * s);
+      ctx.fillStyle = S.flash ? '#fff' : acc;                           // 흐르는 머리채
+      ctx.beginPath();
+      ctx.moveTo(-6 * s, -58 * s);
+      ctx.quadraticCurveTo(-24 * s, -50 * s, -26 * s + swish * 0.5, -22 * s);
+      ctx.lineTo(-14 * s, -26 * s);
+      ctx.quadraticCurveTo(-10 * s, -44 * s, 2 * s, -50 * s);
+      ctx.closePath(); ctx.fill();
+      head(S, 'wide', 8 * s);
+      tri(S, -10 * s, -52 * s, -20 * s, -60 * s, -10 * s, -44 * s, S.flash ? '#fff' : acc);  // 귀지느러미
+      ctx.strokeStyle = S.flash ? '#fff' : acc; ctx.lineWidth = 2 * s;  // 음파
+      for (let i = 0; i < 3; i++) {
+        ctx.globalAlpha = 0.55 - i * 0.14;
+        ctx.beginPath();
+        ctx.arc(9 * s, -48 * s, (10 + i * 9) * s + atk * 10 * s, -0.85, 0.85);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+      arm(S, 20 * s, -44 * s);
+      ctx.restore();
+      break;
+    }
+    case 'octogeneral': {
+      // 여덟 팔이 뒤로 부채처럼 펼쳐지는 문어 장수. 앞의 둘만 후려친다.
+      for (let i = 0; i < 6; i++) {
+        const back = i < 4;                                   // 넷은 뒤로, 둘은 앞으로
+        const a = back ? (2.0 + i * 0.42 + Math.sin(phase * 1.4 + i) * 0.14)
+                       : (-0.5 + (i - 4) * 0.7 - atk * 0.7);
+        ctx.strokeStyle = i % 2 ? (S.flash ? '#fff' : acc) : col;
+        ctx.lineWidth = (6.5 - i * 0.5) * s;
+        ctx.beginPath();
+        ctx.moveTo(-2 * s, -34 * s);
+        ctx.quadraticCurveTo(Math.cos(a) * 22 * s, -34 * s + Math.sin(a) * 16 * s,
+                             Math.cos(a) * 40 * s, -20 * s + Math.sin(a) * 26 * s);
+        ctx.stroke();
+      }
+      legs(S, 18 * s); torso(S, 5 * s);
+      ctx.fillStyle = col;                                              // 둥근 머리
+      ctx.beginPath(); ctx.ellipse(0, -56 * s, 12 * s, 15 * s, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = S.flash ? '#fff' : acc;
+      ctx.beginPath(); ctx.arc(-4 * s, -56 * s, 3 * s, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(5 * s, -56 * s, 3 * s, 0, 7); ctx.fill();
+      ctx.fillStyle = '#d9a227';                                        // 투구 장식
+      ctx.fillRect(-13 * s, -72 * s, 26 * s, 4 * s);
+      tri(S, -3 * s, -72 * s, 2 * s, -86 * s, 7 * s, -72 * s, '#d9a227');
+      break;
+    }
+    case 'pearlseer': {
+      // 진주를 굴리는 무녀. 물방울이 주위를 돈다.
+      robe(S, 18 * s, -42 * s, tun); legsHidden(S); torso(S); head(S, 'coif');
+      ctx.fillStyle = S.flash ? '#fff' : acc;                           // 머리 장식
+      for (let i = -1; i <= 1; i++) {
+        ctx.beginPath(); ctx.arc(i * 6 * s, -62 * s, 2.6 * s, 0, 7); ctx.fill();
+      }
+      armWeapon(S, -0.45, () => orb(S, 4 * s, -6 * s, 7 * s, S.flash ? '#fff' : '#fff6fb'), 7 * s);
+      ctx.fillStyle = S.flash ? '#fff' : acc;                           // 도는 물방울
+      for (let i = 0; i < 4; i++) {
+        const a = phase * 1.2 + i * 1.57;
+        ctx.globalAlpha = 0.65;
+        ctx.beginPath();
+        ctx.ellipse(Math.cos(a) * 20 * s, -46 * s + Math.sin(a) * 8 * s, 2.6 * s, 3.6 * s, 0, 0, 7);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      break;
+    }
+    case 'crabknight': {
+      // 껍질을 세우고 집게를 벌린 게. 다리가 옆으로 벌어진다.
+      ctx.strokeStyle = col; ctx.lineWidth = 3 * s;
+      for (let i = 0; i < 3; i++) {
+        const ph2 = phase + i;
+        const sw = moving ? Math.sin(ph2) * 5 * s : 0;
+        for (let d = -1; d <= 1; d += 2) {
+          ctx.beginPath();
+          ctx.moveTo(d * 4 * s, -22 * s);
+          ctx.lineTo(d * (14 + i * 5) * s, -28 * s);
+          ctx.lineTo(d * (18 + i * 6) * s + sw, 0);
+          ctx.stroke();
+        }
+      }
+      ctx.fillStyle = S.flash ? '#fff' : tun;                           // 등딱지
+      ctx.beginPath(); ctx.ellipse(0, -34 * s, 20 * s, 14 * s, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = S.flash ? '#fff' : acc;
+      ctx.beginPath(); ctx.ellipse(-4 * s, -38 * s, 8 * s, 4 * s, -0.3, 0, 7); ctx.fill();
+      ctx.fillStyle = '#17171d';                                        // 눈자루
+      for (let d = -1; d <= 1; d += 2) {
+        line(S, d * 6 * s, -44 * s, d * 8 * s, -54 * s, 2 * s, col);
+        ctx.beginPath(); ctx.arc(d * 8 * s, -56 * s, 2.6 * s, 0, 7); ctx.fill();
+      }
+      armWeapon(S, -0.2 + atk * 0.9, () => {                            // 집게
+        const gap = (1 - atk) * 7 * s;
+        ctx.fillStyle = acc;
+        tri(S, 4 * s, -2 * s, 26 * s, -6 * s - gap, 24 * s, 2 * s, acc);
+        tri(S, 4 * s, 2 * s, 26 * s, 8 * s + gap, 24 * s, 0, acc);
+      }, 6 * s);
+      break;
+    }
+    case 'harpooner': {
+      // 밧줄 달린 작살을 던지는 수군.
+      legs(S); torso(S); head(S, 'hood');
+      armWeapon(S, -0.2 - S.wind * 0.2, () => {
+        line(S, -6 * s, 0, 34 * s, -4 * s, 3 * s, S.flash ? '#fff' : '#6b4b2a');
+        tri(S, 34 * s, -8 * s, 46 * s, -5 * s, 34 * s, 0, acc);
+        line(S, 38 * s, -5 * s, 42 * s, -12 * s, 2 * s, acc);
+      }, 7 * s);
+      ctx.strokeStyle = S.flash ? '#fff' : '#c9b48a'; ctx.lineWidth = 1.4 * s;   // 밧줄
+      ctx.beginPath();
+      ctx.moveTo(-10 * s, -20 * s);
+      ctx.quadraticCurveTo(6 * s, -12 * s, 20 * s, -30 * s);
+      ctx.stroke();
+      break;
+    }
+
     /* ---------------------- 3막: 심연의 조수 ---------------------- */
     case 'ratling': {
       // 등이 굽은 쥐. 꼬리가 길고, 짧은 단검을 들었다.
@@ -3043,8 +3362,9 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
       for (let i = 0; i < necks; i++) {
         const spread = (i - (necks - 1) / 2);
         const wob = Math.sin(phase * 1.3 + i * 1.7) * 0.18;
-        const tipX = (18 + Math.abs(spread) * 6) * s + atk * 14 * s;
-        const tipY = (-86 + Math.abs(spread) * 13) * s;
+        // 목은 부채처럼 벌어진다: 가운데는 높고 곧게, 바깥은 낮고 앞으로.
+        const tipX = (16 + Math.abs(spread) * 20) * s + atk * 14 * s;
+        const tipY = (-92 + Math.abs(spread) * 20) * s;
         ctx.strokeStyle = i === 2 ? col : (S.flash ? '#fff' : tun);
         ctx.lineWidth = (i === 2 ? 11 : 7) * s;
         ctx.beginPath();
@@ -3069,7 +3389,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
         }
       }
       ctx.fillStyle = col;                                        // 몸통
-      ctx.beginPath(); ctx.ellipse(-8 * s, -26 * s, 30 * s, 22 * s, 0, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(-10 * s, -24 * s, 34 * s, 20 * s, 0, 0, 7); ctx.fill();
       ctx.fillStyle = S.flash ? '#fff' : acc;
       for (let i = 0; i < 4; i++) {
         ctx.beginPath();
@@ -3145,7 +3465,21 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
         ctx.stroke();
       }
       robe(S, 30 * s, -56 * s, tun);
+      ctx.strokeStyle = S.flash ? '#fff' : acc; ctx.lineWidth = 2 * s;  // 자락의 금선
+      ctx.globalAlpha = 0.5;
+      for (let i = 0; i < 2; i++) {
+        ctx.beginPath();
+        ctx.moveTo(-26 * s + i * 5 * s, -6 * s - i * 12 * s);
+        ctx.quadraticCurveTo(0, -18 * s - i * 14 * s, 26 * s - i * 5 * s, -6 * s - i * 12 * s);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
       legsHidden(S); torso(S, 9 * s);
+      // 홀을 먼저 — 나중에 그리면 외눈을 가린다
+      armWeapon(S, 0.5 - atk * 0.8, () => {                       // 심연의 홀
+        line(S, -4 * s, 14 * s, 4 * s, -34 * s, 3.6 * s, acc);
+        orb(S, 5 * s, -40 * s, 6 * s, S.flash ? '#fff' : acc);
+      }, 12 * s);
       ctx.fillStyle = col;                                        // 머리
       ctx.beginPath(); ctx.ellipse(0, -72 * s, 13 * s, 14 * s, 0, 0, 7); ctx.fill();
       ctx.fillStyle = acc;                                        // 외눈
@@ -3157,13 +3491,9 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
         const a = phase * 0.8 + i;
         ctx.beginPath();
         ctx.moveTo(i * 5 * s, -84 * s);
-        ctx.quadraticCurveTo(i * 10 * s, -98 * s, i * 12 * s + Math.sin(a) * 4 * s, -110 * s);
+        ctx.quadraticCurveTo(i * 9 * s, -93 * s, i * 13 * s + Math.sin(a) * 4 * s, -99 * s);
         ctx.stroke();
       }
-      armWeapon(S, -0.35 + atk * 0.9, () => {                     // 심연의 홀
-        line(S, 0, 12 * s, 6 * s, -54 * s, 4 * s, acc);
-        orb(S, 7 * s, -60 * s, 8 * s, S.flash ? '#fff' : acc);
-      }, 12 * s);
       break;
     }
 
@@ -3187,7 +3517,8 @@ const HUMANOID = {
   pojol:1, hwarang:1, dokkaebi:1, teslaknight:1, clocksoldier:1, mechanic:1, rifleman:1,
   spear: 1, shield: 1, archer: 1, venom: 1, bomber: 1, knight: 1, duelist: 1,
   longbow: 1, rogue: 1, engineer: 1, skeleton: 1,
-  goblin: 1, orcspear: 1, ballista: 1, powder: 1, dark: 1, orcberserk: 1
+  goblin: 1, orcspear: 1, ballista: 1, powder: 1, dark: 1, orcberserk: 1,
+  harpooner: 1, pearlseer: 1, deepone: 1, bloodcultist: 1, ratling: 1
 };
 
 /* ---------------------- 부품 ---------------------- */
@@ -3354,10 +3685,10 @@ function attackPose(t) {
 
 /* 공격 모양. 병종을 몇 무리로 나눠 움직임을 다르게 준다. */
 const ATTACK_STYLES = {
-  thrust: 'spear,pojol,frostlancer,valkyrie,hoplite,orcspear,runeguard,teslaknight,pharaoh,spartan,fenrir,bastet',
-  heavy: 'berserk,knight,colossus,thor,dokkaebi,ares,viking,ogre,troll,warlord,orcberserk,golem,dark,warchief,frostgiant,orcshield,haetae,shield,paladin,anubis,clocksoldier,mechanic',
-  cast: 'mage,frost,pyro,necro,priest,shaman,lich,hades,ra,gumiho,persephone,rapriest,runeseer,mudang,purifier,inventor,plaguer,zeus,herald,saja,odin,medusa,engineer,totem',
-  shoot: 'archer,venom,longbow,sniper,musketeer,rifleman,ballista,artemis,skadi,desertarcher,northarcher,catapult,orccatapult,airship,steammech,turret'
+  thrust: 'spear,pojol,frostlancer,valkyrie,hoplite,orcspear,runeguard,teslaknight,pharaoh,spartan,fenrir,bastet,deepone,crabknight',
+  heavy: 'berserk,knight,colossus,thor,dokkaebi,ares,viking,ogre,troll,warlord,orcberserk,golem,dark,warchief,frostgiant,orcshield,haetae,shield,paladin,anubis,clocksoldier,mechanic,ironmaul,hyeonmu,octogeneral,hydra,leviathan',
+  cast: 'mage,frost,pyro,necro,priest,shaman,lich,hades,ra,gumiho,persephone,rapriest,runeseer,mudang,purifier,inventor,plaguer,zeus,herald,saja,odin,medusa,engineer,totem,ryujin,pearlseer,banshee,bloodcultist,abysslord,tentacle',
+  shoot: 'archer,venom,longbow,sniper,musketeer,rifleman,ballista,artemis,skadi,desertarcher,northarcher,catapult,orccatapult,airship,steammech,turret,harpooner,siren,siegetower'
 };
 const ATTACK_STYLE = {};
 for (const k in ATTACK_STYLES) ATTACK_STYLES[k].split(',').forEach(id => { ATTACK_STYLE[id] = k; });

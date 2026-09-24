@@ -269,6 +269,94 @@ test('Stage traits: armored, horde, hero hunters and curse', () => {
   cu.step(cu.allies, [], cu.enemyCastle, 1, true); assert.ok(sk.hp < sk.maxHp * 0.95);
 });
 
+test('Act 3 traits: venom fog, storm front and low tide', () => {
+  const mk = mods => battle({ baseHp: 10000, money: 900, rate: 0, reward: 0, mods: mods,
+                              waves: [{ t: 0, e: 'goblin', n: 1, gap: 1 }] });
+  // 독무: 정화로는 못 걷고, 해독 훈련이 깎아 준다
+  const fog = mk(['venomfog']), a = fog.makeAlly(U.knight, 300);
+  fog.allies.push(a); const before = a.hp;
+  fog.step(fog.allies, [], fog.enemyCastle, 1, true);
+  assert.ok(Math.abs((before - a.hp) - 26) < 0.5, 'fog drained ' + (before - a.hp));
+  const plain = battle({ baseHp: 10000, money: 900, rate: 0, reward: 0, waves: [] });
+  const b2 = plain.makeAlly(U.knight, 300); plain.allies.push(b2); const hp2 = b2.hp;
+  plain.step(plain.allies, [], plain.enemyCastle, 1, true);
+  assert.equal(b2.hp, hp2, 'no fog without the trait');
+  // 폭풍 전선: 사거리 150 초과 병종만 줄어들고, 원본 자료는 그대로다
+  const storm = mk(['stormfront']);
+  assert.equal(storm.makeAlly(U.archer, 300).attackRange, Math.round(U.archer.range * 0.72));
+  assert.equal(storm.makeAlly(U.spear, 300).attackRange, U.spear.range);
+  assert.equal(U.archer.range, 265, 'the unit table itself is untouched');
+  // 간조: 재출진 대기가 길어진다
+  const tide = mk(['lowtide']);
+  assert.ok(tide.cdMul > plain.cdMul * 1.4);
+  tide.money = 9999; tide.deploy('spear');
+  assert.ok(tide.cooldowns.spear > U.spear.cooldown);
+});
+test('Enemy summoners obey their own summon cap', () => {
+  const b = battle({ baseHp: 10000, money: 0, rate: 0, reward: 0, waves: [] });
+  const tower = b.spawnEnemy('siegetower', 900);
+  const cap = E.siegetower.ab.summon.max;
+  for (let k = 0; k < 20; k++) { tower.abCd = 0; b.supportTick(tower, b.enemies, 0.1, false); }
+  const spawned = b.enemies.filter(e => e.summonedBy === tower && !e.dead).length;
+  assert.equal(spawned, cap, 'spawned ' + spawned + ' of a ' + cap + ' cap');
+});
+
+/* ---------------- 심해 용궁 ---------------- */
+test('Dragon King blunts what he hits: slow, knockback and weaken', () => {
+  const b = hero('ryujin'), k = b.makeAlly(U.ryujin, 400);
+  const foe = b.spawnEnemy('orcspear', 500);
+  b.hitOne(10, foe, k, false);
+  assert.ok(foe.slowT > 2, 'slowed');
+  assert.ok(foe.weakT > 0 && foe.weakMul < 1, 'weakened');
+  const dmg = b.rollDamage(foe).dmg;
+  assert.ok(dmg < foe.atk, 'a weakened foe hits softer: ' + dmg + ' < ' + foe.atk);
+});
+test('Black Tortoise reflects melee, ignores knockback and shields allies', () => {
+  const b = hero('hyeonmu'), t = b.makeAlly(U.hyeonmu, 400);
+  b.allies.push(t);
+  const mate = b.makeAlly(U.spear, 420); b.allies.push(mate);
+  const melee = b.spawnEnemy('orcberserk', 460), archer = b.spawnEnemy('ballista', 700);
+  let hp = melee.hp; b.hitOne(100, t, melee, false);
+  assert.ok(melee.hp < hp, 'melee attacker takes thorns');
+  hp = archer.hp; b.hitOne(100, t, archer, false);
+  assert.equal(archer.hp, hp, 'ranged attacker takes none');
+  const kb = t.kbTimer; t.takeDamage(t.maxHp * 0.5); assert.equal(t.kbTimer, kb, 'knockback immune');
+  t.abCd = 0; b.supportTick(t, b.allies, 0.1, true);
+  assert.ok(mate.barrier > 0, 'nearby ally shielded');
+});
+test('Pearl Shaman heals and cleans off poison, burn and slow', () => {
+  const b = hero('pearlseer'), p = b.makeAlly(U.pearlseer, 400);
+  b.allies.push(p);
+  const mate = b.makeAlly(U.knight, 420); b.allies.push(mate);
+  mate.hp = 100; mate.poisonT = 5; mate.poisonDps = 50; mate.burnT = 5; mate.burnDps = 40; mate.slowT = 3;
+  mate.stunT = 2;
+  p.abCd = 0; b.supportTick(p, b.allies, 0.1, true);
+  assert.equal(mate.poisonT, 0); assert.equal(mate.burnT, 0); assert.equal(mate.slowT, 0);
+  assert.ok(mate.hp > 100, 'healed too');
+  assert.equal(mate.stunT, 2, 'stun is not a cleanse target');
+  assert.equal(b.findTarget(p, b.enemies, b.enemyCastle), null, 'never attacks');
+});
+test('Siren hastes nearby allies but not herself', () => {
+  const b = hero('siren'), sg = b.makeAlly(U.siren, 400);
+  b.allies.push(sg);
+  const mate = b.makeAlly(U.spear, 430); b.allies.push(mate);
+  const far = b.makeAlly(U.spear, 900); b.allies.push(far);
+  sg.abCd = 0; b.supportTick(sg, b.allies, 0.1, true);
+  assert.ok(mate.hasteT > 0 && mate.hasteMul < 1);
+  assert.equal(sg.hasteT, 0, 'not herself');
+  assert.equal(far.hasteT, 0, 'out of range');
+});
+test('The deep court is one more season of role specialists, capped like the rest', () => {
+  const { SEASONS } = vm.runInContext('({SEASONS})', ctx);
+  const sn = SEASONS.find(x => x.id === 'deepcourt');
+  assert.ok(sn, 'season exists');
+  assert.equal(U.ryujin.rarity, 'UR'); assert.equal(U.ryujin.maxActive, 1);
+  assert.equal(U.hyeonmu.rarity, 'SSR'); assert.equal(U.hyeonmu.maxActive, 1);
+  assert.equal(U.siren.maxActive, 2);
+  for (const id of sn.units) { assert.equal(U[id].season, 'deepcourt'); assert.ok(U[id].gacha); }
+  assert.ok(U.ryujin.active && U.hyeonmu.active, 'both legends carry an active');
+});
+
 /* ---------------- 요괴록 · 태엽 공방 ---------------- */
 const rnd = v => { const r = ctx.Math.random; ctx.Math.random = () => v; return () => { ctx.Math.random = r; }; };
 test('Gumiho charms non-boss foes into hitting their own side', () => {
@@ -341,9 +429,9 @@ test('A squad brings at most five legends and mythics', () => {
   assert.equal(ids.filter(id => U[id].rarity === 'UR' || U[id].rarity === 'SSR').length, 5);
   assert.ok(ids.includes('spear')); assert.ok(!ids.includes('zeus'));
 });
-test('Five seasons, every summon points at a real unit', () => {
+test('Six seasons, every summon points at a real unit', () => {
   const { SEASONS } = vm.runInContext('({SEASONS})', ctx);
-  assert.equal(SEASONS.length, 5);
+  assert.equal(SEASONS.length, 6);
   for (const sn of SEASONS) for (const id of sn.units) { assert.ok(U[id], id); assert.equal(U[id].season, sn.id); }
   for (const u of UNITS) if (u.ab && u.ab.summon) assert.ok(U[u.ab.summon.id], u.id);
 });

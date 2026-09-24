@@ -106,6 +106,33 @@ Object.keys(D.RARITY).forEach(r => {
 });
 ok('시즌 ' + D.SEASONS.length + '개, 소환 풀 정상');
 
+/* 4. 영어 번역 빠짐 — 새 병종·적·전장을 넣고 번역을 잊으면 영어 화면에 한글이 남는다 */
+vm.runInContext(fs.readFileSync(path.join(ROOT, 'js/i18n.js'), 'utf8'), ctx);
+const T = vm.runInContext('I18N_EN', ctx);
+const { STAGE_MODS, ACHIEVEMENTS } = vm.runInContext('({STAGE_MODS, ACHIEVEMENTS})', ctx);
+const untranslated = [];
+const needEn = (text, where) => { if (text && !T[text]) untranslated.push(where + ': ' + text); };
+D.UNITS.forEach(u => {
+  needEn(u.name, '병종 이름'); needEn(u.short, '병종 약칭'); needEn(u.role, '병종 역할');
+  needEn(u.desc, '병종 설명'); needEn(u.abText, '병종 능력');
+  if (u.active) { needEn(u.active.name, '액티브 이름'); needEn(u.active.desc, '액티브 설명'); }
+});
+Object.keys(D.ENEMIES).forEach(k => {
+  const e = D.ENEMIES[k];
+  needEn(e.name, '적 이름'); needEn(e.abText, '적 능력');
+  if (e.special) needEn(e.special.name, '보스 기술');
+  (e.phases || []).forEach(p => needEn(p.name, '보스 페이즈'));
+});
+D.STAGES.forEach(st => { needEn(st.name, '전장 이름'); needEn(st.hint, '전장 힌트'); });
+Object.keys(STAGE_MODS).forEach(k => {
+  const m = STAGE_MODS[k];
+  needEn(m.name, '특성 이름'); needEn(m.desc, '특성 설명'); needEn(m.counter, '특성 대응');
+});
+ACHIEVEMENTS.forEach(a => { needEn(a.name, '업적 이름'); needEn(a.desc, '업적 설명'); });
+D.SEASONS.forEach(sn => { needEn(sn.name, '시즌 이름'); needEn(sn.sub, '시즌 부제'); needEn(sn.desc, '시즌 설명'); });
+if (untranslated.length) untranslated.forEach(m => bad('영어 번역 없음 — ' + m));
+else ok('영어 번역 빠짐 없음');
+
 /* 렌더러가 모든 shape 을 그릴 수 있는지 */
 const render = fs.readFileSync(path.join(ROOT, 'js/render.js'), 'utf8');
 const shapes = {};

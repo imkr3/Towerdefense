@@ -655,6 +655,93 @@ class GLFx {
         break;
       }
 
+      /* 밀려오는 해일 (용왕) */
+      case 'tidewave': {
+        for (let ring = 0; ring < 3; ring++) {         // 밀려 나가는 물마루
+          const n = N(70);
+          const sp = (240 + ring * 170) * sc;
+          for (let i = 0; i < n; i++) {
+            const a = i / n * TAU;
+            this.add(x, y - 8 * sc, Math.cos(a) * sp, Math.sin(a) * sp * 0.26,
+                     0.4 + ring * 0.12, (20 - ring * 4) * sc * big, 3 * sc,
+                     ring ? col : white, 0.9, 2.8, a, 0, 0, 1.2);
+          }
+        }
+        for (let i = 0, n = N(120); i < n; i++) {      // 튀어 오르는 물보라
+          const a = rnd(-Math.PI, 0), sp = rnd(140, 520) * sc;
+          this.add(x + rnd(-R * 0.6, R * 0.6), y, Math.cos(a) * sp, Math.sin(a) * sp,
+                   rnd(0.4, 0.95), rnd(6, 18) * sc, rnd(4, 9) * sc,
+                   i % 3 ? col : white, 0.85, 1.6, 0, rnd(-4, 4), 720, 1.4);
+        }
+        for (let i = 0, n = N(26); i < n; i++) {       // 바닥에 남는 물웅덩이
+          const a = rnd(0, TAU);
+          this.add(x + Math.cos(a) * rnd(0, R), y + Math.sin(a) * rnd(0, R) * 0.22,
+                   0, 0, rnd(0.4, 0.8), rnd(44, 96) * sc, 9 * sc, col, 0.55, 1, 0, 0, 0, 1.1);
+        }
+        break;
+      }
+
+      /* 등껍질 파동 (현무) — 낮고 무거운 육각 충격 */
+      case 'shellguard': {
+        for (let ring = 0; ring < 2; ring++) {
+          const n = N(48), sp = (260 + ring * 200) * sc;
+          for (let i = 0; i < n; i++) {
+            const a = i / n * TAU;
+            this.add(x, y, Math.cos(a) * sp, Math.sin(a) * sp * 0.3,
+                     0.32 + ring * 0.1, (22 - ring * 6) * sc * big, 4 * sc,
+                     ring ? col : white, 1, 2.2, a, 0, 0, 1.4);
+          }
+        }
+        for (let i = 0, n = N(60); i < n; i++) {       // 깨져 나가는 파편
+          const a = rnd(-Math.PI, 0), sp = rnd(120, 420) * sc;
+          this.add(x, y, Math.cos(a) * sp, Math.sin(a) * sp, rnd(0.35, 0.8),
+                   rnd(8, 18) * sc, rnd(6, 14) * sc, col, 0.9, 1, rnd(0, TAU), rnd(-7, 7), 1000, 1.6);
+        }
+        this.add(x, y, 0, 0, 0.28, 26 * sc, 140 * sc * big, white, 0.75, 2.4, 0, 0, 0, 1.5);
+        break;
+      }
+
+      /* 노랫결 (세이렌) — 앞으로 퍼지는 가는 음파 */
+      case 'songwave': {
+        for (let b = 0; b < 4; b++) {
+          const n = N(22), rr = (26 + b * 16) * sc;
+          for (let i = 0; i < n; i++) {
+            const a = -1.0 + (i / (n - 1)) * 2.0;
+            this.add(x + Math.cos(a) * rr, y - 30 * sc + Math.sin(a) * rr,
+                     Math.cos(a) * 130 * sc, Math.sin(a) * 130 * sc,
+                     rnd(0.3, 0.55), 12 * sc * big, 2.4 * sc,
+                     b % 2 ? col : white, 0.7, 2.6, a, 0, 0, 1.2);
+          }
+        }
+        break;
+      }
+
+      /* 심연의 손아귀 — 땅에서 솟구쳤다 가라앉는 어둠 */
+      case 'abyss': {
+        for (let i = 0, n = N(90); i < n; i++) {       // 솟는 촉수 다발
+          const px = x + rnd(-R, R);
+          this.add(px, y, rnd(-20, 20) * sc, rnd(-420, -200) * sc,
+                   rnd(0.4, 0.95), rnd(16, 40) * sc * big, rnd(4, 9) * sc,
+                   i % 4 ? col : white, 0.95, 3.2, 0, rnd(-2, 2), 420, 1.5);
+        }
+        for (let ring = 0; ring < 2; ring++) {         // 바닥에 번지는 고리
+          const n = N(44), rr = R * (0.5 + ring * 0.45);
+          for (let i = 0; i < n; i++) {
+            const a = i / n * TAU;
+            this.add(x + Math.cos(a) * rr, y + Math.sin(a) * rr * 0.26,
+                     -Math.sin(a) * rr * 0.9, Math.cos(a) * rr * 0.24,
+                     rnd(0.5, 0.9), 14 * sc * big, 3 * sc, col, 0.7, 2.4, a, 0, 0, 1.2);
+          }
+        }
+        for (let i = 0, n = N(34); i < n; i++) {       // 빨려 들어가는 티끌
+          const a = rnd(0, TAU), d0 = R * rnd(0.6, 1.2);
+          this.add(x + Math.cos(a) * d0, y + Math.sin(a) * d0 * 0.3,
+                   -Math.cos(a) * d0 * 1.6, -Math.sin(a) * d0 * 0.4,
+                   rnd(0.4, 0.75), rnd(6, 13) * sc, 2 * sc, white, 0.8, 2, a, 0, 0, 1.6);
+        }
+        break;
+      }
+
       /* 교차 참격 */
       case 'slash': {
         const cy = y - 34 * sc;

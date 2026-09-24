@@ -434,6 +434,7 @@ function renderStageDetail(i) {
   const st = STAGES[i];
   const types = [...new Set(st.waves.map(w => w.e))];
   const head = document.createElement('div');
+  head.className = 'sd-head';
   head.innerHTML =
     '<div class="sd-no">' + (st.boss ? '보스 전장' : '전장') + ' ' + (i + 1) + '</div>' +
     '<div class="sd-name">' + st.name + '</div>' +
@@ -450,6 +451,16 @@ function renderStageDetail(i) {
       '<span>' + stageLenLabel(st) + '</span>' +
     '</div>';
   box.appendChild(head);
+  // 특성 이름표는 스크롤 밖에 둔다. 3막처럼 여섯 개가 붙어도 한눈에 보여야 한다.
+  if (st.mods) {
+    const chips = document.createElement('div');
+    chips.className = 'sd-modchips';
+    chips.innerHTML = st.mods.map(m => {
+      const d = STAGE_MODS[m];
+      return '<i style="--mc:' + d.color + '" title="' + d.desc + ' / 대응 · ' + d.counter + '">' + d.name + '</i>';
+    }).join('');
+    box.appendChild(chips);
+  }
   const foes = document.createElement('div');
   foes.className = 'sd-foes';
   types.slice(0, 8).forEach(id => {

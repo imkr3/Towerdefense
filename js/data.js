@@ -593,6 +593,57 @@ SEASON_UNITS.push(
     ab:{hold:true,kbImmune:true},
     desc:'대발명가가 세운 포탑. 움직이지 않고 쏘기만 한다.'})
 );
+/* ---------------- 시즌 6 · 심해 용궁 (바다 밑의 조정) ----------------
+ * 심연이 올라오자 바다 밑 용궁이 왕국 편에 섰다. 화력으로 밀지 않는다.
+ * 밀쳐 내고(용왕), 되받아치고(현무), 노래로 속도를 바꾸고(세이렌),
+ * 독과 화상을 씻어 낸다(진주 무녀). 앞줄이 없으면 아무것도 못 한다. */
+SEASON_UNITS.push(
+  mk({id:'ryujin',name:'용왕',short:'용왕',role:'조수 지배',shape:'ryujin',castFx:'tidewave',season:'deepcourt',rarity:'UR',gacha:true,unlockStage:999,
+    body:'#2f6f7a',accent:'#7ce8ff',tunic:'#1f4a58',hp:1500,atk:105,range:305,speed:24,interval:1.7,
+    cost:530,cooldown:46,kb:2,ranged:true,area:true,areaRadius:95,scale:1.35,
+    ab:{slow:2.2,push:22,weaken:{mul:.8,dur:3}},
+    abText:'범위 · 2.2초 둔화 · 밀쳐 냄 · 맞은 적 피해 20% 감소',
+    desc:'조수를 부린다. 한 방이 세지는 않지만 적의 줄을 흐트러뜨리고 주먹을 무디게 만든다. 혼자서는 아무도 죽이지 못하니, 뒤에서 몰아칠 주력이 있어야 한다.',
+    active:{name:'역류의 칙령',kind:'tidewave',cd:52,radius:270,mul:2.2,push:150,slow:4,desc:'가장 가까운 적 주변 피해·크게 밀쳐 냄·4초 둔화.'}}),
+  mk({id:'hyeonmu',name:'현무',short:'현무',role:'반격 요새',shape:'hyeonmu',castFx:'shellguard',season:'deepcourt',rarity:'SSR',gacha:true,unlockStage:999,
+    body:'#3f5f4a',accent:'#9fe0c4',tunic:'#2c4436',hp:5400,atk:72,range:70,speed:18,interval:1.8,
+    cost:485,cooldown:40,kb:1,scale:1.35,
+    ab:{kbImmune:true,thorns:.45,armor:.2,barrier:190,radius:210,interval:6},
+    abText:'넉백 면역 · 방어 20% · 근접 피해 45% 반격 · 6초마다 주변 보호막 190',
+    desc:'물러서지 않는 등껍질. 때리는 쪽이 더 아프다. 때리는 힘은 거의 없으니, 뒤에 화력을 세워 두고 벽으로만 써야 값을 한다.',
+    active:{name:'등껍질 파동',kind:'shellguard',cd:46,radius:230,mul:1.8,stun:1.1,desc:'가장 가까운 적 주변 피해·1.1초 기절.'}}),
+  mk({id:'siren',name:'세이렌',role:'노래',shape:'siren',castFx:'songwave',season:'deepcourt',rarity:'SR',gacha:true,unlockStage:999,
+    body:'#2b3038',accent:'#a8e6ff',tunic:'#3f6b8e',hp:720,atk:108,range:335,speed:30,interval:1.5,
+    cost:355,cooldown:22,kb:2,ranged:true,
+    ab:{haste:{mul:.78,dur:4},radius:235,interval:5,slow:1.4},
+    abText:'5초마다 주변 아군 가속 · 맞은 적 1.4초 둔화',
+    desc:'바다의 노래로 아군은 빠르게, 적은 느리게 만든다.'}),
+  mk({id:'octogeneral',name:'문어 장군',short:'문어장군',role:'난격',shape:'octogeneral',castFx:'slash',season:'deepcourt',rarity:'SR',gacha:true,unlockStage:999,
+    body:'#6b3a52',accent:'#f0a8c8',tunic:'#4a2739',hp:1900,atk:118,range:88,speed:36,interval:1.1,
+    cost:345,cooldown:22,kb:2,area:true,areaRadius:90,scale:1.15,
+    ab:{crit:{chance:.28,mul:2.2},push:18},
+    abText:'범위 · 28% 치명타 2.2배 · 밀쳐 냄',
+    desc:'여덟 팔이 한꺼번에 날아든다. 앞의 여럿을 함께 후려치고 뒤로 밀어낸다.'}),
+  mk({id:'pearlseer',name:'진주 무녀',short:'진주무녀',role:'정화',shape:'pearlseer',season:'deepcourt',rarity:'SR',gacha:true,unlockStage:999,
+    body:'#2b3038',accent:'#ffe9f2',tunic:'#7ec8d8',hp:640,atk:0,range:0,speed:28,interval:2.0,
+    cost:330,cooldown:20,kb:1,
+    ab:{heal:150,radius:250,cleanse:true,interval:3.2,noAttack:true},
+    abText:'주변 아군 회복 150 · 중독·화상·둔화 해제 · 공격 안 함',
+    desc:'진주를 굴려 상처와 독을 함께 씻는다. 독무가 깔린 전장에서는 이 하나가 전열을 살린다.'}),
+  mk({id:'crabknight',name:'게 갑사',short:'게갑사',role:'집게',shape:'crabknight',season:'deepcourt',rarity:'R',gacha:true,unlockStage:999,
+    body:'#8e4432',accent:'#ffd0a8',tunic:'#6b3324',hp:2100,atk:62,range:64,speed:28,interval:1.5,
+    cost:215,cooldown:10,kb:1,scale:1.05,
+    ab:{armor:.2,thorns:.15},
+    abText:'방어 20% · 근접 피해 15% 반격',
+    desc:'딱딱한 껍질과 커다란 집게. 값싸게 앞줄을 채운다.'}),
+  mk({id:'harpooner',name:'작살수',role:'원거리',shape:'harpooner',season:'deepcourt',rarity:'N',gacha:true,unlockStage:999,
+    body:'#2b3038',accent:'#b8d8e0',tunic:'#3f5f6b',hp:310,atk:58,range:290,speed:38,interval:1.35,
+    cost:155,cooldown:7,kb:2,ranged:true,
+    ab:{slow:1.0},
+    abText:'값싼 원거리 · 1초 둔화',
+    desc:'밧줄 달린 작살을 던진다. 걸린 적은 잠깐 발이 묶인다.'})
+);
+
 // 전설·신화는 한 명씩만 전장에 설 수 있다. 머릿수로 밀어붙이는 병종이 아니라
 // 판을 바꾸는 특수 병종이기 때문이다.
 SEASON_UNITS.forEach(u => {
@@ -637,7 +688,11 @@ const SEASONS = [
   { id: 'clockwork', name: '태엽 공방', sub: '증기와 톱니',
     color: '#d9a066', accent: '#6b4a24',
     desc: '연기 자욱한 공방에서 발명가들이 기계 군단을 끌고 나왔다.',
-    units: ['inventor', 'steammech', 'airship', 'teslaknight', 'clocksoldier', 'mechanic', 'rifleman'] }
+    units: ['inventor', 'steammech', 'airship', 'teslaknight', 'clocksoldier', 'mechanic', 'rifleman'] },
+  { id: 'deepcourt', name: '심해 용궁', sub: '바다 밑의 조정',
+    color: '#7ce8ff', accent: '#1f4a58',
+    desc: '심연이 올라오자 바다 밑 용궁이 왕국 편에 섰다.',
+    units: ['ryujin', 'hyeonmu', 'siren', 'octogeneral', 'pearlseer', 'crabknight', 'harpooner'] }
 ];
 
 /* 소환 풀: 시즌 병종 + (다른 시즌은 낮은 확률로) */

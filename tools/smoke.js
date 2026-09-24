@@ -83,10 +83,16 @@ async function runSize(browser, size) {
   const expansionMap=await page.evaluate(()=>{
     save.cleared=20;mapChapter=2;mapSel=-1;renderMap();const cards=[...document.querySelectorAll('#stage-list .stage')];
     const res={count:cards.length,open:!cards[0].disabled&&cards[0].dataset.stage==='20',locked:cards[1].disabled};
-    mapChapter=3;renderMap();res.endless=!!document.querySelector('#endless-slot .e-btn');
+    // 3막은 2막을 끝내기 전에는 전부 잠겨 있어야 한다
+    mapChapter=3;renderMap();
+    const act3=[...document.querySelectorAll('#stage-list .stage')];
+    res.act3=act3.length===10&&act3.every(c=>c.disabled);
+    // 무한 전장 탭은 목록의 마지막이다
+    mapChapter=CHAPTERS.findIndex(c=>c.endless);renderMap();
+    res.endless=!!document.querySelector('#endless-slot .e-btn');
     return res;
   });
-  if(expansionMap.count!==10||!expansionMap.open||!expansionMap.locked||!expansionMap.endless)throw Error('Expansion progression or endless unlock broken: '+JSON.stringify(expansionMap));
+  if(expansionMap.count!==10||!expansionMap.open||!expansionMap.locked||!expansionMap.act3||!expansionMap.endless)throw Error('Expansion progression or endless unlock broken: '+JSON.stringify(expansionMap));
   await page.evaluate(n=>{save.cleared=n;mapChapter=-1;mapSel=-1;renderMap();},originalProgress);
   const mapFit=await page.evaluate(()=>{
     const r=document.querySelector('#btn-sortie').getBoundingClientRect(), d=document.querySelector('#stage-detail').getBoundingClientRect();

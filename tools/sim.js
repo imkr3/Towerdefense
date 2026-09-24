@@ -263,7 +263,8 @@ const LEGEND_PROOF = [
 /* 시즌마다 대표 셋. 어느 시즌을 뽑든 비슷한 값어치여야 한다. */
 const SEASON_TRIOS = [
   ['hades', 'zeus', 'artemis'], ['odin', 'thor', 'valkyrie'], ['ra', 'anubis', 'pharaoh'],
-  ['gumiho', 'saja', 'dokkaebi'], ['inventor', 'steammech', 'mechanic']
+  ['gumiho', 'saja', 'dokkaebi'], ['inventor', 'steammech', 'mechanic'],
+  ['ryujin', 'hyeonmu', 'siren']
 ];
 const SEASON_SPREAD = 2;
 const LEGEND_PROOF_MAX = 1;      // 전설만 편성이 이길 수 있는 최대 판 수
