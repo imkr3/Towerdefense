@@ -275,6 +275,11 @@ const COUNTER_MIN = 4;           // 공략 편성이 이겨야 하는 최소 판
  * - 전장 병종으로 몸통을 세우고 역할에 맞게 얹은 "조합" 편성은 무지성 편성을 이겨야 한다 */
 const LEGEND_GAP = 2;
 
+/* 전설·신화 하나가 혼자 밀어 줄 수 있는 전장 수의 상한.
+ * 3막은 전장 편성만으로는 절반쯤에서 막히므로 한 명의 기여가 승수로 드러난다.
+ * 여기서 벌어지면 새로 넣은 전설이 기존 전설을 낡게 만든 것이다. */
+const LEGEND_SOLO = { up: 9, lv: 14, from: 30, to: 40, max: 3 };
+
 /* 소환 병종은 특색으로 값을 해야지, 전장 진도를 건너뛰는 열쇠가 되면 안 된다.
  * 최상급만 뽑아 편성했을 때 전장 병종 편성과 이만큼 이상 벌어지면 실패로 본다. */
 const GACHA_GAP = 4;
@@ -399,6 +404,30 @@ function check() {
     if (rows.some(r => !r.win || r.seconds > 400)) { console.error('  ✗ 3막: 공략 편성으로 거의 다 키우면 400초 안에 전부 넘어야 한다'); failed++; }
     else console.log('  ✓ 3막 공략 편성 완주 (강화 ' + SMART_ACT3.up + '/Lv' + SMART_ACT3.lv + ')');
   }
+  // 전설·신화 하나하나의 값어치가 서로 크게 벌어지면 안 된다
+  {
+    const run = mode => {
+      const g = loadEngine(12345); let w = 0;
+      for (let i = LEGEND_SOLO.from; i < LEGEND_SOLO.to; i++) {
+        w += runStage(g, i, LEGEND_SOLO.up, LEGEND_SOLO.lv, false, mode).win ? 1 : 0;
+      }
+      return w;
+    };
+    const g0 = loadEngine(12345);
+    const base = run(false);
+    const ids = g0.UNITS.filter(u => u.gacha && (u.rarity === 'SSR' || u.rarity === 'UR')).map(u => u.id);
+    const gains = ids.map(id => ({ id: id, gain: run('with:' + id) - base }));
+    const over = gains.filter(x => x.gain > LEGEND_SOLO.max);
+    const tag = gains.sort((a, b) => b.gain - a.gain)
+      .map(x => x.id + ' +' + x.gain).join(' · ');
+    if (over.length) {
+      console.error(`  ✗ 혼자 너무 많이 밀어 주는 전설: ${over.map(x => x.id + ' +' + x.gain).join(', ')} (최대 +${LEGEND_SOLO.max}) — 전장 편성 ${base}승`);
+      failed++;
+    } else {
+      console.log(`  ✓ 전설 하나의 값어치 (3막, 강화 ${LEGEND_SOLO.up}/Lv${LEGEND_SOLO.lv}, 전장 편성 ${base}승) ${tag}`);
+    }
+  }
+
   // 진짜 어려운 전장은 전설·신화를 몰아 넣는 것만으로는 안 된다
   for (const h of LEGEND_PROOF) {
     const [r] = runHard(h.up, h.lv, 0, h.stage - 1, h.stage);
@@ -458,6 +487,41 @@ if (args[0] === '--check') {
   const g = loadEngine(12345), rows = [];
   for (let i = from; i < to; i++) rows.push(runStage(g, i, upLv, unitLv, false, 'smart'));
   printTable(rows, upLv, unitLv);
+} else if (args[0] === '--value') {
+  // node tools/sim.js --value <강화> <Lv> [from] [to]
+  // 전설·신화 하나하나의 값어치를 승수보다 곱게 잰다. 전장 편성 9 + 그 하나로
+  // 돌려, 이긴 판 수·남은 성채·걸린 시간을 함께 본다. 승수만 보면 전부 같은
+  // 값으로 보이지만, 실제 기여는 성채와 시간에 먼저 나타난다.
+  const upLv = +(args[1] || 4), unitLv = +(args[2] || 6);
+  const from = +(args[3] || 0), to = +(args[4] || 20);
+  const score = rows => {
+    const wins = rows.filter(r => r.win).length;
+    const castle = rows.reduce((n, r) => n + r.castle, 0) / rows.length;
+    const secs = rows.filter(r => r.win).reduce((n, r) => n + r.seconds, 0) / Math.max(1, wins);
+    return { wins: wins, castle: castle, secs: secs };
+  };
+  const runWith = mode => {
+    const g = loadEngine(12345), rows = [];
+    for (let i = from; i < to; i++) rows.push(runStage(g, i, upLv, unitLv, false, mode));
+    return score(rows);
+  };
+  const base = runWith(false);
+  const fmt = (tag, v) => '  ' + tag.padEnd(14) +
+    String(v.wins).padStart(2) + '승   성채 평균 ' + v.castle.toFixed(1).padStart(5) + '%   ' +
+    '평균 ' + v.secs.toFixed(0).padStart(3) + '초';
+  console.log('\n  전설·신화 값어치 (강화 ' + upLv + '/Lv' + unitLv + ', ' +
+              (from + 1) + '~' + to + '전장)');
+  console.log(fmt('전장 편성만', base));
+  console.log('  ' + '-'.repeat(52));
+  const g0 = loadEngine(12345);
+  const ids = args[5] ? args[5].split(',')
+    : g0.UNITS.filter(u => u.gacha && (u.rarity === 'SSR' || u.rarity === 'UR')).map(u => u.id);
+  const rows = ids.map(id => ({ id: id, v: runWith('with:' + id) }));
+  rows.sort((a, b) => (b.v.wins - a.v.wins) || (b.v.castle - a.v.castle));
+  rows.forEach(r => console.log(fmt('+ ' + r.id, r.v) +
+    '   (' + (r.v.castle - base.castle >= 0 ? '+' : '') +
+    (r.v.castle - base.castle).toFixed(1) + '% 성채)'));
+  console.log('');
 } else if (args[0] === '--solo') {
   // node tools/sim.js --solo <강화> <Lv> id,id,...  전장 편성 9 + 그 병종 하나
   const upLv = +args[1], unitLv = +args[2];

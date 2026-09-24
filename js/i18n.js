@@ -184,7 +184,7 @@ const I18N_EN = {
   /* ---------------- 심해 용궁 ---------------- */
   '용왕': 'Dragon King', '조수 지배': 'Tide Sovereign',
   '조수를 부린다. 한 방이 세지는 않지만 적의 줄을 흐트러뜨리고 주먹을 무디게 만든다. 혼자서는 아무도 죽이지 못하니, 뒤에서 몰아칠 주력이 있어야 한다.': 'Commands the tide. His blows are not heavy, but they scatter the enemy line and blunt its fists. He kills nobody alone — keep a real striking force behind him.',
-  '범위 · 2.2초 둔화 · 밀쳐 냄 · 맞은 적 피해 20% 감소': 'Area · 2.2s slow · knockback · struck foes deal 20% less damage',
+  '범위 · 2초 둔화 · 밀쳐 냄 · 맞은 적 피해 14% 감소': 'Area · 2s slow · knockback · struck foes deal 14% less damage',
   '역류의 칙령': 'Edict of the Riptide',
   '가장 가까운 적 주변 피해·크게 밀쳐 냄·4초 둔화.': 'Damage around the nearest foe · big knockback · 4s slow.',
   '현무': 'Black Tortoise', '반격 요새': 'Counter Fortress',

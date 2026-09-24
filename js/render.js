@@ -126,7 +126,7 @@ class Renderer {
 
   paintBackground(ctx, stageIndex, cam) {
     const w = this.w, h = this.h;
-    const pal = FIELD_PALETTES[stageIndex % FIELD_PALETTES.length];
+    const pal = fieldPalette(stageIndex);
 
     // 하늘 그라디언트는 매 프레임 새로 만들 필요가 없다
     const key = pal.sky0 + this.groundY;
@@ -227,7 +227,7 @@ class Renderer {
   /* --------------------------- 소품 --------------------------- */
   drawProps(stageIndex) {
     const ctx = this.ctx, cs = this.cs;
-    const pal = FIELD_PALETTES[stageIndex % FIELD_PALETTES.length];
+    const pal = fieldPalette(stageIndex);
     for (let i = 0; i < 24; i++) {
       const wx = 40 + i * 88 + ((i * 137) % 43);
       const x = this.screenX(wx);
@@ -1333,16 +1333,33 @@ class Renderer {
       ctx.globalAlpha = Math.min(1, q * 2.2);
       // 테두리와 글자를 같은 문구로 그린다 (번역 전/후가 섞이면 글자가 뭉개진다)
       const text = tr(battle.patternName);
-      let fs = Math.round(this.h * 0.052);
+      const base = Math.round(this.h * 0.052);
+      const max = this.w * 0.86;
+      // 특성이 여섯 개 붙은 전장은 한 줄로는 글자가 너무 작아진다.
+      // 줄이다가 바닥에 닿으면 가운데 구분점에서 두 줄로 접는다.
+      let lines = [text], fs = base;
       ctx.font = 'bold ' + fs + 'px sans-serif';
-      const tw = ctx.measureText(text).width;
-      if (tw > this.w * 0.86) { fs = Math.floor(fs * this.w * 0.86 / tw); ctx.font = 'bold ' + fs + 'px sans-serif'; }
+      let tw = ctx.measureText(text).width;
+      if (tw > max) {
+        const parts = text.split(' · ');
+        if (parts.length > 3 && tw > max * 1.5) {
+          const half = Math.ceil(parts.length / 2);
+          lines = [parts.slice(0, half).join(' · '), parts.slice(half).join(' · ')];
+          fs = Math.round(base * 0.8);
+          ctx.font = 'bold ' + fs + 'px sans-serif';
+          tw = Math.max.apply(null, lines.map(l => ctx.measureText(l).width));
+        }
+        if (tw > max) { fs = Math.floor(fs * max / tw); ctx.font = 'bold ' + fs + 'px sans-serif'; }
+      }
       ctx.textAlign = 'center';
       ctx.lineWidth = 4;
-      ctx.strokeStyle = 'rgba(0,0,0,.8)';
-      ctx.strokeText(text, this.w / 2, this.h * 0.3 - rise);
-      ctx.fillStyle = '#ffcf70';
-      ctx.fillText(text, this.w / 2, this.h * 0.3 - rise);
+      lines.forEach((l, i) => {
+        const ly = this.h * 0.3 - rise + (i - (lines.length - 1) / 2) * fs * 1.15;
+        ctx.strokeStyle = 'rgba(0,0,0,.8)';
+        ctx.strokeText(l, this.w / 2, ly);
+        ctx.fillStyle = '#ffcf70';
+        ctx.fillText(l, this.w / 2, ly);
+      });
       ctx.textAlign = 'left';
       ctx.globalAlpha = 1;
     }
@@ -4312,4 +4329,28 @@ FIELD_PALETTES[2].orb = '#e9edc4'; FIELD_PALETTES[2].orbGlow = 'rgba(240,250,210
 FIELD_PALETTES[3].orb = '#dfe0f0'; FIELD_PALETTES[3].orbGlow = 'rgba(210,214,245,.28)';
 FIELD_PALETTES[3].moon = true;
 FIELD_PALETTES[4].orb = '#ffffff'; FIELD_PALETTES[4].orbGlow = 'rgba(255,255,255,.55)';
+/* 3막 전용 팔레트. 바다가 삼킨 해안 → 가라앉은 습지 → 심연.
+ * 앞 두 막과 같은 다섯 장을 계속 돌려 쓰면 3막이 2막처럼 보인다. */
+const ABYSS_PALETTES = [
+  { sky0: '#4a7e91', sky1: '#bcd8d4', cloud: 'rgba(230,245,245,.65)',
+    ridgeFar: '#5b8a93', ridge: '#3a656e', ground: '#7f8f84', groundDark: '#4e5f5b', speck: '#6b7d76' },
+  { sky0: '#3c5a52', sky1: '#9db89a', cloud: 'rgba(215,235,215,.45)',
+    ridgeFar: '#456558', ridge: '#2c4a3f', ground: '#57664c', groundDark: '#374533', speck: '#46553f' },
+  { sky0: '#241f3a', sky1: '#5c4a72', cloud: 'rgba(200,180,230,.3)',
+    ridgeFar: '#33294a', ridge: '#221b36', ground: '#33294a', groundDark: '#1d1730', speck: '#2b2340' }
+];
+ABYSS_PALETTES[0].orb = '#dff3f6'; ABYSS_PALETTES[0].orbGlow = 'rgba(200,240,250,.45)';
+ABYSS_PALETTES[1].orb = '#cfe0b8'; ABYSS_PALETTES[1].orbGlow = 'rgba(210,235,190,.35)';
+ABYSS_PALETTES[2].orb = '#c9a8f0'; ABYSS_PALETTES[2].orbGlow = 'rgba(190,150,240,.3)';
+ABYSS_PALETTES[2].moon = true;
 FIELD_PALETTES.forEach(p => { p.prop = p.groundDark; });
+ABYSS_PALETTES.forEach(p => { p.prop = p.groundDark; });
+
+/* 전장 번호로 팔레트를 고른다. 3막(31전장부터)은 심연 팔레트를 쓰되
+ * 돌려 쓰지 않고 한 방향으로 간다 — 내려갈수록 어두워져야 한다. */
+const ABYSS_FROM = 30;
+function fieldPalette(stageIndex) {
+  const i = stageIndex | 0;
+  if (i < ABYSS_FROM) return FIELD_PALETTES[i % FIELD_PALETTES.length];
+  return ABYSS_PALETTES[i < 34 ? 0 : i < 37 ? 1 : 2];
+}

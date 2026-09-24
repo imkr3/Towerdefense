@@ -286,7 +286,7 @@ function renderQuest(tab) {
 let questTab = 'daily';
 
 /* ------------------------------ 지도 ------------------------------ */
-/* 30개 전장을 긴 목록으로 늘어놓던 것을 장(章) 단위 진군로로 바꿨다.
+/* 40개 전장을 긴 목록으로 늘어놓던 것을 장(章) 단위 진군로로 바꿨다.
  * 한 장에 10개, 화면 하나에 다 들어가고 스크롤이 없다. 전장을 누르면 오른쪽에
  * 정보가 뜨고, 거기서 편성을 고치거나 바로 출진한다. */
 const CHAPTERS = [
@@ -396,7 +396,7 @@ function renderMap() {
                    (i === mapSel ? ' sel' : '');
     el.style.left = p.x + '%';
     el.style.top = p.y + '%';
-    el.style.setProperty('--field', FIELD_PALETTES[i % FIELD_PALETTES.length].ridge);
+    el.style.setProperty('--field', fieldPalette(i).ridge);
     el.setAttribute('aria-label', (i + 1) + '. ' + (locked ? '잠김' : st.name));
     el.innerHTML =
       '<span class="stage-no">' + (locked ? '🔒' : (st.boss ? '♛' : (i + 1))) + '</span>' +

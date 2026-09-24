@@ -306,7 +306,7 @@ test('Dragon King blunts what he hits: slow, knockback and weaken', () => {
   const b = hero('ryujin'), k = b.makeAlly(U.ryujin, 400);
   const foe = b.spawnEnemy('orcspear', 500);
   b.hitOne(10, foe, k, false);
-  assert.ok(foe.slowT > 2, 'slowed');
+  assert.ok(foe.slowT >= 2, 'slowed');
   assert.ok(foe.weakT > 0 && foe.weakMul < 1, 'weakened');
   const dmg = b.rollDamage(foe).dmg;
   assert.ok(dmg < foe.atk, 'a weakened foe hits softer: ' + dmg + ' < ' + foe.atk);
