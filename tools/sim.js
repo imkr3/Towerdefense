@@ -98,7 +98,7 @@ function comboLoadout(g, index) {
 /* 공략 편성: 전장 특성을 받아칠 병종을 먼저 챙기고 나머지는 전장 병종으로 채운다.
  * "특정 조합이면 풀린다" 를 재는 쪽이다. 소환 병종은 전부 가졌다고 본다. */
 const COUNTERS = {
-  ironclad: ['thor', 'venom', 'pyro', 'rapriest', 'ra'],
+  ironclad: ['thor', 'venom', 'shield', 'pyro', 'rapriest', 'knight', 'ra'],
   horde:    ['zeus', 'frost', 'pyro', 'catapult', 'knight', 'shield', 'spear'],
   blitz:    ['shield', 'frostlancer', 'frost', 'skadi', 'spartan', 'colossus', 'medusa'],
   giantslayer: ['spear', 'shield', 'venom', 'catapult', 'sniper', 'pyro', 'musketeer', 'frost'],

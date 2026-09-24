@@ -289,6 +289,8 @@ class Battle {
       const spec = ENEMIES[w.e];
       if (!spec || (spec.ab && spec.ab.hold)) return;    // 토템처럼 박혀 있는 건 제외
       const ab = spec.ab || {};
+      // 보스는 증원으로 절대 다시 오지 않는다. 전장마다 하나뿐이다.
+      if (spec.boss) return;
       // 장거리 공성은 증원에서 아예 뺀다. 전선이 닿지 않는 자리에서 쏘기만 하니
       // 죽지 않고 계속 쌓여 전장을 영영 멈춰 세운다.
       if (spec.range > 300) return;
@@ -489,6 +491,11 @@ class Battle {
     f.gold = spec.gold || 0;
     f.boss = !!spec.boss;
     if (mods.horde && !f.boss) { f.maxHp = Math.round(f.maxHp * 0.6); f.hp = f.maxHp; }
+    // 캠페인의 보스는 전장에 하나뿐이라 훨씬 강하다 (무한 전장은 그대로)
+    if (f.boss && this.stage.bossId && !this.endless) {
+      f.maxHp = Math.round(f.maxHp * BOSS_HP_MUL); f.hp = f.maxHp;
+      f.atk = Math.round(f.atk * BOSS_ATK_MUL);
+    }
     if (f.boss) { this.bossAlert = 2.6; this.bossName = spec.name; this.shake = 10; sfx('bossIn'); }
     this.enemies.push(f);
     return f;

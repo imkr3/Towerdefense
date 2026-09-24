@@ -346,4 +346,37 @@ test('Five seasons, every summon points at a real unit', () => {
   for (const u of UNITS) if (u.ab && u.ab.summon) assert.ok(U[u.ab.summon.id], u.id);
 });
 
+/* ---------------- 보스는 전장마다 하나 ---------------- */
+test('Every campaign stage has at most one boss, boss stages exactly one', () => {
+  STAGES.forEach((st, i) => {
+    const bosses = st.waves.filter(w => E[w.e].boss);
+    const count = bosses.reduce((n, w) => n + w.n, 0);
+    assert.ok(count <= 1, 'S' + (i + 1) + ' has ' + count + ' bosses');
+    if (st.bossId) { assert.equal(count, 1, 'S' + (i + 1)); assert.equal(bosses[0].e, st.bossId); }
+  });
+});
+test('Escorts complement the boss: bruisers bring ranged, casters bring a melee wall', () => {
+  const { BOSS_ESCORT } = vm.runInContext('({BOSS_ESCORT})', ctx);
+  const ranged = id => E[id].ranged || E[id].range >= 200;
+  assert.ok(BOSS_ESCORT.bruiser.back.every(ranged) && BOSS_ESCORT.bruiser.nb > BOSS_ESCORT.bruiser.nf);
+  assert.ok(BOSS_ESCORT.caster.front.every(id => !ranged(id)) && BOSS_ESCORT.caster.nf > BOSS_ESCORT.caster.nb);
+  const st = STAGES[19], t = st.waves.find(w => w.e === st.bossId).t;
+  const near = st.waves.filter(w => w.t > t && w.t <= t + 3 && !E[w.e].boss).map(w => w.e);
+  assert.ok(near.some(ranged), 'warlord arrives with ranged escort: ' + near);
+});
+test('The single campaign boss is much stronger; endless bosses are not', () => {
+  const { BOSS_HP_MUL } = vm.runInContext('({BOSS_HP_MUL})', ctx);
+  const b = new Battle(9, save()); const t = b.spawnEnemy('troll', 900);
+  assert.equal(t.maxHp, Math.round(Math.round(E.troll.hp * STAGES[9].enemyMul) * BOSS_HP_MUL));
+  const en = new Battle(0, save(), makeEndlessStage()); const t2 = en.spawnEnemy('troll', 900);
+  assert.equal(t2.maxHp, E.troll.hp);
+});
+test('Reinforcements never bring a boss back', () => {
+  const b = new Battle(29, save());
+  assert.ok(!b.reinfPool.concat(b.reinfHeavy).some(id => E[id].boss));
+  b.qi = b.queue.length;
+  for (let k = 0; k < 40; k++) { b.reinfT = 0; b.tickReinforce(0.01); b.enemies.length = Math.min(b.enemies.length, 4); }
+  assert.ok(!b.enemies.some(e => e.boss));
+});
+
 console.log(count + ' regression checks passed');

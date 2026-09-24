@@ -818,7 +818,7 @@ const STAGES = [
   { name: '방패벽 관문', baseHp: 12000, money: 340, rate: 44, reward: 285, waves: [
       W(2,'orcshield',2,3.0), W(16,'ballista',4,1.5), W(30,'golem',1), W(44,'siegeram',1),
       W(60,'orcshield',3,2.6), W(76,'wolf',7,0.9), W(92,'shaman',3,3.0), W(110,'dark',3,2.6) ] },
-  { name: '★ 두 트롤의 문', baseHp: 13000, money: 360, rate: 46, reward: 420, boss: true, waves: [
+  { name: '★ 거대 트롤의 문', baseHp: 13000, money: 360, rate: 46, reward: 420, boss: true, waves: [
       W(2,'goblin',6,1.1), W(14,'troll',1), W(24,'orcspear',6,1.1), W(40,'troll',1),
       W(52,'warchief',1), W(66,'dark',3,2.6), W(84,'orccatapult',2,4.0), W(102,'powder',5,1.8) ] },
   { name: '역병의 늪', baseHp: 20000, money: 370, rate: 48, reward: 330, waves: [
@@ -857,19 +857,19 @@ STAGES.push(
     W(2,'orcshield',3,2),W(20,'lich',1),W(40,'plaguer',5,2),W(60,'wraith',6,1.4),W(84,'lich',1),W(108,'dark',5,2),W(134,'totem',2,4),W(158,'lich',1),W(182,'orcberserk',7,1)]},
   {name:'가시 왕관의 성문',hint:'가시 반격은 원거리 병종으로 대응',baseHp:35000,money:410,rate:50,reward:1100,enemyMul:1.94,waves:[
     W(2,'orcshield',4,2),W(22,'shaman',3,3),W(44,'golem',2,5),W(66,'siegeram',2,5),W(92,'orcshield',5,2),W(116,'ballista',5,2),W(140,'warchief',2,5),W(168,'dark',6,2),W(196,'troll',1)]},
-  {name:'★ 명계의 삼중 봉인',hint:'리치 소환과 거미 여왕의 독에 대비',baseHp:38000,money:420,rate:51,reward:1350,boss:true,enemyMul:3.2,waves:[
+  {name:'★ 명계의 삼중 봉인',hint:'근접 벽 뒤에서 해골을 부르는 리치를 먼저 노려라',baseHp:38000,money:420,rate:51,reward:1350,boss:true,enemyMul:3.2,waves:[
     W(2,'wraith',5,2),W(24,'lich',1),W(48,'spiderqueen',1),W(70,'plaguer',6,1.8),W(96,'troll',1),W(122,'lich',1),W(148,'orcshield',5,2),W(174,'spiderqueen',1),W(204,'wraith',8,1)]},
   {name:'눈보라 추격전',hint:'빠른 늑대 기수를 둔화로 저지',baseHp:39500,money:425,rate:52,reward:1250,enemyMul:2.29,waves:[
     W(2,'wolf',10,.8),W(24,'dark',5,2),W(48,'frostgiant',1),W(72,'wolf',10,.8),W(96,'orccatapult',2,5),W(120,'orcberserk',7,1.2),W(148,'frostgiant',1),W(180,'golem',2,5),W(208,'wolf',12,.7)]},
   {name:'얼어붙은 공성로',hint:'공성 병기를 막을 보호막 전열 필요',baseHp:41000,money:430,rate:53,reward:1320,enemyMul:2.46,waves:[
     W(2,'orcshield',4,2),W(22,'siegeram',2,5),W(46,'ballista',6,2),W(72,'frostgiant',1),W(100,'orcshield',6,1.8),W(126,'orccatapult',3,5),W(154,'warchief',2,5),W(184,'frostgiant',1),W(214,'dark',7,1.8)]},
-  {name:'★ 영원의 겨울 왕좌',hint:'연속 광역 공격 뒤 왕명으로 회복',baseHp:44000,money:440,rate:54,reward:1600,boss:true,enemyMul:3.0,waves:[
+  {name:'★ 영원의 겨울 왕좌',hint:'연속 광역 공격 뒤 왕명으로 회복',baseHp:44000,money:440,rate:54,reward:1600,boss:true,enemyMul:6.2,waves:[
     W(2,'wolf',8,1),W(24,'frostgiant',1),W(52,'troll',1),W(78,'orcshield',6,1.8),W(104,'frostgiant',1),W(136,'golem',2,5),W(164,'warchief',2,5),W(192,'frostgiant',1),W(224,'orcberserk',8,1)]},
   {name:'불타는 태양 회랑',hint:'화상을 정화하며 화룡을 견제',baseHp:45500,money:445,rate:55,reward:1500,enemyMul:3.3,waves:[
     W(2,'hellhound',9,.8),W(26,'powder',6,1.8),W(52,'drake',1),W(80,'plaguer',6,2),W(108,'orcshield',6,1.8),W(138,'drake',1),W(170,'hellhound',10,.8),W(200,'siegeram',2,4),W(230,'dark',7,1.5)]},
   {name:'황금 일식의 제단',hint:'치유·가속 토템을 범위 공격으로 압박',baseHp:47500,money:450,rate:56,reward:1650,boss:true,enemyMul:3.05,waves:[
     W(2,'orcshield',5,2),W(26,'totem',2,6),W(50,'shaman',5,3),W(78,'warlord',1),W(108,'golem',2,5),W(140,'drake',1),W(174,'warchief',3,5),W(208,'orcberserk',8,1),W(240,'lich',2,8)]},
-  {name:'★ 세 신화의 종착지',hint:'보스 러시에 액티브와 왕명을 나눠 사용',baseHp:51000,money:465,rate:58,reward:2200,boss:true,enemyMul:3.8,waves:[
+  {name:'★ 세 신화의 종착지',hint:'원거리 호위를 먼저 걷어 내고, 대군주에게 액티브와 왕명을 몰아 쓰라',baseHp:51000,money:465,rate:58,reward:2200,boss:true,enemyMul:3.8,waves:[
     W(2,'orcshield',5,2),W(26,'lich',1),W(52,'frostgiant',1),W(82,'drake',1),W(114,'warlord',1),W(148,'warchief',2,5),W(182,'spiderqueen',1),W(216,'golem',3,5),W(248,'warlord',1),W(276,'hellhound',10,.8)]}
 );
 
@@ -889,7 +889,7 @@ const STAGE_MODS = {
               counter: '둔화 · 넉백 면역 방패 · 튼튼한 앞줄', color: '#d0605a' }
 };
 const HARD_STAGE_MODS = {
-  9: ['ironclad'], 14: ['blitz'], 16: ['horde'], 17: ['ironclad'],
+  9: ['ironclad'], 14: ['blitz'], 16: ['horde'], 17: ['ironclad', 'giantslayer'],
   19: ['horde', 'ironclad'],
   21: ['horde'], 23: ['horde', 'giantslayer', 'curse'], 24: ['blitz'], 26: ['blitz', 'giantslayer', 'curse'],
   27: ['horde', 'ironclad'], 29: ['giantslayer', 'curse', 'horde', 'blitz']
@@ -897,8 +897,70 @@ const HARD_STAGE_MODS = {
 STAGES.forEach((st, i) => { if (!st.mods && HARD_STAGE_MODS[i]) st.mods = HARD_STAGE_MODS[i]; });
 // 전설·신화 풀이 넓어질수록 몰아 넣기만 한 편성도 두루 갖춘다. 조합이 필요한
 // 1막 전장은 적 배율을 따로 올려 둔다.
-STAGES[17].enemyMul = 1.75;
-STAGES[19].enemyMul = 1.74;
+STAGES[15].enemyMul = 1.85;             // 끼어 있던 보스 둘이 정예로 바뀐 만큼
+STAGES[16].enemyMul = 1.65;
+STAGES[17].enemyMul = 1.6;
+STAGES[19].enemyMul = 1.85;
+
+/* ------------------------------------------------------------------
+ *  보스는 전장마다 하나.
+ *  예전엔 한 전장에 보스가 여럿 몰려나왔다. 이제 보스 전장에는 그 전장을
+ *  대표하는 보스 하나만, 대신 훨씬 강하게 나온다. 빠진 보스 자리는 그 보스가
+ *  못 하는 쪽을 채워 주는 잡몹 무리가 메운다:
+ *   - 근접 거구(트롤·서리 거인·대군주) → 뒤에서 쏘는 원거리 다수 + 빠른 근접 몇
+ *   - 뒤에 서는 소환사(리치·거미 여왕) → 앞을 막는 근접 벽 + 원거리 조금
+ *   - 불 뿜는 화룡 → 단단한 앞줄 + 빠른 근접 + 원거리 조금
+ *  보스 전장이 아닌 곳에 끼어 있던 보스는 정예 잡몹으로 바꾼다.
+ * ------------------------------------------------------------------ */
+const BOSS_ROLE = { troll: 'bruiser', frostgiant: 'bruiser', warlord: 'bruiser',
+                    lich: 'caster', spiderqueen: 'caster', drake: 'flyer' };
+const BOSS_ESCORT = {
+  bruiser: { back: ['ballista', 'shaman', 'plaguer', 'orccatapult'], front: ['wolf', 'hellhound', 'orcspear'], nb: 4, nf: 2 },
+  caster:  { back: ['ballista', 'plaguer'], front: ['orcshield', 'orcspear', 'orcberserk', 'dark'], nb: 2, nf: 4 },
+  flyer:   { back: ['shaman', 'ballista'], front: ['orcshield', 'hellhound', 'orcberserk', 'golem'], nb: 2, nf: 3 }
+};
+/* 전장 번호(0부터) → 그 전장의 보스 */
+const STAGE_BOSS = { 4: 'lich', 9: 'troll', 12: 'lich', 14: 'troll', 16: 'frostgiant', 17: 'drake',
+                     18: 'spiderqueen', 19: 'warlord', 21: 'lich', 23: 'lich', 26: 'frostgiant',
+                     28: 'drake', 29: 'warlord' };
+const ELITE_FOR = { troll: ['ogre', 1], lich: ['shaman', 2], frostgiant: ['golem', 1],
+                    drake: ['hellhound', 3], spiderqueen: ['spider', 4], warlord: ['warchief', 1] };
+const BOSS_HP_MUL = 2.5;       // 하나뿐인 보스는 그만큼 단단하다
+const BOSS_ATK_MUL = 1.2;
+(function oneBossPerStage() {
+  // 잡몹은 원래 처음 나오던 전장 즈음부터만 쓴다 (1전장에 투석기가 나오면 안 된다)
+  const first = {};
+  STAGES.forEach((st, i) => st.waves.forEach(w => { if (first[w.e] === undefined) first[w.e] = i; }));
+  STAGES.forEach((st, i) => {
+    const sig = STAGE_BOSS[i];
+    const bossWaves = st.waves.filter(w => ENEMIES[w.e].boss);
+    if (!sig && !bossWaves.length) return;
+    const out = st.waves.filter(w => !ENEMIES[w.e].boss);
+    const last = st.waves.reduce((m, w) => Math.max(m, w.t), 0);
+    const ok = id => first[id] !== undefined && first[id] <= i + 1;
+    const pick = (list, k) => { const c = list.filter(ok); return c.length ? c[k % c.length] : 'orcspear'; };
+    if (sig) {
+      const esc = BOSS_ESCORT[BOSS_ROLE[sig]];
+      // 호위 규모: 앞 전장은 절반, 뒤로 갈수록 제 크기
+      const grow = 0.5 + 0.5 * Math.min(1, i / 29);
+      const nb = Math.max(2, Math.round(esc.nb * grow)), nf = Math.max(1, Math.round(esc.nf * grow));
+      bossWaves.slice(1).forEach((w, k) => {              // 빠진 두 번째 보스부터 → 보스를 받쳐 줄 무리
+        out.push(W(w.t, pick(esc.back, k + 1), Math.max(2, nb - 1), 1.3));
+        out.push(W(w.t + 3, pick(esc.front, k + 1), Math.max(1, nf - 1), 1.1));
+      });
+      const firstT = bossWaves.length ? bossWaves[0].t : 0;
+      const tb = Math.round(Math.max(firstT, last * 0.35, 20));
+      out.push(W(tb, sig, 1));
+      out.push(W(tb + 1, pick(esc.back, 0), nb, 1.2));      // 보스와 함께 오는 호위
+      out.push(W(tb + 2, pick(esc.front, 0), nf, 1.0));
+      st.bossId = sig;
+      st.bossRole = BOSS_ROLE[sig];
+    } else {
+      bossWaves.forEach(w => { const el = ELITE_FOR[w.e]; out.push(W(w.t, el[0], el[1], 1.6)); });
+    }
+    st.waves = out.sort((a, b) => a.t - b.t);
+  });
+})();
 
 /* 전장 길이. 예전엔 모두 2000 이라 병사가 적과 부딪히기까지 40초 넘게 걸어야 했다.
  * 초반은 짧게 붙고, 뒤로 갈수록·보스 전장일수록 조금씩 길어진다. */
