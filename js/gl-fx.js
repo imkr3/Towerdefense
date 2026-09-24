@@ -500,6 +500,49 @@ class GLFx {
         break;
       }
 
+      /* 치명타 불꽃: 작고 빠르게 튄다 */
+      case 'spark': {
+        for (let i = 0, n = N(14); i < n; i++) {
+          const a = rnd(-Math.PI, Math.PI * 0.2), sp = rnd(160, 380) * sc;
+          this.add(x, y, Math.cos(a) * sp, Math.sin(a) * sp, rnd(0.15, 0.32), rnd(4, 8) * sc, 1,
+                   i % 3 ? col : white, 1, 2.6, a, 0, 500, 2);
+        }
+        this.add(x, y, 0, 0, 0.14, 10 * sc, 44 * sc, white, 0.9, 1, 0, 0, 0, 1.4);
+        break;
+      }
+
+      /* 광역 폭발: 불꽃 고리와 흩어지는 불씨 */
+      case 'burst': {
+        for (let i = 0, n = N(30); i < n; i++) {
+          const a = i / n * TAU, sp = rnd(140, 260) * sc;
+          this.add(x, y, Math.cos(a) * sp, Math.sin(a) * sp * 0.35, rnd(0.25, 0.45),
+                   rnd(10, 18) * sc, 3 * sc, i % 2 ? col : [1, 0.62, 0.25], 0.9, 1.8, a, 0, 0, 1.4);
+        }
+        for (let i = 0, n = N(18); i < n; i++) {
+          const a = rnd(-Math.PI, 0), sp = rnd(120, 360) * sc;
+          this.add(x, y, Math.cos(a) * sp, Math.sin(a) * sp, rnd(0.3, 0.6), rnd(4, 8) * sc, 1,
+                   white, 1, 1.8, a, 0, 700, 2);
+        }
+        this.add(x, y - 6 * sc, 0, 0, 0.22, 20 * sc, R * 1.2, [1, 0.8, 0.5], 0.7, 1, 0, 0, 0, 1.5);
+        break;
+      }
+
+      /* 큰 몸이 쓰러질 때 이는 흙먼지 */
+      case 'dust': {
+        const dirt = [0.85, 0.78, 0.62];
+        for (let i = 0, n = N(40); i < n; i++) {
+          const a = rnd(-Math.PI, 0), sp = rnd(60, 220) * sc;
+          this.add(x + rnd(-R, R) * 0.4, y, Math.cos(a) * sp, Math.sin(a) * sp * 0.5,
+                   rnd(0.6, 1.1), rnd(14, 24) * sc, rnd(40, 70) * sc, dirt, 0.28, 1, 0, 0, -30, 1.3);
+        }
+        for (let i = 0, n = N(24); i < n; i++) {
+          const a = rnd(-Math.PI * 0.9, -Math.PI * 0.1), sp = rnd(200, 420) * sc;
+          this.add(x, y - 10 * sc, Math.cos(a) * sp, Math.sin(a) * sp, rnd(0.4, 0.8), rnd(5, 10) * sc, 2 * sc,
+                   col, 1, 1.4, a, rnd(-6, 6), 900, 2);
+        }
+        break;
+      }
+
       /* 여우불: 나선을 그리며 피어오르는 분홍 불꽃 (구미호) */
       case 'foxfire':
       case 'foxbead': {

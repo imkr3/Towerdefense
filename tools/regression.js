@@ -214,7 +214,7 @@ test('Hero actives do not re-trigger chain lightning on every target', () => {
 });
 
 test('Every stage has its own shorter battlefield, bosses a little longer', () => {
-  for (const st of STAGES) { assert.ok(st.len >= 1200 && st.len < 2000, st.name + ' len ' + st.len); }
+  for (const st of STAGES) { assert.ok(st.len >= 800 && st.len < 1700, st.name + ' len ' + st.len); }
   assert.ok(STAGES[0].len < STAGES[18].len);
   assert.ok(STAGES[4].len > STAGES[3].len);                     // 보스 전장
 });

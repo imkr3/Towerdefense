@@ -303,7 +303,8 @@ function check() {
   });
 
   // 무지성 전설 편성 vs 조합 편성
-  [{ up: 2, lv: 3 }, { up: 3, lv: 5 }].forEach(e => {
+  // 3/Lv5 는 1막 뒤쪽 벽에 세 편성이 모두 막혀 똑같이 13 이 나온다. 갈라지는 4/Lv6 에서 본다.
+  [{ up: 2, lv: 3 }, { up: 4, lv: 6 }].forEach(e => {
     const base = runAll(e.up, e.lv, 12345, false, 20).filter(r => r.win).length;
     const legend = runAll(e.up, e.lv, 12345, 'legend', 20).filter(r => r.win).length;
     const combo = runAll(e.up, e.lv, 12345, 'combo', 20).filter(r => r.win).length;

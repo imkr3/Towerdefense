@@ -309,7 +309,7 @@ function chapterOf(i) {
 /* 전장 길이를 말로. 숫자보다 감이 온다. */
 function stageLenLabel(st) {
   const len = st.len || 2000;
-  return len < 1420 ? '짧은 전장' : len < 1620 ? '보통 전장' : '긴 전장';
+  return len < 1050 ? '짧은 전장' : len < 1260 ? '보통 전장' : '긴 전장';
 }
 
 /* 진군로 위 점 위치(%). 가로 화면에 맞춘 완만한 S 자 */
@@ -958,27 +958,38 @@ function buildCards() {
       '<div class="c-role">' + u.role + '</div>' +
       '<div class="c-cost">' + u.cost + '</div>' +
       '<span class="c-key">' + ((i + 1) % 10) + '</span>' +
-      '<div class="cool hide"></div>';
+      '<div class="cool hide"></div>' +
+      (u.active ? '<div class="c-act hide"><span class="c-act-k"></span><span class="c-act-v"></span></div>' : '');
+    if (u.active) {
+      b.classList.add('has-active');
+      b.style.setProperty('--hero', u.accent);
+      b.title += '\n' + u.active.name + ' — ' + u.active.desc + '\n(출전 중에 한 번 더 누르면 발동)';
+    }
     drawUnitIcon(b.querySelector('.c-ico'), u, 38);
-    b.addEventListener('click', () => {
-      if (!canBattleInput()) return;
-      if (battle.cooldowns[u.id] > 0) { toast('아직 쿨타임이다'); return; }
-      if (battle.money < u.cost) { toast('군자금이 부족하다'); return; }
-      if (!battle.deploy(u.id)) toast('동시 출진 한도에 도달했다');
-    });
+    b.addEventListener('click', () => onCardTap(u));
     box.appendChild(b);
   });
   cardEls = $$('#cards .card');
-  const abilities=$('#hero-abilities'); abilities.innerHTML='';
-  battle.roster.filter(u=>u.active).forEach(u=>{
-    const btn=document.createElement('button');btn.className='hero-ability';btn.dataset.hero=u.id;
-    btn.style.setProperty('--hero-color',u.accent);btn.title=u.active.name+' — '+u.active.desc;
-    btn.innerHTML='<span class="ha-name"></span><span class="ha-state"></span>';
-    btn.querySelector('.ha-name').textContent=u.short||u.name;
-    btn.onclick=()=>{if(canBattleInput() && battle.useHeroActive(u.id)){SFX.command();toast(u.name+' · '+u.active.name);}};
-    abilities.appendChild(btn);
-  });
-  abilities.hidden=!abilities.children.length;
+}
+
+/* 카드 누르기. 전설·신화가 이미 전장에 서 있으면 출진 대신 액티브를 쓴다. */
+function onCardTap(u) {
+  if (!canBattleInput()) return;
+  if (u.active && battle.heroCaster(u.id)) {
+    if (battle.useHeroActive(u.id)) {
+      SFX.command();
+      buzz(25);
+      toast(u.name + ' · ' + u.active.name);
+      return;
+    }
+    const cd = Math.ceil(Math.max(battle.heroCooldowns[u.id] || 0, battle.heroGlobalCd));
+    toast(cd > 0 ? u.active.name + ' · ' + cd + '초 남음' : u.active.name + ' · 대상 없음');
+    return;
+  }
+  if (battle.cooldowns[u.id] > 0) { toast('아직 쿨타임이다'); return; }
+  if (battle.money < u.cost) { toast('군자금이 부족하다'); return; }
+  if (!battle.deploy(u.id)) toast('동시 출진 한도에 도달했다');
+  else buzz(8);
 }
 
 let cardEls = [];
@@ -1018,14 +1029,6 @@ function autoDeploy(dt) {
 }
 
 function updateHud() {
-  $$('#hero-abilities button').forEach(btn=>{
-    const u=UNIT_BY_ID[btn.dataset.hero], alive=battle.heroCaster(u.id);
-    const cd=Math.ceil(Math.max(battle.heroCooldowns[u.id]||0,battle.heroGlobalCd));
-    btn.disabled=!canBattleInput() || !battle.canHeroActive(u.id);
-    const state=!alive?'출진 필요':cd>0?cd+'초':battle.canHeroActive(u.id)?'사용':'대상 없음';
-    const el=btn.querySelector('.ha-state'); if(el && el.textContent!==state) el.textContent=state;
-    btn.setAttribute('aria-label',u.name+' '+u.active.name+' '+state);
-  });
   const money = Math.floor(battle.money);
   $('#kill-count').textContent = battle.kills;
   // 증원이 돌기 시작하면 남은 적을 셀 수 없다
@@ -1060,11 +1063,34 @@ function updateHud() {
     const id = el.dataset.id;
     const cd = battle.cooldowns[id];
     const cool = el.querySelector('.cool');
-    if (cd > 0) { cool.classList.remove('hide'); cool.textContent = cd.toFixed(1); }
+    const u = UNIT_BY_ID[id];
+    // 전설·신화가 전장에 서 있으면 카드는 액티브 버튼이 된다
+    const alive = !!(u.active && battle.heroCaster(id));
+    el.classList.toggle('alive', alive);
+    if (u.active) {
+      const act = el.querySelector('.c-act');
+      act.classList.toggle('hide', !alive);
+      if (alive) {
+        const acd = Math.max(battle.heroCooldowns[id] || 0, battle.heroGlobalCd);
+        const ready = battle.canHeroActive(id);
+        el.classList.toggle('act-ready', ready);
+        const k = acd > 0 && !ready ? '충전' : '필살';
+        const v = ready ? '발동!' : (acd > 0 ? Math.ceil(acd) + '초' : '대상 없음');
+        const kEl = act.querySelector('.c-act-k'), vEl = act.querySelector('.c-act-v');
+        if (kEl.textContent !== k) kEl.textContent = k;
+        if (vEl.textContent !== v) vEl.textContent = v;
+        el.style.setProperty('--act', (u.active.cd ? Math.min(1, acd / u.active.cd) : 0) * 100 + '%');
+        el.setAttribute('aria-label', u.name + ' ' + u.active.name + ' ' + v);
+      } else {
+        el.classList.remove('act-ready');
+        el.setAttribute('aria-label', u.name + ' 출진, 비용 ' + u.cost);
+      }
+    }
+    if (cd > 0 && !alive) { cool.classList.remove('hide'); cool.textContent = cd.toFixed(1); }
     else cool.classList.add('hide');
-    el.classList.toggle('poor', money < UNIT_BY_ID[id].cost);
-    el.classList.toggle('available', battle.canDeploy(id));
-    el.setAttribute('aria-disabled', String(!canBattleInput() || !battle.canDeploy(id)));
+    el.classList.toggle('poor', !alive && money < u.cost);
+    el.classList.toggle('available', alive ? battle.canHeroActive(id) : battle.canDeploy(id));
+    el.setAttribute('aria-disabled', String(!canBattleInput() || !(battle.canDeploy(id) || (u.active && battle.canHeroActive(id)))));
     const max = UNIT_BY_ID[id].cooldown * battle.cdMul;
     el.style.setProperty('--cooldown', (max ? cd / max * 100 : 0) + '%');
   });
@@ -1580,6 +1606,7 @@ function initSettings() {
   }));
   $$('#set-quality button').forEach(b => b.addEventListener('click', () => {
     Settings.set('quality', b.dataset.v);
+    if (renderer) { renderer.resize(); renderer.syncGlSize(); }
     refreshSettingsUI();
     SFX.ui();
   }));

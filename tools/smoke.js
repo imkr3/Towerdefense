@@ -245,26 +245,29 @@ async function runSize(browser, size) {
     for(const id of heroSave.loadout){battle.money=900;battle.deploy(id);battle.heroCooldowns[id]=0;}
     battle.allies.forEach(f=>{f.x=600;});battle.spawnEnemy('ogre',800);buildCards();paused=true;updateHud();
   });
-  if(!await page.locator('[data-hero="hades"]').isDisabled())throw Error('Paused hero input enabled');
+  // 정지 중에는 카드를 눌러도 액티브가 나가지 않는다
+  await page.click('.card[data-id="hades"]',{force:true});
+  if(await page.evaluate(()=>battle.heroCooldowns.hades>0))throw Error('Paused card fired an active');
   await page.evaluate(()=>{paused=false;updateHud();});
-  // 액티브 칸은 하단 HUD 안에서 카드 줄·왕의 명령과 나란히 서야 한다.
-  // 전장 위로 떠서도, 카드나 왕의 명령을 덮어서도 안 된다.
-  const layout=await page.evaluate(()=>{
-    const r=el=>document.querySelector(el).getBoundingClientRect();
-    const a=r('#hero-abilities'),c=r('#cards'),k=r('#btn-command'),h=r('.hud-bottom');
-    const hit=(p,q)=>p.left<q.right-1&&q.left<p.right-1&&p.top<q.bottom-1&&q.top<p.bottom-1;
-    return {inHud:a.top>=h.top-1&&a.bottom<=h.bottom+1,overCards:hit(a,c),overCmd:hit(a,k),w:a.width,h:a.height};
-  });
-  if(!layout.inHud)throw Error('Hero abilities float over the battlefield');
-  if(layout.overCards||layout.overCmd)throw Error('Hero abilities overlap cards or command: '+JSON.stringify(layout));
-  if(layout.w<40||layout.h<40)throw Error('Hero abilities collapsed: '+JSON.stringify(layout));
+  // 출전 중인 전설·신화 카드는 빛나고, 카드 줄은 넘겨 보지 않아도 다 들어간다
+  const cardState=await page.evaluate(()=>{const c=document.querySelector('#cards');
+    return {alive:[...document.querySelectorAll('.card.alive')].map(e=>e.dataset.id).sort().join(','),
+            scroll:c.scrollWidth>c.clientWidth+1, over:c.getBoundingClientRect().right>document.querySelector('#btn-command').getBoundingClientRect().left+1};});
+  if(cardState.alive!=='hades,odin,ra')throw Error('Alive markers wrong: '+JSON.stringify(cardState));
+  if(cardState.scroll||cardState.over)throw Error('Card row scrolls or overlaps command: '+JSON.stringify(cardState));
+  // 출전 중인 카드를 한 번 더 누르면 액티브
   for(const id of ['hades','odin','ra']){
     await page.evaluate(()=>{battle.heroGlobalCd=0;updateHud();});
-    await page.click('[data-hero="'+id+'"]');
-    if(!await page.evaluate(id=>battle.heroCooldowns[id]>0,id))throw Error('Active button failed: '+id);
+    await page.click('.card[data-id="'+id+'"]');
+    if(!await page.evaluate(id=>battle.heroCooldowns[id]>0,id))throw Error('Card tap did not fire active: '+id);
     await page.evaluate(()=>{renderer.render(battle,1/60);});
     await shot(page,'active-'+id+'-'+size.w);
   }
+  // 열 장을 채워도 한 줄
+  const ten=await page.evaluate(()=>{const s2={...save,loadout:['spear','shield','archer','priest','berserk','venom','bomber','merchant','knight','frost']};
+    s2.cleared=Math.max(10,s2.cleared);battle=new Battle(0,s2,{baseHp:99999,money:900,rate:0,waves:[],reward:0});buildCards();updateHud();
+    const c=document.querySelector('#cards');return {n:c.children.length,scroll:c.scrollWidth>c.clientWidth+1};});
+  if(ten.n!==10||ten.scroll)failures.push(size.name+': 카드 10장이 한 줄에 안 들어간다 '+JSON.stringify(ten));
 
   // 영어: 화면에 한글이 남지 않고, 번역이 전투를 멈추지 않는다
   await page.evaluate(()=>{Settings.set('lang','en');});

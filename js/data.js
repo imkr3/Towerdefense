@@ -846,7 +846,7 @@ const STAGES = [
 
 /* 1막 난이도 곡선. 초반은 기본 병종으로 넘어가야 하니 거의 건드리지 않고,
  * 뒤로 갈수록 같은 적이 더 억세진다. */
-STAGES.forEach((st, i) => { if (!st.enemyMul) st.enemyMul = +(1 + 0.012 * i + 0.0016 * i * i).toFixed(3); });
+STAGES.forEach((st, i) => { if (!st.enemyMul) st.enemyMul = +(1 + 0.02 * i + 0.0016 * i * i).toFixed(3); });
 
 /* 2막: 기존 20전장 인덱스는 유지하여 저장과 별 기록을 보존한다. */
 const ENDLESS_UNLOCK_STAGE = 20;
@@ -897,15 +897,17 @@ const HARD_STAGE_MODS = {
 STAGES.forEach((st, i) => { if (!st.mods && HARD_STAGE_MODS[i]) st.mods = HARD_STAGE_MODS[i]; });
 // 전설·신화 풀이 넓어질수록 몰아 넣기만 한 편성도 두루 갖춘다. 조합이 필요한
 // 1막 전장은 적 배율을 따로 올려 둔다.
-STAGES[17].enemyMul = 2.0;
+STAGES[17].enemyMul = 1.75;
 STAGES[19].enemyMul = 1.74;
 
 /* 전장 길이. 예전엔 모두 2000 이라 병사가 적과 부딪히기까지 40초 넘게 걸어야 했다.
  * 초반은 짧게 붙고, 뒤로 갈수록·보스 전장일수록 조금씩 길어진다. */
 STAGES.forEach((st, i) => {
   if (st.len) return;
-  const base = i < 20 ? 1300 + 12 * i : 1520 + 10 * (i - 20);
-  st.len = base + (st.boss ? 140 : 0);
+  // 레벨마다 조금씩 다르게: 뒤로 갈수록 길어지되, 사이사이 짧은 전장이 섞인다
+  const wiggle = [0, -70, 50, -40, 80][i % 5];
+  const base = i < 20 ? 900 + 20 * i : 1180 + 18 * (i - 20);
+  st.len = base + wiggle + (st.boss ? 120 : 0);
 });
 
 /* =======================================================================
@@ -957,7 +959,7 @@ function makeEndlessStage(waveCount) {
     t = spec.next;
   }
   return {
-    name: '무한 전장', endless: true, infinite: !waveCount, len: 1600,
+    name: '무한 전장', endless: true, infinite: !waveCount, len: 1250,
     baseHp: 99999999,          // 적 요새는 부술 수 없다. 버티는 것이 전부다
     money: 320, rate: 40, reward: 0,
     waves: waves

@@ -18,7 +18,10 @@ class Renderer {
   }
 
   resize() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    // 해상도는 설정의 품질을 따른다: 높음은 3배까지 선명하게, 절전은 1.5배
+    const q = (typeof Settings !== 'undefined') ? Settings.get('quality') : 'auto';
+    const cap = q === 'high' ? 3 : q === 'low' ? 1.5 : 2;
+    const dpr = Math.min(window.devicePixelRatio || 1, cap);
     // 노치 여백. 매 프레임 getComputedStyle 을 부르면 스타일 재계산이 걸린다.
     this.safeTop = parseFloat(
       getComputedStyle(document.documentElement).getPropertyValue('--st')) || 0;
@@ -44,7 +47,7 @@ class Renderer {
   /* WebGL 레이어를 2D 캔버스와 같은 크기로 맞춘다 */
   syncGlSize() {
     if (!this.glfx || !this.glfx.ok) return;
-    this.glfx.resize(this.w, this.h, Math.min(window.devicePixelRatio || 1, 2));
+    this.glfx.resize(this.w, this.h, this.cv.width / this.w);
   }
 
   /* 전투가 새로 시작되면 남아 있던 연출을 비운다 */
@@ -484,6 +487,19 @@ class Renderer {
       ctx.fillStyle = f.side === 'ally' ? '#4fa3e0' : '#c0392b';
       rectPath(ctx, x - bw / 2, y - 72 * s, bw * (f.hp / f.maxHp), 5 * s); ctx.fill();
     }
+    // 전설·신화 표식: 머리 위 작은 마름모. 액티브가 준비되면 반짝이며 커진다.
+    if (f.s.active && f.side === 'ally' && !f.summoned) {
+      const ready = this._battle && this._battle.canHeroActive(f.s.id);
+      const pulse = ready ? 1 + Math.sin((this.clock || 0) * 6) * 0.18 : 0.8;
+      const my = y - 82 * s, r = 5 * s * pulse;
+      ctx.save();
+      if (ready) { ctx.globalAlpha = 0.35; ctx.fillStyle = f.s.accent; ctx.beginPath(); ctx.arc(x, my, r * 2.2, 0, 7); ctx.fill(); }
+      ctx.globalAlpha = ready ? 1 : 0.75;
+      ctx.fillStyle = f.s.accent; ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.4 * s;
+      ctx.beginPath(); ctx.moveTo(x, my - r); ctx.lineTo(x + r * 0.8, my); ctx.lineTo(x, my + r); ctx.lineTo(x - r * 0.8, my); ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      ctx.restore();
+    }
     if (f.barrier > 0) {                                   // 보호막
       ctx.strokeStyle = 'rgba(143,216,255,.85)';
       ctx.lineWidth = 2 * s;
@@ -539,14 +555,26 @@ class Renderer {
       ctx.rotate(s.dir > 0 ? (p - 0.5) * 1.4 : Math.PI - (p - 0.5) * 1.4);
       ctx.strokeStyle = s.color;
       ctx.lineWidth = 2.4 * cs; ctx.lineCap = 'round';
-      if (s.area) {                       // 투석기 바위
+      const magic = s.src && s.src.s && (s.src.s.rarity === 'UR' || s.src.s.rarity === 'SSR' || s.src.s.castFx);
+      if (s.area || magic) {              // 마법탄·폭탄: 빛나는 구슬 + 후광
+        const r0 = (s.area ? 6 : 5) * cs;
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = 0.35;
         ctx.fillStyle = s.color;
-        ctx.beginPath(); ctx.arc(0, 0, 6 * cs, 0, 7); ctx.fill();
-      } else {                            // 화살
+        ctx.beginPath(); ctx.arc(0, 0, r0 * 2.3, 0, 7); ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.beginPath(); ctx.arc(0, 0, r0, 0, 7); ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath(); ctx.arc(-r0 * 0.25, -r0 * 0.25, r0 * 0.45, 0, 7); ctx.fill();
+        ctx.globalCompositeOperation = 'source-over';
+      } else {                            // 화살: 촉과 깃
         ctx.beginPath(); ctx.moveTo(-9 * cs, 0); ctx.lineTo(8 * cs, 0); ctx.stroke();
         ctx.beginPath();
         ctx.moveTo(12 * cs, 0); ctx.lineTo(6 * cs, -3.5 * cs); ctx.lineTo(6 * cs, 3.5 * cs);
         ctx.closePath(); ctx.fillStyle = s.color; ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 1.4 * cs;
+        ctx.beginPath(); ctx.moveTo(-9 * cs, 0); ctx.lineTo(-12 * cs, -3 * cs);
+        ctx.moveTo(-9 * cs, 0); ctx.lineTo(-12 * cs, 3 * cs); ctx.stroke();
       }
       ctx.restore();
     }
@@ -628,6 +656,7 @@ class Renderer {
         ctx.stroke();
         ctx.globalAlpha = 1;
       } else if (e.type === 'boom') {
+        this.glOnce(e, 'burst', x, y, '#ffb45a', e.r * this.zoom);
         const r = e.r * this.zoom * (1.05 - p * 0.35);
         ctx.fillStyle = 'rgba(240,190,110,' + (p * 0.45) + ')';
         ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.5, 0, 0, 7); ctx.fill();
@@ -635,6 +664,7 @@ class Renderer {
         ctx.lineWidth = 2.5 * cs;
         ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.5, 0, 0, 7); ctx.stroke();
       } else if (e.type === 'poof') {
+        if (e.big) this.glOnce(e, 'dust', x, this.rowY(e.row || 0), e.color || '#d8ccb0', 120 * this.zoom);
         const n = e.big ? 12 : 7;
         ctx.strokeStyle = e.color || '#fff';
         ctx.lineWidth = 2.4 * cs;
@@ -649,6 +679,7 @@ class Renderer {
         }
         ctx.globalAlpha = 1;
       } else if (e.type === 'crit') {
+        this.glOnce(e, 'spark', x, y, '#ffd66e', 40);
         ctx.strokeStyle = 'rgba(255,214,110,' + p + ')';
         ctx.lineWidth = 3.4 * cs;
         for (let i = 0; i < 4; i++) {
@@ -794,6 +825,14 @@ class Renderer {
       scale: cs,
       big: !!e.big
     });
+  }
+
+  /* 한 번만 터뜨리는 GL 파티클. WebGL 이 없거나 절전이면 아무것도 안 한다. */
+  glOnce(e, kind, x, y, color, radius, scale) {
+    if (e._emitted || !this.glfx || !this.glfx.ok || this.fxq <= 0) return false;
+    e._emitted = true;
+    this.glfx.emit(kind, x, y, { color: this.rgbOf(color), radius: radius || 60, scale: scale || this.cs });
+    return true;
   }
 
   /* '#rrggbb' -> [r,g,b] 0~1. 같은 색이 계속 오므로 표에 담아 둔다. */
@@ -1126,6 +1165,7 @@ class Renderer {
   render(battle, dt, fxDt) {
     this.trackFrame(dt);
     this.outcome = battle.state === 'win' ? 'win' : (battle.state === 'play' ? null : 'lose');
+    this._battle = battle;
     this.clock = (this.clock || 0) + dt;             // 전투가 끝나 시간이 멈춰도 도는 시계
     this.showDmg = typeof Settings === 'undefined' || Settings.get('dmgNums');
     const camBefore = this.cam;
