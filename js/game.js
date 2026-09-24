@@ -49,6 +49,9 @@ const HUNT_COST = 350;        // 영웅 사냥꾼 특성이 노리는 비용
 const HUNT_MUL = 3;
 const CURSE_HEAL = 0.5;       // 저주: 아군 회복·흡혈 배율
 const CURSE_WITHER = 0.1;     // 저주: 소환물이 초당 잃는 최대 체력 비율
+const FOG_DPS = 26;           // 독무: 아군이 초당 받는 피해 (해독 훈련이 깎아 준다)
+const STORM_RANGE = 0.72;     // 폭풍 전선: 아군 원거리 사거리 배율
+const LOWTIDE_CD = 1.45;      // 간조: 아군 재출진 대기 배율
 const SLOW_SPEED_MUL = 0.45; // 둔화 시 이동
 const SLOW_RATE_MUL = 1.7;   // 둔화 시 공격 간격
 
@@ -267,6 +270,8 @@ class Battle {
     this.queue = [];
     this.mods = {};
     (this.stage.mods || []).forEach(m => { this.mods[m] = true; });
+    // 간조: 카드 재사용이 통째로 느려진다. 병참 강화로 일부만 되돌린다.
+    if (this.mods.lowtide) this.cdMul *= LOWTIDE_CD;
     this.stage.waves.forEach((w0, index) => {
       // 물량: 보스가 아닌 무리는 1.8배로, 더 촘촘하게
       const w = (this.mods.horde && !(ENEMIES[w0.e] && ENEMIES[w0.e].boss))
@@ -337,7 +342,12 @@ class Battle {
   makeAlly(u, x) {
     const lm = unitLevelMul(this.levels[u.id] || 1);
     const buff = { hp: this.buff.hp * lm, atk: this.buff.atk * lm };
-    const f = new Fighter(u, 'ally', x, buff);
+    let spec = u;
+    // 폭풍 전선: 화살과 주문이 바람에 밀린다. 원거리로만 짠 편성이 무너진다.
+    if (this.mods && this.mods.stormfront && u.range > 150) {
+      spec = Object.assign({}, u, { range: Math.round(u.range * STORM_RANGE) });
+    }
+    const f = new Fighter(spec, 'ally', x, buff);
     if (this.mods && this.mods.curse) f.healMul = CURSE_HEAL;
     return f;
   }
@@ -635,6 +645,8 @@ class Battle {
       let dot = 0;
       if (f.poisonT > 0) { dot += f.poisonDps * Math.min(dt, f.poisonT); f.poisonT = Math.max(0, f.poisonT - dt); }
       if (f.burnT > 0) { dot += f.burnDps * Math.min(dt, f.burnT); f.burnT = Math.max(0, f.burnT - dt); }
+      // 독무: 전장 전체가 아군을 좀먹는다. 정화로는 못 걷어 내고 회복으로 버틴다.
+      if (isAlly && this.mods.venomfog) dot += FOG_DPS * dt;
       if (isAlly) dot *= 1 - 0.05 * Math.min(5, this.save.upgrades.resistance || 0);
       if (dot > 0) {
         f.hp -= dot;
@@ -776,22 +788,24 @@ class Battle {
     if (ab.summon) {
       for (let i = 0; i < (ab.summon.n || 1); i++) {
         const sx = f.x - f.dir * (20 + i * 22);
+        // 포탑·공성탑처럼 수가 정해진 소환물은 그 이상 세우지 않는다.
+        // 양쪽 모두에 걸어야 한다 — 적 소환수가 끝없이 불어나면 전선이 멈춘다.
+        if (ab.summon.max) {
+          let mine = 0;
+          for (const a of (isAlly ? this.allies : this.enemies)) if (!a.dead && a.summonedBy === f) mine++;
+          if (mine >= ab.summon.max) break;
+        }
         if (isAlly) {
           const u = UNIT_BY_ID[ab.summon.id];
           if (u) {
-            // 포탑처럼 수가 정해진 소환물은 그 이상 세우지 않는다
-            if (ab.summon.max) {
-              let mine = 0;
-              for (const a of this.allies) if (!a.dead && a.summonedBy === f) mine++;
-              if (mine >= ab.summon.max) break;
-            }
             const m = this.makeAlly(u, sx);
             m.summoned = true;
             m.summonedBy = f;
             this.allies.push(m);
           }
         } else {
-          const m = this.spawnEnemy(ab.summon.id, sx); m.summoned = true; m.wave = f.wave;
+          const m = this.spawnEnemy(ab.summon.id, sx);
+          m.summoned = true; m.summonedBy = f; m.wave = f.wave;
         }
       }
       this.fx.push({ type: 'spawn', x: f.x - f.dir * 24, row: f.row, t: 0.4, life: 0.4 });

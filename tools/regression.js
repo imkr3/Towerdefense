@@ -139,10 +139,12 @@ test('Shared active cooldown and stun block skill spam',()=>{
   const b=heroBattle('odin');b.heroCooldowns.odin=0;b.heroGlobalCd=1;assert.equal(b.canHeroActive('odin'),false);
   b.heroGlobalCd=0;b.allies[0].stunT=1;assert.equal(b.canHeroActive('odin'),false);
 });
-test('Thirty stages retain the existing endless unlock threshold',()=>{
+test('Forty stages retain the existing endless unlock threshold',()=>{
   const {STAGES,ENDLESS_UNLOCK_STAGE}=vm.runInContext('({STAGES,ENDLESS_UNLOCK_STAGE})',ctx);
-  assert.equal(STAGES.length,30);assert.equal(ENDLESS_UNLOCK_STAGE,20);
+  assert.equal(STAGES.length,40);assert.equal(ENDLESS_UNLOCK_STAGE,20);
   assert.ok(STAGES.slice(20).every(s=>s.waves.length>=8&&s.reward>900));
+  // 3막은 전장마다 특성이 붙는다 — 스탯만으로는 넘을 수 없다
+  assert.ok(STAGES.slice(30).every(s=>s.mods&&s.mods.length>=1&&s.reward>=2300));
 });
 test('First expansion victory advances from 20 to 21 and retains old stars',()=>{
   const s=save();s.stars[19]=3;const b=new Battle(20,s);b.finish('win');

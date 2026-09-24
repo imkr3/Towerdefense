@@ -771,6 +771,79 @@ const ENEMIES = {
                 { at: 0.50, t: 'roar',   name: '전장의 포효', r: 420, stun: 1.3, push: 100 },
                 { at: 0.30, t: 'enrage', name: '대군주의 분노', atk: 1.25, rate: 0.8, speed: 1.25 },
                 { at: 0.12, t: 'summon', name: '최후의 군세', id: 'orcberserk', n: 2 }
+              ] },
+
+  /* ---------------- 3막: 심연의 조수 ----------------
+   * 오크 군단이 무너진 자리로 바다 밑에서 올라온 것들이 밀려든다.
+   * 하나하나가 왕국군의 약점을 골라 때린다 — 뒷줄, 회복, 밀집, 강화. */
+  ratling:  { name: '시궁쥐 떼', body: '#5b5147', accent: '#c4a15a', tunic: '#463e36', shape: 'ratling',
+              hp: 300, atk: 46, range: 56, speed: 112, interval: 0.6, kb: 3, gold: 11, scale: .72,
+              abText: '아주 빠르고 값싸다 · 범위 공격으로 쓸어라' },
+  harpy:    { name: '하피 약탈자', body: '#6b5a72', accent: '#e8c46a', tunic: '#4a3c54', shape: 'harpy',
+              hp: 1300, atk: 170, range: 74, speed: 110, interval: 0.85, kb: 3, gold: 58,
+              ab: { backline: true, lifesteal: 0.25 },
+              abText: '사거리 안 가장 뒤의 아군을 노린다 · 흡혈 25%' },
+  banshee:  { name: '통곡의 밴시', body: '#b9c6d4', accent: '#7ce0d8', tunic: '#8ea2b8', shape: 'banshee',
+              hp: 2100, atk: 125, range: 310, speed: 30, interval: 2.0, kb: 2, gold: 88, ranged: true,
+              area: true, areaRadius: 90, ab: { weaken: { mul: 0.7, dur: 4 } },
+              abText: '통곡을 맞은 아군은 피해 30% 감소 · 먼저 끊어라' },
+  deepone:  { name: '심연 추종자', body: '#37605e', accent: '#8ef0c4', tunic: '#27484a', shape: 'deepone',
+              hp: 1800, atk: 155, range: 64, speed: 88, interval: 1.0, kb: 2, gold: 72,
+              ab: { poison: { dps: 74, dur: 4 } }, abText: '맹독 발톱 · 정화와 해독 훈련으로 버텨라' },
+  bloodcultist:{ name: '피의 광신도', body: '#5a3a42', accent: '#e05a5a', tunic: '#3d272e', shape: 'bloodcultist',
+              hp: 2400, atk: 95, range: 66, speed: 36, interval: 1.6, kb: 2, gold: 84,
+              ab: { rally: { atk: 0.4, radius: 250 }, interval: 5, lifesteal: 0.3 },
+              abText: '주변 적의 공격력 +40% · 후방 지원부터 잘라라' },
+  ironmaul: { name: '강철 망치병', body: '#43474f', accent: '#cfd6de', tunic: '#33363d', shape: 'ironmaul',
+              hp: 6800, atk: 340, range: 74, speed: 24, interval: 2.2, kb: 1, gold: 108, scale: 1.2,
+              ab: { armor: 0.3, kbImmune: true, push: 30, stun: { chance: 0.3, dur: 0.7 } },
+              abText: '방어 30% · 넉백 면역 · 30% 확률로 0.7초 기절' },
+  tentacle: { name: '심연의 촉수', body: '#3d3358', accent: '#a86ae0', tunic: '#2b2440', shape: 'tentacle',
+              hp: 3600, atk: 215, range: 345, speed: 0, interval: 1.8, kb: 1, gold: 92, ranged: true,
+              ab: { hold: true, slow: 1.8 },
+              abText: '땅에 박혀 멀리서 휘감는다 · 맞으면 둔화' },
+  siegetower:{ name: '공성탑', body: '#5c4326', accent: '#8a8880', tunic: '#43301b', shape: 'siegetower',
+              hp: 16000, atk: 300, range: 320, speed: 12, interval: 3.0, kb: 1, gold: 205, scale: 1.65,
+              ranged: true, area: true, areaRadius: 110,
+              ab: { kbImmune: true, armor: 0.25, summon: { id: 'orcspear', n: 2, max: 6 }, interval: 7 },
+              abText: '넉백 면역 · 방어 25% · 7초마다 병력을 쏟아낸다' },
+
+  hydra:    { name: '아홉머리 히드라', body: '#3f6b4a', accent: '#b6f07a', tunic: '#2f5238', shape: 'hydra',
+              hp: 27000, atk: 700, range: 175, speed: 19, interval: 2.2, kb: 1, gold: 520,
+              area: true, areaRadius: 150, scale: 1.9, boss: true,
+              ab: { regen: 130, poison: { dps: 90, dur: 4 } },
+              abText: '초당 130 재생 · 화상 중에는 재생 중단',
+              special: { t: 'meteor', name: '삼중 독액', cd: 9, n: 3, dmg: 380, radius: 120,
+                         warn: 1.0, kind: 'runes' },
+              phases: [
+                { at: 0.70, t: 'summon', name: '머리 분열', id: 'deepone', n: 2 },
+                { at: 0.45, t: 'heal',   name: '재생의 늪', ratio: 0.18 },
+                { at: 0.20, t: 'enrage', name: '아홉 겹 분노', atk: 1.3, rate: 0.72, speed: 1.3 }
+              ] },
+  leviathan:{ name: '심연의 레비아탄', body: '#2f5f7a', accent: '#7ce8ff', tunic: '#23485e', shape: 'leviathan',
+              hp: 36000, atk: 900, range: 215, speed: 16, interval: 2.6, kb: 1, gold: 700,
+              area: true, areaRadius: 185, scale: 2.0, boss: true,
+              ab: { slow: 1.5, armor: 0.2 },
+              abText: '맞은 아군은 둔화 · 방어 20% · 해일은 전장 절반을 얼린다',
+              special: { t: 'frost', name: '해일', cd: 13, r: 380, dur: 3.0 },
+              phases: [
+                { at: 0.68, t: 'roar',   name: '심해의 포효', r: 400, stun: 1.2, push: 95 },
+                { at: 0.42, t: 'meteor', name: '삼중 조수', n: 4, dmg: 400, radius: 125,
+                            warn: 1.1, stun: 0.5, kind: 'iceburst' },
+                { at: 0.18, t: 'enrage', name: '조수의 격노', atk: 1.3, rate: 0.75, speed: 1.35 }
+              ] },
+  abysslord:{ name: '심연왕', body: '#241f3a', accent: '#c46af0', tunic: '#1a1630', shape: 'abysslord',
+              hp: 30000, atk: 1050, range: 200, speed: 16, interval: 2.5, kb: 1, gold: 1200,
+              area: true, areaRadius: 195, scale: 2.2, boss: true,
+              ab: { push: 45, summon: { id: 'deepone', n: 2, max: 6 }, interval: 9 },
+              abText: '넉백 밀치기 · 9초마다 추종자 소환 · 촉수를 불러 세운다',
+              special: { t: 'meteor', name: '심연의 손아귀', cd: 10, n: 4, dmg: 440, radius: 125,
+                         warn: 1.05, stun: 0.6, kind: 'abyss' },
+              phases: [
+                { at: 0.78, t: 'summon', name: '촉수 소환', id: 'tentacle', n: 2 },
+                { at: 0.55, t: 'roar',   name: '심연의 부름', r: 440, stun: 1.35, push: 105 },
+                { at: 0.32, t: 'shield', name: '심해의 장막', ratio: 0.22 },
+                { at: 0.14, t: 'enrage', name: '왕의 최후', atk: 1.3, rate: 0.75, speed: 1.3 }
               ] }
 };
 
@@ -873,6 +946,32 @@ STAGES.push(
     W(2,'orcshield',5,2),W(26,'lich',1),W(52,'frostgiant',1),W(82,'drake',1),W(114,'warlord',1),W(148,'warchief',2,5),W(182,'spiderqueen',1),W(216,'golem',3,5),W(248,'warlord',1),W(276,'hellhound',10,.8)]}
 );
 
+/* 3막: 심연의 조수 (31~40전장).
+ * 오크 군단을 밀어낸 자리로 바다 밑의 것들이 올라온다. 여기서부터는
+ * 스탯을 쌓는 것만으로는 안 되고, 전장 특성마다 받아칠 병종을 챙겨야 한다. */
+STAGES.push(
+  {name:'조수가 삼킨 해안',hint:'쥐 떼는 범위 공격으로 한 번에 쓸어라',baseHp:300000,money:470,rate:59,reward:2300,enemyMul:3.6,waves:[
+    W(2,'ratling',10,.7),W(12,'deepone',5,1.4),W(24,'harpy',4,1.6),W(38,'ratling',14,.6),W(52,'orcshield',5,2),W(66,'deepone',7,1.2),W(82,'banshee',3,3),W(98,'harpy',6,1.2),W(114,'ironmaul',2,4),W(132,'deepone',9,1),W(150,'ratling',18,.55),W(168,'harpy',8,1)]},
+  {name:'통곡하는 등대',hint:'밴시의 통곡은 아군 피해를 깎는다 — 먼저 끊어라',baseHp:300000,money:475,rate:60,reward:2400,enemyMul:3.2,waves:[
+    W(2,'deepone',6,1.2),W(14,'banshee',3,2.6),W(28,'harpy',5,1.4),W(42,'ironmaul',2,4),W(58,'banshee',4,2.4),W(74,'tentacle',2,5),W(90,'wraith',8,1.2),W(106,'banshee',5,2.2),W(124,'ironmaul',3,3.5),W(142,'harpy',8,1),W(160,'banshee',6,2),W(180,'deepone',10,1)]},
+  {name:'★ 아홉머리의 늪',hint:'히드라는 재생한다 — 화상으로 재생을 끊고 몰아쳐라',baseHp:330000,money:480,rate:61,reward:2900,boss:true,enemyMul:2.9,waves:[
+    W(2,'ratling',12,.7),W(14,'deepone',6,1.2),W(30,'hydra',1),W(48,'plaguer',6,2),W(64,'deepone',8,1.1),W(80,'tentacle',2,5),W(98,'ironmaul',3,3.5),W(116,'banshee',4,2.4),W(134,'bloodcultist',3,3),W(154,'deepone',10,1),W(174,'ironmaul',4,3)]},
+  {name:'가라앉은 성채',hint:'공성탑이 병력을 토해낸다 — 탑을 먼저 부수는 편이 빠르다',baseHp:330000,money:485,rate:62,reward:2700,enemyMul:3.2,waves:[
+    W(2,'orcshield',5,2),W(14,'siegetower',1),W(30,'ironmaul',3,3.5),W(46,'ballista',6,1.8),W(62,'siegetower',1),W(78,'deepone',8,1.1),W(96,'golem',3,4),W(114,'siegetower',1),W(132,'ironmaul',4,3),W(152,'ballista',8,1.5),W(172,'golem',3,4)]},
+  {name:'피의 제단',hint:'광신도가 주변 적을 강화한다 — 후열부터 도려내라',baseHp:350000,money:490,rate:63,reward:2850,enemyMul:3.1,waves:[
+    W(2,'bloodcultist',3,3),W(14,'orcberserk',8,1),W(30,'bloodcultist',4,2.6),W(46,'hellhound',9,.9),W(62,'ironmaul',3,3.5),W(80,'bloodcultist',5,2.4),W(98,'dark',7,1.6),W(116,'harpy',7,1.1),W(134,'warchief',3,4),W(154,'bloodcultist',6,2.2),W(174,'orcberserk',10,.9)]},
+  {name:'★ 레비아탄의 해구',hint:'해일이 오면 둔화가 겹친다 — 넉백 면역 앞줄로 버텨라',baseHp:300000,money:495,rate:64,reward:3300,boss:true,enemyMul:2.6,waves:[
+    W(2,'deepone',7,1.2),W(14,'tentacle',2,5),W(32,'leviathan',1),W(50,'banshee',4,2.4),W(66,'ironmaul',3,3.5),W(84,'harpy',7,1.1),W(102,'siegetower',1),W(120,'deepone',9,1),W(140,'bloodcultist',4,2.6),W(160,'ironmaul',4,3),W(180,'harpy',9,1)]},
+  {name:'숨 막히는 안개 습지',hint:'독무가 전군을 좀먹는다 — 치유와 재생 없이는 못 버틴다',baseHp:360000,money:500,rate:65,reward:3200,enemyMul:2.9,waves:[
+    W(2,'ratling',14,.6),W(14,'plaguer',6,2),W(30,'deepone',9,1),W(46,'hydra',1),W(64,'tentacle',3,4),W(82,'banshee',5,2.2),W(100,'ironmaul',4,3),W(118,'ratling',18,.55),W(136,'bloodcultist',5,2.4),W(156,'plaguer',8,1.8),W(176,'deepone',12,.9)]},
+  {name:'번개 치는 난바다',hint:'폭풍이 화살을 밀어낸다 — 근접 주력으로 짜라',baseHp:380000,money:505,rate:66,reward:3400,enemyMul:3,waves:[
+    W(2,'harpy',7,1.1),W(14,'wolf',12,.7),W(30,'ironmaul',4,3),W(48,'leviathan',1),W(66,'harpy',9,1),W(84,'orcberserk',10,.9),W(102,'siegetower',1),W(120,'ironmaul',5,2.6),W(140,'hellhound',12,.8),W(160,'harpy',11,.9),W(180,'ironmaul',6,2.4)]},
+  {name:'★ 심연의 관문',hint:'간조로 카드가 늦게 돌아온다 — 오래 버티는 병종을 아껴 써라',baseHp:200000,money:540,rate:70,reward:3800,boss:true,enemyMul:1.75,waves:[
+    W(2,'orcshield',6,1.8),W(14,'tentacle',3,4),W(32,'abysslord',1),W(52,'banshee',5,2.2),W(70,'ironmaul',4,3),W(88,'siegetower',1),W(106,'deepone',10,1),W(124,'golem',3,4),W(144,'bloodcultist',5,2.4),W(164,'ironmaul',6,2.4),W(184,'banshee',7,1.8)]},
+  {name:'★ 심연왕의 옥좌',hint:'모든 특성이 한꺼번에 걸린다 — 특성마다 하나씩 답을 챙겨 와라',baseHp:230000,money:560,rate:72,reward:5000,boss:true,enemyMul:1.8,waves:[
+    W(2,'ratling',16,.6),W(16,'hydra',1),W(34,'leviathan',1),W(54,'siegetower',1),W(72,'abysslord',1),W(92,'bloodcultist',6,2.2),W(110,'ironmaul',5,2.6),W(128,'banshee',6,2),W(146,'harpy',10,.9),W(166,'tentacle',3,4),W(186,'deepone',12,.9),W(206,'ironmaul',7,2.2)]}
+);
+
 
 /* 전장 특성. 어려운 전장에는 특성이 붙어서, 스탯 높은 병종을 몰아 넣는 것만으로는
  * 풀리지 않고 그 특성을 받아칠 병종을 챙겨야 한다. */
@@ -886,13 +985,24 @@ const STAGE_MODS = {
   curse:    { name: '저주', desc: '소환된 아군이 초당 10%씩 시들고, 회복·흡혈이 절반',
               counter: '소환·치유에 기대지 않는 진짜 병력', color: '#5f8f5a' },
   blitz:    { name: '질주', desc: '적 이동 속도 +45% · 공격 속도 +20%',
-              counter: '둔화 · 넉백 면역 방패 · 튼튼한 앞줄', color: '#d0605a' }
+              counter: '둔화 · 넉백 면역 방패 · 튼튼한 앞줄', color: '#d0605a' },
+  venomfog: { name: '독무', desc: '아군 전원이 초당 26 피해를 계속 받는다 (정화로는 못 걷는다)',
+              counter: '치유 · 재생 · 해독 훈련 · 체력 큰 병종', color: '#7fbf3f' },
+  stormfront:{ name: '폭풍 전선', desc: '아군 원거리 사거리 28% 감소 (사거리 150 초과 병종)',
+              counter: '근접 주력 · 단단한 앞줄 · 사거리에 기대지 않는 편성', color: '#6fa8d0' },
+  lowtide:  { name: '간조', desc: '아군 재출진 대기 +45%',
+              counter: '병참 강화 · 값싼 병종 · 한 번에 오래 버티는 병종', color: '#4fb8a8' }
 };
 const HARD_STAGE_MODS = {
   9: ['ironclad'], 14: ['blitz'], 16: ['horde'], 17: ['ironclad', 'giantslayer'],
   19: ['horde', 'ironclad'],
   21: ['horde'], 23: ['horde', 'giantslayer', 'curse'], 24: ['blitz'], 26: ['blitz', 'giantslayer', 'curse'],
-  27: ['horde', 'ironclad'], 29: ['giantslayer', 'curse', 'horde', 'blitz']
+  27: ['horde', 'ironclad'], 29: ['giantslayer', 'curse', 'horde', 'blitz'],
+  // 3막. 특성이 매 전장에 붙고, 마지막은 여섯 가지가 한꺼번에 걸린다.
+  30: ['horde'], 31: ['stormfront'], 32: ['venomfog'], 33: ['lowtide', 'horde'],
+  34: ['giantslayer', 'blitz'], 35: ['ironclad', 'blitz'], 36: ['venomfog', 'horde', 'curse'],
+  37: ['stormfront', 'giantslayer'], 38: ['lowtide', 'ironclad'],
+  39: ['venomfog', 'stormfront', 'lowtide', 'ironclad', 'giantslayer', 'horde']
 };
 STAGES.forEach((st, i) => { if (!st.mods && HARD_STAGE_MODS[i]) st.mods = HARD_STAGE_MODS[i]; });
 // 전설·신화 풀이 넓어질수록 몰아 넣기만 한 편성도 두루 갖춘다. 조합이 필요한
@@ -913,18 +1023,21 @@ STAGES[19].enemyMul = 1.85;
  *  보스 전장이 아닌 곳에 끼어 있던 보스는 정예 잡몹으로 바꾼다.
  * ------------------------------------------------------------------ */
 const BOSS_ROLE = { troll: 'bruiser', frostgiant: 'bruiser', warlord: 'bruiser',
-                    lich: 'caster', spiderqueen: 'caster', drake: 'flyer' };
+                    lich: 'caster', spiderqueen: 'caster', drake: 'flyer',
+                    hydra: 'caster', leviathan: 'bruiser', abysslord: 'bruiser' };
 const BOSS_ESCORT = {
-  bruiser: { back: ['ballista', 'shaman', 'plaguer', 'orccatapult'], front: ['wolf', 'hellhound', 'orcspear'], nb: 4, nf: 2 },
-  caster:  { back: ['ballista', 'plaguer'], front: ['orcshield', 'orcspear', 'orcberserk', 'dark'], nb: 2, nf: 4 },
-  flyer:   { back: ['shaman', 'ballista'], front: ['orcshield', 'hellhound', 'orcberserk', 'golem'], nb: 2, nf: 3 }
+  bruiser: { back: ['ballista', 'shaman', 'plaguer', 'orccatapult', 'banshee', 'siegetower'], front: ['wolf', 'hellhound', 'orcspear', 'harpy'], nb: 4, nf: 2 },
+  caster:  { back: ['ballista', 'plaguer', 'banshee'], front: ['orcshield', 'orcspear', 'orcberserk', 'dark', 'ironmaul', 'deepone'], nb: 2, nf: 4 },
+  flyer:   { back: ['shaman', 'ballista', 'banshee'], front: ['orcshield', 'hellhound', 'orcberserk', 'golem', 'ironmaul'], nb: 2, nf: 3 }
 };
 /* 전장 번호(0부터) → 그 전장의 보스 */
 const STAGE_BOSS = { 4: 'lich', 9: 'troll', 12: 'lich', 14: 'troll', 16: 'frostgiant', 17: 'drake',
                      18: 'spiderqueen', 19: 'warlord', 21: 'lich', 23: 'lich', 26: 'frostgiant',
-                     28: 'drake', 29: 'warlord' };
+                     28: 'drake', 29: 'warlord',
+                     32: 'hydra', 35: 'leviathan', 38: 'abysslord', 39: 'abysslord' };
 const ELITE_FOR = { troll: ['ogre', 1], lich: ['shaman', 2], frostgiant: ['golem', 1],
-                    drake: ['hellhound', 3], spiderqueen: ['spider', 4], warlord: ['warchief', 1] };
+                    drake: ['hellhound', 3], spiderqueen: ['spider', 4], warlord: ['warchief', 1],
+                    hydra: ['deepone', 3], leviathan: ['ironmaul', 2], abysslord: ['tentacle', 2] };
 const BOSS_HP_MUL = 2.5;       // 하나뿐인 보스는 그만큼 단단하다
 const BOSS_ATK_MUL = 1.2;
 (function oneBossPerStage() {
@@ -968,7 +1081,9 @@ STAGES.forEach((st, i) => {
   if (st.len) return;
   // 레벨마다 조금씩 다르게: 뒤로 갈수록 길어지되, 사이사이 짧은 전장이 섞인다
   const wiggle = [0, -70, 50, -40, 80][i % 5];
-  const base = i < 20 ? 900 + 20 * i : 1180 + 18 * (i - 20);
+  const base = i < 20 ? 900 + 20 * i
+             : i < 30 ? 1180 + 18 * (i - 20)
+             : 1330 + 8 * (i - 30);        // 3막은 이미 길다. 더 늘리면 걷기만 한다.
   st.len = base + wiggle + (st.boss ? 120 : 0);
 });
 
@@ -983,9 +1098,15 @@ const ENDLESS_POOL = [
   { id: 'powder',   from: 7 },  { id: 'orcshield',from: 8 },
   { id: 'orcberserk', from: 9 },{ id: 'wraith',   from: 10 },
   { id: 'dark',     from: 11 }, { id: 'golem',    from: 13 },
-  { id: 'totem',    from: 14 }
+  { id: 'totem',    from: 14 },
+  // 3막 잡몹도 무한 전장 후반에 섞인다
+  { id: 'ratling',  from: 5 },  { id: 'harpy',    from: 9 },
+  { id: 'deepone',  from: 11 }, { id: 'banshee',  from: 12 },
+  { id: 'bloodcultist', from: 15 }, { id: 'ironmaul', from: 16 },
+  { id: 'plaguer',  from: 12 }, { id: 'hellhound', from: 10 }
 ];
-const ENDLESS_BOSSES = ['lich', 'troll', 'frostgiant', 'drake', 'warlord'];
+const ENDLESS_BOSSES = ['lich', 'troll', 'frostgiant', 'drake', 'warlord',
+                        'hydra', 'spiderqueen', 'leviathan', 'abysslord'];
 
 /* 무한 전장 적 배율. 웨이브마다 7%씩 붙고, 25웨이브를 넘기면 거기에
  * 웨이브당 4%씩 곱으로 불어난다. 상한이 없으니 언젠가는 반드시 무너진다. */
@@ -1073,8 +1194,10 @@ const ACHIEVEMENTS = [
     test: s => s.cleared >= 20 },
   { id: 'star30',   name: '별 수집가',    desc: '별 30개 획득',                gold: 1500, stone: 2,
     test: s => totalStars(s) >= 30 },
-  { id: 'star60',   name: '완전 제압',    desc: '모든 전장 별 3개',            gold: 6000, stone: 8,
+  { id: 'star60',   name: '완전 제압',    desc: '별 60개 획득',                gold: 6000, stone: 8,
     test: s => totalStars(s) >= 60 },
+  { id: 'star120',  name: '흠 없는 진군',  desc: '모든 전장 별 3개',            gold: 12000, stone: 15,
+    test: s => totalStars(s) >= 120 },
   { id: 'kill1000', name: '천 명의 적',   desc: '누적 1000 처치',              gold: 1000, stone: 1,
     test: s => (s.totalKills || 0) >= 1000 },
   { id: 'kill5000', name: '전장의 주인',  desc: '누적 5000 처치',              gold: 3000, stone: 3,
@@ -1085,7 +1208,7 @@ const ACHIEVEMENTS = [
     test: s => (s.pulls || 0) >= 100 },
   { id: 'legend',   name: '신화의 계약',  desc: '전설 이상 병종 보유',              gold: 2000, stone: 2,
     test: s => SEASON_UNITS.some(u => (u.rarity === 'SSR' || u.rarity === 'UR') && s.owned && s.owned[u.id]) },
-  { id: 'allseason',name: '세 신화',      desc: '세 시즌에서 전설 이상을 각각 보유',    gold: 8000, stone: 10,
+  { id: 'allseason',name: '모든 신화',    desc: '모든 시즌에서 전설 이상을 각각 보유',   gold: 8000, stone: 10,
     test: s => SEASONS.every(sn => sn.units.some(id => {
       const u = UNIT_BY_ID[id];
       return u && (u.rarity === 'SSR' || u.rarity === 'UR') && s.owned && s.owned[id];
@@ -1093,6 +1216,7 @@ const ACHIEVEMENTS = [
   { id: 'maxlv',    name: '정예 조련',    desc: '병종 하나를 15레벨로',        gold: 2500, stone: 3,
     test: s => Object.keys(s.levels || {}).some(k => s.levels[k] >= 15) },
   { id:'campaign30',name:'세 신화의 정복자',desc:'30전장 모두 돌파',gold:5000,stone:5,test:s=>s.cleared>=30 },
+  { id:'campaign40',name:'심연의 종결자',desc:'40전장 모두 돌파',gold:15000,stone:20,test:s=>s.cleared>=40 },
   { id: 'endless10',name: '끝없는 전장',  desc: '무한 전장 10웨이브 돌파',       gold: 2000, stone: 3,
     test: s => (s.endlessBest || 0) >= 10 },
   { id: 'endless25',name: '불굴의 성채',  desc: '무한 전장 25웨이브 돌파',       gold: 7000, stone: 8,
