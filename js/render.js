@@ -361,13 +361,18 @@ class Renderer {
     const s = this.cs * f.scale;
     const y = this.rowY(f.row);
     const moving = !!f.moving && f.stunT <= 0;
-    const atk = Math.max(0, Math.min(1, f.swing / 0.22));
+    // 공격 자세: 친 순간부터 0.22초. 빠르게 휘둘러 끝까지 가고(20%), 천천히 거둔다.
+    const swingT = f.swing > 0 ? 1 - Math.min(1, f.swing / 0.22) : -1;
+    const atk = swingT < 0 ? 0 : attackPose(swingT);
+    const style = attackStyle(f.s);
     // 휘두르기 직전 뒤로 젖히는 준비 동작. 공격 간격이 짧은 병종은 짧게.
     const windLen = Math.min(0.3, (f.intervalNow || f.s.interval || 1) * 0.35);
-    const wind = (f.engaged && !moving && atk === 0 && f.stunT <= 0 && f.kbTimer <= 0 && f.s.atk > 0 && f.cd < windLen)
+    const wind = (f.engaged && !moving && f.swing <= 0 && f.stunT <= 0 && f.kbTimer <= 0 && f.s.atk > 0 && f.cd < windLen)
       ? 1 - Math.max(0, f.cd) / windLen : 0;
-    // 휘두를 때 앞으로 파고들었다가 되돌아온다
-    const lunge = atk > 0 ? Math.sin(atk * Math.PI) * 7 * this.cs : -wind * 3 * this.cs;
+    // 치는 순간 몸이 따라 나간다. 찌르기는 길게, 내려찍기는 무겁게, 쏘기는 반동으로 뒤로.
+    const reach = { thrust: 12, heavy: 9, slash: 7, cast: 2, shoot: -4 }[style];
+    const pull = { thrust: 5, heavy: 4, slash: 3, cast: 1, shoot: 1 }[style];
+    const lunge = atk > 0 ? atk * reach * this.cs : -wind * pull * this.cs;
     // 멈춰 있을 때는 숨쉬기
     const breathe = (!moving && atk === 0 && wind === 0) ? Math.sin(f.bob * 0.9) * 1.2 * this.cs : 0;
     // 막 나온 병사는 땅에서 튀어 오르듯 커진다
@@ -455,20 +460,12 @@ class Renderer {
     const lean = moving ? (f.s.speed > 70 ? 0.11 : 0.05) : 0;
     const sway = moving && heavy ? Math.sin(f.bob) * 0.05 : (moving ? Math.sin(f.bob) * 0.025 : 0);
     // 치는 순간 앞으로 숙였다가, 준비할 땐 뒤로 젖힌다
-    const strike = atk > 0 ? Math.sin(atk * Math.PI) * 0.1 : 0;
+    const strike = atk * (style === 'heavy' ? 0.16 : style === 'thrust' ? 0.08 : style === 'shoot' ? -0.05 : 0.1);
     ctx.translate(-recoil * 2.5 * s - wind * 2 * s, -stride * (heavy ? 1.2 : 2.4) * s);
     ctx.rotate(lean + sway + strike - wind * 0.1 - recoil * 0.06 - kbK * 0.35);
     // 맞으면 잠깐 눌렸다가 돌아온다, 준비 동작은 살짝 움츠린다
     const squash = recoil * 0.07 + wind * 0.04;
     if (squash > 0) ctx.scale(1 + squash, 1 - squash);
-    if (atk > 0 && !f.s.ranged) {
-      ctx.save();
-      ctx.globalAlpha = Math.sin(atk * Math.PI) * 0.65;
-      ctx.strokeStyle = f.s.accent || '#ffe5b2';
-      ctx.lineWidth = 3 * s;
-      ctx.beginPath(); ctx.arc(10 * s, -32 * s, 24 * s, -1.2 + atk, 0.9 + atk); ctx.stroke();
-      ctx.restore();
-    }
     drawBody(ctx, f.s, s, false, f.kbTimer > 0, f.bob, moving, atk, wind, won);
     if (f.hitFlash > 0) {
       const a0 = ctx.globalAlpha;
@@ -1309,7 +1306,8 @@ function easeOutBack(k) {
 
 function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
   const S = {
-    ctx: ctx, s: s, wind: wind || 0, cheer: !!cheer,
+    ctx: ctx, s: s, wind: wind || 0, cheer: !!cheer, style: attackStyle(st),
+    live: wind !== undefined,          // 전투 중인 병사만 잔상을 그린다 (도감·배너 제외)
     col: flash ? '#ffffff' : st.body,
     acc: flash ? '#ffffff' : st.accent,
     tun: flash ? '#ffffff' : (st.tunic || st.body),
@@ -2895,7 +2893,8 @@ function armSwing(S) {
   if (S.cheer) {                                   // 만세
     ctx.quadraticCurveTo(-6 * s, -50 * s, -4 * s, -60 * s);
   } else {
-    const sw = S.moving ? Math.sin(S.phase + Math.PI) * 9 * s : (S.wind ? -6 * s * S.wind : 2 * s);
+    const sw = S.moving ? Math.sin(S.phase + Math.PI) * 9 * s
+      : (S.atk > 0 ? -8 * s * S.atk : (S.wind ? -6 * s * S.wind : 2 * s));   // 치는 반대로 팔을 뒤로
     ctx.quadraticCurveTo(sw * 0.5, -31 * s, sw, -22 * s);
   }
   ctx.stroke();
@@ -2933,20 +2932,20 @@ function arm(S, hx, hy) {
 
 function armWeapon(S, angle, drawWeapon, gripY) {
   const { ctx, s } = S;
-  // 준비 동작에서 무기를 뒤로 치켜든다. 이기면 번쩍 든다.
-  angle -= S.wind * 0.6 + (S.cheer ? 0.9 : 0);
-  const gx = 12 * s, gy = -34 * s - (gripY || 0) * 0.15;
-  // 휘두르는 궤적
-  if (S.atk > 0.08) {
-    ctx.save();
-    ctx.translate(gx, gy);
-    ctx.strokeStyle = 'rgba(255,255,255,' + (0.35 * S.atk) + ')';
-    ctx.lineWidth = 4 * s;
-    ctx.beginPath();
-    ctx.arc(0, 0, 34 * s, angle - 0.9 * S.atk, angle + 0.15);
-    ctx.stroke();
-    ctx.restore();
+  const st = S.style || 'slash';
+  // 준비 동작: 내려찍기는 크게 뒤로, 마법은 지팡이를 치켜들고, 찌르기·쏘기는 조금만.
+  const windK = { heavy: 1.15, cast: 0.9, slash: 0.6, thrust: 0.25, shoot: 0.12 }[st];
+  angle -= S.wind * windK + (S.cheer ? 0.9 : 0);
+  if (st === 'heavy') angle += S.atk * 0.22;             // 내려찍고 조금 더 넘어간다
+  let gx = 12 * s, gy = -34 * s - (gripY || 0) * 0.15;
+  // 찌르기: 무기 방향으로 쭉 뻗었다가 당긴다. 쏘기: 반동으로 뒤로.
+  if (st === 'thrust') {
+    const push = (S.atk * 15 - S.wind * 7) * s;
+    gx += Math.cos(angle) * push; gy += Math.sin(angle) * push;
+  } else if (st === 'shoot') {
+    gx -= S.atk * 4 * s;
   }
+  swingTrail(S, st, angle, gx, gy);
   arm(S, gx, gy);
   ctx.save();
   ctx.translate(gx, gy);
@@ -2954,6 +2953,77 @@ function armWeapon(S, angle, drawWeapon, gripY) {
   drawWeapon();
   ctx.restore();
 }
+
+/* 공격 잔상. 모양마다 다르다. */
+function swingTrail(S, st, angle, gx, gy) {
+  const { ctx, s } = S;
+  if (S.flash || !S.live) return;
+  if (st === 'cast') {                                   // 손끝에 모이는 빛
+    const g = S.wind * 0.55 + S.atk * 0.9;
+    if (g < 0.05) return;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.fillStyle = S.acc;
+    ctx.globalAlpha = 0.25 * g;
+    ctx.beginPath(); ctx.arc(gx, gy, (7 + S.wind * 6 + S.atk * 10) * s, 0, 7); ctx.fill();
+    ctx.globalAlpha = 0.6 * g;
+    ctx.beginPath(); ctx.arc(gx, gy, 3.5 * s, 0, 7); ctx.fill();
+    for (let i = 0; i < 3 && S.wind > 0.2; i++) {        // 모여드는 불티
+      const a = S.phase * 3 + i * 2.1, r = (14 - S.wind * 8) * s;
+      ctx.beginPath(); ctx.arc(gx + Math.cos(a) * r, gy + Math.sin(a) * r, 1.6 * s, 0, 7); ctx.fill();
+    }
+    ctx.restore();
+    return;
+  }
+  if (S.atk < 0.08 || st === 'shoot') return;
+  ctx.save();
+  ctx.lineCap = 'round';
+  if (st === 'thrust') {                                 // 곧게 뻗는 찌르기 선
+    const L = 58 * s;
+    for (const [w, a, c] of [[7, 0.28, S.acc], [2.4, 0.8, '#ffffff']]) {
+      ctx.globalAlpha = a * S.atk;
+      ctx.strokeStyle = c; ctx.lineWidth = w * s;
+      ctx.beginPath();
+      ctx.moveTo(gx + Math.cos(angle) * 20 * s, gy + Math.sin(angle) * 20 * s);
+      ctx.lineTo(gx + Math.cos(angle) * (20 * s + L * S.atk), gy + Math.sin(angle) * (20 * s + L * S.atk));
+      ctx.stroke();
+    }
+  } else {                                               // 휘두르기: 두꺼운 초승달 잔상
+    const heavy = st === 'heavy';
+    const R = (heavy ? 42 : 36) * s, sweep = (heavy ? 1.7 : 1.15) * S.atk;
+    for (const [w, a, c, rr] of [[heavy ? 12 : 8, 0.22, S.acc, 1], [heavy ? 6 : 4, 0.38, S.acc, 0.97], [2, 0.75, '#ffffff', 1.02]]) {
+      ctx.globalAlpha = a * S.atk;
+      ctx.strokeStyle = c; ctx.lineWidth = w * s;
+      ctx.beginPath();
+      ctx.arc(gx, gy, R * rr, angle - sweep, angle + 0.12);
+      ctx.stroke();
+    }
+    if (heavy && S.atk > 0.85) {                         // 내려찍는 순간 땅이 울린다
+      ctx.globalAlpha = (S.atk - 0.85) * 4;
+      ctx.strokeStyle = '#fff5dc'; ctx.lineWidth = 2 * s;
+      ctx.beginPath(); ctx.ellipse(gx + 26 * s, 0, 18 * s * S.atk, 4 * s, 0, 0, 7); ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+/* 공격 자세 곡선: t 0(친 순간) → 1(끝). 앞 20% 에 빠르게 휘둘러 끝까지, 나머지는 부드럽게 거둔다. */
+function attackPose(t) {
+  if (t < 0.2) { const k = t / 0.2; return 1 - (1 - k) * (1 - k) * (1 - k); }
+  const k = (t - 0.2) / 0.8;
+  return 1 - (k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2);
+}
+
+/* 공격 모양. 병종을 몇 무리로 나눠 움직임을 다르게 준다. */
+const ATTACK_STYLES = {
+  thrust: 'spear,pojol,frostlancer,valkyrie,hoplite,orcspear,runeguard,teslaknight,pharaoh,spartan,fenrir,bastet',
+  heavy: 'berserk,knight,colossus,thor,dokkaebi,ares,viking,ogre,troll,warlord,orcberserk,golem,dark,warchief,frostgiant,orcshield,haetae,shield,paladin,anubis,clocksoldier,mechanic',
+  cast: 'mage,frost,pyro,necro,priest,shaman,lich,hades,ra,gumiho,persephone,rapriest,runeseer,mudang,purifier,inventor,plaguer,zeus,herald,saja,odin,medusa,engineer,totem',
+  shoot: 'archer,venom,longbow,sniper,musketeer,rifleman,ballista,artemis,skadi,desertarcher,northarcher,catapult,orccatapult,airship,steammech,turret'
+};
+const ATTACK_STYLE = {};
+for (const k in ATTACK_STYLES) ATTACK_STYLES[k].split(',').forEach(id => { ATTACK_STYLE[id] = k; });
+function attackStyle(st) { return ATTACK_STYLE[st.shape] || (st.ranged ? 'shoot' : 'slash'); }
 
 function robe(S, w, top, color) {
   const { ctx, s } = S;
