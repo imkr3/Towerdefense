@@ -379,4 +379,41 @@ test('Reinforcements never bring a boss back', () => {
   assert.ok(!b.enemies.some(e => e.boss));
 });
 
+/* ---------------- 2.5 새 잡몹 ---------------- */
+test('Burrowers travel untargetable, then surface under the front line and stun', () => {
+  const b = battle(); const a = b.makeAlly(U.spear, 400); b.allies.push(a);
+  const g = b.spawnEnemy('burrower', 700);
+  assert.equal(b.enemies.includes(g), false); assert.equal(b.burrowers.length, 1);
+  assert.equal(b.findTarget(a, b.enemies, b.enemyCastle) === g, false);
+  assert.equal(b.foesLeft(), 1);
+  for (let k = 0; k < 200 && g.burrowed; k++) b.stepBurrowers(0.05);
+  assert.equal(g.burrowed, false); assert.ok(b.enemies.includes(g)); assert.ok(a.stunT > 0);
+});
+test('Assassins leap once over the front line onto a ranged unit', () => {
+  const b = battle(); const front = b.makeAlly(U.shield, 500), archer = b.makeAlly(U.archer, 360);
+  b.allies.push(front, archer);
+  const x = b.spawnEnemy('assassin', 640);
+  b.tryLeap(x, b.allies);
+  assert.equal(x.leapt, true); assert.ok(Math.abs(x.x - (archer.x + 30)) < 1e-9);
+  const y = b.spawnEnemy('assassin', 900); b.tryLeap(y, b.allies);
+  assert.ok(!y.leapt && y.x === 900, 'too far to trigger');
+});
+test('Drummers rally nearby foes, hexers weaken allies, bones get back up', () => {
+  const b = battle(); const d = b.spawnEnemy('drummer', 700), o = b.spawnEnemy('orcspear', 740);
+  d.abCd = 0; b.supportTick(d, b.enemies, 0.01, false); assert.ok(o.rallyMul > 1);
+  const a = b.makeAlly(U.knight, 500), h = b.spawnEnemy('hexer', 700);
+  b.hitOne(1, a, h, false); assert.ok(a.weakT > 0 && a.weakMul < 1);
+  const bone = b.spawnEnemy('boneguard', 700); bone.takeDamage(bone.hp + 10);
+  assert.equal(bone.dead, false); assert.ok(bone.hp > 0);
+});
+test('Every new mob appears in the campaign, in the endless pool and in the bestiary text', () => {
+  const ids = ['slinger', 'drummer', 'hexer', 'skelarcher', 'boneguard', 'assassin', 'burrower', 'chariot'];
+  const { ENDLESS_POOL } = vm.runInContext('({ENDLESS_POOL})', ctx);
+  for (const id of ids) {
+    assert.ok(STAGES.some(st => st.waves.some(w => w.e === id)), id + ' in campaign');
+    assert.ok(ENDLESS_POOL.some(p => p.id === id), id + ' in endless');
+    assert.ok(E[id].abText, id + ' has ability text');
+  }
+});
+
 console.log(count + ' regression checks passed');

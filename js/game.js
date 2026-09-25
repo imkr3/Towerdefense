@@ -245,6 +245,7 @@ class Battle {
 
     this.allies = [];
     this.enemies = [];
+    this.burrowers = [];        // 땅속을 기어 오는 적: 아무도 겨눌 수 없다
     this.shots = [];
     this.fx = [];
 
@@ -458,6 +459,7 @@ class Battle {
 
     this.step(this.allies, this.enemies, this.enemyCastle, dt, true);
     this.step(this.enemies, this.allies, this.allyCastle, dt, false);
+    if (this.burrowers.length) this.stepBurrowers(dt);
 
     this.updateShots(dt);
     // 사망 폭발이 연쇄를 멈출 때까지 양쪽을 정리한다. 보상은 한 번만 준다.
@@ -497,6 +499,7 @@ class Battle {
       f.atk = Math.round(f.atk * BOSS_ATK_MUL);
     }
     if (f.boss) { this.bossAlert = 2.6; this.bossName = spec.name; this.shake = 10; sfx('bossIn'); }
+    if (f.ab.burrow) { f.burrowed = true; this.burrowers.push(f); return f; }
     this.enemies.push(f);
     return f;
   }
@@ -672,6 +675,8 @@ class Battle {
         this.charmedTick(f, list, dt);
         continue;
       }
+
+      if (f.ab.leap && !f.leapt) this.tryLeap(f, foes);
 
       // 지원 능력 (표적과 무관하게 주기적으로 발동)
       this.supportTick(f, list, dt, isAlly);
@@ -1327,7 +1332,7 @@ class Battle {
   wavesDone() {
     if (!this.endless) return 0;
     const pending = new Set(this.queue.slice(this.qi).map(e => e.wave));
-    const alive = new Set(this.enemies.filter(e => !e.dead).map(e => e.wave));
+    const alive = new Set(this.enemies.concat(this.burrowers).filter(e => !e.dead).map(e => e.wave));
     let cleared = 0;
     for (const wave of new Set(this.queue.map(e => e.wave))) {
       if (pending.has(wave) || alive.has(wave)) break;
@@ -1354,7 +1359,56 @@ class Battle {
   }
 
   /* 남은 적 = 아직 등장하지 않은 적 + 전장에 있는 적 */
-  foesLeft() { return (this.queue.length - this.qi) + this.enemies.length; }
+  foesLeft() { return (this.queue.length - this.qi) + this.enemies.length + this.burrowers.length; }
+
+  /* 땅굴 고블린: 땅속으로 기어 오다가 아군 전열(또는 성채) 코앞에서 튀어나온다.
+   * 튀어나오며 주변 아군을 잠깐 기절시키고, 그때부터는 여느 적과 같다. */
+  stepBurrowers(dt) {
+    const keep = [];
+    for (const b of this.burrowers) {
+      b.bob += dt * 3;
+      b.x += b.dir * b.speedNow * dt;
+      let near = Math.abs(b.x - this.allyCastle.x) <= 90;
+      for (const a of this.allies) if (!a.dead && Math.abs(a.x - b.x) <= 70) { near = true; break; }
+      if (!near) { keep.push(b); continue; }
+      b.burrowed = false;
+      const bw = b.ab.burrow;
+      for (const a of this.allies) {
+        if (a.dead || a.ab.kbImmune || Math.abs(a.x - b.x) > bw.radius) continue;
+        a.stunT = Math.max(a.stunT, bw.stun);
+      }
+      this.fx.push({ type: 'boom', x: b.x, r: bw.radius, t: 0.35, life: 0.35 });
+      this.fx.push({ type: 'poof', x: b.x, row: b.row, t: 0.5, life: 0.5, color: '#8a6a3a', big: true });
+      this.shake = Math.max(this.shake, 5);
+      this.enemies.push(b);
+    }
+    this.burrowers = keep;
+  }
+
+  /* 고블린 암살자: 전열 가까이 오면 한 번 뛰어올라 뒤쪽의 원거리 병사 곁에 내려앉는다 */
+  tryLeap(f, foes) {
+    const lp = f.ab.leap;
+    let front = Infinity;
+    for (const e of foes) {
+      if (e.dead) continue;
+      const d = (e.x - f.x) * f.dir;
+      if (d > 0 && d < front) front = d;
+    }
+    if (front > lp.trigger) return;
+    f.leapt = true;
+    let target = null, td = -1;
+    for (const e of foes) {
+      if (e.dead || !e.s.ranged || e.ab.hold) continue;
+      const d = (e.x - f.x) * f.dir;
+      if (d > front && d <= lp.range && d > td) { td = d; target = e; }
+    }
+    if (!target) return;
+    const from = f.x;
+    f.x = target.x - f.dir * 30;
+    f.cd = Math.min(f.cd, 0.2);
+    this.fx.push({ type: 'leap', x: from, x2: f.x, row: f.row, t: 0.35, life: 0.35 });
+    this.fx.push({ type: 'poof', x: f.x, row: f.row, t: 0.35, life: 0.35, color: '#c0392b' });
+  }
   foesTotal() { return this.queue.length; }
 
   aliveBoss() {

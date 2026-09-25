@@ -771,7 +771,33 @@ const ENEMIES = {
                 { at: 0.50, t: 'roar',   name: '전장의 포효', r: 420, stun: 1.3, push: 100 },
                 { at: 0.30, t: 'enrage', name: '대군주의 분노', atk: 1.25, rate: 0.8, speed: 1.25 },
                 { at: 0.12, t: 'summon', name: '최후의 군세', id: 'orcberserk', n: 2 }
-              ] }
+              ] },
+  /* ---------- 2.5 새 잡몹: 역할이 다른 여덟 ---------- */
+  slinger:  { name: '고블린 투석병', body: '#4d6b3a', accent: '#a07a4a', tunic: '#5a4a2f', shape: 'slinger',
+              hp: 260, atk: 30, range: 200, speed: 40, interval: 1.4, kb: 2, gold: 14, scale: .85, ranged: true,
+              abText: '값싼 원거리 · 초반부터 뒤에서 돌을 던진다' },
+  drummer:  { name: '오크 북잡이', body: '#4a6b46', accent: '#c0392b', tunic: '#6b4a2a', shape: 'drummer',
+              hp: 900, atk: 20, range: 60, speed: 32, interval: 1.6, kb: 2, gold: 40,
+              ab: { rally: { atk: .3, radius: 220 }, interval: 2.5 }, abText: '전쟁 북 · 주변 적 공격력 +30%' },
+  hexer:    { name: '저주 주술사', body: '#3f5a3c', accent: '#b784e0', tunic: '#3a2a4a', shape: 'hexer',
+              hp: 800, atk: 40, range: 230, speed: 30, interval: 1.8, kb: 2, gold: 45, ranged: true,
+              ab: { weaken: { mul: .7, dur: 4 } }, abText: '저주 · 맞은 아군의 공격력 -30% (4초)' },
+  skelarcher:{ name: '해골 궁수', body: '#d8d2c0', accent: '#8a8f7a', tunic: '#5a5448', shape: 'skelarcher',
+              hp: 520, atk: 55, range: 280, speed: 34, interval: 1.3, kb: 2, gold: 28, ranged: true,
+              ab: { revive: .4 }, abText: '한 번 쓰러져도 다시 일어난다' },
+  boneguard:{ name: '해골 방패병', body: '#d8d2c0', accent: '#7a8a9a', tunic: '#4a4a52', shape: 'boneguard',
+              hp: 1800, atk: 60, range: 60, speed: 30, interval: 1.3, kb: 1, gold: 40,
+              ab: { revive: .5, armor: .1 }, abText: '갑주 10% · 한 번 쓰러져도 다시 일어난다' },
+  assassin: { name: '고블린 암살자', body: '#3f5a2f', accent: '#c0392b', tunic: '#1f2a1f', shape: 'assassin',
+              hp: 700, atk: 110, range: 60, speed: 70, interval: .9, kb: 2, gold: 38, scale: .9,
+              ab: { leap: { trigger: 170, range: 320 }, crit: { chance: .2, mul: 2 } },
+              abText: '도약 · 전열을 뛰어넘어 궁수와 마법사를 노린다' },
+  burrower: { name: '땅굴 고블린', body: '#4d6b3a', accent: '#8a6a3a', tunic: '#5a4a2f', shape: 'burrower',
+              hp: 1100, atk: 90, range: 60, speed: 55, interval: 1.0, kb: 2, gold: 36,
+              ab: { burrow: { stun: 1.0, radius: 90 } }, abText: '땅굴 · 땅속으로 다가와 전열 밑에서 튀어나오며 기절' },
+  chariot:  { name: '오크 전차', body: '#4a6b46', accent: '#8a5a2a', tunic: '#6b4a2a', shape: 'chariot',
+              hp: 5200, atk: 280, range: 80, speed: 64, interval: 1.8, kb: 1, gold: 90, scale: 1.3,
+              ab: { kbImmune: true, push: 35 }, abText: '돌격 전차 · 넉백 면역 · 들이받아 밀쳐 낸다' },
 };
 
 /* -------------------- 전장 20개 -------------------- */
@@ -869,7 +895,7 @@ STAGES.push(
     W(2,'hellhound',9,.8),W(26,'powder',6,1.8),W(52,'drake',1),W(80,'plaguer',6,2),W(108,'orcshield',6,1.8),W(138,'drake',1),W(170,'hellhound',10,.8),W(200,'siegeram',2,4),W(230,'dark',7,1.5)]},
   {name:'황금 일식의 제단',hint:'치유·가속 토템을 범위 공격으로 압박',baseHp:47500,money:450,rate:56,reward:1650,boss:true,enemyMul:3.05,waves:[
     W(2,'orcshield',5,2),W(26,'totem',2,6),W(50,'shaman',5,3),W(78,'warlord',1),W(108,'golem',2,5),W(140,'drake',1),W(174,'warchief',3,5),W(208,'orcberserk',8,1),W(240,'lich',2,8)]},
-  {name:'★ 세 신화의 종착지',hint:'원거리 호위를 먼저 걷어 내고, 대군주에게 액티브와 왕명을 몰아 쓰라',baseHp:51000,money:465,rate:58,reward:2200,boss:true,enemyMul:3.8,waves:[
+  {name:'★ 세 신화의 종착지',hint:'원거리 호위를 먼저 걷어 내고, 대군주에게 액티브와 왕명을 몰아 쓰라',baseHp:51000,money:465,rate:58,reward:2200,boss:true,enemyMul:6.2,waves:[
     W(2,'orcshield',5,2),W(26,'lich',1),W(52,'frostgiant',1),W(82,'drake',1),W(114,'warlord',1),W(148,'warchief',2,5),W(182,'spiderqueen',1),W(216,'golem',3,5),W(248,'warlord',1),W(276,'hellhound',10,.8)]}
 );
 
@@ -912,12 +938,34 @@ STAGES[19].enemyMul = 1.85;
  *   - 불 뿜는 화룡 → 단단한 앞줄 + 빠른 근접 + 원거리 조금
  *  보스 전장이 아닌 곳에 끼어 있던 보스는 정예 잡몹으로 바꾼다.
  * ------------------------------------------------------------------ */
+/* 새 잡몹을 전장에 섞는다. [시각, 적, 수, 간격] — 처음 나오는 전장 순서가 곧 해금 순서다. */
+const NEW_MOB_WAVES = {
+  1: [[20, 'slinger', 2, 1.5]], 2: [[26, 'slinger', 3, 1.4]], 4: [[34, 'slinger', 3, 1.4]],
+  6: [[40, 'slinger', 4, 1.2]], 7: [[50, 'drummer', 1]], 8: [[44, 'drummer', 1], [60, 'slinger', 4, 1.2]],
+  10: [[60, 'hexer', 2, 2]], 11: [[40, 'skelarcher', 3, 1.4], [70, 'boneguard', 2, 1.6]],
+  12: [[50, 'boneguard', 3, 1.5], [64, 'skelarcher', 3, 1.3]], 13: [[70, 'assassin', 2, 2], [90, 'drummer', 1]],
+  14: [[60, 'burrower', 2, 2]], 15: [[80, 'hexer', 3, 1.8], [100, 'burrower', 2, 2]],
+  16: [[90, 'chariot', 1], [110, 'assassin', 2, 1.8]], 17: [[80, 'burrower', 3, 1.6], [100, 'drummer', 1]],
+  18: [[100, 'chariot', 1], [120, 'hexer', 3, 1.6]],
+  19: [[110, 'drummer', 2, 3], [140, 'chariot', 2, 4], [160, 'assassin', 3, 1.5]],
+  20: [[70, 'skelarcher', 4, 1.2], [120, 'boneguard', 3, 1.5]], 21: [[100, 'boneguard', 4, 1.4], [140, 'skelarcher', 5, 1.1]],
+  22: [[90, 'drummer', 2, 3], [120, 'chariot', 2, 4]], 23: [[130, 'skelarcher', 5, 1.1], [160, 'hexer', 3, 1.6]],
+  24: [[90, 'assassin', 3, 1.5], [160, 'burrower', 3, 1.5]], 25: [[110, 'burrower', 3, 1.5], [150, 'chariot', 2, 4]],
+  26: [[120, 'drummer', 2, 3], [150, 'assassin', 3, 1.4]], 27: [[100, 'hexer', 3, 1.5], [200, 'chariot', 2, 4]],
+  28: [[100, 'drummer', 2, 3], [180, 'hexer', 3, 1.5]],
+  29: [[160, 'burrower', 3, 1.4], [200, 'chariot', 2, 4], [230, 'assassin', 4, 1.3]]
+};
+STAGES.forEach((st, i) => {
+  (NEW_MOB_WAVES[i] || []).forEach(([t, e, n, gap]) => st.waves.push(W(t, e, n, gap)));
+  st.waves.sort((a, b) => a.t - b.t);
+});
+
 const BOSS_ROLE = { troll: 'bruiser', frostgiant: 'bruiser', warlord: 'bruiser',
                     lich: 'caster', spiderqueen: 'caster', drake: 'flyer' };
 const BOSS_ESCORT = {
-  bruiser: { back: ['ballista', 'shaman', 'plaguer', 'orccatapult'], front: ['wolf', 'hellhound', 'orcspear'], nb: 4, nf: 2 },
-  caster:  { back: ['ballista', 'plaguer'], front: ['orcshield', 'orcspear', 'orcberserk', 'dark'], nb: 2, nf: 4 },
-  flyer:   { back: ['shaman', 'ballista'], front: ['orcshield', 'hellhound', 'orcberserk', 'golem'], nb: 2, nf: 3 }
+  bruiser: { back: ['ballista', 'slinger', 'shaman', 'hexer', 'plaguer', 'orccatapult'], front: ['wolf', 'assassin', 'hellhound', 'orcspear'], nb: 4, nf: 2 },
+  caster:  { back: ['ballista', 'skelarcher', 'plaguer'], front: ['orcshield', 'boneguard', 'orcspear', 'orcberserk', 'chariot', 'dark'], nb: 2, nf: 4 },
+  flyer:   { back: ['shaman', 'hexer', 'ballista'], front: ['orcshield', 'burrower', 'hellhound', 'boneguard', 'orcberserk', 'golem'], nb: 2, nf: 3 }
 };
 /* 전장 번호(0부터) → 그 전장의 보스 */
 const STAGE_BOSS = { 4: 'lich', 9: 'troll', 12: 'lich', 14: 'troll', 16: 'frostgiant', 17: 'drake',
@@ -983,7 +1031,11 @@ const ENDLESS_POOL = [
   { id: 'powder',   from: 7 },  { id: 'orcshield',from: 8 },
   { id: 'orcberserk', from: 9 },{ id: 'wraith',   from: 10 },
   { id: 'dark',     from: 11 }, { id: 'golem',    from: 13 },
-  { id: 'totem',    from: 14 }
+  { id: 'totem',    from: 14 },
+  { id: 'slinger',  from: 1 },  { id: 'drummer',  from: 6 },
+  { id: 'skelarcher', from: 8 },{ id: 'boneguard', from: 9 },
+  { id: 'hexer',    from: 10 }, { id: 'assassin', from: 12 },
+  { id: 'burrower', from: 13 }, { id: 'chariot',  from: 15 }
 ];
 const ENDLESS_BOSSES = ['lich', 'troll', 'frostgiant', 'drake', 'warlord'];
 
@@ -1166,6 +1218,11 @@ function upgradeCost(key, level) {
 /* Tactical descriptions shared by the campaign and enemy codex. */
 function enemyTactic(e) {
   if (e.boss) return '보스 · 왕명을 아껴 폭격 후 회복';
+  if (e.ab && e.ab.leap) return '암살 · 궁수 곁에 방패병이나 근접을 한 명 두자';
+  if (e.ab && e.ab.burrow) return '땅굴 · 전열을 두껍게, 기절 뒤 왕명으로 수습';
+  if (e.ab && e.ab.rally) return '지휘 · 북잡이부터 원거리로 끊어라';
+  if (e.ab && e.ab.weaken) return '저주 · 정화사로 해제, 멀리서 먼저 쓰러뜨려라';
+  if (e.ab && e.ab.revive) return '부활 · 한 번 더 쓰러뜨려야 한다, 범위 공격이 유리';
   if (e.ab && e.ab.armor) return '중장갑 · 중독과 화상으로 지속 피해';
   if (e.ab && e.ab.heal) return '치유 지원 · 범위 공격으로 후열 압박';
   if (e.ab && e.ab.deathBomb) return '사망 폭발 · 저렴한 전열로 피해 분산';

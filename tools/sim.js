@@ -87,12 +87,15 @@ function legendLoadout(g) {
 /* 조합 편성: 전장 병종으로 몸통을 세우고, 전설·신화는 역할에 맞는 셋만 얹는다.
  * 오딘(지휘) + 라(낙인)가 주력의 화력을 끌어올리고, 토르가 보스를 깬다. */
 function comboLoadout(g, index) {
+  // 전설·신화 다섯 칸을 역할로 채운다: 지휘(오딘) · 낙인(라) · 파쇄(토르) · 홀림(구미호) · 포탑(대발명가).
+  // 몸통은 전장 병종 다섯. 잡몹이 다양해진 2.5 부터는 셋으로는 모자라 다섯을 다 쓴다.
+  const roles = ['odin', 'ra', 'thor', 'gumiho', 'inventor'];
   const core = g.ROSTER_UNITS
     .filter(u => u.unlockStage <= index + 1)
     .sort((a, b) => b.cost - a.cost)
-    .slice(0, g.LOADOUT_MAX - 3)
+    .slice(0, g.LOADOUT_MAX - roles.length)
     .map(u => u.id);
-  return core.concat(['odin', 'ra', 'thor']).slice(0, g.LOADOUT_MAX);
+  return core.concat(roles).slice(0, g.LOADOUT_MAX);
 }
 
 /* 공략 편성: 전장 특성을 받아칠 병종을 먼저 챙기고 나머지는 전장 병종으로 채운다.
@@ -134,7 +137,7 @@ function runStage(g, index, upLv, unitLv, trace, gacha, basic) {
   const loadout = basic ? basicLoadout(g)
     : gacha === 'legend' ? legendLoadout(g)
     : (typeof gacha === 'string' && gacha.indexOf('trio:') === 0)
-      ? unlocked.slice().sort((a, b) => b.cost - a.cost).slice(0, g.LOADOUT_MAX - 3).map(u => u.id).concat(gacha.slice(5).split('+'))
+      ? unlocked.slice().sort((a, b) => b.cost - a.cost).slice(0, g.LOADOUT_MAX - gacha.slice(5).split('+').length).map(u => u.id).concat(gacha.slice(5).split('+'))
     : (typeof gacha === 'string' && gacha.indexOf('legend-') === 0)
       ? g.UNITS.filter(u => u.gacha && (u.rarity === 'UR' || u.rarity === 'SSR' || u.rarity === 'SR') && u.id !== gacha.slice(7))
           .sort((a, b) => ({ UR: 0, SSR: 1, SR: 2 }[a.rarity] - { UR: 0, SSR: 1, SR: 2 }[b.rarity]) || (b.cost - a.cost))

@@ -181,6 +181,21 @@ const I18N_EN = {
   '태엽 공방': 'Clockwork Workshop', '증기와 톱니': 'Steam & gears', '연기 자욱한 공방에서 발명가들이 기계 군단을 끌고 나왔다.': 'From a smoky workshop, inventors roll out their mechanical legion.',
   '전설·신화는 편성에 5명까지다': 'A squad can bring at most 5 Legend+ units',
 
+  /* 2.5 새 잡몹 */
+  '고블린 투석병': 'Goblin Slinger', '값싼 원거리 · 초반부터 뒤에서 돌을 던진다': 'Cheap ranged · hurls stones from the back early on',
+  '오크 북잡이': 'Orc Drummer', '전쟁 북 · 주변 적 공격력 +30%': 'War drums · nearby foes ATK +30%',
+  '저주 주술사': 'Hexer', '저주 · 맞은 아군의 공격력 -30% (4초)': 'Hex · hit allies deal -30% damage (4s)',
+  '해골 궁수': 'Skeleton Archer', '한 번 쓰러져도 다시 일어난다': 'Gets back up once after falling',
+  '해골 방패병': 'Bone Guard', '갑주 10% · 한 번 쓰러져도 다시 일어난다': 'Armor 10% · gets back up once',
+  '고블린 암살자': 'Goblin Assassin', '도약 · 전열을 뛰어넘어 궁수와 마법사를 노린다': 'Leap · jumps your front line to hunt archers and mages',
+  '땅굴 고블린': 'Goblin Burrower', '땅굴 · 땅속으로 다가와 전열 밑에서 튀어나오며 기절': 'Burrow · tunnels in and bursts out under your line, stunning',
+  '오크 전차': 'Orc Chariot', '돌격 전차 · 넉백 면역 · 들이받아 밀쳐 낸다': 'War chariot · knockback immune · rams units aside',
+  '암살 · 궁수 곁에 방패병이나 근접을 한 명 두자': 'Assassin · keep a shield or melee next to your archers',
+  '땅굴 · 전열을 두껍게, 기절 뒤 왕명으로 수습': "Burrower · thicken the front, recover with the King's Command",
+  '지휘 · 북잡이부터 원거리로 끊어라': 'Commander · snipe the drummer first',
+  '저주 · 정화사로 해제, 멀리서 먼저 쓰러뜨려라': 'Hex · cleanse it, and drop the hexer from range',
+  '부활 · 한 번 더 쓰러뜨려야 한다, 범위 공격이 유리': 'Revive · must be felled twice, area damage helps',
+  '도약': 'Leap', '땅굴': 'Burrow', '부활': 'Revive',
   /* ---------------- 시즌 · 등급 ---------------- */
   '올림포스': 'Olympus', '그리스 신화': 'Greek myth', '번개와 창의 신들이 왕국의 부름에 응했다.': 'The gods of thunder and spear answer the call.',
   '라그나로크': 'Ragnarok', '북유럽 신화': 'Norse myth', '최후의 전투를 앞둔 북방의 전사들이 내려왔다.': 'Northern warriors arrive on the eve of the final battle.',

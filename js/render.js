@@ -532,6 +532,23 @@ class Renderer {
     }
   }
 
+  /* 땅속을 기어 오는 적: 흙더미와 튀는 흙 */
+  drawBurrow(b) {
+    const ctx = this.ctx, x = this.screenX(b.x);
+    if (x < -60 || x > this.w + 60) return;
+    const s = this.cs, y = this.rowY(b.row);
+    const bump = Math.abs(Math.sin(b.bob * 2)) * 2 * s;
+    ctx.fillStyle = '#6b5638';
+    ctx.beginPath(); ctx.ellipse(x, y - bump * 0.5, 16 * s, 6 * s + bump, 0, Math.PI, 0); ctx.fill();
+    ctx.fillStyle = '#8a7048';
+    for (let i = 0; i < 3; i++) {
+      const k = (b.bob * 0.7 + i / 3) % 1;
+      ctx.globalAlpha = 1 - k;
+      ctx.beginPath(); ctx.arc(x - b.dir * (6 + k * 16) * s, y - 4 * s - Math.sin(k * Math.PI) * 12 * s, 2 * s, 0, 7); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
   drawShots(battle) {
     const ctx = this.ctx, cs = this.cs;
     for (const s of battle.shots) {
@@ -694,6 +711,12 @@ class Renderer {
         const rr = e.r * this.zoom * (1 - p);
         ctx.beginPath(); ctx.ellipse(x, y + 14 * cs, rr, rr * 0.28, 0, 0, 7); ctx.stroke();
         ctx.globalAlpha = 1;
+      } else if (e.type === 'leap') {                  // 암살자의 도약 궤적
+        const x2 = this.screenX(e.x2), gy = this.rowY(e.row || 0) - 20 * cs;
+        ctx.globalAlpha = p * 0.8;
+        ctx.strokeStyle = '#ff8a7a'; ctx.lineWidth = 2.4 * cs; ctx.setLineDash([6 * cs, 5 * cs]);
+        ctx.beginPath(); ctx.moveTo(x, gy); ctx.quadraticCurveTo((x + x2) / 2, gy - 90 * cs, x2, gy); ctx.stroke();
+        ctx.setLineDash([]); ctx.globalAlpha = 1;
       } else if (e.type === 'charm') {                 // 홀림: 떠오르는 하트
         ctx.globalAlpha = Math.min(1, p * 1.5);
         heart(ctx, x, y - 40 * cs - (1 - p) * 26 * cs, 7 * cs * (1 + (1 - p) * 0.4), '#ff7ab8');
@@ -1187,6 +1210,7 @@ class Renderer {
     const all = battle.allies.concat(battle.enemies);
     all.sort((a, b) => (a.row - b.row) || (a.x - b.x));
     for (const f of all) this.drawFighter(f);
+    if (battle.burrowers) for (const b of battle.burrowers) this.drawBurrow(b);
 
     this.drawShots(battle);
     this.drawFx(battle);
@@ -1807,6 +1831,99 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
       break;
 
     /* ---------------------- 오크 군단 ---------------------- */
+    /* ---------------------- 2.5 새 잡몹 ---------------------- */
+    case 'slinger':                               // 고블린 투석병: 머리 위로 돌리는 투석끈
+      legs(S); torso(S); head(S, 'ears');
+      {
+        const a = S.wind > 0 ? S.phase * 12 : -1.4 + S.atk * 2.2;
+        const hx = 10 * s, hy = -40 * s;
+        arm(S, hx, hy);
+        ctx.strokeStyle = S.flash ? '#fff' : '#6b4b2a'; ctx.lineWidth = 1.6 * s;
+        const ex = hx + Math.cos(a) * 16 * s, ey = hy + Math.sin(a) * 16 * s;
+        ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(ex, ey); ctx.stroke();
+        ctx.fillStyle = S.flash ? '#fff' : '#9a9a8a';
+        if (S.atk < 0.3) { ctx.beginPath(); ctx.arc(ex, ey, 3.2 * s, 0, 7); ctx.fill(); }
+      }
+      break;
+    case 'drummer':                               // 오크 북잡이: 배에 큰 북, 두 손 북채
+      legs(S, 20 * s); torso(S, 6 * s); head(S, 'tusk');
+      ctx.fillStyle = S.flash ? '#fff' : tun;
+      ctx.beginPath(); ctx.ellipse(8 * s, -30 * s, 11 * s, 13 * s, 0, 0, 7); ctx.fill();
+      ctx.strokeStyle = S.flash ? '#fff' : acc; ctx.lineWidth = 2 * s;
+      ctx.beginPath(); ctx.ellipse(8 * s, -30 * s, 11 * s, 13 * s, 0, 0, 7); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-2 * s, -38 * s); ctx.lineTo(18 * s, -22 * s); ctx.moveTo(-2 * s, -22 * s); ctx.lineTo(18 * s, -38 * s); ctx.stroke();
+      {
+        const beat = Math.abs(Math.sin(S.phase * 4));
+        line(S, 4 * s, -40 * s, 16 * s, -48 * s + beat * 10 * s, 2.4 * s, S.flash ? '#fff' : '#d8c8a8');
+        line(S, 0, -38 * s, 10 * s, -52 * s + (1 - beat) * 10 * s, 2.4 * s, S.flash ? '#fff' : '#d8c8a8');
+      }
+      break;
+    case 'hexer':                                 // 저주 주술사: 해골 지팡이, 보라 연기
+      robe(S, 17 * s, -44 * s, tun);
+      head(S, 'hood', 8 * s);
+      armWeapon(S, -0.15, () => {
+        line(S, 0, 0, 3 * s, -40 * s, 2.6 * s, S.flash ? '#fff' : '#3a2a1a');
+        skull(S, 3 * s, -45 * s, 5 * s, S.flash ? '#fff' : '#e8e0c8', acc);
+      }, 4 * s);
+      ctx.globalAlpha = 0.45;
+      for (let i = 0; i < 3; i++) {
+        const k = (S.phase * 0.5 + i / 3) % 1;
+        ctx.fillStyle = S.flash ? '#fff' : acc;
+        ctx.beginPath(); ctx.arc(-6 * s + Math.sin(k * 6 + i) * 6 * s, -20 * s - k * 40 * s, (2 + k * 3) * s, 0, 7); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      break;
+    case 'skelarcher':                            // 해골 궁수: 뼈 몸통, 낡은 활
+      legs(S); head(S, 'skullface', 7.5 * s);
+      ctx.strokeStyle = col; ctx.lineWidth = 2 * s;
+      for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(-5 * s, (-38 + i * 5) * s); ctx.lineTo(5 * s, (-38 + i * 5) * s); ctx.stroke(); }
+      line(S, 0, -42 * s, 0, -19 * s, 2.4 * s, col);
+      bow(S, 20 * s, -34 * s, 18 * s, S.flash ? '#fff' : acc);
+      arm(S, 20 * s, -34 * s);
+      break;
+    case 'boneguard':                             // 해골 방패병: 녹슨 방패와 칼
+      legs(S); head(S, 'skullface', 8 * s);
+      ctx.strokeStyle = col; ctx.lineWidth = 2.2 * s;
+      for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(-6 * s, (-38 + i * 5) * s); ctx.lineTo(6 * s, (-38 + i * 5) * s); ctx.stroke(); }
+      line(S, 0, -42 * s, 0, -19 * s, 2.6 * s, col);
+      armWeapon(S, -0.9 + atk * 1.5, () => line(S, 0, 0, 26 * s, 0, 3 * s, S.flash ? '#fff' : '#8a8f96'), 6 * s);
+      shieldShape(S, 12 * s, -48 * s, 16 * s, 34 * s, S.flash ? '#fff' : acc);
+      break;
+    case 'assassin':                              // 고블린 암살자: 두건, 쌍단검, 낮은 자세
+      legs(S, 16 * s); torso(S, 3.4 * s); head(S, 'hood', 7.5 * s);
+      ctx.fillStyle = S.flash ? '#fff' : acc;      // 붉은 눈
+      ctx.fillRect(3 * s, -51 * s, 3 * s, 1.6 * s);
+      armWeapon(S, -0.6 + atk * 1.6, () => {
+        line(S, 0, 0, 18 * s, -3 * s, 2.4 * s, S.flash ? '#fff' : '#c8ced6');
+        line(S, 0, 4 * s, 16 * s, 8 * s, 2.4 * s, S.flash ? '#fff' : '#c8ced6');
+      }, 7 * s);
+      break;
+    case 'burrower':                              // 땅굴 고블린: 곡괭이와 헬멧 등불
+      legs(S); torso(S); head(S, 'pot', 8 * s);
+      orb(S, 4 * s, -60 * s, 2.4 * s, S.flash ? '#fff' : '#ffd166');
+      armWeapon(S, -1.0 + atk * 1.7, () => {
+        line(S, 0, 0, 24 * s, 0, 3 * s, S.flash ? '#fff' : '#6b4b2a');
+        ctx.strokeStyle = S.flash ? '#fff' : '#9aa3ab'; ctx.lineWidth = 3 * s;
+        ctx.beginPath(); ctx.arc(24 * s, 8 * s, 10 * s, -2.2, -0.6); ctx.stroke();
+      }, 6 * s);
+      break;
+    case 'chariot': {                             // 오크 전차: 바퀴 달린 수레 + 창 든 오크
+      const spin = moving ? S.phase * 3 : 0;
+      ctx.fillStyle = S.flash ? '#fff' : tun;
+      ctx.beginPath(); ctx.moveTo(-26 * s, -30 * s); ctx.lineTo(20 * s, -30 * s); ctx.lineTo(26 * s, -12 * s); ctx.lineTo(-26 * s, -12 * s); ctx.closePath(); ctx.fill();
+      tri(S, 26 * s, -22 * s, 42 * s, -18 * s, 26 * s, -14 * s, S.flash ? '#fff' : '#c8ced6');   // 앞 충각
+      ctx.save(); ctx.translate(-14 * s, -10 * s); ctx.rotate(spin); wheels(S, [0], 0, 10 * s, S.flash ? '#fff' : acc); ctx.restore();
+      ctx.save(); ctx.translate(14 * s, -10 * s); ctx.rotate(spin); wheels(S, [0], 0, 10 * s, S.flash ? '#fff' : acc); ctx.restore();
+      ctx.save(); ctx.translate(-4 * s, -12 * s);         // 수레 위에 선 오크
+      const O = Object.assign({}, S);
+      torso(O, 5 * s); head(O, 'tusk', 8 * s);
+      armWeapon(O, -0.3 + atk * 0.6, () => {
+        line(S, 0, 0, 40 * s, -4 * s, 3 * s, S.flash ? '#fff' : '#6b4b2a');
+        tri(S, 44 * s, -4 * s, 34 * s, -10 * s, 34 * s, 2 * s, S.flash ? '#fff' : '#c8ced6');
+      }, 8 * s);
+      ctx.restore();
+      break;
+    }
     case 'goblin':
       legs(S); torso(S); head(S, 'ears');
       armWeapon(S, -0.9 + atk * 1.5, () => {
@@ -2846,6 +2963,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
 /* 걸을 때 반대쪽 팔을 흔드는 인간형 병종 */
 const HUMANOID = {
   skadi:1,bastet:1,runeguard:1, musketeer:1, purifier:1, frostlancer:1,
+  drummer:1, assassin:1, burrower:1, boneguard:1,
   pojol:1, hwarang:1, dokkaebi:1, teslaknight:1, clocksoldier:1, mechanic:1, rifleman:1,
   spear: 1, shield: 1, archer: 1, venom: 1, bomber: 1, knight: 1, duelist: 1,
   longbow: 1, rogue: 1, engineer: 1, skeleton: 1,
@@ -3188,6 +3306,11 @@ function head(S, type, radius) {
   ctx.strokeStyle = S.acc;
 
   switch (type) {
+    case 'skullface':                            // 해골 얼굴
+      ctx.fillStyle = S.flash ? '#fff' : '#1c1c22';
+      ctx.beginPath(); ctx.arc(2 * s, cy - 1 * s, 1.8 * s, 0, 7); ctx.arc(6 * s, cy - 1 * s, 1.8 * s, 0, 7); ctx.fill();
+      ctx.fillRect(2 * s, cy + 3 * s, 5 * s, 1.2 * s);
+      break;
     case 'gat':                                  // 검은 갓
       ctx.fillStyle = S.flash ? '#fff' : '#111116';
       ctx.fillRect(-r - 9 * s, cy - 6 * s, (r + 9 * s) * 2, 2.4 * s);

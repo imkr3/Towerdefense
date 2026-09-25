@@ -657,6 +657,11 @@ function renderTraining() {
           (e.ab && e.ab.kbImmune ? '<span class="stat hl">넉백 면역</span>' : '') +
           (e.ab && e.ab.deathBomb ? '<span class="stat hl">사망 시 폭발</span>' : '') +
           (e.ab && e.ab.summon ? '<span class="stat hl">소환</span>' : '') +
+          (e.ab && e.ab.leap ? '<span class="stat hl">도약</span>' : '') +
+          (e.ab && e.ab.burrow ? '<span class="stat hl">땅굴</span>' : '') +
+          (e.ab && e.ab.revive ? '<span class="stat hl">부활</span>' : '') +
+          (e.ab && e.ab.rally ? '<span class="stat hl">지휘</span>' : '') +
+          (e.ab && e.ab.weaken ? '<span class="stat hl">저주</span>' : '') +
           (e.area ? '<span class="stat">범위</span>' : '') +
         '</div>' +
       '</div>';
