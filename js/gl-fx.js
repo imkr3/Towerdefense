@@ -655,6 +655,80 @@ class GLFx {
         break;
       }
 
+      /* 밀려오는 물결: 바닥을 훑고 지나가는 파도 (용왕) */
+      case 'tide':
+      case 'tidewave': {
+        const foam = [0.92, 0.98, 1];
+        const wide = kind === 'tidewave' ? 1.4 : 1;
+        for (let i = 0, n = N(70 * wide); i < n; i++) {
+          const t = rnd(-1, 1);
+          const px = x + t * R * wide, py = y - rnd(0, 46) * sc * (1 - Math.abs(t) * 0.6);
+          this.add(px, py, t * rnd(60, 220) * sc, -rnd(20, 120) * sc, rnd(0.4, 0.9),
+                   rnd(14, 26) * sc * big, rnd(30, 60) * sc, i % 3 ? col : foam, 0.5, 1.6,
+                   0, 0, 260, 1.4);
+        }
+        for (let i = 0, n = N(40 * wide); i < n; i++) {   // 흩날리는 물방울
+          const a = rnd(-Math.PI, 0), sp = rnd(180, 460) * sc;
+          this.add(x, y - 12 * sc, Math.cos(a) * sp, Math.sin(a) * sp, rnd(0.3, 0.7),
+                   rnd(4, 9) * sc, 1, foam, 0.9, 2.2, a, 0, 620, 2);
+        }
+        this.add(x, y - 24 * sc, 0, 0, 0.3, 26 * sc, 150 * sc * big * wide, col, 0.7, 1.9, 0, 0, 0, 1.4);
+        break;
+      }
+
+      /* 터지는 물거품 (크라켄) */
+      case 'bubble': {
+        for (let i = 0, n = N(46); i < n; i++) {
+          const a = rnd(-Math.PI, 0), sp = rnd(60, 220) * sc;
+          this.add(x + rnd(-R, R) * 0.3, y - 26 * sc, Math.cos(a) * sp, Math.sin(a) * sp * 0.8,
+                   rnd(0.4, 0.9), rnd(6, 16) * sc * big, rnd(6, 16) * sc, i % 4 ? col : white,
+                   0.55, 1, 0, rnd(-3, 3), -90, 1.6);
+        }
+        break;
+      }
+
+      /* 퍼져 나가는 노랫결 (인어) */
+      case 'songwave': {
+        const cy = y - 46 * sc;
+        for (let ring = 0; ring < 3; ring++) {
+          for (let i = 0, n = N(26); i < n; i++) {
+            const a = rnd(-1.1, 1.1);
+            const rr = (26 + ring * 22) * sc;
+            this.add(x + Math.cos(a) * rr, cy + Math.sin(a) * rr,
+                     Math.cos(a) * 150 * sc, Math.sin(a) * 150 * sc, rnd(0.3, 0.6),
+                     10 * sc * big, 3 * sc, ring % 2 ? col : white, 0.75, 2.4, a, 0, 0, 1.6);
+          }
+        }
+        break;
+      }
+
+      /* 꿰뚫고 지나가는 작살 자국 */
+      case 'harpoon': {
+        for (let i = 0, n = N(30); i < n; i++) {
+          const t = i / n;
+          this.add(x - t * R * 0.9, y - 34 * sc + rnd(-5, 5) * sc, 0, 0, rnd(0.15, 0.32),
+                   (22 - t * 14) * sc * big, 3 * sc, i % 3 ? col : white, 0.9, 3, 0, 0, 0, 1.2);
+        }
+        for (let i = 0, n = N(24); i < n; i++) {
+          const a = rnd(-1.2, 1.2), sp = rnd(140, 380) * sc;
+          this.add(x, y - 34 * sc, Math.cos(a) * sp, Math.sin(a) * sp, rnd(0.2, 0.45),
+                   rnd(4, 9) * sc, 1, white, 1, 2.2, a, 0, 400, 2);
+        }
+        break;
+      }
+
+      /* 저주의 연기 (흑마술사) */
+      case 'hex': {
+        for (let i = 0, n = N(54); i < n; i++) {
+          const a = rnd(0, TAU), rr = rnd(0, R) * 0.8;
+          this.add(x + Math.cos(a) * rr, y - 24 * sc + Math.sin(a) * rr * 0.35,
+                   Math.cos(a) * 40 * sc, -rnd(30, 110) * sc, rnd(0.5, 1),
+                   rnd(10, 22) * sc * big, rnd(22, 44) * sc, i % 3 ? col : white, 0.4, 1,
+                   0, rnd(-2, 2), -60, 1.5);
+        }
+        break;
+      }
+
       /* 교차 참격 */
       case 'slash': {
         const cy = y - 34 * sc;

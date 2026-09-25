@@ -51,6 +51,12 @@ const CURSE_HEAL = 0.5;       // 저주: 아군 회복·흡혈 배율
 const CURSE_WITHER = 0.1;     // 저주: 소환물이 초당 잃는 최대 체력 비율
 const SLOW_SPEED_MUL = 0.45; // 둔화 시 이동
 const SLOW_RATE_MUL = 1.7;   // 둔화 시 공격 간격
+const VENOMFOG_DPS = 0.05;   // 독무: 중독된 아군이 초당 잃는 최대 체력 비율
+const VENOMFOG_DUR = 3;      // 독무 한 자락이 남기는 중독 시간
+const VENOMFOG_PULSE = 7;    // 독무가 전장을 훑고 지나가는 주기
+const WARD_RATIO = 0.22;     // 결계: 적이 두르는 보호막 (최대 체력 대비)
+const WARD_INTERVAL = 7;     // 결계가 되살아나는 주기
+const GALE_RANGE_MUL = 0.75; // 삭풍: 아군 원거리 사거리 배율
 
 /* ------------------------------- 병사 ------------------------------- */
 class Fighter {
@@ -84,6 +90,12 @@ class Fighter {
     this.weakT = 0; this.weakMul = 1;   // 무당의 액막이: 이 적이 주는 피해가 준다
     this.charmT = 0;                    // 구미호의 홀림: 제 편을 친다
     this.spin = 0;                      // 증기 거상: 쏠수록 빨라진다
+    this.rangeMul = 1;                  // 삭풍 전장: 원거리 사거리가 줄어든다
+    this.armorCut = 0;                  // 작살에 찢긴 갑주 (영구)
+    this.aegisT = 0; this.cutMul = 1;   // 용왕의 비호: 받는 피해가 준다
+    this.guardT = 0; this.guardArmor = 0; // 군기병의 방어 기치
+    this.muteT = 0;                     // 인어의 노래: 능력을 쓰지 못한다
+    this.blinkCd = 0;                   // 그림자 암습자의 순간이동 대기
     this.scale = stats.scale || 1;
     this.radius = 26 * this.scale;
 
@@ -130,7 +142,17 @@ class Fighter {
     }
     return Math.max(0.12, v);
   }
-  get attackRange() { return this.s.range; }
+  get attackRange() { return this.s.range * this.rangeMul; }
+
+  /* 지금 이 병사가 두르고 있는 갑주. 타고난 갑주에 기치(군기병)를 더하고
+   * 작살에 찢긴 만큼 뺀다. */
+  get armorNow() {
+    const base = (this.ab.armor || 0) + (this.guardT > 0 ? this.guardArmor : 0) - this.armorCut;
+    return Math.max(0, Math.min(0.75, base));
+  }
+
+  /* 능력을 쓸 수 있는 상태인가 (인어의 노래에 묶이면 못 쓴다) */
+  get silenced() { return this.muteT > 0; }
 
   heal(amount) {
     if (this.dead) return;
@@ -149,7 +171,11 @@ class Fighter {
     if (this.dead) return 0;
     dmg = Math.max(0, dmg);
     if (this.vulnT > 0) dmg *= this.vulnMul;                          // 낙인
-    if (this.ab.armor && !pierceArmor) dmg *= (1 - Math.min(0.75, this.ab.armor));   // 두꺼운 갑주
+    if (this.aegisT > 0) dmg *= this.cutMul;                          // 용왕의 비호
+    if (!pierceArmor) {                                               // 두꺼운 갑주
+      const armor = this.armorNow;
+      if (armor > 0) dmg *= (1 - armor);
+    }
     if (this.barrier > 0) {
       const absorbed = Math.min(this.barrier, dmg);
       this.barrier -= absorbed;
@@ -340,6 +366,8 @@ class Battle {
     const buff = { hp: this.buff.hp * lm, atk: this.buff.atk * lm };
     const f = new Fighter(u, 'ally', x, buff);
     if (this.mods && this.mods.curse) f.healMul = CURSE_HEAL;
+    // 삭풍: 맞바람에 화살이 힘을 잃는다. 근접 병종은 그대로다.
+    if (this.mods && this.mods.gale && u.ranged) f.rangeMul = GALE_RANGE_MUL;
     return f;
   }
 
@@ -445,6 +473,7 @@ class Battle {
     if (this.bossAlert > 0) this.bossAlert -= dt;
     if (this.patternT > 0) this.patternT -= dt;
     this.updatePending(dt);
+    this.updateFog(dt);
     for (const k in this.cooldowns) {
       if (this.cooldowns[k] > 0) this.cooldowns[k] = Math.max(0, this.cooldowns[k] - dt);
     }
@@ -498,6 +527,7 @@ class Battle {
       f.maxHp = Math.round(f.maxHp * BOSS_HP_MUL); f.hp = f.maxHp;
       f.atk = Math.round(f.atk * BOSS_ATK_MUL);
     }
+    if (mods.warded) { f.wardCd = WARD_INTERVAL; f.giveBarrier(f.maxHp * WARD_RATIO); }
     if (f.boss) { this.bossAlert = 2.6; this.bossName = spec.name; this.shake = 10; sfx('bossIn'); }
     if (f.ab.burrow) { f.burrowed = true; this.burrowers.push(f); return f; }
     this.enemies.push(f);
@@ -510,17 +540,59 @@ class Battle {
     if (corpse.summoned) return;                // 소환물로는 소환물을 만들지 않는다
     for (const h of this.allies) {
       const r = h.ab.reanimate;
-      if (!r || h.dead || h.reCd > 0) continue;
+      if (!r || h.dead || h.reCd > 0 || h.silenced) continue;
       if (Math.abs(h.x - corpse.x) > r.radius) continue;
       let raised = 0;
       for (const a of this.allies) if (!a.dead && a.raisedBy === h) raised++;
       if (raised >= r.max) continue;
       const u = UNIT_BY_ID[r.id];
-      if (!u) return;
+      if (!u) continue;
       const m = this.makeAlly(u, corpse.x);
       m.summoned = true;
       m.raisedBy = h;
       this.allies.push(m);
+      h.reCd = r.cd;
+      this.fx.push({ type: 'spawn', x: corpse.x, row: m.row, t: 0.4, life: 0.4 });
+      return;
+    }
+  }
+
+  /* 점액 괴물: 쓰러지면 작은 덩어리로 갈라진다. 갈라진 것은 다시 갈라지지 않는다.
+   * 한 방에 쓸어버리는 범위 공격이 없으면 수가 줄지 않는다. */
+  splitApart(f, isEnemySide) {
+    const sp = f.s.split;
+    for (let i = 0; i < (sp.n || 2); i++) {
+      const sx = Math.max(70, Math.min(WORLD - 70, f.x + (i - (sp.n - 1) / 2) * 34));
+      if (isEnemySide) {
+        const m = this.spawnEnemy(sp.id, sx);
+        m.summoned = true;
+        m.wave = f.wave;
+      } else {
+        const u = UNIT_BY_ID[sp.id];
+        if (!u) break;
+        const m = this.makeAlly(u, sx);
+        m.summoned = true;
+        this.allies.push(m);
+      }
+    }
+    this.fx.push({ type: 'split', x: f.x, row: f.row, color: f.s.body, t: 0.5, life: 0.5 });
+  }
+
+  /* 적 사령관: 쓰러진 아군 병사를 제 편의 망자로 일으킨다. 하데스의 거울상이다. */
+  raiseForEnemy(corpse) {
+    if (corpse.summoned) return;
+    for (const h of this.enemies) {
+      const r = h.ab.reanimate;
+      if (!r || h.dead || h.reCd > 0 || h.silenced) continue;
+      if (Math.abs(h.x - corpse.x) > r.radius) continue;
+      let raised = 0;
+      for (const e of this.enemies) if (!e.dead && e.raisedBy === h) raised++;
+      if (raised >= r.max) continue;
+      if (!ENEMIES[r.id]) continue;
+      const m = this.spawnEnemy(r.id, corpse.x);
+      m.summoned = true;
+      m.raisedBy = h;
+      m.wave = h.wave;
       h.reCd = r.cd;
       this.fx.push({ type: 'spawn', x: corpse.x, row: m.row, t: 0.4, life: 0.4 });
       return;
@@ -544,10 +616,13 @@ class Battle {
         this.areaHit(b.dmg * f.abMul, f.x, b.radius, foes, foeCastle, null, false);
         this.fx.push({ type: 'boom', x: f.x, r: b.radius, t: 0.35, life: 0.35 });
       }
+      if (f.s.split && !f.summoned) this.splitApart(f, isEnemySide);
       if (isEnemySide) {
         this.coins += Math.round((f.gold || 0) * KILL_GOLD_RATE * this.goldMul);
         this.kills++;
         this.reanimate(f);
+      } else {
+        this.raiseForEnemy(f);
       }
       // 쓰러지는 연출 + 먼지
       this.fx.push({ type: 'corpse', st: f.s, x: f.x, row: f.row, dir: f.dir,
@@ -630,8 +705,18 @@ class Battle {
       if (f.rallyT > 0) { f.rallyT -= dt; if (f.rallyT <= 0) f.rallyMul = 1; }
       if (f.vulnT > 0) { f.vulnT -= dt; if (f.vulnT <= 0) f.vulnMul = 1; }
       if (f.reCd > 0) f.reCd -= dt;
+      if (f.blinkCd > 0) f.blinkCd -= dt;
+      if (f.muteT > 0) f.muteT -= dt;
       if (f.weakT > 0) { f.weakT -= dt; if (f.weakT <= 0) f.weakMul = 1; }
+      if (f.aegisT > 0) { f.aegisT -= dt; if (f.aegisT <= 0) f.cutMul = 1; }
+      if (f.guardT > 0) { f.guardT -= dt; if (f.guardT <= 0) f.guardArmor = 0; }
       f.bob += dt * (f.speedNow / 22);
+
+      // 결계 전장: 적의 결계가 일정 시간마다 되살아난다
+      if (!isAlly && this.mods.warded) {
+        f.wardCd = (f.wardCd || 0) - dt;
+        if (f.wardCd <= 0) { f.wardCd = WARD_INTERVAL; f.giveBarrier(f.maxHp * WARD_RATIO); }
+      }
 
       const burning = f.burnT > 0;
       // 중독 / 화상 피해
@@ -677,6 +762,7 @@ class Battle {
       }
 
       if (f.ab.leap && !f.leapt) this.tryLeap(f, foes);
+      if (f.ab.blink && f.blinkCd <= 0 && !f.silenced) this.tryBlink(f, foes);
 
       // 지원 능력 (표적과 무관하게 주기적으로 발동)
       this.supportTick(f, list, dt, isAlly);
@@ -715,7 +801,8 @@ class Battle {
   supportTick(f, mates, dt, isAlly) {
     const ab = f.ab;
     if (!ab.heal && !ab.gold && !ab.summon && !ab.barrier && !ab.haste && !ab.cleanse &&
-        !ab.rally) return;
+        !ab.rally && !ab.aegis && !ab.guard) return;
+    if (f.silenced) return;                        // 노래에 묶이면 아무것도 못 한다
     if (ab.gold && isAlly) {
       this.money = Math.min(this.walletMax, this.money + ab.gold * dt);
     }
@@ -736,6 +823,31 @@ class Battle {
                      t: 0.5, life: 0.5, color: f.s.accent });
     }
 
+    if (ab.aegis) {
+      // 비호: 주변 '병졸'이 받는 피해를 줄인다. 값비싼 영웅(비용 350 이상)과
+      // 전설·신화는 제 힘으로 서야 한다 — 비싼 병종만 몰아 넣은 편성에서는
+      // 용왕이 아무 값도 하지 못한다.
+      for (const m of mates) {
+        if (m.dead || isHeroUnit(m.s) || (m.s.cost || 0) >= HUNT_COST) continue;
+        if (Math.abs(m.x - f.x) > ab.aegis.radius) continue;
+        m.aegisT = Math.max(m.aegisT, (ab.interval || 3) + 0.6);
+        m.cutMul = Math.min(m.cutMul, 1 - ab.aegis.cut);
+      }
+      f.auraPulse = 0.5;
+      this.fx.push({ type: 'aura', x: f.x, row: f.row, r: ab.aegis.radius,
+                     t: 0.5, life: 0.5, color: f.s.accent });
+    }
+    if (ab.guard) {
+      // 방어 기치: 주변에게 갑주를 나눠 준다
+      for (const m of mates) {
+        if (m.dead || m === f || Math.abs(m.x - f.x) > ab.guard.radius) continue;
+        m.guardT = Math.max(m.guardT, (ab.interval || 3) + 0.6);
+        m.guardArmor = Math.max(m.guardArmor, ab.guard.armor);
+      }
+      f.auraPulse = 0.5;
+      this.fx.push({ type: 'aura', x: f.x, row: f.row, r: ab.guard.radius,
+                     t: 0.5, life: 0.5, color: '#b9c2cc' });
+    }
     if (ab.cleanse) {
       for (const m of mates) if (!m.dead && Math.abs(m.x - f.x) <= ab.radius) {
         m.poisonT = 0; m.poisonDps = 0; m.burnT = 0; m.burnDps = 0; m.slowT = 0;
@@ -866,7 +978,7 @@ class Battle {
       }
     }
     const sp = f.s.special;
-    if (sp && f.stunT <= 0) {
+    if (sp && f.stunT <= 0 && !f.silenced) {
       f.specialCd -= dt;
       if (f.specialCd <= 0) {
         f.specialCd = sp.cd || 10;
@@ -1027,6 +1139,24 @@ class Battle {
     }
   }
 
+  /* 독무 전장: 몇 초마다 독안개가 전장을 훑고 지나가며 아군을 중독시킨다.
+   * 계속 깔려 있지 않고 물결처럼 오므로, 정화사가 씻어 낼 틈이 있다. */
+  updateFog(dt) {
+    if (!this.mods.venomfog) return;
+    this.fogT = (this.fogT === undefined ? VENOMFOG_PULSE : this.fogT) - dt;
+    if (this.fogT > 0) return;
+    this.fogT = VENOMFOG_PULSE;
+    for (const a of this.allies) {
+      if (a.dead) continue;
+      if (a.poisonT <= 0) a.poisonDps = 0;
+      a.poisonT = Math.max(a.poisonT, VENOMFOG_DUR);
+      a.poisonDps = Math.max(a.poisonDps, a.maxHp * VENOMFOG_DPS);
+    }
+    if (this.allies.length) {
+      this.fx.push({ type: 'fog', x: this.frontline(), row: 1, t: 1.1, life: 1.1 });
+    }
+  }
+
   /* 진영 기준으로 지금 살아 있는 적 목록과 성채를 돌려준다.
    * 발사체가 배열 참조를 들고 있으면 그 사이에 갈린 목록을 놓치게 된다. */
   foesOf(side) { return side === 'ally' ? this.enemies : this.allies; }
@@ -1035,15 +1165,23 @@ class Battle {
   findTarget(f, foes, foeCastle) {
     if (f.ab.noAttack) return null;
     const reach = f.attackRange + f.radius;
-    let best = null, bestD = Infinity;
+    let best = null, bestD = Infinity, taunt = null, tauntD = Infinity;
     // 비행선 폭격: 사거리 안에서 가장 먼(뒷줄) 적을 노린다
     const back = !!f.ab.backline;
+    // 공성 돌격(폭파병)은 병사를 거들떠보지도 않고 성채만 노린다
+    if (f.ab.siegeRush) {
+      if (!foeCastle.dead && (foeCastle.x - f.x) * f.dir <= reach + foeCastle.radius) return foeCastle;
+      return null;
+    }
     for (const e of foes) {
       if (e.dead) continue;
       const d = (e.x - f.x) * f.dir;
       if (d < -f.radius || d > reach + e.radius) continue;
+      // 도발: 사거리 안에 도발하는 적이 있으면 그쪽부터 친다
+      if (e.ab.taunt && Math.abs(e.x - f.x) <= e.ab.taunt.radius && d < tauntD) { tauntD = d; taunt = e; }
       if (back ? (best === null || d > -bestD) : d < bestD) { bestD = back ? -d : d; best = e; }
     }
+    if (taunt && !back) return taunt;
     if (best) return best;
     if (!foeCastle.dead) {
       const d = (foeCastle.x - f.x) * f.dir;
@@ -1096,6 +1234,13 @@ class Battle {
   }
 
   attack(f, target, foes, foeCastle) {
+    // 공성 폭파병은 성벽에 닿는 순간 제 몸을 터뜨린다 (피해는 사망 폭발이 낸다)
+    if (f.ab.siegeRush && target.isCastle) {
+      f.hp = 0;
+      f.dead = true;
+      this.shake = Math.max(this.shake, 12);
+      return;
+    }
     const r = this.rollDamage(f);
     if (f.s.ranged) {
       sfx('arrow');
@@ -1108,6 +1253,7 @@ class Battle {
     } else {
       const cx = f.x + f.dir * f.attackRange * 0.6;
       if (f.s.area) this.areaHit(r.dmg, cx, f.s.areaRadius, foes, foeCastle, f, r.crit);
+      else if (f.ab.multi) this.multiHit(f, target, r, foes);
       else this.hitOne(r.dmg, target, f, r.crit);
       this.castFx(f, target.x !== undefined ? target.x : cx, target.row, r.crit);
       this.fx.push({ type: r.crit ? 'crit' : 'hit', x: target.x, row: target.row ?? 1,
@@ -1116,8 +1262,36 @@ class Battle {
     }
   }
 
+  /* 크라켄의 촉수: 사거리 안의 서로 다른 적을 한 번에 여럿 후려친다.
+   * 범위 공격과 달리 뭉쳐 있지 않아도 되지만, 정해진 수만큼만 닿는다. */
+  multiHit(f, target, r, foes) {
+    const n = f.ab.multi.n || 2;
+    const reach = f.attackRange + f.radius;
+    const list = [];
+    for (const e of foes) {
+      if (e.dead || e === target) continue;
+      const d = (e.x - f.x) * f.dir;
+      if (d < -f.radius || d > reach + e.radius) continue;
+      list.push(e);
+    }
+    list.sort((a, b) => Math.abs(a.x - f.x) - Math.abs(b.x - f.x));
+    const hit = [target].concat(list.slice(0, n - 1));
+    const fall = f.ab.multi.fall || 1;
+    hit.forEach((e, i) => {
+      this.hitOne(r.dmg * Math.pow(fall, i), e, f, r.crit);
+      if (i) this.fx.push({ type: 'tentacle', x: f.x, x2: e.x, row: e.row,
+                            color: f.s.accent, t: 0.22, life: 0.22 });
+    });
+  }
+
   /* 단일 대상 타격 + 부가 효과 */
   hitOne(dmg, target, src, crit) {
+    // 활공: 하피는 날아오는 화살을 흘려 낸다. 근접으로 붙잡는 수밖에 없다.
+    if (!target.isCastle && target.ab.deflect && src && src.s.ranged &&
+        Math.random() < target.ab.deflect) {
+      this.fx.push({ type: 'deflect', x: target.x, row: target.row, t: 0.3, life: 0.3 });
+      return 0;
+    }
     let pierce = false;
     if (src && src.ab.breaker && !target.isCastle) {
       // 파쇄: 갑주를 무시하고, 보스·중장갑·넉백 면역에게는 더 세게 들어간다
@@ -1163,6 +1337,22 @@ class Battle {
       if (target.burnT <= 0) target.burnDps = 0;
       target.burnT = Math.max(target.burnT, ab.burn.dur);
       target.burnDps = Math.max(target.burnDps, ab.burn.dps * src.abMul);
+    }
+    if (ab.sunder) {                              // 작살: 갑주를 찢는다 (되돌아오지 않는다)
+      const before = target.armorCut;
+      target.armorCut = Math.min(ab.sunder.max, target.armorCut + ab.sunder.amt);
+      if (target.armorCut > before) {
+        this.fx.push({ type: 'sunder', x: target.x, row: target.row, t: 0.4, life: 0.4 });
+      }
+    }
+    if (ab.freeze && target.slowT > 0 && !target.boss) {   // 얼어붙은 적을 깨뜨린다
+      target.stunT = Math.max(target.stunT, ab.freeze.dur);
+      target.slowT = 0;
+      this.fx.push({ type: 'freeze', x: target.x, row: target.row, t: 0.55, life: 0.55 });
+    }
+    if (ab.mute) {                                // 인어의 노래: 능력을 묶는다
+      target.muteT = Math.max(target.muteT, ab.mute);
+      this.fx.push({ type: 'mute', x: target.x, row: target.row, t: 0.5, life: 0.5 });
     }
     if (ab.stun && Math.random() < ab.stun.chance) {
       target.stunT = Math.max(target.stunT, ab.stun.dur);
@@ -1409,6 +1599,27 @@ class Battle {
     this.fx.push({ type: 'leap', x: from, x2: f.x, row: f.row, t: 0.35, life: 0.35 });
     this.fx.push({ type: 'poof', x: f.x, row: f.row, t: 0.35, life: 0.35, color: '#c0392b' });
   }
+  /* 그림자 암습자: 일정 시간마다 전열 너머로 스며든다. 암살자의 도약과 달리
+   * 몇 번이고 되풀이하므로, 뒷줄에도 지킬 것을 두어야 한다. */
+  tryBlink(f, foes) {
+    const bl = f.ab.blink;
+    let front = Infinity, deep = null, deepD = -1;
+    for (const e of foes) {
+      if (e.dead) continue;
+      const d = (e.x - f.x) * f.dir;
+      if (d > 0 && d < front) front = d;
+      if (d > 0 && d <= bl.range && d > deepD) { deepD = d; deep = e; }
+    }
+    if (front > bl.trigger || !deep || deepD <= front + 40) return;
+    f.blinkCd = bl.cd;
+    const from = f.x;
+    f.x = Math.max(60, Math.min(WORLD - 60, deep.x - f.dir * 34));
+    f.cd = Math.min(f.cd, 0.25);
+    this.fx.push({ type: 'blink', x: from, x2: f.x, row: f.row, t: 0.4, life: 0.4,
+                   color: f.s.accent });
+    this.fx.push({ type: 'poof', x: from, row: f.row, t: 0.35, life: 0.35, color: f.s.body });
+  }
+
   foesTotal() { return this.queue.length; }
 
   aliveBoss() {

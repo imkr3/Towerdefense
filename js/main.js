@@ -293,6 +293,7 @@ const CHAPTERS = [
   { name: '1장', sub: '국경 전선', from: 0, to: 10 },
   { name: '2장', sub: '왕도 수호', from: 10, to: 20 },
   { name: '2막', sub: '신화의 끝', from: 20, to: 30 },
+  { name: '3막', sub: '심연의 문', from: 30, to: 40 },
   { name: '무한', sub: '끝없는 웨이브', endless: true }
 ];
 let mapChapter = -1;       // -1: 진행 중인 장을 자동으로 고른다
@@ -662,6 +663,15 @@ function renderTraining() {
           (e.ab && e.ab.revive ? '<span class="stat hl">부활</span>' : '') +
           (e.ab && e.ab.rally ? '<span class="stat hl">지휘</span>' : '') +
           (e.ab && e.ab.weaken ? '<span class="stat hl">저주</span>' : '') +
+          (e.split ? '<span class="stat hl">분열</span>' : '') +
+          (e.ab && e.ab.deflect ? '<span class="stat hl">활공</span>' : '') +
+          (e.ab && e.ab.blink ? '<span class="stat hl">그림자 이동</span>' : '') +
+          (e.ab && e.ab.siegeRush ? '<span class="stat hl">성채 돌격</span>' : '') +
+          (e.ab && e.ab.reanimate ? '<span class="stat hl">사령</span>' : '') +
+          (e.ab && e.ab.guard ? '<span class="stat hl">기치</span>' : '') +
+          (e.ab && e.ab.barrier ? '<span class="stat hl">결계</span>' : '') +
+          (e.ab && e.ab.freeze ? '<span class="stat hl">빙결</span>' : '') +
+          (e.ab && e.ab.armor ? '<span class="stat hl">갑주</span>' : '') +
           (e.area ? '<span class="stat">범위</span>' : '') +
         '</div>' +
       '</div>';

@@ -139,10 +139,15 @@ test('Shared active cooldown and stun block skill spam',()=>{
   const b=heroBattle('odin');b.heroCooldowns.odin=0;b.heroGlobalCd=1;assert.equal(b.canHeroActive('odin'),false);
   b.heroGlobalCd=0;b.allies[0].stunT=1;assert.equal(b.canHeroActive('odin'),false);
 });
-test('Thirty stages retain the existing endless unlock threshold',()=>{
+test('Forty stages retain the existing endless unlock threshold',()=>{
   const {STAGES,ENDLESS_UNLOCK_STAGE}=vm.runInContext('({STAGES,ENDLESS_UNLOCK_STAGE})',ctx);
-  assert.equal(STAGES.length,30);assert.equal(ENDLESS_UNLOCK_STAGE,20);
+  assert.equal(STAGES.length,40);assert.equal(ENDLESS_UNLOCK_STAGE,20);
   assert.ok(STAGES.slice(20).every(s=>s.waves.length>=8&&s.reward>900));
+  // 3막은 2막보다 무겁다: 요새도 보상도 적 배율도 한 단계 위여야 한다
+  const act2=STAGES.slice(20,30), act3=STAGES.slice(30);
+  assert.ok(act3.every(s=>s.reward>=2400&&s.baseHp>=54000));
+  assert.ok(act3.every(s=>s.mods&&s.mods.length));
+  assert.ok(Math.min(...act3.map(s=>s.baseHp))>Math.max(...act2.map(s=>s.baseHp)));
 });
 test('First expansion victory advances from 20 to 21 and retains old stars',()=>{
   const s=save();s.stars[19]=3;const b=new Battle(20,s);b.finish('win');
@@ -339,9 +344,9 @@ test('A squad brings at most five legends and mythics', () => {
   assert.equal(ids.filter(id => U[id].rarity === 'UR' || U[id].rarity === 'SSR').length, 5);
   assert.ok(ids.includes('spear')); assert.ok(!ids.includes('zeus'));
 });
-test('Five seasons, every summon points at a real unit', () => {
+test('Six seasons, every summon points at a real unit', () => {
   const { SEASONS } = vm.runInContext('({SEASONS})', ctx);
-  assert.equal(SEASONS.length, 5);
+  assert.equal(SEASONS.length, 6);
   for (const sn of SEASONS) for (const id of sn.units) { assert.ok(U[id], id); assert.equal(U[id].season, sn.id); }
   for (const u of UNITS) if (u.ab && u.ab.summon) assert.ok(U[u.ab.summon.id], u.id);
 });
@@ -414,6 +419,170 @@ test('Every new mob appears in the campaign, in the endless pool and in the best
     assert.ok(ENDLESS_POOL.some(p => p.id === id), id + ' in endless');
     assert.ok(E[id].abText, id + ' has ability text');
   }
+});
+
+/* ---------------- 2.6 심연의 해역 · 3막 ---------------- */
+test('The dragon king shelters rank-and-file only, never costly heroes', () => {
+  const b = hero('ryujin'), r = b.makeAlly(U.ryujin, 500);
+  const grunt = b.makeAlly(U.spear, 520), heroUnit = b.makeAlly(U.thor, 540);
+  b.allies.push(r, grunt, heroUnit); r.abCd = 0;
+  b.supportTick(r, b.allies, 0.01, true);
+  assert.ok(grunt.aegisT > 0 && grunt.cutMul < 1);
+  assert.equal(heroUnit.aegisT, 0);
+  const before = grunt.hp; grunt.takeDamage(100);
+  assert.ok(Math.abs((before - grunt.hp) - 100 * grunt.cutMul) < 1e-9);
+  const hb = heroUnit.hp; heroUnit.takeDamage(100); assert.equal(hb - heroUnit.hp, 100);
+});
+test('Kraken tentacles hit several separate foes, with falloff and a cap', () => {
+  const b = hero('kraken'), k = b.makeAlly(U.kraken, 500); b.allies.push(k);
+  const es = [0, 1, 2, 3].map(i => { const e = new Fighter({ ...E.goblin, hp: 9999 }, 'enemy', 520 + i * 25); b.enemies.push(e); return e; });
+  b.attack(k, es[0], b.enemies, b.enemyCastle);
+  const lost = es.map(e => e.maxHp - e.hp);
+  assert.ok(lost[0] > 0 && lost[1] > 0 && lost[2] > 0, 'three tentacles land: ' + lost);
+  assert.ok(lost[1] < lost[0] && lost[2] < lost[1], 'later tentacles hit softer');
+  assert.equal(lost[3], 0, 'a fourth foe is out of reach');
+});
+test('The siren silences abilities: supports stop and bosses hold their skill', () => {
+  const b = hero('siren'), s = b.makeAlly(U.siren, 400);
+  const shaman = b.spawnEnemy('shaman', 500), hurt = b.spawnEnemy('goblin', 520);
+  hurt.hp = 10; b.hitOne(1, shaman, s, false);
+  assert.ok(shaman.muteT > 0);
+  shaman.abCd = 0; b.supportTick(shaman, b.enemies, 0.01, false);
+  assert.equal(hurt.hp, 10, 'a silenced shaman heals nobody');
+  const boss = b.spawnEnemy('troll', 600); boss.specialCd = 0.001; boss.muteT = 3;
+  b.bossTick(boss, 0.01); assert.equal(b.pending.length, 0, 'a silenced boss casts nothing');
+  boss.muteT = 0; boss.specialCd = 0.001; b.bossTick(boss, 0.01); assert.ok(b.pending.length > 0);
+});
+test('Taunting guards pull nearby attacks off the squishy units', () => {
+  const b = hero('turtleguard');
+  const turtle = b.makeAlly(U.turtleguard, 520), archer = b.makeAlly(U.archer, 505);
+  const orc = b.spawnEnemy('orcspear', 560);
+  assert.equal(b.findTarget(orc, [archer, turtle], b.allyCastle), turtle);
+  assert.equal(b.findTarget(orc, [archer], b.allyCastle), archer);
+});
+test('Harpoons shred armor for good, down to a floor', () => {
+  const b = hero('harpooner'), h = b.makeAlly(U.harpooner, 400);
+  const e = new Fighter({ ...E.goblin, hp: 99999, ab: { armor: 0.5 } }, 'enemy', 500);
+  for (let i = 0; i < 10; i++) b.hitOne(1, e, h, false);
+  assert.ok(Math.abs(e.armorCut - U.harpooner.ab.sunder.max) < 1e-9);
+  assert.ok(Math.abs(e.armorNow - (0.5 - 0.45)) < 1e-9);
+  const before = e.hp; e.takeDamage(100);
+  assert.ok(Math.abs((before - e.hp) - 100 * (1 - e.armorNow)) < 1e-9);
+});
+test('Freezing shatters a slowed foe but never a boss', () => {
+  const b = battle(), w = b.spawnEnemy('frostwitch', 700);
+  const a = b.makeAlly(U.spear, 500); a.slowT = 2;
+  b.hitOne(1, a, w, false);
+  assert.ok(a.stunT > 0 && a.slowT === 0);
+  const boss = b.makeAlly(U.spear, 520); boss.boss = true; boss.slowT = 2;
+  b.hitOne(1, boss, w, false); assert.equal(boss.stunT, 0);
+});
+test('Slime lords split when felled, and the pieces do not split again', () => {
+  const b = battle(), s = b.spawnEnemy('slimeking', 700);
+  s.dead = true; b.reap(b.enemies, b.allies, b.allyCastle, true);
+  const lets = b.enemies.filter(e => e.s.name === E.slimelet.name);
+  assert.equal(lets.length, E.slimeking.split.n);
+  assert.ok(lets.every(e => e.summoned));
+  const before = b.enemies.length;
+  lets[0].dead = true; b.reap(b.enemies, b.allies, b.allyCastle, true);
+  assert.equal(b.enemies.length, before, 'a split piece never splits');
+});
+test('Harpies shrug off arrows but never melee', () => {
+  const b = battle(), h = b.spawnEnemy('harpy', 700);
+  const archer = b.makeAlly(U.archer, 500), spear = b.makeAlly(U.spear, 500);
+  const r = ctx.Math.random; ctx.Math.random = () => 0;            // 언제나 흘려 낸다
+  let hp = h.hp; b.hitOne(100, h, archer, false); assert.equal(h.hp, hp);
+  b.hitOne(100, h, spear, false); assert.ok(h.hp < hp);
+  ctx.Math.random = () => 0.99;                                    // 언제나 맞는다
+  hp = h.hp; b.hitOne(100, h, archer, false); assert.ok(h.hp < hp);
+  ctx.Math.random = r;
+});
+test('Sappers ignore soldiers, blow up on the wall and stay killable', () => {
+  const b = battle(), s = b.spawnEnemy('sapper', 400);
+  const guard = b.makeAlly(U.shield, 380); b.allies.push(guard);
+  assert.equal(b.findTarget(s, b.allies, b.allyCastle), null, 'soldiers are not targets');
+  s.x = b.allyCastle.x + 100;
+  assert.equal(b.findTarget(s, b.allies, b.allyCastle), b.allyCastle);
+  b.attack(s, b.allyCastle, b.allies, b.allyCastle);
+  assert.equal(s.dead, true, 'it blows itself up on contact');
+  const hp = b.allyCastle.hp;
+  b.reap(b.enemies, b.allies, b.allyCastle, true);
+  assert.ok(b.allyCastle.hp < hp, 'the blast hits the wall');
+});
+test('Enemy necromancers raise your fallen soldiers, up to a cap', () => {
+  const b = battle(), n = b.spawnEnemy('necroorc', 520);
+  const cap = E.necroorc.ab.reanimate.max;
+  for (let i = 0; i < cap + 3; i++) {
+    n.reCd = 0;
+    const dead = b.makeAlly(U.spear, 500); dead.dead = true; b.allies.push(dead);
+    b.reap(b.allies, b.enemies, b.enemyCastle, false);
+  }
+  assert.equal(b.enemies.filter(e => e.raisedBy === n).length, cap);
+  n.reCd = 0; n.muteT = 3;
+  const before = b.enemies.length;
+  const d2 = b.makeAlly(U.spear, 500); d2.dead = true; b.allies.push(d2);
+  b.reap(b.allies, b.enemies, b.enemyCastle, false);
+  assert.equal(b.enemies.length, before, 'a silenced necromancer raises nothing');
+});
+test('Standard bearers hand out armor that expires with them', () => {
+  const b = battle(), st = b.spawnEnemy('bannerorc', 700), orc = b.spawnEnemy('orcspear', 740);
+  st.abCd = 0; b.supportTick(st, b.enemies, 0.01, false);
+  assert.ok(orc.guardT > 0 && Math.abs(orc.armorNow - E.bannerorc.ab.guard.armor) < 1e-9);
+  b.step([orc], [], b.allyCastle, 10, false);
+  assert.equal(orc.guardArmor, 0); assert.equal(orc.armorNow, 0);
+});
+test('Stalkers blink past the front line again and again, on a cooldown', () => {
+  const b = battle();
+  const front = b.makeAlly(U.shield, 500), back = b.makeAlly(U.archer, 340);
+  b.allies.push(front, back);
+  const s = b.spawnEnemy('stalker', 640);
+  b.tryBlink(s, b.allies);
+  assert.ok(Math.abs(s.x - (back.x + 34)) < 1e-9, 'lands next to the back rank');
+  assert.ok(s.blinkCd > 0);
+  const x = s.x; b.tryBlink(s, b.allies); assert.equal(s.x, x, 'not again until it cools');
+});
+test('Battlefield traits: wards, venom fog and headwind', () => {
+  const mk = mods => battle({ baseHp: 10000, money: 900, rate: 0, reward: 0, mods: mods, waves: [] });
+  const w = mk(['warded']), e = w.spawnEnemy('goblin', 900);
+  assert.ok(Math.abs(e.barrier - e.maxHp * 0.22) < 1e-6);
+  e.barrier = 0; w.step([e], [], w.allyCastle, 8, false);
+  assert.ok(e.barrier > 0, 'the ward comes back');
+  // 중독은 보호막을 지나쳐 몸에 닿는다
+  const e2 = w.spawnEnemy('goblin', 900); const hp = e2.hp;
+  e2.poisonT = 1; e2.poisonDps = 50; w.step([e2], [], w.allyCastle, 1, false);
+  assert.ok(Math.abs(hp - e2.hp - 50) < 1e-6);
+  const f = mk(['venomfog']), a = f.makeAlly(U.spear, 500); f.allies.push(a);
+  f.updateFog(99); assert.ok(a.poisonT > 0 && a.poisonDps > 0);
+  a.poisonT = 0; a.poisonDps = 0; f.updateFog(0.01);
+  assert.equal(a.poisonT, 0, 'the fog only rolls through now and then');
+  const g = mk(['gale']);
+  assert.ok(g.makeAlly(U.archer, 500).attackRange < U.archer.range);
+  assert.equal(g.makeAlly(U.spear, 500).attackRange, U.spear.range);
+});
+test('Act III mobs and bosses all reach the field, the pool and the bestiary', () => {
+  const ids = ['slimeking', 'slimelet', 'bannerorc', 'wardpriest', 'harpy', 'stalker',
+               'frostwitch', 'sapper', 'necroorc', 'obsidian'];
+  const { ENDLESS_POOL, ENDLESS_BOSSES } = vm.runInContext('({ENDLESS_POOL,ENDLESS_BOSSES})', ctx);
+  for (const id of ids) {
+    assert.ok(STAGES.some(st => st.waves.some(w => w.e === id)), id + ' in campaign');
+    assert.ok(E[id].abText, id + ' has ability text');
+  }
+  for (const id of ['deathknight', 'hydra', 'demonlord']) {
+    assert.ok(E[id].boss && E[id].phases.length >= 3, id + ' is a real boss');
+    assert.ok(STAGES.some(st => st.bossId === id), id + ' headlines a stage');
+    assert.ok(ENDLESS_BOSSES.includes(id), id + ' in the endless rotation');
+  }
+  assert.ok(ids.filter(id => ENDLESS_POOL.some(p => p.id === id)).length >= 8);
+});
+test('New kingdom units join in later acts and stay reachable', () => {
+  for (const id of ['banneret', 'trapper', 'warlock', 'dragoon', 'arbalest', 'warmonk']) {
+    const u = U[id];
+    assert.ok(u.unlockStage > 20 && u.unlockStage <= STAGES.length, id + ' unlock ' + u.unlockStage);
+    assert.ok(u.desc && u.shape, id);
+  }
+  const s = save(); s.cleared = 40;
+  const b = new Battle(39, s);
+  assert.ok(b.unlockedUnits().some(u => u.id === 'warmonk'));
 });
 
 console.log(count + ' regression checks passed');

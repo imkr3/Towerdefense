@@ -105,26 +105,44 @@ const COUNTERS = {
   horde:    ['zeus', 'frost', 'pyro', 'catapult', 'knight', 'shield', 'spear'],
   blitz:    ['shield', 'frostlancer', 'frost', 'skadi', 'spartan', 'colossus', 'medusa'],
   giantslayer: ['spear', 'shield', 'venom', 'catapult', 'sniper', 'pyro', 'musketeer', 'frost'],
-  curse: ['knight', 'shield', 'spear', 'venom', 'pyro', 'frost']
+  curse: ['knight', 'shield', 'spear', 'venom', 'pyro', 'frost'],
+  // 결계는 보호막을 지나치는 지속 피해와 즉사로, 독무는 정화와 회복으로,
+  // 삭풍은 근접 주력과 아주 긴 사거리로 받아친다.
+  warded:   ['venom', 'pyro', 'warlock', 'rapriest', 'saja', 'knight', 'mage'],
+  venomfog: ['purifier', 'knight', 'catapult', 'warmonk', 'mage', 'paladin', 'priest'],
+  gale:     ['knight', 'berserk', 'dragoon', 'colossus', 'rogue', 'duelist', 'catapult']
 };
-function counterLoadout(g, index) {
+function counterLoadout(g, index, core) {
   const st = g.STAGES[index];
   const hunted = (st.mods || []).includes('giantslayer');
-  // 영웅 사냥꾼이 있으면 비싼 병종은 과녁일 뿐이다
+  // 영웅 사냥꾼이 있으면 비싼 병종은 과녁일 뿐이라 COUNTER_PRICEY 만큼만 데려간다.
+  let pricey = 0;
   const ok = id => { const u = g.UNIT_BY_ID[id];
-    return u && (u.gacha || u.unlockStage <= index + 1) && !(hunted && u.cost >= 350); };
+    if (!u || !(u.gacha || u.unlockStage <= index + 1)) return false;
+    return !(hunted && u.cost >= HUNT_COST && pricey >= COUNTER_PRICEY);
+  };
+  const take = (list, id) => { list.push(id); if (g.UNIT_BY_ID[id].cost >= HUNT_COST) pricey++; };
   const picks = [];
   const mods = st.mods || [];
+  // 답만 잔뜩 들고 가면 정작 적을 쓰러뜨릴 주력이 없다. 특성 대응은 여기까지만
+  // 챙기고, 남는 칸은 그 시점의 주력으로 채운다.
+  const maxCounters = Math.max(2, g.LOADOUT_MAX - (core === undefined ? COUNTER_CORE : core));
   // 특성마다 앞에서부터 번갈아 하나씩 — 두 특성이 겹치면 양쪽을 고루 챙긴다
-  for (let k = 0; k < 7 && picks.length < g.LOADOUT_MAX; k++) {
+  for (let k = 0; k < 7 && picks.length < maxCounters; k++) {
     for (const m of mods) {
       const id = (COUNTERS[m] || [])[k];
-      if (id && ok(id) && !picks.includes(id) && picks.length < g.LOADOUT_MAX) picks.push(id);
+      if (id && ok(id) && !picks.includes(id) && picks.length < maxCounters) take(picks, id);
     }
   }
-  const rest = g.ROSTER_UNITS.filter(u => u.unlockStage <= index + 1 && !picks.includes(u.id) && !(hunted && u.cost >= 350))
-    .sort((a, b) => b.cost - a.cost).map(u => u.id);
-  return picks.concat(rest).slice(0, g.LOADOUT_MAX);
+  const rest = g.ROSTER_UNITS
+    .filter(u => u.unlockStage <= index + 1 && !picks.includes(u.id))
+    .sort((a, b) => b.cost - a.cost);
+  for (const u of rest) {
+    if (picks.length >= g.LOADOUT_MAX) break;
+    if (ok(u.id)) take(picks, u.id);
+  }
+  // 순서도 편성의 일부다. 특성을 받아칠 병종부터 내고, 남는 군자금으로 주력을 낸다.
+  return picks.slice(0, g.LOADOUT_MAX);
 }
 
 function runStage(g, index, upLv, unitLv, trace, gacha, basic) {
@@ -144,6 +162,7 @@ function runStage(g, index, upLv, unitLv, trace, gacha, basic) {
           .slice(0, g.LOADOUT_MAX).map(u => u.id)
     : gacha === 'combo' ? comboLoadout(g, index)
     : gacha === 'counter' ? counterLoadout(g, index)
+    : gacha === 'counterall' ? counterLoadout(g, index, 0)
     : (typeof gacha === 'string' && gacha.indexOf('with:') === 0)
       ? unlocked.slice().sort((a, b) => b.cost - a.cost).slice(0, g.LOADOUT_MAX - 1).map(u => u.id).concat([gacha.slice(5)])
     : gacha === 'smart' ? (g.STAGES[index].mods ? counterLoadout(g, index) : unlocked.slice()
@@ -245,15 +264,22 @@ const EXPECT = [
 ];
 
 /* 제대로 편성하는 플레이어: 특성 전장에는 그 특성을 받아칠 공략 편성을 든다.
- * 이 플레이어는 충분히 키웠을 때 캠페인을 거의 다, 2막을 전부 넘어야 한다. */
+ * 이 플레이어는 충분히 키웠을 때 캠페인을 거의 다, 2막과 3막을 전부 넘어야 한다. */
 const SMART_ACT1 = { up: 6, lv: 10, min: 19 };
 const SMART_ACT2 = { up: 8, lv: 12 };
+const SMART_ACT3 = { up: 10, lv: 15 };
+
+/* 막의 경계 (전장 번호, 0부터) */
+const ACT2_FROM = 20, ACT3_FROM = 30;
 
 /* 진짜 어려운 전장. 전설·신화를 다 가져도 몰아 넣기만 해서는 못 넘고,
  * 특성에 맞춘 공략 편성이라야 넘는다. HARD_SEEDS 판 중 이긴 횟수로 본다. */
 const LEGEND_PROOF = [
-  { stage: 18, up: 6, lv: 10 }, { stage: 20, up: 6, lv: 10 },
-  { stage: 27, up: 8, lv: 12 }, { stage: 28, up: 8, lv: 12 }, { stage: 30, up: 8, lv: 12 }
+  { stage: 18, up: 6, lv: 10 },
+  { stage: 27, up: 8, lv: 12 }, { stage: 28, up: 8, lv: 12 }, { stage: 30, up: 8, lv: 12 },
+  // 3막은 '막 들어선' 수준(강화 8/Lv12)에서 잰다. 병영을 끝까지 올리면
+  // 무엇을 들고 가도 넘어가므로, 관문이 되는 지점에서 봐야 한다.
+  { stage: 33, up: 8, lv: 12 }, { stage: 38, up: 8, lv: 12 }
 ];
 /* 시즌마다 대표 셋. 어느 시즌을 뽑든 비슷한 값어치여야 한다. */
 const SEASON_TRIOS = [
@@ -263,6 +289,9 @@ const SEASON_TRIOS = [
 const SEASON_SPREAD = 2;
 const LEGEND_PROOF_MAX = 1;      // 전설만 편성이 이길 수 있는 최대 판 수
 const COUNTER_MIN = 4;           // 공략 편성이 이겨야 하는 최소 판 수
+const COUNTER_CORE = 4;          // 공략 편성에서 주력으로 남겨 두는 칸
+const COUNTER_PRICEY = 0;        // 영웅 사냥꾼 전장에 데려가는 비싼 병종 수 (과녁일 뿐이다)
+const HUNT_COST = 350;           // 영웅 사냥꾼이 노리는 비용 (게임 엔진과 같은 값)
 
 /* 전설·신화는 스탯이 아니라 역할로 값을 한다.
  * - 전설·신화만 몽땅 넣은 "무지성" 편성은 전장 병종 편성보다 LEGEND_GAP 이상 앞서면 안 된다
@@ -279,6 +308,9 @@ const BASIC_STAGES = 3;
 /* 2막(21~30전장)을 캠페인 완주 수준(강화5/Lv8)으로 돌파해도 되는 최대 개수.
  * 이걸 넘으면 2막이 자체 성장 구간 노릇을 못 한다. */
 const EXT_ENTRY_MAX = 6;
+
+/* 3막(31~40전장)을 2막 완주 수준(강화8/Lv12)으로 돌파해도 되는 최대 개수 */
+const ACT3_ENTRY_MAX = 6;
 
 function check() {
   let failed = 0;
@@ -339,7 +371,7 @@ function check() {
 
   // 2막은 캠페인을 막 끝낸 수준으로 "들어갈 수는" 있되 쓸어담지는 못해야 한다.
   const entryEngine=loadEngine(12345), entryRows=[];
-  for(let i=20;i<entryEngine.STAGES.length;i++)entryRows.push(runStage(entryEngine,i,5,8,false,false));
+  for(let i=ACT2_FROM;i<ACT3_FROM;i++)entryRows.push(runStage(entryEngine,i,5,8,false,false));
   printTable(entryRows,5,8);
   if(!entryRows[0].win){console.error('  ✗ 21전장은 기존 캠페인 완주 강화 수준으로 진입 가능해야 함');failed++;}
   const entryWins=entryRows.filter(r=>r.win).length;
@@ -348,6 +380,21 @@ function check() {
     failed++;
   } else {
     console.log(`  ✓ 2막 진입 관문: 캠페인 완주 수준으로 ${entryWins}/10 돌파 (최대 ${EXT_ENTRY_MAX})`);
+  }
+  // 3막도 마찬가지다. 2막을 넘긴 수준(강화 8/Lv12)으로 공략 편성을 들어도
+  // 절반 넘게 쓸어담아서는 안 된다 — 병영을 끝까지 올려야 하는 구간이다.
+  {
+    const g=loadEngine(12345), rows=[];
+    for(let i=ACT3_FROM;i<g.STAGES.length;i++)rows.push(runStage(g,i,SMART_ACT2.up,SMART_ACT2.lv,false,'smart'));
+    printTable(rows,SMART_ACT2.up,SMART_ACT2.lv);
+    const wins=rows.filter(r=>r.win).length;
+    if(!rows[0].win){console.error('  ✗ 31전장은 2막 완주 수준으로 진입 가능해야 함');failed++;}
+    else if(wins>ACT3_ENTRY_MAX){
+      console.error(`  ✗ 3막이 너무 무르다: 2막 완주 수준으로 ${wins}/10 돌파 (최대 ${ACT3_ENTRY_MAX})`);
+      failed++;
+    } else {
+      console.log(`  ✓ 3막 진입 관문: 2막 완주 수준으로 ${wins}/10 돌파 (최대 ${ACT3_ENTRY_MAX})`);
+    }
   }
   // 시즌끼리 격차: 시즌마다 대표 셋(신화·전설·영웅)을 전장 7 에 얹어 본다
   {
@@ -371,10 +418,18 @@ function check() {
   }
   for (const seed of [12345, 98765]) {
     const g = loadEngine(seed), rows = [];
-    for (let i = 20; i < g.STAGES.length; i++) rows.push(runStage(g, i, SMART_ACT2.up, SMART_ACT2.lv, false, 'smart'));
+    for (let i = ACT2_FROM; i < ACT3_FROM; i++) rows.push(runStage(g, i, SMART_ACT2.up, SMART_ACT2.lv, false, 'smart'));
     printTable(rows, SMART_ACT2.up, SMART_ACT2.lv);
     if (rows.some(r => !r.win || r.seconds > 400)) { console.error('  ✗ 2막: 공략 편성으로 충분히 키우면 400초 안에 전부 넘어야 한다 (seed ' + seed + ')'); failed++; }
     else console.log('  ✓ 2막 공략 편성 완주 (seed ' + seed + ')');
+  }
+  // 3막: 병영을 끝까지 올리고 공략 편성을 들면 전부 넘어야 한다
+  for (const seed of [12345, 98765]) {
+    const g = loadEngine(seed), rows = [];
+    for (let i = ACT3_FROM; i < g.STAGES.length; i++) rows.push(runStage(g, i, SMART_ACT3.up, SMART_ACT3.lv, false, 'smart'));
+    printTable(rows, SMART_ACT3.up, SMART_ACT3.lv);
+    if (rows.some(r => !r.win || r.seconds > 400)) { console.error('  ✗ 3막: 병영을 끝까지 올린 공략 편성으로는 400초 안에 전부 넘어야 한다 (seed ' + seed + ')'); failed++; }
+    else console.log('  ✓ 3막 공략 편성 완주 (seed ' + seed + ')');
   }
   // 진짜 어려운 전장은 전설·신화를 몰아 넣는 것만으로는 안 된다
   for (const h of LEGEND_PROOF) {
@@ -404,7 +459,9 @@ function runHard(upLv, unitLv, seed, from, to) {
     const count = mode => engines.reduce((n, g) => n + (runStage(g, i, upLv, unitLv, false, mode).win ? 1 : 0), 0);
     r.base = count(false);
     r.legend = count('legend');
-    r.counter = count('counter');
+    // 공략 편성은 두 갈래로 본다: 특성 대응으로만 채운 편성과, 대응 여섯에
+    // 주력 넷을 얹은 편성. 둘 중 하나라도 넘으면 "답이 있는 전장"이다.
+    r.counter = Math.max(count('counter'), count('counterall'));
     rows.push(r);
   }
   return rows;

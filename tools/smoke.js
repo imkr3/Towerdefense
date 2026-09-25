@@ -79,14 +79,17 @@ async function runSize(browser, size) {
   await page.waitForTimeout(250);
   await shot(page, 'map-' + size.w);
   const originalProgress=await page.evaluate(()=>save.cleared);
-  // 진군도는 장(章)마다 10개씩 보여 준다. 2막 첫 전장이 열리고 다음은 잠겨야 한다.
+  // 진군도는 장(章)마다 10개씩 보여 준다. 2막·3막 첫 전장이 열리고 다음은 잠겨야 한다.
   const expansionMap=await page.evaluate(()=>{
     save.cleared=20;mapChapter=2;mapSel=-1;renderMap();const cards=[...document.querySelectorAll('#stage-list .stage')];
     const res={count:cards.length,open:!cards[0].disabled&&cards[0].dataset.stage==='20',locked:cards[1].disabled};
-    mapChapter=3;renderMap();res.endless=!!document.querySelector('#endless-slot .e-btn');
+    save.cleared=30;mapChapter=3;mapSel=-1;renderMap();
+    const act3=[...document.querySelectorAll('#stage-list .stage')];
+    res.act3=act3.length===10&&!act3[0].disabled&&act3[0].dataset.stage==='30'&&act3[1].disabled;
+    mapChapter=4;renderMap();res.endless=!!document.querySelector('#endless-slot .e-btn');
     return res;
   });
-  if(expansionMap.count!==10||!expansionMap.open||!expansionMap.locked||!expansionMap.endless)throw Error('Expansion progression or endless unlock broken: '+JSON.stringify(expansionMap));
+  if(expansionMap.count!==10||!expansionMap.open||!expansionMap.locked||!expansionMap.act3||!expansionMap.endless)throw Error('Expansion progression or endless unlock broken: '+JSON.stringify(expansionMap));
   await page.evaluate(n=>{save.cleared=n;mapChapter=-1;mapSel=-1;renderMap();},originalProgress);
   const mapFit=await page.evaluate(()=>{
     const r=document.querySelector('#btn-sortie').getBoundingClientRect(), d=document.querySelector('#stage-detail').getBoundingClientRect();
