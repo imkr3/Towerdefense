@@ -80,13 +80,21 @@ async function runSize(browser, size) {
   await shot(page, 'map-' + size.w);
   const originalProgress=await page.evaluate(()=>save.cleared);
   // 진군도는 장(章)마다 10개씩 보여 준다. 2막 첫 전장이 열리고 다음은 잠겨야 한다.
+  // 무한 전장 탭은 CHAPTERS 에서 찾는다 — 장이 늘어도 번호를 손대지 않게.
   const expansionMap=await page.evaluate(()=>{
     save.cleared=20;mapChapter=2;mapSel=-1;renderMap();const cards=[...document.querySelectorAll('#stage-list .stage')];
     const res={count:cards.length,open:!cards[0].disabled&&cards[0].dataset.stage==='20',locked:cards[1].disabled};
-    mapChapter=3;renderMap();res.endless=!!document.querySelector('#endless-slot .e-btn');
+    // 3막: 30전장을 넘긴 뒤에 첫 전장이 열린다
+    const act3=CHAPTERS.findIndex(c=>c.from===30);
+    save.cleared=30;mapChapter=act3;mapSel=-1;renderMap();
+    const a3=[...document.querySelectorAll('#stage-list .stage')];
+    res.act3=a3.length===10&&!a3[0].disabled&&a3[0].dataset.stage==='30'&&a3[1].disabled;
+    save.cleared=20;
+    mapChapter=CHAPTERS.findIndex(c=>c.endless);renderMap();
+    res.endless=!!document.querySelector('#endless-slot .e-btn');
     return res;
   });
-  if(expansionMap.count!==10||!expansionMap.open||!expansionMap.locked||!expansionMap.endless)throw Error('Expansion progression or endless unlock broken: '+JSON.stringify(expansionMap));
+  if(expansionMap.count!==10||!expansionMap.open||!expansionMap.locked||!expansionMap.endless||!expansionMap.act3)throw Error('Expansion progression or endless unlock broken: '+JSON.stringify(expansionMap));
   await page.evaluate(n=>{save.cleared=n;mapChapter=-1;mapSel=-1;renderMap();},originalProgress);
   const mapFit=await page.evaluate(()=>{
     const r=document.querySelector('#btn-sortie').getBoundingClientRect(), d=document.querySelector('#stage-detail').getBoundingClientRect();

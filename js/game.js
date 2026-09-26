@@ -51,6 +51,10 @@ const CURSE_HEAL = 0.5;       // 저주: 아군 회복·흡혈 배율
 const CURSE_WITHER = 0.1;     // 저주: 소환물이 초당 잃는 최대 체력 비율
 const SLOW_SPEED_MUL = 0.45; // 둔화 시 이동
 const SLOW_RATE_MUL = 1.7;   // 둔화 시 공격 간격
+const VAMPIRIC_HEAL = 0.22;  // 흡혈 전장: 적이 준 피해의 이만큼을 회복한다
+const WARDED_RANGED = 0.55;  // 결계 전장: 원거리 아군의 피해 배율
+const FRENZY_RATE = 0.55;    // 광란 전장: 체력이 다 빠진 적의 공격 간격 배율
+const BLIGHT_HEAL = 0.5;     // 심연의 마름: 받는 회복 배율
 
 /* ------------------------------- 병사 ------------------------------- */
 class Fighter {
@@ -108,6 +112,11 @@ class Fighter {
     this.vulnT = 0;         // 라의 낙인: 받는 피해가 늘어난 상태
     this.vulnMul = 1;
     this.reCd = 0;          // 하데스의 부활 대기
+    this.wardT = 0;         // 미카엘의 수호: 받는 피해가 줄어든 상태
+    this.wardMul = 1;
+    this.graceHp = 0;       // 라파엘의 은총: 한 번 다시 일어설 몫 (최대 체력 비율)
+    this.blightT = 0;       // 심연의 마름: 받는 회복이 절반으로 준다
+    this.smiteCd = 0;       // 심판의 빛 재타격 대기
 
     // 보스 패턴용
     this.speedMul = 1;      // 광폭화로 빨라진다
@@ -121,6 +130,10 @@ class Fighter {
 
   get intervalNow() {
     let v = this.s.interval * this.rateMul;
+    if (this.frenzy) {                          // 광란 전장: 피가 깎일수록 매섭게 몰아친다
+      const missing = 1 - this.hp / this.maxHp;
+      v *= 1 - (1 - FRENZY_RATE) * missing;
+    }
     if (this.slowT > 0) v *= SLOW_RATE_MUL;
     if (this.hasteT > 0) v *= this.hasteMul;
     if (this.spin > 0) v /= (1 + this.spin);
@@ -134,7 +147,9 @@ class Fighter {
 
   heal(amount) {
     if (this.dead) return;
-    this.hp = Math.min(this.maxHp, this.hp + amount * this.healMul);
+    // 심연의 마름에 걸려 있으면 어떤 회복도 절반만 듣는다
+    const blight = this.blightT > 0 ? BLIGHT_HEAL : 1;
+    this.hp = Math.min(this.maxHp, this.hp + amount * this.healMul * blight);
   }
 
   giveBarrier(amount) {
@@ -145,10 +160,31 @@ class Fighter {
     }
   }
 
+  /* 쓰러지는 순간 다시 일어설 수단이 있는가 (고유 부활 → 은총 순서).
+   * 직접 맞아 죽을 때와 중독·화상으로 죽을 때 모두 같은 규칙을 쓴다. */
+  tryRise() {
+    if (this.ab.revive && !this.usedRevive) {
+      this.usedRevive = true;
+      this.hp = Math.round(this.maxHp * this.ab.revive);
+      this.kbTimer = 0.5;
+      this.reviveFx = true;
+      return true;
+    }
+    if (this.graceHp > 0) {                        // 은총: 빌려 온 한 번의 삶
+      this.hp = Math.round(this.maxHp * this.graceHp);
+      this.graceHp = 0;
+      this.kbTimer = 0.4;
+      this.graceFx = true;
+      return true;
+    }
+    return false;
+  }
+
   takeDamage(dmg, pierceArmor) {
     if (this.dead) return 0;
     dmg = Math.max(0, dmg);
     if (this.vulnT > 0) dmg *= this.vulnMul;                          // 낙인
+    if (this.wardT > 0) dmg *= this.wardMul;                           // 수호의 결계
     if (this.ab.armor && !pierceArmor) dmg *= (1 - Math.min(0.75, this.ab.armor));   // 두꺼운 갑주
     if (this.barrier > 0) {
       const absorbed = Math.min(this.barrier, dmg);
@@ -161,13 +197,7 @@ class Fighter {
     this.hp -= Math.max(0, dmg);
     this.hitFlash = 0.15;
     if (this.hp <= 0) {
-      if (this.ab.revive && !this.usedRevive) {     // 1회 부활
-        this.usedRevive = true;
-        this.hp = Math.round(this.maxHp * this.ab.revive);
-        this.kbTimer = 0.5;
-        this.reviveFx = true;
-        return dealt;
-      }
+      if (this.tryRise()) return dealt;
       this.hp = 0;
       this.dead = true;
       return dealt;
@@ -197,7 +227,8 @@ class Castle {
     this.ab = {};
   }
   takeDamage(d) {
-    const dealt = Math.min(this.hp, Math.max(0, d));
+    d = Math.max(0, d);
+    const dealt = Math.min(this.hp, d);
     this.hp -= d;
     this.hitFlash = 0.15;
     if (this.hp <= 0) { this.hp = 0; this.dead = true; }
@@ -235,6 +266,7 @@ class Battle {
     this.cmdCd = this.cmdMax;   // 시작하자마자는 쓸 수 없다
     this.cmdHeal = COMMAND.healRatio + COMMAND.healPerLv * cmdLv;
     this.cmdUses = 0;
+    this.heroUses = 0;          // 전설·신화 필살기를 몇 번 썼는가 (일일 임무용)
     this.heroCooldowns = {};
     this.heroGlobalCd = 0;
 
@@ -373,7 +405,7 @@ class Battle {
   useHeroActive(id) {
     if(!this.canHeroActive(id)) return false;
     const f=this.heroCaster(id), a=f.s.active, buff=a.barrier||a.haste, target=buff?f:this.heroTarget(f);
-    this.heroCooldowns[id]=a.cd; this.heroGlobalCd=6;
+    this.heroCooldowns[id]=a.cd; this.heroGlobalCd=6; this.heroUses++;
     if(buff) {
       for(const m of this.allies) if(!m.dead && Math.abs(m.x-f.x)<=a.radius) {
         if(a.barrier){m.giveBarrier(a.barrier*f.abMul);m.poisonT=0;m.poisonDps=0;m.burnT=0;m.burnDps=0;}
@@ -493,6 +525,7 @@ class Battle {
     f.gold = spec.gold || 0;
     f.boss = !!spec.boss;
     if (mods.horde && !f.boss) { f.maxHp = Math.round(f.maxHp * 0.6); f.hp = f.maxHp; }
+    if (mods.frenzy) f.frenzy = true;      // 광란: 피가 빠질수록 매섭게 몰아친다
     // 캠페인의 보스는 전장에 하나뿐이라 훨씬 강하다 (무한 전장은 그대로)
     if (f.boss && this.stage.bossId && !this.endless) {
       f.maxHp = Math.round(f.maxHp * BOSS_HP_MUL); f.hp = f.maxHp;
@@ -539,6 +572,15 @@ class Battle {
     for (const f of list) {
       if (!f.dead || f.reaped) continue;
       f.reaped = true;
+      // 갈라지는 적: 쓰러진 자리에서 더 작은 놈들이 기어 나온다
+      if (f.ab.deathSplit && !f.summoned && isEnemySide) {
+        const sp = f.ab.deathSplit;
+        for (let i = 0; i < (sp.n || 2); i++) {
+          const m = this.spawnEnemy(sp.id, f.x + (i - (sp.n || 2) / 2) * 22);
+          m.summoned = true; m.wave = f.wave;
+        }
+        this.fx.push({ type: 'split', x: f.x, row: f.row, t: 0.5, life: 0.5, color: f.s.accent });
+      }
       if (f.ab.deathBomb) {
         const b = f.ab.deathBomb;
         this.areaHit(b.dmg * f.abMul, f.x, b.radius, foes, foeCastle, null, false);
@@ -629,6 +671,9 @@ class Battle {
       if (f.auraPulse > 0) f.auraPulse -= dt;
       if (f.rallyT > 0) { f.rallyT -= dt; if (f.rallyT <= 0) f.rallyMul = 1; }
       if (f.vulnT > 0) { f.vulnT -= dt; if (f.vulnT <= 0) f.vulnMul = 1; }
+      if (f.wardT > 0) { f.wardT -= dt; if (f.wardT <= 0) f.wardMul = 1; }
+      if (f.blightT > 0) f.blightT -= dt;
+      if (f.smiteCd > 0) f.smiteCd -= dt;
       if (f.reCd > 0) f.reCd -= dt;
       if (f.weakT > 0) { f.weakT -= dt; if (f.weakT <= 0) f.weakMul = 1; }
       f.bob += dt * (f.speedNow / 22);
@@ -641,18 +686,14 @@ class Battle {
       if (isAlly) dot *= 1 - 0.05 * Math.min(5, this.save.upgrades.resistance || 0);
       if (dot > 0) {
         f.hp -= dot;
-        if (f.hp <= 0) {
-          if (f.ab.revive && !f.usedRevive) {
-            f.usedRevive = true; f.hp = Math.round(f.maxHp * f.ab.revive); f.reviveFx = true;
-          } else { f.hp = 0; f.dead = true; continue; }
-        }
+        if (f.hp <= 0 && !f.tryRise()) { f.hp = 0; f.dead = true; continue; }
       }
 
       if (f.ab.regen && !burning) f.heal(f.ab.regen * dt);
       // 저주: 불려 나온 아군(해골·미라·방벽)은 서서히 시든다
       if (isAlly && f.summoned && this.mods.curse) {
         f.hp -= f.maxHp * CURSE_WITHER * dt;
-        if (f.hp <= 0) { f.hp = 0; f.dead = true; continue; }
+        if (f.hp <= 0 && !f.tryRise()) { f.hp = 0; f.dead = true; continue; }
       }
 
       // 보스 패턴
@@ -715,7 +756,7 @@ class Battle {
   supportTick(f, mates, dt, isAlly) {
     const ab = f.ab;
     if (!ab.heal && !ab.gold && !ab.summon && !ab.barrier && !ab.haste && !ab.cleanse &&
-        !ab.rally) return;
+        !ab.rally && !ab.ward && !ab.grace && !ab.blight) return;
     if (ab.gold && isAlly) {
       this.money = Math.min(this.walletMax, this.money + ab.gold * dt);
     }
@@ -771,12 +812,49 @@ class Battle {
       for (const m of mates) {
         if (m.dead || m === f) continue;
         if (Math.abs(m.x - f.x) > ab.radius) continue;
+        // 더 센 가속(배율이 작은 쪽)이 약한 가속에 덮이지 않게 한다
+        m.hasteMul = m.hasteT > 0 ? Math.min(m.hasteMul, ab.haste.mul) : ab.haste.mul;
         m.hasteT = Math.max(m.hasteT, ab.haste.dur);
-        m.hasteMul = ab.haste.mul;
       }
       f.auraPulse = 0.5;
       this.fx.push({ type: 'aura', x: f.x, row: f.row, r: ab.radius,
                      t: 0.5, life: 0.5, color: '#ffd166' });
+    }
+    if (ab.ward) {
+      // 수호의 결계: 주변 아군이 받는 피해가 준다. 보호막과 달리 닳지 않는다.
+      for (const m of mates) {
+        if (m.dead) continue;
+        if (Math.abs(m.x - f.x) > ab.radius) continue;
+        m.wardMul = m.wardT > 0 ? Math.min(m.wardMul, ab.ward.mul) : ab.ward.mul;
+        m.wardT = Math.max(m.wardT, ab.ward.dur || (ab.interval || 3) + 0.6);
+      }
+      f.auraPulse = 0.5;
+      this.fx.push({ type: 'ward', x: f.x, row: f.row, r: ab.radius, t: 0.6, life: 0.6,
+                     color: f.s.accent });
+    }
+    if (ab.grace) {
+      // 은총: 아직 몫을 받지 못한 주변 아군에게 한 번 다시 일어설 힘을 맡긴다
+      let given = 0;
+      for (const m of mates) {
+        if (m.dead || m === f) continue;
+        if (Math.abs(m.x - f.x) > ab.radius) continue;
+        if (m.graceHp > 0) continue;
+        m.graceHp = ab.grace.hp;
+        this.fx.push({ type: 'grace', x: m.x, row: m.row, t: 0.7, life: 0.7 });
+        if (++given >= (ab.grace.n || 2)) break;
+      }
+      if (given) f.auraPulse = 0.5;
+    }
+    if (ab.blight) {
+      // 심연의 마름: 저쪽 진영의 회복을 반으로 꺾는다
+      const foes = this.foesOf(f.side);
+      for (const e of foes) {
+        if (e.dead) continue;
+        if (Math.abs(e.x - f.x) > ab.radius) continue;
+        e.blightT = Math.max(e.blightT, ab.blight.dur);
+      }
+      this.fx.push({ type: 'blight', x: f.x, row: f.row, r: ab.radius, t: 0.6, life: 0.6,
+                     color: f.s.accent });
     }
     if (ab.summon) {
       for (let i = 0; i < (ab.summon.n || 1); i++) {
@@ -1068,7 +1146,8 @@ class Battle {
   castFx(f, x, row, crit) {
     const kind = f.s.castFx;
     if (!kind) return;
-    const big = f.s.rarity === 'SSR';
+    // 전설과 신화는 둘 다 화면이 흔들릴 만큼 크게 터진다
+    const big = f.s.rarity === 'SSR' || f.s.rarity === 'UR';
     // 같은 순간에 연출이 몰리면 프레임이 무너진다. 살아 있는 수를 세어 막는다.
     let live = 0, liveBig = 0;
     for (const e of this.fx) {
@@ -1119,6 +1198,10 @@ class Battle {
   /* 단일 대상 타격 + 부가 효과 */
   hitOne(dmg, target, src, crit) {
     let pierce = false;
+    // 결계 전장: 아군 원거리의 화살은 힘을 잃는다. 근접으로 붙어야 한다.
+    if (this.mods && this.mods.warded && src && src.side === 'ally' && src.s.ranged) {
+      dmg *= WARDED_RANGED;
+    }
     if (src && src.ab.breaker && !target.isCastle) {
       // 파쇄: 갑주를 무시하고, 보스·중장갑·넉백 면역에게는 더 세게 들어간다
       pierce = true;
@@ -1134,6 +1217,7 @@ class Battle {
       target.vulnMul = Math.max(target.vulnMul, 1 + src.ab.sunmark.vuln);
     }
     if (src && src.ab.chain && !target.isCastle && !this._chaining) this.chainFrom(src, target, dmg);
+    if (src && src.ab.smite && !target.isCastle && !this._smiting) this.smiteFrom(src, target, dmg);
     if (target.isCastle) {
       if (target.side === 'ally') this.shake = Math.max(this.shake, 8);
     } else if (dealt >= 1 && this.dmgFxCount < 14) {
@@ -1149,6 +1233,17 @@ class Battle {
     }
     const ab = src.ab;
     if (ab.lifesteal) src.heal(dealt * ab.lifesteal);
+    // 흡혈 전장: 적은 때린 만큼 스스로 아문다. 오래 끌면 절대 못 이긴다.
+    if (this.mods && this.mods.vampiric && src.side === 'enemy' && dealt > 0) {
+      src.heal(dealt * VAMPIRIC_HEAL);
+    }
+    // 소매치기: 아군을 때릴 때마다 군자금을 훔쳐 간다
+    if (ab.steal && src.side === 'enemy' && dealt > 0 && this.money > 0) {
+      const took = Math.min(this.money, ab.steal);
+      this.money -= took;
+      if (took >= 1) this.fx.push({ type: 'steal', x: target.x, row: target.row ?? 1,
+                                    v: Math.round(took), t: 0.8, life: 0.8 });
+    }
     if (target.isCastle || target.dead) return;
     if (ab.slow) {
       target.slowT = Math.max(target.slowT, ab.slow);
@@ -1238,6 +1333,29 @@ class Battle {
       from = best;
     }
     this._chaining = false;
+  }
+
+  /* 심판의 빛: 지금 때린 것보다 훨씬 단단한 것이 전장에 있으면, 사거리와
+   * 무관하게 그쪽도 한 번 더 내리친다. 앞의 잡몹을 치면서 뒤의 벽과 보스를
+   * 같이 깎는 도구다. 비슷한 것들만 몰려 있을 때는 아무 일도 일어나지 않으니
+   * 물량 전장에서 공짜 두 번 때리기로 쓸 수는 없다. */
+  smiteFrom(src, first, dmg) {
+    const sm = src.ab.smite;
+    if (src.smiteCd > 0) return;
+    const foes = this.foesOf(src.side);
+    const bar = (first.maxHp || 0) * (sm.over || 1.6);
+    let best = null;
+    for (const e of foes) {
+      if (e.dead || e === first || e.maxHp <= bar) continue;
+      if (!best || e.maxHp > best.maxHp) best = e;
+    }
+    if (!best) return;
+    src.smiteCd = sm.cd || 1.2;
+    this._smiting = true;
+    this.hitOne(dmg * sm.mul, best, src, false);
+    this._smiting = false;
+    this.fx.push({ type: 'smite', x: best.x, row: best.row, t: 0.45, life: 0.45,
+                   color: src.s.accent });
   }
 
   areaHit(dmg, cx, radius, foes, foeCastle, src, crit) {

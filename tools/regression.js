@@ -139,10 +139,13 @@ test('Shared active cooldown and stun block skill spam',()=>{
   const b=heroBattle('odin');b.heroCooldowns.odin=0;b.heroGlobalCd=1;assert.equal(b.canHeroActive('odin'),false);
   b.heroGlobalCd=0;b.allies[0].stunT=1;assert.equal(b.canHeroActive('odin'),false);
 });
-test('Thirty stages retain the existing endless unlock threshold',()=>{
-  const {STAGES,ENDLESS_UNLOCK_STAGE}=vm.runInContext('({STAGES,ENDLESS_UNLOCK_STAGE})',ctx);
-  assert.equal(STAGES.length,30);assert.equal(ENDLESS_UNLOCK_STAGE,20);
+test('Forty stages retain the existing endless unlock threshold',()=>{
+  const {STAGES,ENDLESS_UNLOCK_STAGE,ACT3_FROM_STAGE}=vm.runInContext('({STAGES,ENDLESS_UNLOCK_STAGE,ACT3_FROM_STAGE})',ctx);
+  assert.equal(STAGES.length,40);assert.equal(ENDLESS_UNLOCK_STAGE,20);assert.equal(ACT3_FROM_STAGE,30);
   assert.ok(STAGES.slice(20).every(s=>s.waves.length>=8&&s.reward>900));
+  // 3막은 2막보다 요새도 두껍고 보상도 크다
+  assert.ok(STAGES.slice(30).every(s=>s.baseHp>=54000&&s.reward>=2400&&s.mods&&s.mods.length));
+  assert.ok(STAGES[39].reward>STAGES[29].reward);
 });
 test('First expansion victory advances from 20 to 21 and retains old stars',()=>{
   const s=save();s.stars[19]=3;const b=new Battle(20,s);b.finish('win');
@@ -339,9 +342,9 @@ test('A squad brings at most five legends and mythics', () => {
   assert.equal(ids.filter(id => U[id].rarity === 'UR' || U[id].rarity === 'SSR').length, 5);
   assert.ok(ids.includes('spear')); assert.ok(!ids.includes('zeus'));
 });
-test('Five seasons, every summon points at a real unit', () => {
+test('Six seasons, every summon points at a real unit', () => {
   const { SEASONS } = vm.runInContext('({SEASONS})', ctx);
-  assert.equal(SEASONS.length, 5);
+  assert.equal(SEASONS.length, 6);
   for (const sn of SEASONS) for (const id of sn.units) { assert.ok(U[id], id); assert.equal(U[id].season, sn.id); }
   for (const u of UNITS) if (u.ab && u.ab.summon) assert.ok(U[u.ab.summon.id], u.id);
 });
@@ -414,6 +417,215 @@ test('Every new mob appears in the campaign, in the endless pool and in the best
     assert.ok(ENDLESS_POOL.some(p => p.id === id), id + ' in endless');
     assert.ok(E[id].abText, id + ' has ability text');
   }
+});
+
+
+/* ---------------- 2.6 천상의 성단 ---------------- */
+test('Warding cuts damage taken and a weaker ward never replaces a stronger one', () => {
+  const b = battle();
+  const m = b.makeAlly(U.michael, 500), mate = b.makeAlly(U.spear, 520);
+  b.allies.push(m, mate);
+  m.abCd = 0; b.supportTick(m, b.allies, 0.01, true);
+  assert.ok(mate.wardT > 0 && mate.wardMul === U.michael.ab.ward.mul, 'ward applied');
+  const full = mate.maxHp;
+  mate.takeDamage(100);
+  assert.equal(full - mate.hp, 100 * U.michael.ab.ward.mul);       // 결계만큼 덜 아프다
+  mate.wardMul = 0.5; mate.wardT = 3;
+  m.abCd = 0; b.supportTick(m, b.allies, 0.01, true);
+  assert.equal(mate.wardMul, 0.5, 'stronger ward survives a weaker pulse');
+  // 미카엘이 쓰러지면 결계도 시간이 지나 풀린다
+  m.dead = true;
+  for (let k = 0; k < 400 && mate.wardT > 0; k++) b.step(b.allies, b.enemies, b.enemyCastle, 0.05, true);
+  assert.equal(mate.wardMul, 1); assert.equal(mate.wardT <= 0, true);
+});
+test('Grace lends one rise from the dead, and only once per ally', () => {
+  const b = battle();
+  const r = b.makeAlly(U.raphael, 500), mate = b.makeAlly(U.spear, 520);
+  b.allies.push(r, mate);
+  r.abCd = 0; b.supportTick(r, b.allies, 0.01, true);
+  assert.equal(mate.graceHp, U.raphael.ab.grace.hp);
+  mate.takeDamage(mate.maxHp * 10);
+  assert.equal(mate.dead, false);
+  assert.equal(mate.hp, Math.round(mate.maxHp * U.raphael.ab.grace.hp));
+  assert.equal(mate.graceHp, 0, 'grace is spent');
+  mate.takeDamage(mate.maxHp * 10);
+  assert.equal(mate.dead, true);
+});
+test('Grace also works when a DOT lands the killing blow', () => {
+  const b = battle();
+  const mate = b.makeAlly(U.spear, 520); b.allies.push(mate);
+  mate.graceHp = 0.5; mate.hp = 5; mate.poisonT = 5; mate.poisonDps = 500;
+  b.step(b.allies, b.enemies, b.enemyCastle, 0.1, true);
+  assert.equal(mate.dead, false); assert.ok(mate.hp > 5);
+});
+test('Judgement light only reaches a foe far tougher than the one just hit', () => {
+  const b = battle();
+  const sera = b.makeAlly(U.seraph, 300); b.allies.push(sera);
+  const small = b.spawnEnemy('goblin', 500), twin = b.spawnEnemy('goblin', 900);
+  b.hitOne(100, small, sera, false);
+  assert.equal(twin.hp, twin.maxHp, 'a same-sized foe is never smitten');
+  sera.smiteCd = 0;
+  const wall = b.spawnEnemy('golem', 1100);
+  b.hitOne(100, small, sera, false);
+  assert.ok(wall.hp < wall.maxHp, 'the wall behind takes the light');
+  const before = wall.hp;
+  b.hitOne(100, small, sera, false);
+  assert.equal(wall.hp, before, 'the light has its own cooldown');
+});
+test('Six seasons and the celestial trio are all summonable', () => {
+  const { SEASONS } = vm.runInContext('({SEASONS})', ctx);
+  const cel = SEASONS.find(s => s.id === 'celestial');
+  assert.ok(cel && cel.units.length >= 7);
+  assert.equal(U.seraph.rarity, 'UR'); assert.equal(U.michael.rarity, 'SSR');
+  for (const id of ['seraph', 'michael']) assert.equal(U[id].maxActive, 1, id);
+  assert.ok(U.seraph.active && U.michael.active, 'both carry an ultimate');
+});
+
+/* ---------------- 2.6 심연의 군세 ---------------- */
+test('Blight halves the healing the other side receives', () => {
+  const b = battle();
+  const guard = b.spawnEnemy('abyssguard', 700);
+  const mate = b.makeAlly(U.shield, 660); b.allies.push(mate);
+  mate.hp = 100;
+  guard.abCd = 0; b.supportTick(guard, b.enemies, 0.01, false);
+  assert.ok(mate.blightT > 0);
+  mate.heal(200);
+  assert.equal(mate.hp, 200);                       // 200 이 아니라 100 만 들어갔다
+  mate.blightT = 0; mate.hp = 100; mate.heal(200);
+  assert.equal(mate.hp, 300);
+});
+test('Soul thieves drain war funds and never take more than is there', () => {
+  const b = battle();
+  const thief = b.spawnEnemy('soulthief', 700);
+  const mate = b.makeAlly(U.shield, 660); b.allies.push(mate);
+  b.money = 100; b.hitOne(10, mate, thief, false);
+  assert.equal(b.money, 100 - E.soulthief.ab.steal);
+  b.money = 5; b.hitOne(10, mate, thief, false);
+  assert.equal(b.money, 0);
+  b.hitOne(10, mate, thief, false);
+  assert.equal(b.money, 0);
+});
+test('Bloaters split into imps, and the imps they leave do not split again', () => {
+  const b = battle();
+  const big = b.spawnEnemy('bloater', 700);
+  big.dead = true;
+  b.reap(b.enemies, b.allies, b.allyCastle, true);
+  const imps = b.enemies.filter(e => e.s.shape === 'imp');
+  assert.equal(imps.length, E.bloater.ab.deathSplit.n);
+  assert.ok(imps.every(i => i.summoned));
+  imps.forEach(i => { i.dead = true; });
+  b.reap(b.enemies, b.allies, b.allyCastle, true);
+  assert.equal(b.enemies.filter(e => !e.dead).length, 0, 'a split never cascades');
+});
+test('Charm witches turn our own units against us', () => {
+  const b = battle();
+  const w = new Fighter({ ...E.charmwitch, ab: { charm: { chance: 1, dur: 3 } } }, 'enemy', 700);
+  const a = b.makeAlly(U.knight, 500), mate = b.makeAlly(U.spear, 540);
+  b.allies.push(a, mate);
+  b.hitOne(1, a, w, false);
+  assert.ok(a.charmT > 0);
+  mate.hp = mate.maxHp; a.cd = 0;
+  b.charmedTick(a, b.allies, 0.01);
+  assert.ok(mate.hp < mate.maxHp, 'the charmed knight hits its own side');
+});
+test('Void seers scrub poison, burn and slow off their own side', () => {
+  const b = battle();
+  const seer = b.spawnEnemy('voidseer', 700), orc = b.spawnEnemy('orcspear', 720);
+  orc.poisonT = 5; orc.poisonDps = 40; orc.burnT = 5; orc.burnDps = 40; orc.slowT = 3; orc.stunT = 2;
+  seer.abCd = 0; b.supportTick(seer, b.enemies, 0.01, false);
+  assert.equal(orc.poisonT, 0); assert.equal(orc.burnT, 0); assert.equal(orc.slowT, 0);
+  assert.equal(orc.stunT, 2, 'stun is not cleansed');
+});
+test('Every act-3 mob shows up in the campaign, the endless pool and the bestiary', () => {
+  const ids = ['imp', 'soulthief', 'flamefiend', 'gargoyle', 'bloater',
+               'charmwitch', 'warlock', 'voidseer', 'dreadknight', 'abyssguard'];
+  const { ENDLESS_POOL, ENDLESS_BOSSES } = vm.runInContext('({ENDLESS_POOL,ENDLESS_BOSSES})', ctx);
+  for (const id of ids) {
+    assert.ok(STAGES.some(st => st.waves.some(w => w.e === id)), id + ' in campaign');
+    assert.ok(ENDLESS_POOL.some(p => p.id === id), id + ' in endless');
+    assert.ok(E[id].abText, id + ' has ability text');
+  }
+  for (const id of ['bonelord', 'voidwitch', 'abysslord']) {
+    assert.ok(E[id].boss && E[id].phases && E[id].special, id + ' is a full boss');
+    assert.ok(ENDLESS_BOSSES.includes(id), id + ' in endless bosses');
+    assert.ok(STAGES.some(st => st.bossId === id), id + ' owns a stage');
+  }
+});
+test('The bone sovereign has to be put down twice', () => {
+  const b = battle();
+  const king = b.spawnEnemy('bonelord', 800);
+  const full = king.maxHp;
+  king.takeDamage(full * 5);
+  assert.equal(king.dead, false);
+  assert.equal(king.hp, Math.round(full * E.bonelord.ab.revive));
+  king.takeDamage(full * 5);
+  assert.equal(king.dead, true);
+});
+
+/* ---------------- 2.6 새 전장 특성 ---------------- */
+test('Stage traits: vampiric, warded and frenzy', () => {
+  const mk = mods => battle({ baseHp: 10000, money: 900, rate: 0, reward: 0, mods: mods,
+                              waves: [{ t: 0, e: 'goblin', n: 1, gap: 1 }] });
+  // 흡혈: 적이 때린 만큼 아문다
+  const v = mk(['vampiric']);
+  const foe = v.spawnEnemy('orcspear', 700), wall = v.makeAlly(U.shield, 660);
+  v.allies.push(wall); foe.hp = 100;
+  v.hitOne(300, wall, foe, false);
+  assert.ok(foe.hp > 100, 'vampiric foe heals');
+  const plain = mk([]);
+  const foe2 = plain.spawnEnemy('orcspear', 700), wall2 = plain.makeAlly(U.shield, 660);
+  plain.allies.push(wall2); foe2.hp = 100;
+  plain.hitOne(300, wall2, foe2, false);
+  assert.equal(foe2.hp, 100, 'without the trait nothing heals');
+  // 결계: 아군 원거리만 약해진다
+  const w = mk(['warded']);
+  const bow = w.makeAlly(U.archer, 400), sword = w.makeAlly(U.knight, 400);
+  const t1 = w.spawnEnemy('orcshield', 700), t2 = w.spawnEnemy('orcshield', 720);
+  w.hitOne(1000, t1, bow, false); w.hitOne(1000, t2, sword, false);
+  assert.ok(t1.maxHp - t1.hp < t2.maxHp - t2.hp, 'ranged is blunted, melee is not');
+  // 광란: 피가 빠질수록 빨라진다
+  const f = mk(['frenzy']);
+  const mad = f.spawnEnemy('orcspear', 700);
+  assert.equal(mad.frenzy, true);
+  const slow = mad.intervalNow; mad.hp = 1;
+  assert.ok(mad.intervalNow < slow * 0.7, 'a bled foe swings much faster');
+});
+test('A weaker haste never overwrites a stronger one', () => {
+  const b = battle();
+  const bug = b.makeAlly(U.herald, 500), mate = b.makeAlly(U.spear, 520);
+  b.allies.push(bug, mate);
+  mate.hasteMul = 0.4; mate.hasteT = 5;
+  bug.abCd = 0; b.supportTick(bug, b.allies, 0.01, true);
+  assert.equal(mate.hasteMul, 0.4);
+  mate.hasteT = 0;
+  bug.abCd = 0; b.supportTick(bug, b.allies, 0.01, true);
+  assert.ok(mate.hasteMul < 1 && mate.hasteMul > 0.4, 'a fresh pulse sets its own value');
+});
+test('Ultimate and command use counts are tracked for the daily missions', () => {
+  const s = save(); s.owned.zeus = 1; s.loadout = ['zeus', 'spear'];
+  const b = new Battle(0, s, { baseHp: 10000, money: 9999, rate: 0, waves: [], reward: 0 });
+  b.money = 99999; b.deploy('zeus'); b.spawnEnemy('goblin', b.allies[0].x + 100);
+  b.heroCooldowns.zeus = 0; b.heroGlobalCd = 0;
+  assert.equal(b.useHeroActive('zeus'), true);
+  assert.equal(b.heroUses, 1);
+  b.cmdCd = 0; assert.equal(b.useCommand(), true); assert.equal(b.cmdUses, 1);
+});
+test('Every cast effect the data asks for has art in at least one layer', () => {
+  const { GLFX_KINDS } = require('../js/gl-fx.js');
+  const render = fs.readFileSync(path.join(__dirname, '../js/render.js'), 'utf8');
+  // cast 연출은 WebGL 이 켜지면 그쪽이 통째로 맡는다. 어느 층에도 그림이 없으면
+  // 그 기기에서는 아무것도 안 보이므로, 둘 중 한 곳에는 반드시 있어야 한다.
+  const cast = new Set();
+  UNITS.forEach(u => { if (u.castFx) cast.add(u.castFx); });
+  Object.keys(E).forEach(k => {
+    const sp = E[k].special; if (sp && sp.kind) cast.add(sp.kind);
+    (E[k].phases || []).forEach(ph => { if (ph.kind) cast.add(ph.kind); });
+  });
+  for (const k of cast) {
+    assert.ok(GLFX_KINDS[k] || render.indexOf("case '" + k + "'") >= 0, 'no art for cast kind ' + k);
+  }
+  // 필살기(mythic) 연출은 Canvas2D 가 언제나 그린다 — 종류 이름만 있으면 된다
+  UNITS.forEach(u => { if (u.active) assert.ok(u.active.kind && u.active.cd > 0, u.id); });
 });
 
 console.log(count + ' regression checks passed');

@@ -303,10 +303,12 @@ class GLFx {
   }
 
   /* ------------------------------ 연출 ------------------------------
-   * 게임의 castFx 종류 8가지. x, y 는 화면 좌표(y 는 지면).
+   * x, y 는 화면 좌표(y 는 지면). GLFX_KINDS 에 없는 종류는 그리지 않고
+   * false 를 돌려 준다 — 그러면 render.js 가 Canvas2D 로 대신 그린다.
    * opt: color [r,g,b] 0~1 / scale / radius / density / big */
   emit(kind, x, y, opt) {
-    if (!this.ok) return;
+    if (!this.ok) return false;
+    if (!GLFX_KINDS[kind]) return false;     // 모르는 연출은 Canvas2D 에 넘긴다
     opt = opt || {};
     const col = opt.color || [1, 0.88, 0.29];
     const white = [1, 1, 0.94];
@@ -655,6 +657,88 @@ class GLFx {
         break;
       }
 
+      /* 심판: 하늘에서 내려오는 빛기둥 + 퍼지는 고리 */
+      case 'judgement': {
+        const top = y - 520 * sc;
+        for (let i = 0, n = N(40); i < n; i++) {        // 기둥 본체 (위에서 아래로)
+          const t = i / n;
+          const py = top + (y - top) * t;
+          const w = (18 + t * 26) * sc * big;
+          this.add(x + rnd(-3, 3) * sc, py, 0, rnd(60, 180) * sc, rnd(0.3, 0.5),
+                   w, w * 0.5, t < 0.4 ? white : col, 0.8, 2.4, 0, 0, 0, 1.2);
+        }
+        for (let i = 0, n = N(16); i < n; i++) {        // 기둥 안의 흰 심지
+          const t = i / n;
+          this.add(x, top + (y - top) * t, 0, rnd(120, 260) * sc, rnd(0.25, 0.45),
+                   6 * sc * big, 3 * sc, white, 1, 3, 0, 0, 0, 1);
+        }
+        for (let r = 0; r < 3; r++) {                   // 바닥에서 퍼지는 고리 셋
+          for (let i = 0, n = N(26); i < n; i++) {
+            const a = i / n * TAU;
+            const sp = (240 + r * 130) * sc;
+            this.add(x, y, Math.cos(a) * sp, Math.sin(a) * sp * 0.28,
+                     rnd(0.3, 0.55), (12 - r * 2) * sc * big, 4 * sc,
+                     r ? col : white, 0.8, 2.4, a, 0, 60, 1.1);
+          }
+        }
+        for (let i = 0, n = N(44); i < n; i++) {        // 위로 솟는 빛 조각
+          this.add(x + rnd(-R, R) * 0.9, y + rnd(-8, 8), rnd(-40, 40),
+                   rnd(-320, -120) * sc, rnd(0.5, 1.1), rnd(5, 13) * sc, 1,
+                   white, 0.95, 1, 0, 0, 180, 1.6);
+        }
+        this.add(x, y - 40 * sc, 0, 0, 0.4, 44 * sc, 200 * sc * big, col, 0.8, 1, 0, 0, 0, 1.5);
+        break;
+      }
+
+      /* 공허의 균열: 별 모양으로 갈라지는 틈 */
+      case 'voidrift': {
+        const cy = y - 20 * sc;
+        for (let i = 0, n = N(7); i < n; i++) {
+          const a = i / n * TAU + rnd(-0.1, 0.1);
+          const len = R * rnd(0.7, 1.5);
+          const steps = N(9);
+          for (let k = 1; k <= steps; k++) {
+            const rr = len * k / steps;
+            this.add(x + Math.cos(a) * rr, cy + Math.sin(a) * rr * 0.55, 0, 0,
+                     rnd(0.3, 0.55), (22 - k * 1.6) * sc * big, 5 * sc,
+                     k < 3 ? white : col, 0.8, 2.8, a, 0, 0, 1.1);
+          }
+        }
+        for (let i = 0, n = N(50); i < n; i++) {        // 안으로 빨려 드는 파편
+          const a = rnd(0, TAU), rr = R * rnd(0.6, 1.3);
+          const sp = rnd(180, 420) * sc;
+          this.add(x + Math.cos(a) * rr, cy + Math.sin(a) * rr * 0.55,
+                   -Math.cos(a) * sp, -Math.sin(a) * sp * 0.5,
+                   rnd(0.3, 0.7), rnd(4, 11) * sc, 1, col, 0.9, 2, a, 0, 0, 1);
+        }
+        this.add(x, cy, 0, 0, 0.5, 36 * sc, 140 * sc * big, col, 0.85, 1, 0, 0, 0, 1.3);
+        this.add(x, cy, 0, 0, 0.32, 14 * sc, 56 * sc, white, 1, 1, 0, 0, 0, 1.1);
+        break;
+      }
+
+      /* 심연의 낙인: 바닥에서 솟구치는 검붉은 불기둥 */
+      case 'abyssfall': {
+        for (let i = 0, n = N(11); i < n; i++) {        // 불기둥 여럿
+          const px = x + rnd(-R, R) * 0.9;
+          const h = R * rnd(1.0, 2.4);
+          const steps = N(10);
+          for (let k = 0; k < steps; k++) {
+            const t = k / steps;
+            this.add(px + rnd(-6, 6) * sc, y - h * t, rnd(-30, 30),
+                     rnd(-260, -110) * sc, rnd(0.35, 0.7),
+                     (24 - t * 14) * sc * big, (24 - t * 14) * sc * 0.6,
+                     t < 0.3 ? white : col, 0.85, 2, 0, 0, 40, 1.2);
+          }
+        }
+        for (let i = 0, n = N(36); i < n; i++) {        // 바닥으로 흩어지는 잉걸
+          const a = rnd(0, TAU), sp = rnd(160, 460) * sc;
+          this.add(x, y, Math.cos(a) * sp, Math.sin(a) * sp * 0.3 - 60 * sc,
+                   rnd(0.35, 0.8), rnd(4, 10) * sc, 1, col, 1, 2.2, a, 0, 420);
+        }
+        this.add(x, y - 6 * sc, 0, 0, 0.45, 40 * sc, 210 * sc * big, col, 0.7, 1, 0, 0, 0, 1.3);
+        break;
+      }
+
       /* 교차 참격 */
       case 'slash': {
         const cy = y - 34 * sc;
@@ -684,4 +768,11 @@ class GLFx {
   }
 }
 
-if (typeof module !== 'undefined' && module.exports) module.exports = { GLFx };
+/* 이 레이어가 실제로 그릴 수 있는 연출 목록. 새 연출을 Canvas2D 에만 넣고
+ * 여기 빠뜨리면 WebGL 이 켜진 기기에서 아무것도 안 보이던 문제를 막는다. */
+const GLFX_KINDS = {};
+'lightning firestorm holy iceburst shockwave runes pillar spark burst dust foxfire foxbead \
+inkslash reaproll goldburst tesla steamburst overdrive slash judgement voidrift abyssfall'
+  .split(/\s+/).forEach(k => { if (k) GLFX_KINDS[k] = true; });
+
+if (typeof module !== 'undefined' && module.exports) module.exports = { GLFx, GLFX_KINDS };

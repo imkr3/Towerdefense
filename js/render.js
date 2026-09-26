@@ -635,6 +635,17 @@ class Renderer {
           ctx.globalAlpha=p*.4;ctx.fillStyle='#e8e6e0';
           for(let i=0;i<7;i++){const a=-Math.PI+i/6*Math.PI;ctx.beginPath();ctx.arc(Math.cos(a)*radius*.7*k,-20*cs+Math.sin(a)*radius*.35*k,(20+k*30)*cs,0,7);ctx.fill();}
           ctx.fillStyle=e.color;
+        }else if(e.kind==='judgement'){              // 심판: 내려오는 빛기둥과 여섯 날개
+          const w=radius*.16;ctx.globalAlpha=p*.7;
+          ctx.beginPath();ctx.moveTo(-w,-radius*2.2);ctx.lineTo(w,-radius*2.2);ctx.lineTo(w*1.8,0);ctx.lineTo(-w*1.8,0);ctx.closePath();ctx.fill();
+          ctx.globalAlpha=p;ctx.fillStyle='#ffffff';
+          ctx.beginPath();ctx.moveTo(-w*.3,-radius*2.2);ctx.lineTo(w*.3,-radius*2.2);ctx.lineTo(w*.6,0);ctx.lineTo(-w*.6,0);ctx.closePath();ctx.fill();
+          ctx.fillStyle=e.color;ctx.globalAlpha=p*.55;
+          for(let i=-1;i<=1;i+=2)for(let w2=0;w2<3;w2++){
+            const flap=Math.sin(k*3+w2)*.18;
+            ctx.save();ctx.translate(0,-95*cs+w2*20*cs);ctx.rotate((-.8+w2*.7+flap)*i);
+            ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(-46*cs,-18*cs);ctx.lineTo(-34*cs,0);ctx.lineTo(-48*cs,12*cs);ctx.lineTo(-8*cs,18*cs);ctx.closePath();ctx.fill();
+            ctx.restore();}
         }else if(e.kind==='underworld'){
           ctx.globalAlpha=p*.65;ctx.lineWidth=5*cs;ctx.beginPath();ctx.ellipse(0,-55*cs,45*cs,65*cs,0,0,7);ctx.stroke();
           for(let i=-1;i<=1;i++){ctx.beginPath();ctx.moveTo(i*20*cs,0);ctx.bezierCurveTo(i*50*cs,-30*cs,-i*15*cs,-70*cs,i*30*cs,-115*cs);ctx.stroke();}
@@ -823,8 +834,83 @@ class Renderer {
         ctx.textAlign = 'left';
         ctx.globalAlpha = 1;
       } else if (e.type === 'cast') {
-        if (this.glfx && this.glfx.ok) this.emitCast(e, x, cs);
-        else this.drawCast(e, x, y, p, cs);
+        if (!(this.glfx && this.glfx.ok && this.emitCast(e, x, cs))) {
+          this.drawCast(e, x, y, p, cs);
+        }
+      } else if (e.type === 'ward') {                  // 수호의 결계: 겹쳐 도는 육각 테
+        ctx.strokeStyle = e.color || '#ffe9a8';
+        ctx.globalAlpha = p * 0.75;
+        ctx.lineWidth = 2.2 * cs;
+        const rr = e.r * this.zoom * (0.55 + 0.45 * (1 - p));
+        for (let k = 0; k < 2; k++) {
+          ctx.beginPath();
+          for (let i = 0; i <= 6; i++) {
+            const a = i * Math.PI / 3 + (1 - p) * 1.2 + k * 0.5;
+            const px = x + Math.cos(a) * rr, py = y + 12 * cs + Math.sin(a) * rr * 0.3;
+            if (i) ctx.lineTo(px, py); else ctx.moveTo(px, py);
+          }
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+      } else if (e.type === 'grace') {                 // 은총: 내려앉는 흰 깃털
+        const fall = (1 - p) * 26 * cs;
+        ctx.globalAlpha = Math.min(1, p * 1.6);
+        ctx.fillStyle = '#fdf8ec';
+        ctx.save();
+        ctx.translate(x + Math.sin((1 - p) * 6) * 6 * cs, y - 52 * cs + fall);
+        ctx.rotate(Math.sin((1 - p) * 4) * 0.5);
+        ctx.beginPath(); ctx.ellipse(0, 0, 3.4 * cs, 9 * cs, 0, 0, 7); ctx.fill();
+        ctx.restore();
+        ctx.globalAlpha = 1;
+      } else if (e.type === 'blight') {                // 마름: 바닥을 기는 검은 기운
+        ctx.globalAlpha = p * 0.5;
+        ctx.fillStyle = e.color || '#8affd0';
+        const rr = e.r * this.zoom * (1 - p);
+        for (let i = 0; i < 5; i++) {
+          const a = i * 1.26 + (1 - p) * 2;
+          ctx.beginPath();
+          ctx.arc(x + Math.cos(a) * rr, y + 12 * cs + Math.sin(a) * rr * 0.26,
+                  (5 - i * 0.6) * cs, 0, 7);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      } else if (e.type === 'smite') {                 // 심판의 빛: 하늘에서 내려꽂히는 기둥
+        ctx.globalAlpha = p * 0.85;
+        const grd = ctx.createLinearGradient(x, y - 240 * cs, x, y + 10 * cs);
+        grd.addColorStop(0, 'rgba(255,255,255,0)');
+        grd.addColorStop(0.6, e.color || '#ffe08a');
+        grd.addColorStop(1, '#ffffff');
+        ctx.fillStyle = grd;
+        const w = (5 + 7 * (1 - p)) * cs;
+        ctx.fillRect(x - w, y - 240 * cs, w * 2, 250 * cs);
+        ctx.globalAlpha = p * 0.5;
+        ctx.strokeStyle = '#fff6cf'; ctx.lineWidth = 2 * cs;
+        ctx.beginPath();
+        ctx.ellipse(x, y + 10 * cs, (16 + 22 * (1 - p)) * cs, 6 * cs, 0, 0, 7); ctx.stroke();
+        ctx.globalAlpha = 1;
+      } else if (e.type === 'steal') {                 // 소매치기: 빠져나가는 군자금
+        const rise = (1 - p) * 30 * cs;
+        ctx.globalAlpha = Math.min(1, p * 2);
+        ctx.fillStyle = '#c9a227';
+        ctx.beginPath(); ctx.ellipse(x, y - 28 * cs - rise, 5.5 * cs, 4.6 * cs, 0, 0, 7); ctx.fill();
+        ctx.font = 'bold ' + Math.round(12 * cs) + 'px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.lineWidth = 3 * cs; ctx.strokeStyle = 'rgba(0,0,0,.6)';
+        ctx.strokeText('-' + e.v, x + 14 * cs, y - 24 * cs - rise);
+        ctx.fillStyle = '#ff9a8a';
+        ctx.fillText('-' + e.v, x + 14 * cs, y - 24 * cs - rise);
+        ctx.textAlign = 'left';
+        ctx.globalAlpha = 1;
+      } else if (e.type === 'split') {                 // 갈라짐: 양쪽으로 튀는 조각
+        ctx.globalAlpha = p;
+        ctx.fillStyle = e.color || '#c4e05a';
+        for (let i = 0; i < 6; i++) {
+          const a = -0.4 - i * 0.45, d = (1 - p) * 40 * cs;
+          ctx.beginPath();
+          ctx.arc(x + Math.cos(a) * d, y - 14 * cs + Math.sin(a) * d * 0.6, 3.4 * cs, 0, 7);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
       } else if (e.type === 'spawn') {
         ctx.strokeStyle = 'rgba(255,255,255,' + p + ')';
         ctx.lineWidth = 2.5 * cs;
@@ -837,14 +923,16 @@ class Renderer {
 
   /* cast 연출을 WebGL 파티클로 넘긴다. 연출 하나는 한 번만 터진다. */
   emitCast(e, x, cs) {
-    if (e._emitted) return;
-    e._emitted = true;
-    this.glfx.emit(e.kind, x, this.rowY(e.row || 0), {
+    if (e._emitted) return true;
+    const drew = this.glfx.emit(e.kind, x, this.rowY(e.row || 0), {
       color: this.rgbOf(e.color),
       radius: (e.r || 110) * this.zoom,
       scale: cs,
       big: !!e.big
     });
+    // 파티클 레이어가 모르는 연출이면 Canvas2D 쪽에 넘긴다
+    if (drew) e._emitted = true;
+    return drew;
   }
 
   /* 한 번만 터뜨리는 GL 파티클. WebGL 이 없거나 절전이면 아무것도 안 한다. */
@@ -1152,6 +1240,100 @@ class Renderer {
         }
         ctx.globalAlpha = p; ctx.fillStyle = e.color;
         ctx.beginPath(); ctx.arc(x, gy - 20 * cs, 9 * cs * (1 - k), 0, 7); ctx.fill();
+        break;
+      }
+      case 'judgement': {                  // 심판: 하늘에서 내려오는 빛기둥 + 퍼지는 고리
+        const w = R * (0.14 + k * 0.1);
+        const grd = ctx.createLinearGradient(x, y - R * 2.4, x, gy);
+        grd.addColorStop(0, 'rgba(255,255,255,0)');
+        grd.addColorStop(0.55, e.color);
+        grd.addColorStop(1, '#ffffff');
+        ctx.globalAlpha = p * 0.9;
+        ctx.fillStyle = grd;
+        ctx.fillRect(x - w, y - R * 2.4, w * 2, R * 2.4 + (gy - y));
+        // 안쪽 심지
+        ctx.globalAlpha = p;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(x - w * 0.3, y - R * 2.4, w * 0.6, R * 2.4 + (gy - y));
+        // 바닥에서 퍼지는 고리 셋
+        ctx.strokeStyle = e.color;
+        for (let i = 0, n = this.qn(3); i < n; i++) {
+          const kk = Math.max(0, k - i * 0.16);
+          ctx.globalAlpha = p * (0.7 - i * 0.18);
+          ctx.lineWidth = (5 - i) * cs * big;
+          ctx.beginPath();
+          ctx.ellipse(x, gy, R * (0.2 + kk * 1.5), R * 0.3 * (0.2 + kk * 1.5), 0, 0, 7);
+          ctx.stroke();
+        }
+        // 위로 솟는 빛 조각
+        ctx.fillStyle = '#fff6cf';
+        for (let i = 0, n = this.qn(10); i < n; i++) {
+          const a = i * 0.63 + e.x * 0.01;
+          const d = R * (0.2 + k * 0.9);
+          ctx.globalAlpha = p * 0.8;
+          ctx.beginPath();
+          ctx.arc(x + Math.cos(a) * d, gy - k * R * 1.2 + Math.sin(a) * d * 0.3,
+                  3 * cs * big, 0, 7);
+          ctx.fill();
+        }
+        break;
+      }
+      case 'voidrift': {                   // 공허의 균열: 갈라지는 검은 틈과 보라 불빛
+        ctx.globalAlpha = p * 0.8;
+        ctx.fillStyle = e.color;
+        for (let i = 0, n = this.qn(5); i < n; i++) {
+          const a = i * 1.26 + k * 1.4;
+          const len = R * (0.4 + k * 1.1);
+          ctx.save();
+          ctx.translate(x, gy - 10 * cs);
+          ctx.rotate(a);
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(len, -4 * cs * big);
+          ctx.lineTo(len * 0.9, 0);
+          ctx.lineTo(len, 4 * cs * big);
+          ctx.closePath(); ctx.fill();
+          ctx.restore();
+        }
+        ctx.globalAlpha = p;
+        ctx.fillStyle = '#1a0f22';
+        ctx.beginPath();
+        ctx.ellipse(x, gy - 10 * cs, R * (0.18 + k * 0.4), R * (0.3 + k * 0.6), 0, 0, 7);
+        ctx.fill();
+        ctx.globalAlpha = p * 0.9;
+        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2.4 * cs * big;
+        ctx.beginPath();
+        ctx.ellipse(x, gy - 10 * cs, R * (0.18 + k * 0.4), R * (0.3 + k * 0.6), 0, 0, 7);
+        ctx.stroke();
+        break;
+      }
+      case 'abyssfall': {                  // 심연의 낙인: 바닥에서 솟구치는 검붉은 불기둥
+        ctx.globalAlpha = p * 0.75;
+        ctx.fillStyle = e.color;
+        for (let i = 0, n = this.qn(9); i < n; i++) {
+          const a = i * 0.7 + e.x * 0.01;
+          const px = x + Math.cos(a) * R * (0.15 + k * 0.7);
+          const h = R * (0.5 + k * 1.5) * (0.5 + (i % 3) * 0.25);
+          ctx.beginPath();
+          ctx.moveTo(px - 6 * cs * big, gy);
+          ctx.lineTo(px, gy - h);
+          ctx.lineTo(px + 6 * cs * big, gy);
+          ctx.closePath(); ctx.fill();
+        }
+        ctx.globalAlpha = p * 0.9;
+        ctx.fillStyle = '#ffd08a';
+        ctx.beginPath();
+        ctx.ellipse(x, gy, R * (0.25 + k * 0.8), R * 0.22 * (0.4 + k), 0, 0, 7); ctx.fill();
+        // 위를 덮는 검은 연기
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.globalAlpha = p * 0.35 * (0.3 + k);
+        ctx.fillStyle = '#1a1020';
+        for (let i = 0, n = this.qn(4); i < n; i++) {
+          ctx.beginPath();
+          ctx.arc(x + (i - 1.5) * 18 * cs, gy - R * (0.9 + k * 0.8), (14 + i * 4) * cs * big, 0, 7);
+          ctx.fill();
+        }
+        ctx.globalCompositeOperation = 'lighter';
         break;
       }
       case 'holy': {
@@ -1611,6 +1793,94 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
         if (atk > 0.6) tri(S, 42 * s, -3 * s, 52 * s, -8 * s, 51 * s, 2 * s, S.flash ? '#fff' : '#ffd166');
       }, 8 * s);
       break;
+    /* ---------------------- 천상의 성단 ---------------------- */
+    case 'seraph': {
+      // 여섯 날개: 위 두 장은 얼굴을 가리고, 가운데 두 장을 펴고, 아래 두 장은 접는다
+      const fl = Math.sin(phase * 1.1) * 0.22;
+      ctx.fillStyle = S.flash ? '#fff' : '#ffffffcc';
+      for (let i = -1; i <= 1; i += 2) for (let k = 0; k < 3; k++) {
+        ctx.save();
+        ctx.translate(-2 * s, (-58 + k * 16) * s);
+        ctx.rotate((-0.9 + k * 0.75 + fl * (k === 1 ? 1.4 : 0.6)) * i);
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(-30 * s, -12 * s); ctx.lineTo(-22 * s, 0);
+        ctx.lineTo(-32 * s, 8 * s); ctx.lineTo(-6 * s, 12 * s);
+        ctx.closePath(); ctx.fill();
+        ctx.restore();
+      }
+      robe(S, 21 * s, -42 * s, tun); legsHidden(S); torso(S, 4.5 * s);
+      head(S, 'wrap'); halo(S, acc);
+      // 눈을 가린 띠
+      line(S, -8 * s, -51 * s, 8 * s, -51 * s, 2.6 * s, acc);
+      armWeapon(S, -0.2, () => {                       // 심판의 저울추 대신 빛의 창
+        line(S, 0, 6 * s, 30 * s, -40 * s, 3 * s, acc);
+        orb(S, 33 * s, -45 * s, 5 * s + 2 * s * atk, S.flash ? '#fff' : '#fff6cf');
+      }, 6 * s);
+      break;
+    }
+    case 'michael': {
+      wings(S, S.flash ? '#fff' : '#f4f7ff', phase);
+      legs(S); torso(S, 5 * s); head(S, 'winged'); halo(S, acc);
+      cape(S, -1, tun, 1.1);
+      // 불의 검: 내려칠 때 칼날이 밝아진다
+      armWeapon(S, -1.15 + atk * 1.9, () => {
+        line(S, 0, 0, 16 * s, 0, 4 * s, S.flash ? '#fff' : '#6b5a3a');
+        line(S, 14 * s, 0, 58 * s, -2 * s, 6 * s, S.flash ? '#fff' : acc);
+        ctx.globalAlpha = 0.28 + 0.4 * atk;
+        line(S, 14 * s, 0, 62 * s, -2 * s, 13 * s, S.flash ? '#fff' : '#fff2c0');
+        ctx.globalAlpha = 1;
+      }, 9 * s);
+      break;
+    }
+    case 'raphael':
+      wings(S, S.flash ? '#fff' : '#e8fff2', phase);
+      robe(S, 18 * s, -40 * s, tun); legsHidden(S); torso(S); head(S, 'coif'); halo(S, acc);
+      armWeapon(S, 0.15, () => {                       // 손에 든 치유의 잔
+        ctx.fillStyle = S.flash ? '#fff' : acc;
+        ctx.beginPath(); ctx.arc(9 * s, 2 * s, 5.5 * s, Math.PI, 0); ctx.fill();
+        line(S, 9 * s, 8 * s, 9 * s, 14 * s, 2 * s, acc);
+        wisp(S, 9 * s, -8 * s, 3.4 * s, S.flash ? '#fff' : '#a8f0c8', phase * 1.6);
+      }, 5 * s);
+      break;
+    case 'templar':
+      legs(S); torso(S, 4.2 * s); head(S, 'greathelm');
+      shieldShape(S, -26 * s, -48 * s, 17 * s, 38 * s, S.flash ? '#fff' : tun);
+      armWeapon(S, -1.0 + atk * 1.8, () => {            // 양손 대검
+        line(S, 0, 0, 10 * s, 0, 4 * s, S.flash ? '#fff' : '#5a4a32');
+        line(S, 4 * s, -9 * s, 4 * s, 9 * s, 2.4 * s, acc);   // 십자 손잡이
+        line(S, 10 * s, 0, 54 * s, -4 * s, 5.4 * s, acc);
+      }, 9 * s);
+      break;
+    case 'chanter':
+      robe(S, 18 * s, -40 * s, tun); legsHidden(S); torso(S); head(S, 'coif'); halo(S, acc);
+      // 펼쳐 든 성가집 + 흘러나오는 음표
+      ctx.fillStyle = S.flash ? '#fff' : acc;
+      ctx.beginPath();
+      ctx.moveTo(4 * s, -6 * s); ctx.lineTo(22 * s, -12 * s); ctx.lineTo(22 * s, 2 * s);
+      ctx.lineTo(4 * s, 8 * s); ctx.closePath(); ctx.fill();
+      for (let i = 0; i < 3; i++) {
+        const yy = -22 * s - ((phase * 12 + i * 14) % 34) * s * 0.6;
+        ctx.globalAlpha = 0.6;
+        ctx.fillStyle = S.flash ? '#fff' : '#cfe8ff';
+        ctx.beginPath(); ctx.arc((14 + i * 5) * s, yy, 2.4 * s, 0, 7); ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+      break;
+    case 'lancer':
+      legs(S); torso(S); head(S, 'plume');
+      armWeapon(S, -0.4 + atk * 0.5, () => {            // 긴 창 + 작은 날개 장식
+        line(S, -10 * s, 4 * s, 52 * s, -12 * s, 3 * s, S.flash ? '#fff' : '#6b5a3a');
+        tri(S, 54 * s, -13 * s, 42 * s, -20 * s, 42 * s, -5 * s, acc);
+      }, 9 * s);
+      tri(S, -8 * s, -44 * s, -20 * s, -52 * s, -8 * s, -34 * s, S.flash ? '#fff' : '#f4f7ff');
+      break;
+    case 'acolyte':
+      robe(S, 15 * s, -38 * s, tun); legsHidden(S); torso(S); head(S, 'hood');
+      armWeapon(S, -0.25 - atk * 0.2, () => {
+        orb(S, 14 * s, -6 * s, 4 * s + 2.5 * s * atk, S.flash ? '#fff' : acc);
+      }, 5 * s);
+      break;
     case 'turret':
       ctx.fillStyle = S.flash ? '#fff' : '#4a4038';            // 받침
       ctx.beginPath(); ctx.moveTo(-18 * s, 0); ctx.lineTo(18 * s, 0); ctx.lineTo(10 * s, -16 * s); ctx.lineTo(-10 * s, -16 * s); ctx.closePath(); ctx.fill();
@@ -1922,6 +2192,274 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
         tri(S, 44 * s, -4 * s, 34 * s, -10 * s, 34 * s, 2 * s, S.flash ? '#fff' : '#c8ced6');
       }, 8 * s);
       ctx.restore();
+      break;
+    }
+    /* ---------------------- 3막 · 심연의 군세 ---------------------- */
+    case 'imp': {                                 // 심연 잡귀: 작은 뿔, 박쥐 날개, 갈고리
+      const fl = Math.sin(phase * 2.4) * 0.4;
+      ctx.fillStyle = S.flash ? '#fff' : tun;
+      for (let i = -1; i <= 1; i += 2) {
+        ctx.save(); ctx.translate(-3 * s, -38 * s); ctx.rotate(-0.4 + fl * i);
+        ctx.beginPath();
+        ctx.moveTo(0, 0); ctx.lineTo(-18 * s, -10 * s); ctx.lineTo(-12 * s, 2 * s);
+        ctx.lineTo(-20 * s, 8 * s); ctx.closePath(); ctx.fill();
+        ctx.restore();
+      }
+      legs(S); torso(S); head(S, 'devil');
+      armWeapon(S, -0.8 + atk * 1.4, () => {
+        line(S, 0, 0, 14 * s, -2 * s, 3 * s, acc);
+        tri(S, 15 * s, -3 * s, 24 * s, -10 * s, 20 * s, 3 * s, acc);
+      }, 5 * s);
+      break;
+    }
+    case 'soulthief': {                           // 영혼 도둑: 복면, 자루, 훔친 동전
+      legs(S); torso(S); head(S, 'hood');
+      ctx.fillStyle = S.flash ? '#fff' : tun;      // 등에 멘 자루
+      ctx.beginPath(); ctx.ellipse(-16 * s, -34 * s, 9 * s, 11 * s, 0.3, 0, 7); ctx.fill();
+      ctx.fillStyle = S.flash ? '#fff' : acc;      // 자루에서 새는 동전
+      for (let i = 0; i < 2; i++) {
+        const yy = -30 * s + ((phase * 10 + i * 9) % 20) * s;
+        ctx.beginPath(); ctx.arc(-24 * s, yy, 2.2 * s, 0, 7); ctx.fill();
+      }
+      armWeapon(S, -0.7 + atk * 1.3, () => {
+        line(S, 0, 0, 20 * s, -6 * s, 2.6 * s, acc);   // 낚아채는 손톱
+        line(S, 14 * s, -4 * s, 24 * s, -12 * s, 2 * s, acc);
+        line(S, 14 * s, -2 * s, 25 * s, -1 * s, 2 * s, acc);
+      }, 6 * s);
+      break;
+    }
+    case 'flamefiend': {                          // 화염 마귀: 온몸이 불, 머리 위로 불꽃
+      for (let i = 0; i < 4; i++) {
+        const a = phase * 1.7 + i * 1.6;
+        ctx.globalAlpha = 0.4;
+        ctx.fillStyle = S.flash ? '#fff' : acc;
+        ctx.beginPath();
+        ctx.arc(Math.sin(a) * 12 * s, -30 * s - ((a * 7) % 34) * s * 0.7,
+                (4 - i * 0.6) * s, 0, 7);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      legs(S); torso(S); head(S, 'devil');
+      ctx.fillStyle = S.flash ? '#fff' : acc;       // 타오르는 갈기
+      for (let i = -1; i <= 1; i++) tri(S, i * 5 * s, -58 * s, i * 5 * s + 3 * s, -76 * s, i * 5 * s + 6 * s, -58 * s, acc);
+      armWeapon(S, -0.9 + atk * 1.6, () => {
+        orb(S, 18 * s, -4 * s, 5 * s + 3 * s * atk, S.flash ? '#fff' : '#ffd88a');
+      }, 6 * s);
+      break;
+    }
+    case 'gargoyle': {                            // 가고일: 돌 날개, 웅크린 자세, 꼬리
+      const fl = Math.sin(phase * 1.9) * 0.35;
+      ctx.fillStyle = S.flash ? '#fff' : acc;
+      for (let i = -1; i <= 1; i += 2) {
+        ctx.save(); ctx.translate(-4 * s, -44 * s); ctx.rotate(-0.7 + fl * i);
+        ctx.beginPath();
+        ctx.moveTo(0, 0); ctx.lineTo(-30 * s, -20 * s); ctx.lineTo(-22 * s, -4 * s);
+        ctx.lineTo(-34 * s, 2 * s); ctx.lineTo(-24 * s, 8 * s); ctx.lineTo(-6 * s, 14 * s);
+        ctx.closePath(); ctx.fill();
+        ctx.restore();
+      }
+      legs(S, 22 * s); torso(S, 4.6 * s); head(S, 'horn', 9 * s);
+      line(S, -8 * s, -22 * s, -26 * s, -6 * s, 3 * s, col);       // 꼬리
+      line(S, -26 * s, -6 * s, -30 * s, -16 * s, 2.4 * s, col);
+      armWeapon(S, -0.8 + atk * 1.5, () => {
+        for (let j = -1; j <= 1; j++) line(S, 4 * s, j * 3 * s, 20 * s, j * 6 * s - 2 * s, 2.4 * s, acc);
+      }, 6 * s);
+      break;
+    }
+    case 'bloater': {                             // 부푼 역병체: 불룩한 몸, 새는 독, 부글대는 종양
+      const puff = 1 + Math.sin(phase * 1.2) * 0.05;
+      ctx.fillStyle = S.flash ? '#fff' : tun;
+      ctx.beginPath(); ctx.ellipse(0, -30 * s, 22 * s * puff, 26 * s * puff, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = S.flash ? '#fff' : acc;
+      for (let i = 0; i < 4; i++) {
+        const a = i * 1.7 + phase * 0.5;
+        ctx.globalAlpha = 0.7;
+        ctx.beginPath();
+        ctx.arc(Math.cos(a) * 14 * s, -30 * s + Math.sin(a) * 16 * s, (3 + (i % 2)) * s, 0, 7);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      legs(S, 12 * s);
+      ctx.fillStyle = col;                                  // 파묻힌 머리
+      ctx.beginPath(); ctx.arc(6 * s, -52 * s, 8 * s, 0, 7); ctx.fill();
+      ctx.fillStyle = S.flash ? '#fff' : '#1c1c22';
+      ctx.beginPath(); ctx.arc(9 * s, -53 * s, 1.8 * s, 0, 7); ctx.fill();
+      armWeapon(S, -0.5 + atk * 0.9, () => {
+        line(S, 0, 0, 22 * s, 6 * s, 5 * s, col);
+      }, 8 * s);
+      break;
+    }
+    case 'charmwitch': {                          // 매혹의 마녀: 뾰족 모자, 하트 부적
+      robe(S, 19 * s, -40 * s, tun); legsHidden(S); torso(S); head(S, 'wizard');
+      armWeapon(S, -0.3 - atk * 0.3, () => {
+        line(S, 0, 0, 6 * s, -34 * s, 2.6 * s, S.flash ? '#fff' : '#5c4326');
+        heart(ctx, 7 * s, -42 * s, (5 + 2.5 * atk) * s, S.flash ? '#fff' : acc);
+      }, 5 * s);
+      for (let i = 0; i < 2; i++) {                        // 떠도는 분홍 하트
+        const yy = -58 * s - ((phase * 9 + i * 12) % 26) * s * 0.8;
+        ctx.globalAlpha = 0.5;
+        heart(ctx, (-14 + i * 26) * s, yy, 3 * s, S.flash ? '#fff' : acc);
+        ctx.globalAlpha = 1;
+      }
+      break;
+    }
+    case 'warlock': {                             // 오크 흑마도사: 뿔 두건, 보호막 문양
+      robe(S, 19 * s, -42 * s, tun); legsHidden(S); head(S, 'tusk', 8 * s); torso(S);
+      tri(S, -9 * s, -58 * s, -14 * s, -74 * s, -2 * s, -58 * s, acc);
+      tri(S, 9 * s, -58 * s, 14 * s, -74 * s, 2 * s, -58 * s, acc);
+      armWeapon(S, -0.25, () => {
+        line(S, 0, 0, 2 * s, -38 * s, 3 * s, S.flash ? '#fff' : '#3a2a44');
+        ctx.strokeStyle = S.flash ? '#fff' : acc; ctx.lineWidth = 2.4 * s;
+        ctx.beginPath(); ctx.arc(2 * s, -46 * s, (6 + 3 * atk) * s, 0, 7); ctx.stroke();
+      }, 5 * s);
+      break;
+    }
+    case 'voidseer': {                            // 공허의 예언자: 눈이 하나, 떠 있는 고리
+      ctx.save(); ctx.translate(0, Math.sin(phase) * 3 * s - 4 * s);
+      robe(S, 18 * s, -44 * s, tun); legsHidden(S); torso(S);
+      ctx.fillStyle = col;
+      ctx.beginPath(); ctx.arc(0, -52 * s, 9 * s, 0, 7); ctx.fill();
+      ctx.fillStyle = S.flash ? '#fff' : acc;                // 커다란 외눈
+      ctx.beginPath(); ctx.arc(2 * s, -52 * s, 4.6 * s, 0, 7); ctx.fill();
+      ctx.fillStyle = S.flash ? '#fff' : '#101820';
+      ctx.beginPath(); ctx.arc(3 * s, -52 * s, 2 * s, 0, 7); ctx.fill();
+      ctx.strokeStyle = S.flash ? '#fff' : acc; ctx.lineWidth = 2 * s;
+      for (let i = 0; i < 2; i++) {                          // 머리 위를 도는 고리
+        ctx.beginPath();
+        ctx.ellipse(0, (-70 - i * 8) * s, (13 - i * 4) * s,
+                    (3.4 + Math.sin(phase + i) * 1.6) * s, 0, 0, 7);
+        ctx.stroke();
+      }
+      ctx.restore();
+      break;
+    }
+    case 'dreadknight': {                         // 공포 기사: 검은 판금, 뿔투구, 붉은 눈
+      cape(S, -1, tun, 1.2);
+      legs(S); torso(S, 5 * s); head(S, 'greathelm', 9.5 * s);
+      tri(S, -8 * s, -58 * s, -16 * s, -76 * s, -1 * s, -58 * s, acc);
+      tri(S, 8 * s, -58 * s, 16 * s, -76 * s, 1 * s, -58 * s, acc);
+      ctx.fillStyle = S.flash ? '#fff' : acc;                 // 투구 틈의 붉은 눈
+      ctx.fillRect(-1 * s, -52 * s, 8 * s, 2.2 * s);
+      armWeapon(S, -1.2 + atk * 2.0, () => {
+        line(S, 0, 0, 14 * s, 0, 4 * s, S.flash ? '#fff' : '#3a2a30');
+        ctx.fillStyle = S.flash ? '#fff' : '#6b6b74';         // 톱니 대검
+        ctx.beginPath();
+        ctx.moveTo(12 * s, -5 * s);
+        for (let i = 0; i < 4; i++) { ctx.lineTo((20 + i * 10) * s, -9 * s); ctx.lineTo((25 + i * 10) * s, -3 * s); }
+        ctx.lineTo(58 * s, 4 * s); ctx.lineTo(12 * s, 5 * s);
+        ctx.closePath(); ctx.fill();
+      }, 9 * s);
+      break;
+    }
+    case 'abyssguard': {                          // 심연 파수병: 큰 방패, 마름의 기운이 새어 나온다
+      legs(S, 22 * s); torso(S, 6 * s); head(S, 'pot', 9 * s);
+      shieldShape(S, 14 * s, -56 * s, 24 * s, 50 * s, S.flash ? '#fff' : tun);
+      ctx.strokeStyle = S.flash ? '#fff' : acc; ctx.lineWidth = 2.2 * s;
+      ctx.beginPath(); ctx.arc(26 * s, -32 * s, 8 * s, 0, 7); ctx.stroke();
+      for (let i = 0; i < 3; i++) {                           // 스며 나오는 마름의 기운
+        const a = phase * 0.9 + i * 2.1;
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = S.flash ? '#fff' : acc;
+        ctx.beginPath();
+        ctx.arc(Math.cos(a) * 24 * s, -34 * s + Math.sin(a) * 12 * s, 4 * s, 0, 7); ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+      armWeapon(S, -0.4 + atk * 0.9, () => line(S, 0, 0, 26 * s, -6 * s, 4.6 * s, acc), 7 * s);
+      break;
+    }
+
+    /* ---------------------- 3막 보스 ---------------------- */
+    case 'bonelord': {                            // 백골 군주: 뼈 왕관, 갈비 흉갑, 지팡이
+      const O = Object.assign({}, S, { lw: 6.5 * s });
+      cape(O, -1, tun, 1.3);
+      legs(O, 24 * s);
+      ctx.strokeStyle = S.flash ? '#fff' : col; ctx.lineWidth = 3 * s;   // 갈비뼈
+      for (let i = 0; i < 4; i++) {
+        ctx.beginPath();
+        ctx.arc(0, (-30 - i * 7) * s, (13 - i) * s, 0.2, Math.PI - 0.2);
+        ctx.stroke();
+      }
+      torso(O, 7 * s);
+      skull(S, 0, -56 * s, 12 * s, S.flash ? '#fff' : col, S.flash ? '#fff' : acc);
+      ctx.fillStyle = S.flash ? '#fff' : acc;                            // 뼈 왕관
+      for (let i = -2; i <= 2; i++) tri(S, i * 6 * s - 2 * s, -68 * s, i * 6 * s, -84 * s, i * 6 * s + 3 * s, -68 * s, acc);
+      armWeapon(O, -0.25, () => {
+        line(O, 0, 12 * s, 6 * s, -54 * s, 4 * s, S.flash ? '#fff' : col);
+        skull(S, 7 * s, -60 * s, 7 * s, S.flash ? '#fff' : col, S.flash ? '#fff' : acc);
+        wisp(S, 7 * s, -74 * s, 4 * s + 2 * s * atk, S.flash ? '#fff' : acc, phase * 1.7);
+      }, 10 * s);
+      break;
+    }
+    case 'voidwitch': {                           // 공허의 마녀: 갈라진 치마, 세 개의 눈, 균열 구슬
+      const O = Object.assign({}, S, { lw: 6 * s });
+      ctx.save(); ctx.translate(0, Math.sin(phase * 0.8) * 4 * s);
+      robe(O, 26 * s, -52 * s, tun); legsHidden(O); torso(O, 6.5 * s);
+      ctx.fillStyle = col;
+      ctx.beginPath(); ctx.arc(0, -64 * s, 12 * s, 0, 7); ctx.fill();
+      ctx.fillStyle = S.flash ? '#fff' : acc;                            // 세 개의 눈
+      for (let i = -1; i <= 1; i++) {
+        ctx.beginPath(); ctx.arc(i * 5 * s, -66 * s + Math.abs(i) * 3 * s, 2.4 * s, 0, 7); ctx.fill();
+      }
+      ctx.strokeStyle = S.flash ? '#fff' : acc; ctx.lineWidth = 2.6 * s; // 뿔 관
+      for (let i = -1; i <= 1; i += 2) {
+        ctx.beginPath();
+        ctx.moveTo(i * 8 * s, -74 * s);
+        ctx.quadraticCurveTo(i * 22 * s, -88 * s, i * 12 * s, -98 * s);
+        ctx.stroke();
+      }
+      armWeapon(O, -0.3 - atk * 0.2, () => {                             // 손 위의 균열 구슬
+        ctx.strokeStyle = S.flash ? '#fff' : acc; ctx.lineWidth = 2 * s;
+        const r = (10 + 5 * atk) * s;
+        ctx.beginPath(); ctx.arc(18 * s, -6 * s, r, 0, 7); ctx.stroke();
+        for (let i = 0; i < 4; i++) {
+          const a = phase * 1.4 + i * 1.57;
+          line(S, 18 * s, -6 * s, 18 * s + Math.cos(a) * r, -6 * s + Math.sin(a) * r, 1.6 * s, acc);
+        }
+      }, 8 * s);
+      ctx.restore();
+      break;
+    }
+    case 'abysslord': {                           // 심연의 군주: 거대한 뿔, 갈라진 가슴, 낙인의 낫
+      const O = Object.assign({}, S, { lw: 9 * s });
+      // 등 뒤의 심연: 천천히 벌어지는 검붉은 균열
+      ctx.globalAlpha = 0.5;
+      ctx.fillStyle = S.flash ? '#fff' : acc;
+      for (let i = 0; i < 3; i++) {
+        const w = (6 + Math.sin(phase * 0.7 + i) * 3) * s;
+        ctx.beginPath();
+        ctx.moveTo(-30 * s, (-70 + i * 22) * s);
+        ctx.lineTo(-30 * s - w, (-58 + i * 22) * s);
+        ctx.lineTo(-30 * s, (-46 + i * 22) * s);
+        ctx.closePath(); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      legs(O, 30 * s);
+      ctx.fillStyle = tun;                                               // 두꺼운 몸통
+      ctx.beginPath(); ctx.ellipse(0, -50 * s, 18 * s, 22 * s, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = S.flash ? '#fff' : acc;                            // 가슴의 불길
+      ctx.beginPath(); ctx.ellipse(2 * s, -50 * s, 5 * s, 11 * s, 0, 0, 7); ctx.fill();
+      torso(O, 9 * s);
+      ctx.fillStyle = col;
+      ctx.beginPath(); ctx.arc(0, -72 * s, 13 * s, 0, 7); ctx.fill();
+      ctx.strokeStyle = S.flash ? '#fff' : '#c9c2b0'; ctx.lineWidth = 4.4 * s;  // 크게 휜 뿔
+      for (let i = -1; i <= 1; i += 2) {
+        ctx.beginPath();
+        ctx.moveTo(i * 10 * s, -80 * s);
+        ctx.quadraticCurveTo(i * 34 * s, -96 * s, i * 20 * s, -112 * s);
+        ctx.stroke();
+      }
+      ctx.fillStyle = S.flash ? '#fff' : acc;
+      ctx.beginPath(); ctx.arc(4 * s, -73 * s, 3.2 * s, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(-4 * s, -73 * s, 3.2 * s, 0, 7); ctx.fill();
+      armWeapon(O, -1.35 + atk * 2.1, () => {                            // 낙인의 낫
+        line(O, 0, 0, 52 * s, -6 * s, 5.5 * s, S.flash ? '#fff' : '#3a2028');
+        ctx.fillStyle = S.flash ? '#fff' : acc;
+        ctx.beginPath();
+        ctx.moveTo(48 * s, -8 * s);
+        ctx.quadraticCurveTo(76 * s, -34 * s, 34 * s, -40 * s);
+        ctx.quadraticCurveTo(62 * s, -22 * s, 46 * s, -2 * s);
+        ctx.closePath(); ctx.fill();
+      }, 12 * s);
       break;
     }
     case 'goblin':
@@ -2962,6 +3500,8 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
 
 /* 걸을 때 반대쪽 팔을 흔드는 인간형 병종 */
 const HUMANOID = {
+  michael:1, templar:1, lancer:1,
+  imp:1, soulthief:1, flamefiend:1, gargoyle:1, dreadknight:1, abyssguard:1,
   skadi:1,bastet:1,runeguard:1, musketeer:1, purifier:1, frostlancer:1,
   drummer:1, assassin:1, burrower:1, boneguard:1,
   pojol:1, hwarang:1, dokkaebi:1, teslaknight:1, clocksoldier:1, mechanic:1, rifleman:1,
@@ -3134,9 +3674,9 @@ function attackPose(t) {
 
 /* 공격 모양. 병종을 몇 무리로 나눠 움직임을 다르게 준다. */
 const ATTACK_STYLES = {
-  thrust: 'spear,pojol,frostlancer,valkyrie,hoplite,orcspear,runeguard,teslaknight,pharaoh,spartan,fenrir,bastet',
-  heavy: 'berserk,knight,colossus,thor,dokkaebi,ares,viking,ogre,troll,warlord,orcberserk,golem,dark,warchief,frostgiant,orcshield,haetae,shield,paladin,anubis,clocksoldier,mechanic',
-  cast: 'mage,frost,pyro,necro,priest,shaman,lich,hades,ra,gumiho,persephone,rapriest,runeseer,mudang,purifier,inventor,plaguer,zeus,herald,saja,odin,medusa,engineer,totem',
+  thrust: 'spear,pojol,frostlancer,valkyrie,hoplite,orcspear,runeguard,teslaknight,pharaoh,spartan,fenrir,bastet,lancer',
+  heavy: 'berserk,knight,colossus,thor,dokkaebi,ares,viking,ogre,troll,warlord,orcberserk,golem,dark,warchief,frostgiant,orcshield,haetae,shield,paladin,anubis,clocksoldier,mechanic,michael,templar,dreadknight,abyssguard,bloater,abysslord',
+  cast: 'mage,frost,pyro,necro,priest,shaman,lich,hades,ra,gumiho,persephone,rapriest,runeseer,mudang,purifier,inventor,plaguer,zeus,herald,saja,odin,medusa,engineer,totem,seraph,raphael,chanter,acolyte,charmwitch,warlock,voidseer,bonelord,voidwitch',
   shoot: 'archer,venom,longbow,sniper,musketeer,rifleman,ballista,artemis,skadi,desertarcher,northarcher,catapult,orccatapult,airship,steammech,turret'
 };
 const ATTACK_STYLE = {};

@@ -286,13 +286,14 @@ function renderQuest(tab) {
 let questTab = 'daily';
 
 /* ------------------------------ 지도 ------------------------------ */
-/* 30개 전장을 긴 목록으로 늘어놓던 것을 장(章) 단위 진군로로 바꿨다.
+/* 전장을 긴 목록으로 늘어놓던 것을 장(章) 단위 진군로로 바꿨다.
  * 한 장에 10개, 화면 하나에 다 들어가고 스크롤이 없다. 전장을 누르면 오른쪽에
  * 정보가 뜨고, 거기서 편성을 고치거나 바로 출진한다. */
 const CHAPTERS = [
   { name: '1장', sub: '국경 전선', from: 0, to: 10 },
   { name: '2장', sub: '왕도 수호', from: 10, to: 20 },
   { name: '2막', sub: '신화의 끝', from: 20, to: 30 },
+  { name: '3막', sub: '심연의 문', from: 30, to: 40 },
   { name: '무한', sub: '끝없는 웨이브', endless: true }
 ];
 let mapChapter = -1;       // -1: 진행 중인 장을 자동으로 고른다
@@ -662,6 +663,12 @@ function renderTraining() {
           (e.ab && e.ab.revive ? '<span class="stat hl">부활</span>' : '') +
           (e.ab && e.ab.rally ? '<span class="stat hl">지휘</span>' : '') +
           (e.ab && e.ab.weaken ? '<span class="stat hl">저주</span>' : '') +
+          (e.ab && e.ab.charm ? '<span class="stat hl">홀림</span>' : '') +
+          (e.ab && e.ab.blight ? '<span class="stat hl">마름</span>' : '') +
+          (e.ab && e.ab.steal ? '<span class="stat hl">소매치기</span>' : '') +
+          (e.ab && e.ab.deathSplit ? '<span class="stat hl">갈라짐</span>' : '') +
+          (e.ab && e.ab.barrier ? '<span class="stat hl">보호막 지원</span>' : '') +
+          (e.ab && e.ab.cleanse ? '<span class="stat hl">정화</span>' : '') +
           (e.area ? '<span class="stat">범위</span>' : '') +
         '</div>' +
       '</div>';
@@ -1114,6 +1121,9 @@ function showResult() {
   save.stats.bossKills += battle.bossKills || 0;
   addStat('kills', battle.kills);
   addStat('bosses', battle.bossKills || 0);
+  // 왕명과 필살기 사용 횟수도 임무에 옮긴다 (예전에는 기록되지 않아 임무가 끝나지 않았다)
+  addStat('commands', battle.cmdUses || 0);
+  addStat('actives', battle.heroUses || 0);
   if (battle.endless) addStat('endless', battle.wavesCleared || 0);
   if (battle.state === 'win') {
     save.stats.wins++;

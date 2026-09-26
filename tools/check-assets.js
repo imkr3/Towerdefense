@@ -106,6 +106,43 @@ Object.keys(D.RARITY).forEach(r => {
 });
 ok('시즌 ' + D.SEASONS.length + '개, 소환 풀 정상');
 
+/* 영어 번역이 자료를 전부 덮는지, 사전에 같은 열쇠가 두 번 들어가지 않았는지.
+ * 번역이 빠지면 영어로 고른 화면에 한국어가 그대로 남고, 열쇠가 겹치면 뒤엣것이
+ * 앞엣것을 조용히 덮어써서 엉뚱한 말이 나온다. */
+const i18nSrc = fs.readFileSync(path.join(ROOT, 'js/i18n.js'), 'utf8');
+vm.runInContext(i18nSrc, ctx, { filename: 'js/i18n.js' });
+const T = vm.runInContext(
+  '({I18N_EN, MISSION_DEFS, ACHIEVEMENTS, STAGE_MODS, COMMAND})', ctx);
+{
+  const han = /[가-힣]/;
+  const missing = new Set();
+  const walk = (o, d) => {
+    if (!o || typeof o !== 'object' || d > 6) return;
+    for (const k in o) {
+      const v = o[k];
+      if (typeof v === 'string') {
+        if (han.test(v) && !Object.prototype.hasOwnProperty.call(T.I18N_EN, v)) missing.add(v);
+      } else if (v && typeof v === 'object') walk(v, d + 1);
+    }
+  };
+  [D.UNITS, D.ENEMIES, D.STAGES, D.SEASONS, T.MISSION_DEFS, T.ACHIEVEMENTS,
+   D.UPGRADES, T.COMMAND, D.RARITY, T.STAGE_MODS].forEach(o => walk(o, 0));
+  if (missing.size) {
+    [...missing].slice(0, 12).forEach(m => bad('영어 번역 없음: ' + m));
+    if (missing.size > 12) bad('… 그 밖에 ' + (missing.size - 12) + '건');
+  } else ok('영어 번역 ' + Object.keys(T.I18N_EN).length + '개, 자료 전체 덮음');
+
+  const block = i18nSrc.slice(i18nSrc.indexOf('const I18N_EN = {'),
+                              i18nSrc.indexOf('\n};', i18nSrc.indexOf('const I18N_EN = {')));
+  const re = /'((?:[^'\\]|\\.)*)'\s*:/g;
+  const seen = {}; let m2, dups = 0;
+  while ((m2 = re.exec(block))) {
+    if (seen[m2[1]]) { bad('번역 사전에 같은 열쇠가 둘: ' + m2[1]); dups++; }
+    seen[m2[1]] = true;
+  }
+  if (!dups) ok('번역 사전에 중복 열쇠 없음');
+}
+
 /* 렌더러가 모든 shape 을 그릴 수 있는지 */
 const render = fs.readFileSync(path.join(ROOT, 'js/render.js'), 'utf8');
 const shapes = {};
