@@ -234,7 +234,7 @@ function renderQuest(tab) {
           save.stones += def.stone;
           saveGame(save);
           SFX.gold();
-          toast('보상을 받았다');
+          toast('보상 획득!');
           renderQuest('daily');
           checkAchievements();
         });
@@ -243,7 +243,7 @@ function renderQuest(tab) {
     });
     const note = document.createElement('div');
     note.className = 'quest-card note';
-    note.innerHTML = '<div class="q-name">임무는 날짜가 바뀌면 새로 뽑힌다.</div>';
+    note.innerHTML = '<div class="q-name">임무는 매일 자정에 새로 갱신됩니다.</div>';
     box.appendChild(note);
 
   } else if (questTab === 'achv') {
@@ -421,8 +421,8 @@ function renderStageDetail(i) {
   const ch = CHAPTERS[mapChapter];
   if (ch.endless || i < 0) {
     box.innerHTML = ch.endless
-      ? '<div class="sd-name">무한 전장</div><p class="sd-hint">웨이브가 끝없이 온다. 웨이브마다 적이 강해지고 5웨이브마다 보스가 나온다. 성채가 무너질 때까지 몇 웨이브를 버티는지 겨룬다.</p>'
-      : '<div class="sd-name">' + ch.name + ' · ' + ch.sub + '</div><p class="sd-hint">이전 장을 먼저 돌파해야 한다.</p>';
+      ? '<div class="sd-name">무한 전장</div><p class="sd-hint">웨이브가 끝없이 몰려옵니다. 웨이브마다 적이 강해지고, 5웨이브마다 보스가 등장합니다. 성채가 무너지기 전까지 최대한 버텨 보세요!</p>'
+      : '<div class="sd-name">' + ch.name + ' · ' + ch.sub + '</div><p class="sd-hint">이전 장을 먼저 돌파해야 합니다.</p>';
     const fb = document.createElement('button');
     fb.className = 'btn ghost sd-formation';
     fb.textContent = '편성';
@@ -438,6 +438,8 @@ function renderStageDetail(i) {
     '<div class="sd-name">' + st.name + '</div>' +
     '<div class="sd-stars">' + starMarks(save.stars[i] || 0) + '</div>' +
     (st.hint ? '<p class="sd-hint">' + st.hint + '</p>' : '') +
+    (OPENINGS[st.opening] ? '<div class="sd-open" style="--mc:' + OPENINGS[st.opening].color + '"><b>' +
+      OPENINGS[st.opening].icon + ' ' + OPENINGS[st.opening].name + '</b><span>' + OPENINGS[st.opening].desc + '</span></div>' : '') +
     (st.mods ? '<div class="sd-mods">' + st.mods.map(m => {
       const d = STAGE_MODS[m];
       return '<div class="sd-mod" style="--mc:' + d.color + '"><b>' + d.name + '</b><span>' + d.desc + '</span>' +
@@ -483,14 +485,14 @@ function renderEndlessSlot() {
   const open = save.cleared >= ENDLESS_UNLOCK_STAGE;
   slot.innerHTML = '';
   if (!open) {
-    slot.innerHTML = '<div class="endless-card locked">🔒 무한 전장은 20전장을 모두 돌파하면 열린다</div>';
+    slot.innerHTML = '<div class="endless-card locked">🔒 무한 전장은 20전장을 모두 돌파하면 열립니다</div>';
     return;
   }
   const el = document.createElement('div');
   el.className = 'endless-card';
   el.innerHTML =
     '<div class="e-title">무한 전장</div>' +
-    '<div class="e-sub">끝이 없는 웨이브. 웨이브마다 적이 강해진다. 성채가 무너질 때까지 버텨라.</div>' +
+    '<div class="e-sub">끝없는 웨이브. 웨이브마다 적이 강해집니다. 성채가 무너질 때까지 버텨 내세요!</div>' +
     '<div class="e-best">최고 기록 <b>' + (save.endlessBest || 0) + '</b> 웨이브</div>' +
     '<button class="btn primary e-btn">도전</button>';
   el.querySelector('.e-btn').addEventListener('click', () => startEndless());
@@ -526,7 +528,7 @@ function renderShop() {
         (maxed ? '최대 강화 완료' : '💰 ' + cost + ' 골드로 강화') + '</button>';
     if (!maxed) {
       card.querySelector('.up-buy').addEventListener('click', () => {
-        if (save.coins < cost) { toast('골드가 부족하다'); return; }
+        if (save.coins < cost) { toast('골드가 부족합니다'); return; }
         save.coins -= cost;
         save.upgrades[key] = lv + 1;
         saveGame(save);
@@ -549,7 +551,7 @@ function renderTraining() {
     '레벨 상한 <b>' + cap + '</b>' +
     (cap < hardCap ? ' (전장을 돌파하면 상승)' : ' (최대)') +
     ' · 편성 <b>' + save.loadout.length + ' / ' + LOADOUT_MAX + '</b>' +
-    ' <span class="hint">카드는 편성한 병종만 나온다</span>';
+    ' <span class="hint">전투 카드는 편성한 병종만 나옵니다</span>';
 
   const box = $('#units-list');
   box.innerHTML = '';
@@ -579,7 +581,7 @@ function renderTraining() {
         (unlocked && u.active ? '<div class="active-desc">액티브 · ' + u.active.name + ' (' + u.active.cd + '초): ' + u.active.desc + '</div>' : '') +
         (unlocked && u.abText ? '<div class="ab-text">◆ ' + u.abText + '</div>' : '') +
         '<div class="unit-desc">' +
-          (unlocked ? u.desc : '전장 ' + u.unlockStage + '에 도달하면 합류한다.') + '</div>' +
+          (unlocked ? u.desc : '전장 ' + u.unlockStage + '에 도달하면 합류합니다.') + '</div>' +
         (unlocked ?
           '<div class="stat-row">' +
             '<span class="stat">비용 ' + u.cost + '</span>' +
@@ -605,7 +607,7 @@ function renderTraining() {
       drawUnitIcon(el.querySelector('.unit-ico canvas'), u, 54);
       if (!atCap) {
         el.querySelector('.train-btn').addEventListener('click', () => {
-          if (save.coins < cost) { toast('골드가 부족하다'); return; }
+          if (save.coins < cost) { toast('골드가 부족합니다'); return; }
           save.coins -= cost;
           save.levels[u.id] = lv + 1;
           save.stats.trains++;
@@ -620,7 +622,7 @@ function renderTraining() {
       if (tb && !(!inTeam && teamFull)) {
         tb.addEventListener('click', () => {
           if (inTeam) {
-            if (save.loadout.length <= 1) { toast('최소 한 병종은 편성해야 한다'); return; }
+            if (save.loadout.length <= 1) { toast('최소 1개 병종은 편성해야 합니다'); return; }
             save.loadout = save.loadout.filter(id => id !== u.id);
           } else {
             save.loadout.push(u.id);
@@ -738,7 +740,7 @@ function grantUnit(u) {
 
 function doPull(count) {
   const cost = count === 10 ? GACHA.tenPull : GACHA.stonePerPull * count;
-  if (save.stones < cost) { toast('소환석이 부족하다'); return; }
+  if (save.stones < cost) { toast('소환석이 부족합니다'); return; }
   save.stones -= cost;
 
   const got = [];
@@ -916,6 +918,8 @@ function startBattle(index) {
   beginBattle();
   // 특성 전장은 시작하자마자 무엇이 다른지 크게 알린다
   if (battle.stage.mods) battle.announce('전장 특성 · ' + battle.stage.mods.map(m => STAGE_MODS[m].name).join(' · '), 3.2);
+  else if (battle.stage.opening === 'calm') battle.announce('폭풍 전야 · 적이 곧 몰려옵니다', 3);
+  else if (battle.stage.opening === 'sally') battle.announce('요새 반격 · 요새를 치면 수비대가 나옵니다', 3);
 }
 
 function beginBattle() {
@@ -991,9 +995,9 @@ function onCardTap(u) {
     toast(cd > 0 ? u.active.name + ' · ' + cd + '초 남음' : u.active.name + ' · 대상 없음');
     return;
   }
-  if (battle.cooldowns[u.id] > 0) { toast('아직 쿨타임이다'); return; }
-  if (battle.money < u.cost) { toast('군자금이 부족하다'); return; }
-  if (!battle.deploy(u.id)) toast('동시 출진 한도에 도달했다');
+  if (battle.cooldowns[u.id] > 0) { toast('재사용 대기 중입니다'); return; }
+  if (battle.money < u.cost) { toast('군자금이 부족합니다'); return; }
+  if (!battle.deploy(u.id)) toast('동시 출진 한도에 도달했습니다');
   else buzz(8);
 }
 
@@ -1048,15 +1052,13 @@ function updateHud() {
   $('#ally-hp-txt').textContent = Math.ceil(allyPct) + '%';
   $('#enemy-hp-txt').textContent = Math.ceil(enemyPct) + '%';
   $('#castle-status').classList.toggle('critical', allyPct < 30);
-  const wave = battle.nextWave();
-  // 무한 전장은 지금 몇 웨이브째이고 적이 얼마나 세졌는지를 먼저 보여 준다
-  const endlessTag = battle.endless
-    ? '웨이브 ' + battle.currentWave() + ' · 적 ×' + endlessMul(battle.currentWave() - 1).toFixed(1) + ' · ' : '';
-  $('#wave-preview').textContent = endlessTag + (wave
-    ? (wave.boss ? '보스 예고 · ' : (wave.reinforce ? '끝없는 증원 · ' : '다음 증원 · ')) +
-      wave.name + ' ' + wave.seconds + '초'
-    : '마지막 웨이브 · 남은 적을 처치하라');
-  $('#wave-preview').classList.toggle('boss-warning', !!wave && wave.boss);
+  // 적이 언제 나오는지는 알려 주지 않는다. 무한 전장만 몇 웨이브째인지 보여 준다.
+  const preview = battle.endless
+    ? '웨이브 ' + battle.currentWave() + ' · 적 ×' + endlessMul(battle.currentWave() - 1).toFixed(1)
+    : (battle.reinforcing() ? '적 증원 중' : '');
+  const wp = $('#wave-preview');
+  if (wp.textContent !== preview) wp.textContent = preview;
+  wp.hidden = !preview;
   $('#battle-clock').textContent = Math.floor(battle.time / 60) + ':' + String(Math.floor(battle.time % 60)).padStart(2, '0');
   cmdBtn.classList.toggle('ready', ready);
   $('#cmd-cd').textContent = ready ? '준비'
@@ -1138,11 +1140,11 @@ function showResult() {
   if (win) {
     const nextUnit = ROSTER_UNITS.find(u => u.unlockStage === battle.stageIndex + 2);
     if (nextUnit) lines.push('새 병종 해금: ' + nextUnit.name);
-    if (battle.stars < 3) lines.push('성채를 더 지키면 별 3개를 받는다.');
+    if (battle.stars < 3) lines.push('성채를 더 지켜내면 ★3을 받을 수 있습니다.');
     if (battle.stoneGain) lines.push('소환석 🔮 +' + battle.stoneGain);
     if (battle.stageIndex + 1 >= STAGES.length) lines.push('왕국 방어전 전 전장 제패!');
   } else {
-    lines.push('강화를 올리거나 편성을 바꿔 보자.');
+    lines.push('강화를 올리거나 편성을 바꿔 다시 도전하세요!');
   }
   $('#result-desc').textContent = lines.join('\n');
   const hasNext = win && battle.stageIndex + 1 < STAGES.length;
@@ -1234,10 +1236,10 @@ function toggleFullscreen() {
     const req = el.requestFullscreen || el.webkitRequestFullscreen;
     if (req) {
       const r = req.call(el);
-      if (r && r.then) r.then(lock).catch(() => toast('전체화면을 지원하지 않는 기기다'));
+      if (r && r.then) r.then(lock).catch(() => toast('전체화면을 지원하지 않는 기기입니다'));
       else lock();
     } else {
-      toast('전체화면을 지원하지 않는 기기다');
+      toast('전체화면을 지원하지 않는 기기입니다');
     }
   } else {
     if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
@@ -1440,12 +1442,12 @@ function init() {
   });
   $('#btn-reset').addEventListener('click', () => {
     askConfirm('기록 초기화',
-      '진행도와 소환한 병종까지 전부 사라진다. 정말 지울까?', () => {
+      '진행도와 소환한 병종이 모두 삭제됩니다. 정말 초기화하시겠습니까?', () => {
         const fresh = defaultSave();
         if (!SaveStore.write(fresh, true)) { toast(SaveStore.error); return; }
         save = fresh;
         refreshTitleBadges();
-        toast('기록을 초기화했다');
+        toast('기록을 초기화했습니다');
       });
   });
   $('#confirm-yes').addEventListener('click', () => {
@@ -1474,19 +1476,19 @@ function init() {
     save.auto = !save.auto;
     saveGame(save);
     refreshAutoBtn();
-    toast(save.auto ? '자동 출진을 켰다' : '자동 출진을 껐다');
+    toast(save.auto ? '자동 출진 ON' : '자동 출진 OFF');
     SFX.ui();
   });
   $('#btn-pull1').addEventListener('click', () => doPull(1));
   $('#btn-pull10').addEventListener('click', () => doPull(10));
   $('#btn-buy-stone').addEventListener('click', () => {
-    if (save.coins < GACHA.goldPerStone) { toast('골드가 부족하다'); return; }
+    if (save.coins < GACHA.goldPerStone) { toast('골드가 부족합니다'); return; }
     save.coins -= GACHA.goldPerStone;
     save.stones++;
     saveGame(save);
     renderGacha();
     SFX.gold();
-    toast('소환석을 하나 얻었다');
+    toast('소환석 1개 획득!');
   });
   $('#btn-pull-close').addEventListener('click', () => {
     $('#pull-result').classList.remove('show');
@@ -1495,7 +1497,7 @@ function init() {
 
   $('#btn-quit').addEventListener('click', () => {
     if (battle && battle.state === 'play') {
-      askConfirm('전투 포기', '지금까지의 전과를 버리고 진군도로 돌아갈까?',
+      askConfirm('전투 포기', '지금까지의 전과를 포기하고 진군도로 돌아가시겠습니까?',
                  () => { flushPlayTime(); saveGame(save); show('scr-map'); });
       return;
     }
@@ -1517,7 +1519,7 @@ function init() {
   });
   $('#btn-command').addEventListener('click', () => {
     if (!canBattleInput()) return;
-    if (!battle.canCommand()) { toast('왕명은 아직 준비되지 않았다'); return; }
+    if (!battle.canCommand()) { toast('왕의 명령이 아직 준비되지 않았습니다'); return; }
     battle.useCommand();
   });
   initSettings();
@@ -1527,11 +1529,11 @@ function init() {
     else startBattle(battle.stageIndex);
   });
   $('#btn-next').addEventListener('click', () => {
-    $('#btn-retry').textContent = '다시 싸운다';
+    $('#btn-retry').textContent = '다시 도전';
     startBattle(battle.stageIndex + 1);
   });
   $('#btn-tomap').addEventListener('click', () => {
-    $('#btn-retry').textContent = '다시 싸운다';
+    $('#btn-retry').textContent = '다시 도전';
     show('scr-map');
   });
 
@@ -1601,7 +1603,7 @@ function initSettings() {
   $$('#set-lang button').forEach(b => b.addEventListener('click', () => {
     if (Settings.get('lang') === b.dataset.v) return;
     if (battle && battle.state === 'play' && $('#scr-battle').classList.contains('active')) {
-      toast('전투 중에는 언어를 바꿀 수 없다');
+      toast('전투 중에는 언어를 바꿀 수 없습니다');
       return;
     }
     Settings.set('lang', b.dataset.v);

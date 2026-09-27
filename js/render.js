@@ -1231,6 +1231,7 @@ class Renderer {
   /* WebGL 연출 레이어. 파티클은 화면 좌표로 살기 때문에 카메라가 흐른 만큼
    * 같이 밀어 주고, 화면 흔들림도 같은 값으로 따라가게 한다. */
   drawGlFx(battle, dt, camBefore, shakeX, shakeY) {
+    if (this.glfx && this.glfx.ok) this.glfx.floorY = this.rowY(2) + 14 * this.cs;
     const g = this.glfx;
     if (!g || !g.ok) return;
     g.quality = this.fxq < 0.5 ? 0.45 : (this.fxq < 1 ? 0.7 : 1);

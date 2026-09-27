@@ -1010,6 +1010,48 @@ const BOSS_ATK_MUL = 1.2;
   });
 })();
 
+/* ------------------------------------------------------------------
+ *  개전 방식. 매번 같은 식으로 시작하면 금방 질린다.
+ *   - rush  : 곧바로 적이 온다
+ *   - calm  : 첫 적이 12초쯤 뒤에 온다 — 편성을 깔 시간이 있다
+ *   - sally : 요새를 두들기면(체력 80%·45%) 요새가 충격파로 아군을 밀어내며
+ *             숨겨 둔 수비대를 쏟아낸다
+ *  1·2전장은 안내 삼아 늘 rush. 조합 검증용 전장 몇 곳은 손으로 정한다.
+ * ------------------------------------------------------------------ */
+const OPENINGS = {
+  rush:  { name: '정면 돌격', icon: '⚔', color: '#ff7a5a', desc: '전투가 시작되자마자 적이 몰려옵니다.' },
+  calm:  { name: '폭풍 전야', icon: '⏳', color: '#7ac8ff', desc: '잠시 조용하다가 적이 한꺼번에 들이닥칩니다. 그 사이 전열을 갖추세요.' },
+  sally: { name: '요새 반격', icon: '🏰', color: '#ffb45a', desc: '요새 체력이 80%·45%가 되면 충격파로 아군을 밀쳐내고 수비대를 풀어놓습니다.' }
+};
+STAGES[17].opening = 'calm';
+STAGES[23].opening = 'calm';
+STAGES[27].opening = 'sally';
+STAGES.forEach((st, i) => {
+  st.opening = st.opening || (i < 2 ? 'rush' : ['calm', 'rush', 'sally'][i % 3]);
+  // 고요: 첫 12초는 조용하다가, 그 사이 올 적이 한꺼번에 몰려온다 (전체 압박은 그대로)
+  if (st.opening === 'calm') st.waves.forEach(w => { if (w.t < 12) w.t = 12; });
+  if (st.opening !== 'sally') return;
+  // 수비대: 보스 전장이면 그 보스의 호위, 아니면 이 전장에서 가장 흔한 잡몹 둘
+  let front, back;
+  if (st.bossRole) {
+    const esc = BOSS_ESCORT[st.bossRole];
+    const seen = new Set(); STAGES.slice(0, i + 1).forEach(x => x.waves.forEach(w => seen.add(w.e)));
+    front = esc.front.find(id => seen.has(id)) || 'orcspear';
+    back = esc.back.find(id => seen.has(id)) || 'ballista';
+  } else {
+    const count = {};
+    st.waves.forEach(w => { if (!ENEMIES[w.e].boss && !(ENEMIES[w.e].ab && ENEMIES[w.e].ab.hold)) count[w.e] = (count[w.e] || 0) + w.n; });
+    const top = Object.keys(count).sort((a, b) => count[b] - count[a]);
+    front = top.find(id => !ENEMIES[id].ranged) || top[0] || 'orcspear';
+    back = top.find(id => ENEMIES[id].ranged) || top[1] || front;
+  }
+  const n = 2 + Math.floor(i / 7);
+  st.sally = [
+    { at: 0.8, group: [[front, n], [back, Math.max(1, n - 1)]] },
+    { at: 0.45, group: [[front, n + 1], [back, n]] }
+  ];
+});
+
 /* 전장 길이. 예전엔 모두 2000 이라 병사가 적과 부딪히기까지 40초 넘게 걸어야 했다.
  * 초반은 짧게 붙고, 뒤로 갈수록·보스 전장일수록 조금씩 길어진다. */
 STAGES.forEach((st, i) => {

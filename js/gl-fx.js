@@ -92,6 +92,7 @@ class GLFx {
     this.offX = 0;
     this.offY = 0;
     this.quality = 1;              // 프레임이 밀리면 렌더러가 낮춘다
+    this.floorY = 0;               // 땅 높이(화면 좌표). 렌더러가 매 프레임 넣는다
     // 전체 밝기. 전장이 밝은 낮 배경이라 가산 광채가 묻히기 쉽다.
     // 합성식이 포화형이어서 1 을 넘겨도 흰 덩어리로 터지지는 않는다.
     this.gain = 1.15;
@@ -257,7 +258,10 @@ class GLFx {
       // 같은 정적 파티클)은 화면 위에서 시작하므로 건드리지 않는다.
       if (d[b + P_VX] !== 0 || d[b + P_VY] !== 0) {
         const px = d[b + P_X], py = d[b + P_Y];
-        if (py < -60 || py > this.h + 80 || px < -240 || px > this.w + 240) {
+        // 땅(floorY) 아래로 떨어지는 파티클도 버린다. 안 그러면 불티가 화면 아래
+        // 카드 줄까지 흘러내려 '이펙트가 화면 밑에서 나오는' 것처럼 보인다.
+        const sunk = this.floorY && py > this.floorY && d[b + P_VY] > 0;
+        if (sunk || py < -60 || py > this.h + 80 || px < -240 || px > this.w + 240) {
           n--;
           if (i !== n) d.copyWithin(b, n * GLFX_STRIDE, n * GLFX_STRIDE + GLFX_STRIDE);
           continue;

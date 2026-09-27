@@ -416,4 +416,26 @@ test('Every new mob appears in the campaign, in the endless pool and in the best
   }
 });
 
+/* ---------------- 2.6 개전 방식 ---------------- */
+test('Stages open three ways: rush, calm (first foe at 12s+) and sally', () => {
+  const kinds = new Set(STAGES.map(st => st.opening));
+  assert.deepEqual([...kinds].sort(), ['calm', 'rush', 'sally']);
+  assert.equal(STAGES[0].opening, 'rush'); assert.equal(STAGES[1].opening, 'rush');
+  for (const st of STAGES.filter(s => s.opening === 'calm')) assert.ok(Math.min(...st.waves.map(w => w.t)) >= 12);
+  for (const st of STAGES.filter(s => s.opening === 'sally')) assert.equal(st.sally.length, 2);
+});
+test('A sally fires once per threshold, shoves nearby allies back and releases the garrison', () => {
+  const st = STAGES.find(s => s.opening === 'sally');
+  const b = new Battle(0, save(), { baseHp: 10000, money: 900, rate: 0, waves: [], reward: 0, sally: st.sally });
+  const c = b.enemyCastle; const a = b.makeAlly(U.spear, c.x - 100), far = b.makeAlly(U.spear, 200);
+  b.allies.push(a, far); const x0 = a.x;
+  b.checkSally(); assert.equal(b.enemies.length, 0, 'nothing at full hp');
+  c.hp = c.maxHp * 0.7; b.checkSally();
+  const n1 = st.sally[0].group.reduce((s, g) => s + g[1], 0);
+  assert.equal(b.enemies.length + b.burrowers.length, n1);
+  assert.ok(a.x < x0 && a.stunT > 0); assert.equal(far.x, 200);
+  b.checkSally(); assert.equal(b.enemies.length + b.burrowers.length, n1, 'does not refire');
+  c.hp = c.maxHp * 0.3; b.checkSally(); assert.equal(b.sallyDone, 2);
+});
+
 console.log(count + ' regression checks passed');

@@ -49,7 +49,7 @@ function heroRoom(id, out) {
   if (!isHeroUnit(UNIT_BY_ID[id])) return true;
   const n = heroCount(save.loadout) - (out && isHeroUnit(UNIT_BY_ID[out]) ? 1 : 0);
   if (n < HERO_SLOT_MAX) return true;
-  toast('전설·신화는 편성에 ' + HERO_SLOT_MAX + '명까지다');
+  toast('전설·신화는 최대 ' + HERO_SLOT_MAX + '명까지 편성할 수 있습니다');
   return false;
 }
 
@@ -74,7 +74,7 @@ function placeUnit(id, index) {
 }
 
 function removeUnit(id) {
-  if (save.loadout.length <= 1) { toast('최소 한 병종은 편성해야 한다'); return false; }
+  if (save.loadout.length <= 1) { toast('최소 1개 병종은 편성해야 합니다'); return false; }
   save.loadout = save.loadout.filter(x => x !== id);
   return true;
 }
@@ -84,7 +84,7 @@ function toggleUnit(id) {
     if (removeUnit(id)) { SFX.ui(); commitLoadout(); }
     return;
   }
-  if (save.loadout.length >= LOADOUT_MAX) { toast('칸이 가득 찼다. 칸 위에 끌어 놓으면 바꾼다'); return; }
+  if (save.loadout.length >= LOADOUT_MAX) { toast('빈 칸이 없습니다. 칸 위에 끌어 놓으면 교체됩니다'); return; }
   if (!heroRoom(id)) return;
   save.loadout.push(id);
   SFX.deploy();
@@ -103,7 +103,7 @@ function autoFillLoadout() {
     save.loadout.push(u.id);
     n++;
   }
-  commitLoadout(n ? n + '개 칸을 채웠다' : '채울 칸이 없다');
+  commitLoadout(n ? n + '개 칸을 채웠습니다' : '채울 칸이 없습니다');
 }
 
 function unitMatchesFilter(u) {
@@ -206,7 +206,7 @@ function renderFormationPool() {
     });
     box.appendChild(el);
   });
-  if (!list.length) box.innerHTML = '<p class="pool-empty">해당하는 병종이 없다</p>';
+  if (!list.length) box.innerHTML = '<p class="pool-empty">해당하는 병종이 없습니다</p>';
   box.scrollTop = keep;
 }
 
@@ -231,7 +231,7 @@ function renderFormationSide() {
   } else {
     const tip = document.createElement('p');
     tip.className = 'fs-tip';
-    tip.textContent = '병종을 누르면 여기에 정보가 나온다.';
+    tip.textContent = '병종을 누르면 상세 정보가 표시됩니다.';
     side.appendChild(tip);
   }
 
@@ -246,7 +246,7 @@ function renderFormationSide() {
   clear.textContent = '비우기';
   clear.addEventListener('click', () => {
     save.loadout = save.loadout.slice(0, 1);
-    commitLoadout('첫 칸만 남겼다');
+    commitLoadout('첫 칸만 남기고 비웠습니다');
   });
   tools.appendChild(fill);
   tools.appendChild(clear);
@@ -268,10 +268,10 @@ function renderFormationSide() {
     load.addEventListener('click', () => {
       const unlocked = new Set(unlockedUnits().map(x => x.id));
       const next = p.filter(id => unlocked.has(id)).slice(0, LOADOUT_MAX);
-      if (!next.length) { toast('불러올 병종이 없다'); return; }
+      if (!next.length) { toast('불러올 편성이 없습니다'); return; }
       save.loadout = next;
       SFX.ui();
-      commitLoadout('저장 ' + (k + 1) + ' 편성을 불러왔다');
+      commitLoadout('저장 ' + (k + 1) + ' 편성을 불러왔습니다');
     });
     const store = document.createElement('button');
     store.className = 'fp-btn';
@@ -279,7 +279,7 @@ function renderFormationSide() {
     store.addEventListener('click', () => {
       presets[k] = save.loadout.slice();
       SFX.ui();
-      commitLoadout('저장 ' + (k + 1) + ' 에 기록했다');
+      commitLoadout('저장 ' + (k + 1) + '에 저장했습니다');
     });
     row.appendChild(load);
     row.appendChild(store);
@@ -393,7 +393,7 @@ function dragUp(e) {
   if (slot) {
     const index = Number(slot.dataset.slot);
     const res = placeUnit(src.id, index);
-    if (res === null) { toast('칸이 가득 찼다'); renderFormation(); return; }
+    if (res === null) { toast('빈 칸이 없습니다'); renderFormation(); return; }
     if (res === 'blocked') { renderFormation(); return; }
     SFX.deploy();
     buzz(12);

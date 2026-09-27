@@ -246,6 +246,7 @@ class Battle {
     this.allies = [];
     this.enemies = [];
     this.burrowers = [];        // 땅속을 기어 오는 적: 아무도 겨눌 수 없다
+    this.sallyDone = 0;         // 요새 반격을 몇 번 했나
     this.shots = [];
     this.fx = [];
 
@@ -460,6 +461,7 @@ class Battle {
     this.step(this.allies, this.enemies, this.enemyCastle, dt, true);
     this.step(this.enemies, this.allies, this.allyCastle, dt, false);
     if (this.burrowers.length) this.stepBurrowers(dt);
+    if (this.stage.sally && !this.endless) this.checkSally();
 
     this.updateShots(dt);
     // 사망 폭발이 연쇄를 멈출 때까지 양쪽을 정리한다. 보상은 한 번만 준다.
@@ -1383,6 +1385,31 @@ class Battle {
       this.enemies.push(b);
     }
     this.burrowers = keep;
+  }
+
+  /* 요새 반격: 요새 체력이 정해진 선 아래로 떨어지면 충격파로 가까운 아군을
+   * 밀어내고 숨겨 둔 수비대를 쏟아낸다. 한 선마다 한 번. */
+  checkSally() {
+    const list = this.stage.sally;
+    const c = this.enemyCastle;
+    while (this.sallyDone < list.length && !c.dead && c.hp / c.maxHp <= list[this.sallyDone].at) {
+      const sy = list[this.sallyDone++];
+      for (const a of this.allies) {
+        if (a.dead || a.ab.hold || Math.abs(c.x - a.x) > 380) continue;
+        a.stunT = Math.max(a.stunT, 0.4);
+        if (a.ab.kbImmune) continue;
+        a.x = Math.max(60, a.x - 140);
+        a.kbTimer = Math.max(a.kbTimer, 0.42);
+      }
+      sy.group.forEach(([id, n]) => {
+        for (let k = 0; k < n; k++) this.spawnEnemy(id, ENEMY_SPAWN_X - k * 24 - Math.random() * 20);
+      });
+      this.fx.push({ type: 'cast', kind: 'shockwave', x: c.x - 60, row: 1, color: '#ffb45a', r: 260,
+                     big: true, dir: -1, t: 0.7, life: 0.7 });
+      this.shake = Math.max(this.shake, 12);
+      this.announce('요새 반격!', 2);
+      sfx('bossIn');
+    }
   }
 
   /* 고블린 암살자: 전열 가까이 오면 한 번 뛰어올라 뒤쪽의 원거리 병사 곁에 내려앉는다 */
