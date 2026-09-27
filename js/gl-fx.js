@@ -660,6 +660,107 @@ class GLFx {
       }
 
       /* 교차 참격 */
+      /* 여의봉 회전: 도는 봉 잔상 + 상서로운 구름 */
+      case 'cloudspin': {
+        for (let turn = 0; turn < 3; turn++) {
+          const a0 = turn * 2.09;
+          const n = N(30);
+          for (let i = 0; i < n; i++) {
+            const t = (i / (n - 1) - 0.5) * 2;
+            const px = x + Math.cos(a0) * t * R * 0.8;
+            const py = y - 34 * sc + Math.sin(a0) * t * R * 0.3;
+            this.add(px, py, 0, 0, rnd(0.2, 0.42), 24 * sc * big, 5 * sc, col, 0.7, 2.4, a0, 0, 0, 1);
+            this.add(px, py, 0, 0, rnd(0.18, 0.34), 8 * sc, 2 * sc, white, 1, 3, a0, 0, 0, 0.9);
+          }
+        }
+        for (let i = 0, n = N(60); i < n; i++) {        // 낮게 퍼지는 구름
+          const a = rnd(0, TAU);
+          this.add(x + Math.cos(a) * rnd(0, R), y + Math.sin(a) * rnd(0, R) * 0.2,
+                   Math.cos(a) * rnd(40, 180) * sc, rnd(-60, -10) * sc,
+                   rnd(0.45, 0.9), rnd(26, 52) * sc, 14 * sc, col, 0.5, 1.3, 0, 0, 0, 1.2);
+        }
+        break;
+      }
+
+      /* 감로수: 피어나는 연꽃과 떨어지는 이슬 */
+      case 'lotus': {
+        for (let i = 0, n = N(10); i < n; i++) {
+          const a = (i / n) * TAU;
+          const segs = N(14);
+          for (let k = 0; k < segs; k++) {
+            const t = k / segs;
+            const px = x + Math.cos(a) * R * t;
+            const py = y - 24 * sc + Math.sin(a) * R * t * 0.35 - Math.sin(t * Math.PI) * 26 * sc;
+            this.add(px, py, 0, 0, rnd(0.3, 0.6), (18 - t * 8) * sc * big, 5 * sc,
+                     k % 3 ? col : white, 0.8, 1.8, a, 0, 0, 1);
+          }
+        }
+        for (let i = 0, n = N(70); i < n; i++) {        // 내려앉는 이슬
+          this.add(x + rnd(-R, R), y - rnd(60, 190) * sc, rnd(-20, 20), rnd(60, 170) * sc,
+                   rnd(0.5, 1.1), rnd(5, 11) * sc, 1, white, 0.9, 1, 0, 0, 0, 1.4);
+        }
+        break;
+      }
+
+      /* 천안: 가로로 찢어지는 빛살 */
+      case 'thirdeye': {
+        const n = N(80);
+        for (let i = 0; i < n; i++) {
+          const t = (i / (n - 1) - 0.5) * 2;
+          const px = x + t * R * 1.5;
+          const taper = 1 - Math.abs(t) * 0.8;
+          this.add(px, y, t * 260 * sc, 0, rnd(0.2, 0.45), 30 * sc * taper * big, 5 * sc,
+                   col, 0.7, 2.6, 0, 0, 0, 1);
+          this.add(px, y, t * 320 * sc, 0, rnd(0.18, 0.36), 10 * sc * taper, 2 * sc,
+                   white, 1, 3, 0, 0, 0, 0.9);
+        }
+        for (let i = 0, n2 = N(30); i < n2; i++) {
+          const a = rnd(-0.5, 0.5);
+          this.add(x, y, Math.cos(a) * rnd(200, 520) * sc, Math.sin(a) * rnd(-90, 90) * sc,
+                   rnd(0.2, 0.5), rnd(6, 14) * sc, 1, col, 1, 2.2, a, 0, 0);
+        }
+        break;
+      }
+
+      /* 파멸 선고가 터진다: 조여들다 터지는 육각 봉인 */
+      case 'doom': {
+        for (let ring = 0; ring < 2; ring++) {
+          const rr = R * (ring ? 1 : 0.62);
+          const n = N(40);
+          for (let i = 0; i < n; i++) {
+            const a = (i / n) * TAU;
+            this.add(x + Math.cos(a) * rr, y + Math.sin(a) * rr * 0.42, 0, 0,
+                     rnd(0.3, 0.6), 22 * sc * big, 6 * sc, col, 0.7, 2, a + 1.57, 0, 0, 1);
+          }
+        }
+        for (let i = 0, n = N(120); i < n; i++) {       // 안으로 빨려들다 터지는 불티
+          const a = rnd(0, TAU), sp = rnd(120, 560) * sc;
+          this.add(x, y, Math.cos(a) * sp, Math.sin(a) * sp * 0.7,
+                   rnd(0.3, 0.8), rnd(7, 18) * sc, 1, i % 5 ? col : white, 1, 2.2, a, 0, 240);
+        }
+        break;
+      }
+
+      /* 절망의 외침: 퍼져 나가는 음파 고리 */
+      case 'wail': {
+        for (let ring = 0; ring < 4; ring++) {
+          const rr = R * (0.35 + ring * 0.28);
+          const n = N(34);
+          for (let i = 0; i < n; i++) {
+            const a = -1.25 + (i / (n - 1)) * 2.5;
+            this.add(x + Math.cos(a) * rr, y - 10 * sc + Math.sin(a) * rr * 0.5,
+                     Math.cos(a) * 130 * sc, Math.sin(a) * 70 * sc,
+                     rnd(0.3, 0.7) - ring * 0.04, 20 * sc * big, 5 * sc,
+                     col, 0.55, 1.8, a + 1.57, 0, 0, 1);
+          }
+        }
+        for (let i = 0, n = N(50); i < n; i++) {
+          this.add(x + rnd(-R * 0.4, R * 0.4), y - rnd(0, 90) * sc, rnd(-40, 40), rnd(-160, -40) * sc,
+                   rnd(0.4, 0.9), rnd(8, 20) * sc, 1, white, 0.6, 1.2, 0, 0, 0, 1.3);
+        }
+        break;
+      }
+
       case 'slash': {
         const cy = y - 34 * sc;
         for (let s = 0; s < 2; s++) {

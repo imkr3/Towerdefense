@@ -83,10 +83,18 @@ async function runSize(browser, size) {
   const expansionMap=await page.evaluate(()=>{
     save.cleared=20;mapChapter=2;mapSel=-1;renderMap();const cards=[...document.querySelectorAll('#stage-list .stage')];
     const res={count:cards.length,open:!cards[0].disabled&&cards[0].dataset.stage==='20',locked:cards[1].disabled};
-    mapChapter=3;renderMap();res.endless=!!document.querySelector('#endless-slot .e-btn');
+    // 3막도 같은 꼴로 열린다: 30전장까지 깨면 첫 칸만 열려 있다
+    save.cleared=30;mapChapter=3;mapSel=-1;renderMap();
+    const act3=[...document.querySelectorAll('#stage-list .stage')];
+    res.act3Count=act3.length;
+    res.act3Open=!act3[0].disabled&&act3[0].dataset.stage==='30';
+    res.act3Locked=act3[1].disabled;
+    mapChapter=4;renderMap();res.endless=!!document.querySelector('#endless-slot .e-btn');
     return res;
   });
-  if(expansionMap.count!==10||!expansionMap.open||!expansionMap.locked||!expansionMap.endless)throw Error('Expansion progression or endless unlock broken: '+JSON.stringify(expansionMap));
+  if(expansionMap.count!==10||!expansionMap.open||!expansionMap.locked||!expansionMap.endless||
+     expansionMap.act3Count!==10||!expansionMap.act3Open||!expansionMap.act3Locked)
+    throw Error('Expansion progression or endless unlock broken: '+JSON.stringify(expansionMap));
   await page.evaluate(n=>{save.cleared=n;mapChapter=-1;mapSel=-1;renderMap();},originalProgress);
   const mapFit=await page.evaluate(()=>{
     const r=document.querySelector('#btn-sortie').getBoundingClientRect(), d=document.querySelector('#stage-detail').getBoundingClientRect();

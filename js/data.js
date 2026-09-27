@@ -593,6 +593,70 @@ SEASON_UNITS.push(
     ab:{hold:true,kbImmune:true},
     desc:'대발명가가 세운 포탑. 움직이지 않고 쏘기만 한다.'})
 );
+/* ---------------- 시즌 6 · 서천취경 (서유기) ----------------
+ * 하나가 세 몫을 하려 들지 않는다. 손오공은 분신을 세워 머릿수를 벌고,
+ * 관음은 남이 받을 피해를 대신 받고, 이랑진군은 표식을 남겨 한꺼번에 터뜨린다.
+ * 셋 다 혼자서는 전장을 끝내지 못한다. */
+SEASON_UNITS.push(
+  mk({id:'sunwukong',name:'손오공',short:'오공',role:'제천대성',shape:'sunwukong',castFx:'cloudspin',
+    season:'journey',rarity:'UR',gacha:true,unlockStage:999,
+    body:'#e0b878',accent:'#ffd75a',tunic:'#c0392b',hp:1900,atk:130,range:105,speed:62,interval:.95,
+    cost:540,cooldown:45,kb:2,area:true,areaRadius:85,scale:1.15,
+    ab:{summon:{id:'monkeyclone',n:1,max:2},interval:7,feast:{atk:.07,hp:.04,max:6}},
+    abText:'분신 · 7초마다 분신 1기(최대 2) · 쓰러뜨릴수록 자란다(최대 6) · 여의봉 회전',
+    desc:'털 한 올로 분신을 세우고, 쓰러뜨릴수록 스스로 자란다. 다만 자라려면 제 손으로 적을 쓰러뜨려야 하니, 앞줄이 버텨 주지 않으면 한 번도 크지 못하고 넘어진다.',
+    active:{name:'여의봉 회전',kind:'cloudspin',cd:50,radius:235,mul:2.4,push:70,stun:.7,
+      desc:'가장 가까운 적 주변을 후려 피해·밀쳐 냄·0.7초 기절. 성채에는 피해 없음.'}}),
+  mk({id:'guanyin',name:'관음보살',short:'관음',role:'자비',shape:'guanyin',castFx:'lotus',
+    season:'journey',rarity:'SSR',gacha:true,unlockStage:999,
+    body:'#f0e6d2',accent:'#a8f0d8',tunic:'#3f7a8e',hp:1800,atk:0,range:0,speed:26,interval:3,
+    cost:460,cooldown:38,kb:1,scale:1.2,
+    ab:{aegis:{share:.35,radius:200},heal:110,cleanse:true,radius:200,interval:3.5,noAttack:true},
+    abText:'수호 연결 · 주변 아군이 맞는 공격의 35%를 대신 받음 · 회복과 정화 · 공격 안 함',
+    desc:'곁에 선 병사가 맞을 매를 대신 받고, 상처와 액을 함께 씻는다. 스스로는 한 대도 치지 못하니 때려 줄 주력이 반드시 있어야 한다.',
+    active:{name:'감로수',kind:'lotus',cd:48,radius:300,barrier:340,
+      desc:'주변 아군 보호막·중독과 화상 정화. 보호막 중첩 없음.'}}),
+  mk({id:'erlang',name:'이랑진군',short:'이랑',role:'천안',shape:'erlang',castFx:'thirdeye',
+    season:'journey',rarity:'SR',gacha:true,unlockStage:999,
+    body:'#2b3038',accent:'#9fe8ff',tunic:'#3a5c8e',hp:860,atk:215,range:340,speed:36,interval:2.6,
+    cost:390,cooldown:24,kb:2,ranged:true,
+    ab:{doom:{delay:3,radius:80,mul:1.0,cd:3.5}},
+    abText:'단일 저격 · 3초마다 한 명에게 파멸 선고(3초 뒤 그 자리에서 터진다, 보스 제외)',
+    desc:'세 번째 눈이 고른 한 놈에게만 선고가 내린다. 무리 속에 선 적을 골라 찍으면 곁에 선 것들까지 함께 터진다. 떼를 쓸어내는 병종은 따로 챙겨야 한다.'}),
+  mk({id:'bajie',name:'저팔계',short:'팔계',role:'탐식',shape:'bajie',castFx:'slash',
+    season:'journey',rarity:'SR',gacha:true,unlockStage:999,
+    body:'#e8b4b8',accent:'#c9cdd2',tunic:'#6b4a2a',hp:2900,atk:96,range:74,speed:30,interval:1.5,
+    cost:370,cooldown:23,kb:1,scale:1.2,
+    ab:{kbImmune:true,thorns:.25,lifesteal:.18,feast:{atk:.06,hp:.05,max:5}},
+    abText:'넉백 면역 · 근접 피해 25% 되돌림 · 흡혈 18% · 먹을수록 자란다',
+    desc:'쇠스랑을 들고 버티며 먹어 치운다. 밀리지 않고, 저를 친 자에게 되돌려 준다.'}),
+  mk({id:'sandmonk',name:'사오정',short:'오정',role:'항마',shape:'sandmonk',
+    season:'journey',rarity:'SR',gacha:true,unlockStage:999,
+    body:'#2b3038',accent:'#d8e8c0',tunic:'#4a6b5c',hp:1700,atk:110,range:150,speed:36,interval:1.4,
+    cost:350,cooldown:22,kb:2,
+    ab:{fear:{chance:.3,dur:1.3},slow:1.2},
+    abText:'항마장 · 30% 확률로 적을 물러나게 함(보스 제외) · 둔화',
+    desc:'월아산으로 길게 밀어낸다. 겁먹은 적은 등을 보이고 물러나 전선을 저 혼자 늦춘다.'}),
+  mk({id:'dragonprince',name:'용왕 태자',short:'용태자',role:'연사',shape:'dragonprince',
+    season:'journey',rarity:'R',gacha:true,unlockStage:999,
+    body:'#2b3038',accent:'#8fe0c8',tunic:'#2f6b7a',hp:620,atk:72,range:280,speed:38,interval:1.6,
+    cost:250,cooldown:11,kb:2,ranged:true,
+    ab:{volley:{n:2,fall:.55}},
+    abText:'연사 · 한 번에 세 발이 부챗살로 날아간다',
+    desc:'용의 아들이 쏘는 세 갈래 물살. 몰려오는 무리에 두루 꽂힌다.'}),
+  mk({id:'monkwarrior',name:'승병',role:'곤봉',shape:'monkwarrior',
+    season:'journey',rarity:'N',gacha:true,unlockStage:999,
+    body:'#2b3038',accent:'#e8d9a8',tunic:'#9a5a2a',hp:680,atk:44,range:84,speed:46,interval:1.05,
+    cost:145,cooldown:6,kb:2,
+    abText:'값싼 근접 · 긴 곤봉',
+    desc:'절을 지키던 승병. 싸고 빠르게 전열을 채운다.'}),
+  // 소환 전용
+  mk({id:'monkeyclone',name:'분신 원숭이',role:'소환수',shape:'monkeyclone',unlockStage:999,
+    body:'#d8b070',accent:'#ffd75a',tunic:'#a8322b',hp:520,atk:52,range:70,speed:74,interval:.8,
+    cost:0,cooldown:0,kb:2,scale:.85,
+    desc:'털 한 올에서 태어난 분신. 본체만큼은 못 하지만 공짜로 전선을 채운다.'})
+);
+
 // 전설·신화는 한 명씩만 전장에 설 수 있다. 머릿수로 밀어붙이는 병종이 아니라
 // 판을 바꾸는 특수 병종이기 때문이다.
 SEASON_UNITS.forEach(u => {
@@ -637,7 +701,11 @@ const SEASONS = [
   { id: 'clockwork', name: '태엽 공방', sub: '증기와 톱니',
     color: '#d9a066', accent: '#6b4a24',
     desc: '연기 자욱한 공방에서 발명가들이 기계 군단을 끌고 나왔다.',
-    units: ['inventor', 'steammech', 'airship', 'teslaknight', 'clocksoldier', 'mechanic', 'rifleman'] }
+    units: ['inventor', 'steammech', 'airship', 'teslaknight', 'clocksoldier', 'mechanic', 'rifleman'] },
+  { id: 'journey', name: '서천취경', sub: '서유기',
+    color: '#e8b45a', accent: '#8e4a1f',
+    desc: '경을 구하러 서쪽으로 간 일행이 왕국의 길을 함께 열어 준다.',
+    units: ['sunwukong', 'guanyin', 'erlang', 'bajie', 'sandmonk', 'dragonprince', 'monkwarrior'] }
 ];
 
 /* 소환 풀: 시즌 병종 + (다른 시즌은 낮은 확률로) */
@@ -798,6 +866,98 @@ const ENEMIES = {
   chariot:  { name: '오크 전차', body: '#4a6b46', accent: '#8a5a2a', tunic: '#6b4a2a', shape: 'chariot',
               hp: 5200, atk: 280, range: 80, speed: 64, interval: 1.8, kb: 1, gold: 90, scale: 1.3,
               ab: { kbImmune: true, push: 35 }, abText: '돌격 전차 · 넉백 면역 · 들이받아 밀쳐 낸다' },
+
+  /* ---------- 3막의 심연 군단: 앞줄만 두껍게 세워서는 풀리지 않는 열 ---------- */
+  harpy:    { name: '하피', body: '#6b5a7a', accent: '#f0d78a', tunic: '#4a3d5c', shape: 'harpy',
+              hp: 1500, atk: 130, range: 250, speed: 96, interval: 1.2, kb: 2, gold: 70, ranged: true,
+              ab: { backline: true },
+              abText: '급강하 · 사거리 안에서 가장 뒤에 선 아군을 노린다' },
+  impaler:  { name: '오크 작살병', body: '#46603a', accent: '#c9cdd2', tunic: '#5a4a2f', shape: 'impaler',
+              hp: 2100, atk: 190, range: 300, speed: 30, interval: 2.4, kb: 2, gold: 72, ranged: true,
+              ab: { pierce: true },
+              abText: '작살 관통 · 한 줄로 선 아군을 통째로 꿰뚫는다' },
+  warpriest:{ name: '오크 군종사제', body: '#4a6b46', accent: '#ffe3a0', tunic: '#7a5a8a', shape: 'warpriest',
+              hp: 2400, atk: 70, range: 180, speed: 28, interval: 2.0, kb: 2, gold: 95, ranged: true,
+              ab: { barrier: 620, radius: 250, interval: 6 },
+              abText: '전투 축복 · 주변 적에게 보호막 620 (중독·화상은 보호막을 뚫는다)' },
+  banshee:  { name: '통곡의 정령', body: '#9aa8c4', accent: '#d6a8ff', tunic: '#6a7490', shape: 'banshee',
+              hp: 1700, atk: 95, range: 235, speed: 58, interval: 1.6, kb: 1, gold: 84, ranged: true,
+              ab: { fear: { chance: .35, dur: 1.5 } },
+              abText: '통곡 · 들은 아군은 등을 보이고 물러난다 (정화·왕명으로 해제)' },
+  stormcaller:{ name: '폭풍 주술사', body: '#3f5a5c', accent: '#8fe8ff', tunic: '#2f4a5c', shape: 'stormcaller',
+              hp: 1900, atk: 105, range: 260, speed: 28, interval: 1.9, kb: 2, gold: 92, ranged: true,
+              ab: { chain: { n: 3, fall: .72, range: 120 } },
+              abText: '연쇄 번개 · 붙어 선 아군에게 줄줄이 옮겨 붙는다' },
+  gravewarden:{ name: '무덤 수호병', body: '#c8c2ae', accent: '#7a8a6a', tunic: '#46463e', shape: 'gravewarden',
+              hp: 6800, atk: 175, range: 66, speed: 22, interval: 1.5, kb: 1, gold: 110, scale: 1.2,
+              ab: { revive: .55, kbImmune: true, armor: .2 },
+              abText: '갑주 20% · 넉백 면역 · 한 번 쓰러져도 다시 일어난다' },
+  venomspawn:{ name: '독알 거미', body: '#3a4a2f', accent: '#b6f07a', tunic: '#2a3422', shape: 'venomspawn',
+              hp: 900, atk: 70, range: 60, speed: 112, interval: .9, kb: 2, gold: 46, scale: .9,
+              ab: { poison: { dps: 70, dur: 5 }, deathBomb: { dmg: 190, radius: 105 } },
+              abText: '독 · 쓰러지면 독안개가 터진다 (해독 훈련과 정화로 버틴다)' },
+  warbeast: { name: '전투 멧돼지', body: '#6b5340', accent: '#e8d9c0', tunic: '#4a3a2c', shape: 'warbeast',
+              hp: 4200, atk: 210, range: 64, speed: 86, interval: 1.2, kb: 1, gold: 96, scale: 1.25,
+              ab: { kbImmune: true, push: 45, feast: { atk: .1, hp: .05, max: 6 } },
+              abText: '돌진 · 넉백 면역 · 쓰러뜨릴수록 커진다 (먹이를 주지 말 것)' },
+  hoarfrost: { name: '서리 망령', body: '#a8c6d8', accent: '#ddf4ff', tunic: '#7f9fb8', shape: 'hoarfrost',
+              hp: 1600, atk: 120, range: 72, speed: 64, interval: 1.3, kb: 1, gold: 78,
+              ab: { slow: 2.4, deathBomb: { dmg: 150, radius: 120 } },
+              abText: '서리 손 · 둔화 · 쓰러지면 한파가 터진다' },
+  siegewitch:{ name: '공성 마녀', body: '#4a3a5c', accent: '#ff9f5a', tunic: '#33263f', shape: 'siegewitch',
+              hp: 2600, atk: 110, range: 420, speed: 18, interval: 3.0, kb: 1, gold: 130, ranged: true,
+              special: { t: 'meteor', name: '마녀의 포격', cd: 13, first: 8, n: 2, dmg: 300,
+                         radius: 105, warn: 1.2, burn: { dps: 40, dur: 3 }, kind: 'firestorm' },
+              abText: '원거리 포격 · 예고 원을 보면 그 자리를 비워라' },
+
+  /* ---------- 3막의 보스 넷 ---------- */
+  deathknight:{ name: '파멸의 흑기사', body: '#1c1e26', accent: '#c0392b', tunic: '#2a2030', shape: 'deathknight',
+              hp: 17000, atk: 700, range: 150, speed: 24, interval: 2.2, kb: 1, gold: 420,
+              area: true, areaRadius: 140, scale: 1.8, boss: true,
+              ab: { armor: .25, breaker: 1.4, lifesteal: .12 },
+              special: { t: 'doomcall', name: '파멸 선고', cd: 13, first: 7, n: 3, r: 320,
+                         delay: 3.2, radius: 115, dmg: 380 },
+              phases: [
+                { at: .70, t: 'terror', name: '절망의 외침', r: 360, dur: 1.8 },
+                { at: .45, t: 'enrage', name: '검은 맹세', atk: 1.3, rate: .78, speed: 1.25 },
+                { at: .20, t: 'drain',  name: '피의 갈증', r: 300, dmg: 220, ratio: .8 }
+              ] },
+  plaguemother:{ name: '역병의 어미', body: '#5c6b3a', accent: '#c6f07a', tunic: '#3f4a2a', shape: 'plaguemother',
+              hp: 19000, atk: 480, range: 230, speed: 16, interval: 2.4, kb: 1, gold: 460,
+              area: true, areaRadius: 150, scale: 1.85, boss: true, ranged: true,
+              ab: { poison: { dps: 110, dur: 6 }, summon: { id: 'venomspawn', n: 2 }, interval: 9, regen: 40 },
+              special: { t: 'meteor', name: '역병 산란', cd: 12, first: 6, n: 3, dmg: 300, radius: 120,
+                         warn: 1.1, kind: 'runes' },
+              phases: [
+                { at: .72, t: 'summon', name: '알집이 터진다', id: 'venomspawn', n: 4 },
+                { at: .48, t: 'enrage', name: '어미의 분노', atk: 1.25, rate: .8 },
+                { at: .22, t: 'summon', name: '마지막 산란', id: 'spider', n: 5 }
+              ] },
+  stormtitan:{ name: '폭풍의 거신', body: '#7f97a8', accent: '#8fe8ff', tunic: '#41586b', shape: 'stormtitan',
+              hp: 24000, atk: 760, range: 170, speed: 18, interval: 2.5, kb: 1, gold: 520,
+              area: true, areaRadius: 160, scale: 2.0, boss: true,
+              ab: { kbImmune: true, chain: { n: 4, fall: .7, range: 140 }, armor: .15 },
+              special: { t: 'meteor', name: '벼락 낙하', cd: 11, first: 7, n: 3, dmg: 400, radius: 120,
+                         warn: 1.1, stun: .6, kind: 'lightning' },
+              phases: [
+                { at: .75, t: 'roar',   name: '천둥 포효', r: 420, stun: 1.2, push: 90 },
+                { at: .50, t: 'frost',  name: '폭풍 한파', r: 400, dur: 4 },
+                { at: .30, t: 'enrage', name: '벼락의 격노', atk: 1.3, rate: .75, speed: 1.2 },
+                { at: .12, t: 'shield', name: '폭풍의 갑주', ratio: .3 }
+              ] },
+  abysslord:{ name: '심연의 군주', body: '#2a2038', accent: '#c49bff', tunic: '#1a1426', shape: 'abysslord',
+              hp: 34000, atk: 900, range: 200, speed: 15, interval: 2.6, kb: 1, gold: 900,
+              area: true, areaRadius: 185, scale: 2.2, boss: true,
+              ab: { armor: .25, push: 45, summon: { id: 'wraith', n: 2 }, interval: 10 },
+              special: { t: 'doomcall', name: '심연의 선고', cd: 11, first: 6, n: 4, r: 380,
+                         delay: 3.0, radius: 130, dmg: 460 },
+              phases: [
+                { at: .82, t: 'summon', name: '심연의 부름', id: 'gravewarden', n: 1 },
+                { at: .62, t: 'terror', name: '심연이 울린다', r: 440, dur: 2.2 },
+                { at: .44, t: 'roar',   name: '군주의 포효', r: 460, stun: 1.4, push: 110 },
+                { at: .26, t: 'enrage', name: '군주의 진노', atk: 1.3, rate: .75, speed: 1.2 },
+                { at: .10, t: 'summon', name: '최후의 심연', id: 'hoarfrost', n: 4 }
+              ] },
 };
 
 /* -------------------- 전장 20개 -------------------- */
@@ -900,6 +1060,63 @@ STAGES.push(
 );
 
 
+/* 3막: 심연의 문. 여기부터는 "앞줄을 두껍게" 하나로는 아무것도 풀리지 않는다.
+ * 뒷줄을 노리는 하피, 줄을 꿰뚫는 작살, 보호막을 씌우는 군종사제, 물러나게 만드는
+ * 통곡 — 하나하나 다른 답을 요구한다. 특성도 둘셋씩 겹친다. */
+STAGES.push(
+  {name:'잿빛 관문',hint:'안개로 사거리가 준다 — 뒤에서 쏘는 대신 근접으로 붙어라',
+   baseHp:54000,money:470,rate:59,reward:2400,enemyMul:3.0,waves:[
+    W(2,'orcshield',5,1.8),W(24,'harpy',3,1.8),W(48,'impaler',3,2.2),W(74,'dark',6,1.6),
+    W(100,'harpy',4,1.5),W(128,'golem',2,5),W(156,'impaler',4,2),W(186,'orcberserk',8,1),
+    W(216,'chariot',2,4),W(248,'harpy',5,1.3)]},
+  {name:'통곡의 벌판',hint:'통곡은 정화사와 왕명으로 끊고, 몰려오는 수는 범위로 쓸어라',
+   baseHp:56000,money:475,rate:60,reward:2500,enemyMul:5.4,waves:[
+    W(2,'wraith',6,1.4),W(26,'banshee',3,2),W(52,'hoarfrost',5,1.4),W(80,'boneguard',6,1.4),
+    W(108,'banshee',4,1.8),W(138,'hoarfrost',6,1.2),W(168,'gravewarden',2,4),
+    W(200,'banshee',4,1.6),W(232,'wraith',9,1),W(264,'hoarfrost',7,1.1)]},
+  {name:'★ 파멸의 흑기사',hint:'파멸 선고가 붙은 병사는 흩어 세워라 — 뭉쳐 있으면 함께 터진다',
+   baseHp:60000,money:485,rate:61,reward:3200,boss:true,enemyMul:4.6,waves:[
+    W(2,'orcshield',5,1.8),W(28,'impaler',4,2),W(56,'deathknight',1),W(92,'gravewarden',2,4),
+    W(124,'harpy',4,1.5),W(156,'deathknight',1),W(190,'dark',8,1.4),W(224,'banshee',4,1.6),
+    W(256,'chariot',2,4)]},
+  {name:'역병 산란지',hint:'독알 거미는 쓰러질 때 터진다 — 값싼 전열로 받고 해독 훈련을 올려라',
+   baseHp:58000,money:480,rate:60,reward:2700,enemyMul:2.8,waves:[
+    W(2,'venomspawn',7,1),W(26,'plaguer',6,1.8),W(52,'warpriest',2,4),W(80,'venomspawn',9,.9),
+    W(110,'spiderqueen',1),W(142,'warpriest',3,3.5),W(174,'venomspawn',10,.8),
+    W(206,'gravewarden',2,4),W(240,'plaguer',7,1.6),W(272,'venomspawn',12,.7)]},
+  {name:'★ 역병의 어미',hint:'알집을 깨려면 광역 화력이 필요하다 — 군자금이 줄었으니 값싼 병종을 섞어라',
+   baseHp:63000,money:490,rate:62,reward:3500,boss:true,enemyMul:5.4,waves:[
+    W(2,'venomspawn',8,.9),W(28,'warpriest',2,4),W(58,'plaguemother',1),W(96,'venomspawn',10,.8),
+    W(128,'plaguer',7,1.6),W(162,'gravewarden',2,4),W(196,'venomspawn',12,.7),
+    W(230,'warpriest',3,3.5),W(264,'spider',12,.7)]},
+  {name:'번개 치는 절벽',hint:'붙어 서면 번개가 옮겨 붙는다 — 흩어 세우고 멧돼지에게 먹이를 주지 마라',
+   baseHp:61000,money:490,rate:62,reward:2900,enemyMul:4.8,waves:[
+    W(2,'wolf',10,.8),W(26,'stormcaller',3,2),W(54,'warbeast',3,2.5),W(84,'harpy',4,1.5),
+    W(114,'stormcaller',4,1.8),W(146,'warbeast',4,2.2),W(178,'chariot',3,3.5),
+    W(210,'stormcaller',5,1.6),W(244,'warbeast',5,2),W(278,'wolf',12,.7)]},
+  {name:'★ 폭풍의 거신',hint:'거신이 비싼 아군만 노린다 — 값싼 몸통으로 받고, 파쇄와 지속 피해로 갑주를 깎아라',
+   baseHp:68000,money:500,rate:63,reward:3900,boss:true,enemyMul:5.4,waves:[
+    W(2,'orcshield',5,1.8),W(28,'stormcaller',4,1.8),W(60,'stormtitan',1),W(98,'warbeast',4,2.2),
+    W(130,'gravewarden',2,4),W(164,'harpy',5,1.4),W(198,'stormcaller',5,1.6),
+    W(232,'chariot',3,3.5),W(266,'warbeast',5,2)]},
+  {name:'무너지는 성벽',hint:'적 요새가 스스로 되쌓는다 — 오래 끌지 말고 공성 화력으로 단숨에 부숴라',
+   baseHp:104000,money:505,rate:64,reward:3300,enemyMul:5.4,waves:[
+    W(2,'orcshield',6,1.6),W(26,'siegewitch',2,5),W(56,'gravewarden',3,3.5),W(88,'impaler',5,1.8),
+    W(120,'siegewitch',2,5),W(152,'warpriest',3,3.5),W(186,'gravewarden',3,3.5),
+    W(220,'siegewitch',3,4.5),W(254,'harpy',5,1.4),W(288,'impaler',6,1.6)]},
+  {name:'심연의 계단',hint:'비싼 병종은 과녁이 된다 — 값싼 몸통으로 버티며 금을 벌어라',
+   baseHp:64000,money:505,rate:64,reward:3700,enemyMul:5.0,waves:[
+    W(2,'boneguard',7,1.4),W(26,'banshee',4,1.6),W(54,'stormcaller',4,1.8),W(84,'warbeast',4,2.2),
+    W(116,'siegewitch',2,5),W(148,'gravewarden',3,3.5),W(182,'harpy',6,1.3),
+    W(216,'hoarfrost',8,1),W(250,'impaler',6,1.6),W(284,'venomspawn',12,.7),
+    W(318,'warpriest',3,3.5)]},
+  {name:'★ 심연의 군주',hint:'선고는 흩어서 받고, 호위를 먼저 걷어 낸 뒤 액티브와 왕명을 군주에게 몰아라',
+   baseHp:78000,money:520,rate:66,reward:6000,boss:true,enemyMul:3.0,waves:[
+    W(2,'orcshield',6,1.6),W(28,'harpy',5,1.4),W(58,'gravewarden',3,3.5),W(92,'abysslord',1),
+    W(132,'stormcaller',5,1.6),W(166,'warbeast',5,2),W(202,'banshee',5,1.5),
+    W(238,'abysslord',1),W(274,'siegewitch',3,4.5),W(310,'hoarfrost',9,.9)]}
+);
+
 /* 전장 특성. 어려운 전장에는 특성이 붙어서, 스탯 높은 병종을 몰아 넣는 것만으로는
  * 풀리지 않고 그 특성을 받아칠 병종을 챙겨야 한다. */
 const STAGE_MODS = {
@@ -912,13 +1129,24 @@ const STAGE_MODS = {
   curse:    { name: '저주', desc: '소환된 아군이 초당 10%씩 시들고, 회복·흡혈이 절반',
               counter: '소환·치유에 기대지 않는 진짜 병력', color: '#5f8f5a' },
   blitz:    { name: '질주', desc: '적 이동 속도 +45% · 공격 속도 +20%',
-              counter: '둔화 · 넉백 면역 방패 · 튼튼한 앞줄', color: '#d0605a' }
+              counter: '둔화 · 넉백 면역 방패 · 튼튼한 앞줄', color: '#d0605a' },
+  veil:     { name: '짙은 안개', desc: '아군 사거리 30% 감소 — 뒤에서 쏘는 전술이 안 통한다',
+              counter: '근접 주력 · 돌격 · 두꺼운 전열', color: '#93a8b8' },
+  siege:    { name: '요새 재건', desc: '적 요새가 초당 최대 체력 0.38%를 되쌓는다 — 오래 끌면 못 깬다',
+              counter: '공성 화력 · 한 방이 큰 병종 · 빠른 돌파', color: '#c0a06a' },
+  tribute:  { name: '징세', desc: '군자금 수입과 시작 자금이 45% 줄어든다',
+              counter: '금을 버는 병종 · 값싼 병종 위주 편성', color: '#7bbd8f' }
 };
 const HARD_STAGE_MODS = {
   9: ['ironclad'], 14: ['blitz'], 16: ['horde'], 17: ['ironclad', 'giantslayer'],
   19: ['horde', 'ironclad'],
   21: ['horde'], 23: ['horde', 'giantslayer', 'curse'], 24: ['blitz'], 26: ['blitz', 'giantslayer', 'curse'],
-  27: ['horde', 'ironclad'], 29: ['giantslayer', 'curse', 'horde', 'blitz']
+  27: ['horde', 'ironclad'], 29: ['giantslayer', 'curse', 'horde', 'blitz'],
+  /* 3막: 특성이 둘셋씩 겹친다. 하나만 받아쳐서는 넘지 못한다. */
+  30: ['veil'], 31: ['horde', 'veil'], 32: ['ironclad'], 33: ['curse', 'tribute'],
+  34: ['horde', 'tribute'], 35: ['blitz', 'veil'], 36: ['ironclad', 'blitz', 'giantslayer'],
+  37: ['siege'], 38: ['giantslayer', 'siege', 'tribute'],
+  39: ['ironclad', 'horde', 'veil', 'giantslayer']
 };
 STAGES.forEach((st, i) => { if (!st.mods && HARD_STAGE_MODS[i]) st.mods = HARD_STAGE_MODS[i]; });
 // 전설·신화 풀이 넓어질수록 몰아 넣기만 한 편성도 두루 갖춘다. 조합이 필요한
@@ -926,7 +1154,7 @@ STAGES.forEach((st, i) => { if (!st.mods && HARD_STAGE_MODS[i]) st.mods = HARD_S
 STAGES[15].enemyMul = 1.85;             // 끼어 있던 보스 둘이 정예로 바뀐 만큼
 STAGES[16].enemyMul = 1.65;
 STAGES[17].enemyMul = 1.6;
-STAGES[19].enemyMul = 1.85;
+STAGES[19].enemyMul = 2.05;             // 전설 풀이 여섯 시즌으로 넓어진 만큼 한 번 더
 
 /* ------------------------------------------------------------------
  *  보스는 전장마다 하나.
@@ -953,7 +1181,17 @@ const NEW_MOB_WAVES = {
   24: [[90, 'assassin', 3, 1.5], [160, 'burrower', 3, 1.5]], 25: [[110, 'burrower', 3, 1.5], [150, 'chariot', 2, 4]],
   26: [[120, 'drummer', 2, 3], [150, 'assassin', 3, 1.4]], 27: [[100, 'hexer', 3, 1.5], [200, 'chariot', 2, 4]],
   28: [[100, 'drummer', 2, 3], [180, 'hexer', 3, 1.5]],
-  29: [[160, 'burrower', 3, 1.4], [200, 'chariot', 2, 4], [230, 'assassin', 4, 1.3]]
+  29: [[160, 'burrower', 3, 1.4], [200, 'chariot', 2, 4], [230, 'assassin', 4, 1.3]],
+  /* 3막의 새 잡몹도 앞 전장에서 한두 번 맛보게 한 뒤 본격적으로 쏟아진다 */
+  25: [[170, 'harpy', 2, 2]], 27: [[150, 'impaler', 2, 2.2], [210, 'harpy', 3, 1.8]],
+  28: [[140, 'hoarfrost', 3, 1.5]], 30: [[130, 'banshee', 2, 2], [200, 'warpriest', 1]],
+  31: [[190, 'gravewarden', 1], [250, 'warbeast', 2, 2.5]],
+  32: [[140, 'stormcaller', 2, 2]], 33: [[160, 'harpy', 3, 1.6]],
+  35: [[150, 'banshee', 3, 1.8], [230, 'siegewitch', 1]],
+  36: [[170, 'venomspawn', 6, .9], [240, 'impaler', 4, 1.8]],
+  37: [[190, 'warbeast', 3, 2.4], [260, 'stormcaller', 4, 1.6]],
+  38: [[200, 'warpriest', 2, 4]],
+  39: [[200, 'gravewarden', 3, 3.5], [270, 'impaler', 6, 1.5], [330, 'warbeast', 5, 2]]
 };
 STAGES.forEach((st, i) => {
   (NEW_MOB_WAVES[i] || []).forEach(([t, e, n, gap]) => st.waves.push(W(t, e, n, gap)));
@@ -961,18 +1199,23 @@ STAGES.forEach((st, i) => {
 });
 
 const BOSS_ROLE = { troll: 'bruiser', frostgiant: 'bruiser', warlord: 'bruiser',
-                    lich: 'caster', spiderqueen: 'caster', drake: 'flyer' };
+                    lich: 'caster', spiderqueen: 'caster', drake: 'flyer',
+                    deathknight: 'bruiser', stormtitan: 'bruiser',
+                    plaguemother: 'caster', abysslord: 'caster' };
 const BOSS_ESCORT = {
-  bruiser: { back: ['ballista', 'slinger', 'shaman', 'hexer', 'plaguer', 'orccatapult'], front: ['wolf', 'assassin', 'hellhound', 'orcspear'], nb: 4, nf: 2 },
-  caster:  { back: ['ballista', 'skelarcher', 'plaguer'], front: ['orcshield', 'boneguard', 'orcspear', 'orcberserk', 'chariot', 'dark'], nb: 2, nf: 4 },
-  flyer:   { back: ['shaman', 'hexer', 'ballista'], front: ['orcshield', 'burrower', 'hellhound', 'boneguard', 'orcberserk', 'golem'], nb: 2, nf: 3 }
+  bruiser: { back: ['ballista', 'slinger', 'shaman', 'hexer', 'plaguer', 'orccatapult', 'impaler', 'stormcaller', 'harpy'], front: ['wolf', 'assassin', 'hellhound', 'orcspear', 'warbeast', 'hoarfrost'], nb: 4, nf: 2 },
+  caster:  { back: ['ballista', 'skelarcher', 'plaguer', 'banshee', 'siegewitch'], front: ['orcshield', 'boneguard', 'orcspear', 'orcberserk', 'chariot', 'dark', 'gravewarden', 'warbeast'], nb: 2, nf: 4 },
+  flyer:   { back: ['shaman', 'hexer', 'ballista', 'stormcaller'], front: ['orcshield', 'burrower', 'hellhound', 'boneguard', 'orcberserk', 'golem', 'gravewarden'], nb: 2, nf: 3 }
 };
 /* 전장 번호(0부터) → 그 전장의 보스 */
 const STAGE_BOSS = { 4: 'lich', 9: 'troll', 12: 'lich', 14: 'troll', 16: 'frostgiant', 17: 'drake',
                      18: 'spiderqueen', 19: 'warlord', 21: 'lich', 23: 'lich', 26: 'frostgiant',
-                     28: 'drake', 29: 'warlord' };
+                     28: 'drake', 29: 'warlord',
+                     32: 'deathknight', 34: 'plaguemother', 36: 'stormtitan', 39: 'abysslord' };
 const ELITE_FOR = { troll: ['ogre', 1], lich: ['shaman', 2], frostgiant: ['golem', 1],
-                    drake: ['hellhound', 3], spiderqueen: ['spider', 4], warlord: ['warchief', 1] };
+                    drake: ['hellhound', 3], spiderqueen: ['spider', 4], warlord: ['warchief', 1],
+                    deathknight: ['dark', 3], plaguemother: ['venomspawn', 4],
+                    stormtitan: ['stormcaller', 2], abysslord: ['gravewarden', 2] };
 const BOSS_HP_MUL = 2.5;       // 하나뿐인 보스는 그만큼 단단하다
 const BOSS_ATK_MUL = 1.2;
 (function oneBossPerStage() {
@@ -1058,7 +1301,8 @@ STAGES.forEach((st, i) => {
   if (st.len) return;
   // 레벨마다 조금씩 다르게: 뒤로 갈수록 길어지되, 사이사이 짧은 전장이 섞인다
   const wiggle = [0, -70, 50, -40, 80][i % 5];
-  const base = i < 20 ? 900 + 20 * i : 1180 + 18 * (i - 20);
+  // 1막은 짧게 붙고, 2막이 가장 크게 늘고, 3막은 이미 긴 전장에서 완만히 더 늘어난다
+  const base = i < 20 ? 900 + 20 * i : i < 30 ? 1180 + 18 * (i - 20) : 1300 + 14 * (i - 30);
   st.len = base + wiggle + (st.boss ? 120 : 0);
 });
 
@@ -1077,9 +1321,17 @@ const ENDLESS_POOL = [
   { id: 'slinger',  from: 1 },  { id: 'drummer',  from: 6 },
   { id: 'skelarcher', from: 8 },{ id: 'boneguard', from: 9 },
   { id: 'hexer',    from: 10 }, { id: 'assassin', from: 12 },
-  { id: 'burrower', from: 13 }, { id: 'chariot',  from: 15 }
+  { id: 'burrower', from: 13 }, { id: 'chariot',  from: 15 },
+  /* 3막의 심연 군단 — 무한 전장 후반부터 섞인다 */
+  { id: 'harpy',    from: 16 }, { id: 'impaler',  from: 17 },
+  { id: 'hoarfrost', from: 18 },{ id: 'banshee',  from: 19 },
+  { id: 'venomspawn', from: 20 },{ id: 'stormcaller', from: 21 },
+  { id: 'warpriest', from: 22 },{ id: 'warbeast', from: 23 },
+  { id: 'gravewarden', from: 25 },{ id: 'siegewitch', from: 27 }
 ];
-const ENDLESS_BOSSES = ['lich', 'troll', 'frostgiant', 'drake', 'warlord'];
+/* 무한 전장 보스는 3막 보스까지 돌아간다 */
+const ENDLESS_BOSSES = ['lich', 'troll', 'frostgiant', 'drake', 'warlord',
+                        'deathknight', 'plaguemother', 'stormtitan', 'abysslord'];
 
 /* 무한 전장 적 배율. 웨이브마다 7%씩 붙고, 25웨이브를 넘기면 거기에
  * 웨이브당 4%씩 곱으로 불어난다. 상한이 없으니 언젠가는 반드시 무너진다. */
@@ -1135,7 +1387,11 @@ const MISSION_DEFS = [
   { id: 'cmd2',    text: '왕의 명령 2회 사용',  need: 2,  stat: 'commands',gold: 400, stone: 1 },
   { id: 'train2',  text: '병종 훈련 2회',       need: 2,  stat: 'trains',  gold: 350, stone: 1 },
   { id: 'boss1',   text: '보스 1체 처치',       need: 1,  stat: 'bosses',  gold: 600, stone: 1 },
-  { id: 'endless5',text: '무한 전장 5웨이브 돌파', need: 5,  stat: 'endless', gold: 800, stone: 1 }
+  { id: 'endless5',text: '무한 전장 5웨이브 돌파', need: 5,  stat: 'endless', gold: 800, stone: 1 },
+  { id: 'kill300', text: '적 300명 처치',       need: 300, stat: 'kills',  gold: 1600, stone: 2 },
+  { id: 'boss3',   text: '보스 3체 처치',       need: 3,  stat: 'bosses',  gold: 1400, stone: 2 },
+  { id: 'cmd5',    text: '왕의 명령 5회 사용',  need: 5,  stat: 'commands',gold: 900, stone: 1 },
+  { id: 'star3x3', text: '별 3개로 승리 3회',   need: 3,  stat: 'perfect', gold: 1800, stone: 2 }
 ];
 const DAILY_COUNT = 3;
 
@@ -1167,8 +1423,10 @@ const ACHIEVEMENTS = [
     test: s => s.cleared >= 20 },
   { id: 'star30',   name: '별 수집가',    desc: '별 30개 획득',                gold: 1500, stone: 2,
     test: s => totalStars(s) >= 30 },
-  { id: 'star60',   name: '완전 제압',    desc: '모든 전장 별 3개',            gold: 6000, stone: 8,
+  { id: 'star60',   name: '별의 수장',    desc: '별 60개 획득',                gold: 6000, stone: 8,
     test: s => totalStars(s) >= 60 },
+  { id: 'star120',  name: '완전 제압',    desc: '모든 전장 별 3개 (120개)',    gold: 12000, stone: 15,
+    test: s => totalStars(s) >= 120 },
   { id: 'kill1000', name: '천 명의 적',   desc: '누적 1000 처치',              gold: 1000, stone: 1,
     test: s => (s.totalKills || 0) >= 1000 },
   { id: 'kill5000', name: '전장의 주인',  desc: '누적 5000 처치',              gold: 3000, stone: 3,
@@ -1179,7 +1437,7 @@ const ACHIEVEMENTS = [
     test: s => (s.pulls || 0) >= 100 },
   { id: 'legend',   name: '신화의 계약',  desc: '전설 이상 병종 보유',              gold: 2000, stone: 2,
     test: s => SEASON_UNITS.some(u => (u.rarity === 'SSR' || u.rarity === 'UR') && s.owned && s.owned[u.id]) },
-  { id: 'allseason',name: '세 신화',      desc: '세 시즌에서 전설 이상을 각각 보유',    gold: 8000, stone: 10,
+  { id: 'allseason',name: '모든 신화',    desc: '모든 시즌에서 전설 이상을 각각 보유',  gold: 8000, stone: 10,
     test: s => SEASONS.every(sn => sn.units.some(id => {
       const u = UNIT_BY_ID[id];
       return u && (u.rarity === 'SSR' || u.rarity === 'UR') && s.owned && s.owned[id];
@@ -1187,10 +1445,16 @@ const ACHIEVEMENTS = [
   { id: 'maxlv',    name: '정예 조련',    desc: '병종 하나를 15레벨로',        gold: 2500, stone: 3,
     test: s => Object.keys(s.levels || {}).some(k => s.levels[k] >= 15) },
   { id:'campaign30',name:'세 신화의 정복자',desc:'30전장 모두 돌파',gold:5000,stone:5,test:s=>s.cleared>=30 },
+  { id:'clear35',   name:'심연의 등반자',desc:'35전장 돌파',gold:6000,stone:6,test:s=>s.cleared>=35 },
+  { id:'campaign40',name:'심연의 정복자',desc:'40전장 모두 돌파',gold:15000,stone:18,test:s=>s.cleared>=40 },
   { id: 'endless10',name: '끝없는 전장',  desc: '무한 전장 10웨이브 돌파',       gold: 2000, stone: 3,
     test: s => (s.endlessBest || 0) >= 10 },
   { id: 'endless25',name: '불굴의 성채',  desc: '무한 전장 25웨이브 돌파',       gold: 7000, stone: 8,
-    test: s => (s.endlessBest || 0) >= 25 }
+    test: s => (s.endlessBest || 0) >= 25 },
+  { id: 'endless40',name: '끝을 본 자',   desc: '무한 전장 40웨이브 돌파',       gold: 16000, stone: 20,
+    test: s => (s.endlessBest || 0) >= 40 },
+  { id: 'endless60',name: '성채의 전설',  desc: '무한 전장 60웨이브 돌파',       gold: 30000, stone: 30,
+    test: s => (s.endlessBest || 0) >= 60 }
 ];
 
 function totalStars(s) {
@@ -1260,6 +1524,13 @@ function upgradeCost(key, level) {
 /* Tactical descriptions shared by the campaign and enemy codex. */
 function enemyTactic(e) {
   if (e.boss) return '보스 · 왕명을 아껴 폭격 후 회복';
+  if (e.ab && e.ab.backline) return '급강하 · 궁수 곁을 비우지 말고 빠르게 떨어뜨려라';
+  if (e.ab && e.ab.fear) return '공포 · 정화사와 왕명으로 풀고, 원거리로 먼저 끊어라';
+  if (e.ab && e.ab.barrier && e.ab.radius) return '보호막 지원 · 중독과 화상은 보호막을 뚫는다';
+  if (e.ab && e.ab.chain) return '연쇄 번개 · 뭉치지 말고 전열을 흩어 세워라';
+  if (e.ab && e.ab.feast) return '포식 · 먹이를 주지 말고 둔화로 묶어 한꺼번에 쓰러뜨려라';
+  if (e.ab && e.ab.pierce) return '관통 · 한 줄로 서지 말고 앞줄을 두껍게';
+  if (e.special && e.special.t === 'meteor') return '예고 포격 · 바닥의 예고 원을 보면 그 자리를 비워라';
   if (e.ab && e.ab.leap) return '암살 · 궁수 곁에 방패병이나 근접을 한 명 두자';
   if (e.ab && e.ab.burrow) return '땅굴 · 전열을 두껍게, 기절 뒤 왕명으로 수습';
   if (e.ab && e.ab.rally) return '지휘 · 북잡이부터 원거리로 끊어라';

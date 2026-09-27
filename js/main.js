@@ -293,6 +293,7 @@ const CHAPTERS = [
   { name: '1장', sub: '국경 전선', from: 0, to: 10 },
   { name: '2장', sub: '왕도 수호', from: 10, to: 20 },
   { name: '2막', sub: '신화의 끝', from: 20, to: 30 },
+  { name: '3막', sub: '심연의 문', from: 30, to: 40 },
   { name: '무한', sub: '끝없는 웨이브', endless: true }
 ];
 let mapChapter = -1;       // -1: 진행 중인 장을 자동으로 고른다
@@ -664,6 +665,16 @@ function renderTraining() {
           (e.ab && e.ab.revive ? '<span class="stat hl">부활</span>' : '') +
           (e.ab && e.ab.rally ? '<span class="stat hl">지휘</span>' : '') +
           (e.ab && e.ab.weaken ? '<span class="stat hl">저주</span>' : '') +
+          (e.ab && e.ab.fear ? '<span class="stat hl">공포</span>' : '') +
+          (e.ab && e.ab.doom ? '<span class="stat hl">파멸 선고</span>' : '') +
+          (e.ab && e.ab.aegis ? '<span class="stat hl">수호 연결</span>' : '') +
+          (e.ab && e.ab.feast ? '<span class="stat hl">포식</span>' : '') +
+          (e.ab && e.ab.volley ? '<span class="stat hl">연사</span>' : '') +
+          (e.ab && e.ab.barrier ? '<span class="stat hl">보호막 지원</span>' : '') +
+          (e.ab && e.ab.chain ? '<span class="stat hl">연쇄 번개</span>' : '') +
+          (e.ab && e.ab.pierce ? '<span class="stat hl">관통</span>' : '') +
+          (e.ab && e.ab.backline ? '<span class="stat hl">뒷줄 노림</span>' : '') +
+          (e.special && e.special.t === 'meteor' ? '<span class="stat hl">예고 포격</span>' : '') +
           (e.area ? '<span class="stat">범위</span>' : '') +
         '</div>' +
       '</div>';

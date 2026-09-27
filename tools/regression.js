@@ -139,10 +139,12 @@ test('Shared active cooldown and stun block skill spam',()=>{
   const b=heroBattle('odin');b.heroCooldowns.odin=0;b.heroGlobalCd=1;assert.equal(b.canHeroActive('odin'),false);
   b.heroGlobalCd=0;b.allies[0].stunT=1;assert.equal(b.canHeroActive('odin'),false);
 });
-test('Thirty stages retain the existing endless unlock threshold',()=>{
+test('Forty stages retain the existing endless unlock threshold',()=>{
   const {STAGES,ENDLESS_UNLOCK_STAGE}=vm.runInContext('({STAGES,ENDLESS_UNLOCK_STAGE})',ctx);
-  assert.equal(STAGES.length,30);assert.equal(ENDLESS_UNLOCK_STAGE,20);
-  assert.ok(STAGES.slice(20).every(s=>s.waves.length>=8&&s.reward>900));
+  assert.equal(STAGES.length,40);assert.equal(ENDLESS_UNLOCK_STAGE,20);
+  assert.ok(STAGES.slice(20,30).every(s=>s.waves.length>=8&&s.reward>900));
+  // 3막은 2막보다 길고 두툼하며 보상도 크다
+  assert.ok(STAGES.slice(30).every(s=>s.waves.length>=10&&s.reward>=2400&&s.baseHp>=52000));
 });
 test('First expansion victory advances from 20 to 21 and retains old stars',()=>{
   const s=save();s.stars[19]=3;const b=new Battle(20,s);b.finish('win');
@@ -339,9 +341,9 @@ test('A squad brings at most five legends and mythics', () => {
   assert.equal(ids.filter(id => U[id].rarity === 'UR' || U[id].rarity === 'SSR').length, 5);
   assert.ok(ids.includes('spear')); assert.ok(!ids.includes('zeus'));
 });
-test('Five seasons, every summon points at a real unit', () => {
+test('Six seasons, every summon points at a real unit', () => {
   const { SEASONS } = vm.runInContext('({SEASONS})', ctx);
-  assert.equal(SEASONS.length, 5);
+  assert.equal(SEASONS.length, 6);
   for (const sn of SEASONS) for (const id of sn.units) { assert.ok(U[id], id); assert.equal(U[id].season, sn.id); }
   for (const u of UNITS) if (u.ab && u.ab.summon) assert.ok(U[u.ab.summon.id], u.id);
 });
@@ -407,7 +409,9 @@ test('Drummers rally nearby foes, hexers weaken allies, bones get back up', () =
   assert.equal(bone.dead, false); assert.ok(bone.hp > 0);
 });
 test('Every new mob appears in the campaign, in the endless pool and in the bestiary text', () => {
-  const ids = ['slinger', 'drummer', 'hexer', 'skelarcher', 'boneguard', 'assassin', 'burrower', 'chariot'];
+  const ids = ['slinger', 'drummer', 'hexer', 'skelarcher', 'boneguard', 'assassin', 'burrower', 'chariot',
+               'harpy', 'impaler', 'warpriest', 'banshee', 'stormcaller', 'gravewarden',
+               'venomspawn', 'warbeast', 'hoarfrost', 'siegewitch'];
   const { ENDLESS_POOL } = vm.runInContext('({ENDLESS_POOL})', ctx);
   for (const id of ids) {
     assert.ok(STAGES.some(st => st.waves.some(w => w.e === id)), id + ' in campaign');
@@ -436,6 +440,176 @@ test('A sally fires once per threshold, shoves nearby allies back and releases t
   assert.ok(a.x < x0 && a.stunT > 0); assert.equal(far.x, 200);
   b.checkSally(); assert.equal(b.enemies.length + b.burrowers.length, n1, 'does not refire');
   c.hp = c.maxHp * 0.3; b.checkSally(); assert.equal(b.sallyDone, 2);
+});
+
+/* ---------------- 2.7 새 능력과 3막 ---------------- */
+test('Fear makes a fighter back off instead of fighting, and wears off', () => {
+  const b = battle(); const a = b.makeAlly(U.spear, 500); b.allies.push(a);
+  const e = b.spawnEnemy('banshee', 700); const x0 = a.x;
+  a.fearT = 1; b.step(b.allies, b.enemies, b.enemyCastle, 0.5, true);
+  assert.ok(a.x < x0, 'retreats'); assert.equal(e.hp, e.maxHp, 'cannot strike while afraid');
+  b.step(b.allies, b.enemies, b.enemyCastle, 0.6, true);
+  assert.equal(a.fearT <= 0, true);
+});
+test('Cleanse and the royal command both lift fear', () => {
+  const b = battle(); const p = b.makeAlly(U.purifier, 500), a = b.makeAlly(U.spear, 520);
+  b.allies.push(p, a); a.fearT = 3; p.abCd = 0;
+  b.supportTick(p, b.allies, 0.01, true); assert.equal(a.fearT, 0);
+  a.fearT = 3; b.cmdCd = 0; b.useCommand(); assert.equal(a.fearT, 0);
+});
+test('Bosses shrug off fear and doom', () => {
+  const b = battle(); const boss = b.spawnEnemy('troll', 600);
+  const s1 = b.makeAlly(U.sandmonk, 560), s2 = b.makeAlly(U.erlang, 560);
+  for (let k = 0; k < 40; k++) { s1.doomCd = 0; b.hitOne(1, boss, s1, false); b.hitOne(1, boss, s2, false); }
+  assert.equal(boss.fearT, 0); assert.equal(boss.doomT, 0);
+});
+test('Doom marks one foe at a time and detonates on its own side only', () => {
+  const b = battle(); const e = b.makeAlly(U.erlang, 400); b.allies.push(e);
+  const a = b.spawnEnemy('goblin', 600), c = b.spawnEnemy('goblin', 640);
+  const ally = b.makeAlly(U.spear, 610); b.allies.push(ally);
+  b.hitOne(1, a, e, false);
+  assert.ok(a.doomT > 0 && e.doomCd > 0);
+  b.hitOne(1, c, e, false); assert.equal(c.doomT, 0, 'one sentence at a time');
+  const before = ally.hp;
+  a.doomT = 0.001; b.step(b.enemies, b.allies, b.allyCastle, 0.01, false);
+  assert.ok(a.dead || a.hp < a.maxHp, 'the marked foe takes the blast');
+  assert.ok(c.hp < c.maxHp, 'neighbours on the same side are caught');
+  assert.equal(ally.hp, before, 'the caster side is untouched');
+});
+test('Doom respects armour like any other blow', () => {
+  const b = battle();
+  const tough = new Fighter({ ...E.goblin, hp: 100000, ab: { armor: 0.5 } }, 'enemy', 600);
+  const soft = new Fighter({ ...E.goblin, hp: 100000 }, 'enemy', 600);
+  b.enemies.push(tough, soft);
+  tough.doomDmg = soft.doomDmg = 1000; tough.doomR = soft.doomR = 10;
+  b.detonateDoom(tough, [tough]); b.detonateDoom(soft, [soft]);
+  assert.equal(tough.maxHp - tough.hp, 500); assert.equal(soft.maxHp - soft.hp, 1000);
+});
+test('A guardian soaks a share of the damage aimed at nearby allies, never its own', () => {
+  const b = battle(); const g = b.makeAlly(U.guanyin, 500), a = b.makeAlly(U.spear, 560);
+  b.allies.push(g, a);
+  const foe = b.spawnEnemy('goblin', 620);
+  const gHp = g.hp, aHp = a.hp;
+  b.hitOne(100, a, foe, false);
+  assert.equal(a.maxHp - a.hp, 65); assert.equal(g.maxHp - g.hp, 35);
+  g.hp = gHp; a.hp = aHp;
+  b.hitOne(100, g, foe, false);
+  assert.equal(g.maxHp - g.hp, 100, 'the guardian takes its own hits whole');
+});
+test('A guardian out of range soaks nothing', () => {
+  const b = battle(); const g = b.makeAlly(U.guanyin, 100), a = b.makeAlly(U.spear, 600);
+  b.allies.push(g, a);
+  b.hitOne(100, a, b.spawnEnemy('goblin', 660), false);
+  assert.equal(g.hp, g.maxHp); assert.equal(a.maxHp - a.hp, 100);
+});
+test('Feasting grows a fighter on its own kills, up to a cap', () => {
+  const b = battle(); const w = b.makeAlly(U.sunwukong, 500); b.allies.push(w);
+  const atk0 = w.atk, hp0 = w.maxHp;
+  for (let k = 0; k < 20; k++) {
+    const prey = b.spawnEnemy('goblin', 560); prey.hp = 1;
+    b.hitOne(99999, prey, w, false);
+  }
+  assert.equal(w.feast, U.sunwukong.ab.feast.max);
+  assert.ok(w.atk > atk0 && w.maxHp > hp0);
+});
+test('A volley sends one full arrow and weaker extras that spread out', () => {
+  const b = battle(); const d = b.makeAlly(U.dragonprince, 400); b.allies.push(d);
+  const foe = b.spawnEnemy('goblin', 600);
+  b.attack(d, foe, b.enemies, b.enemyCastle);
+  assert.equal(b.shots.length, 3);
+  assert.equal(b.shots[0].dmg, d.atk);
+  assert.ok(b.shots[1].dmg < b.shots[0].dmg && b.shots[2].dmg < b.shots[0].dmg);
+  assert.equal(new Set(b.shots.map(x => x.tx)).size, 3, 'each arrow lands somewhere else');
+});
+test('Fog shortens ally reach; foes keep theirs', () => {
+  const plain = new Battle(0, save(), { baseHp: 100, money: 0, rate: 0, waves: [], reward: 0 });
+  const foggy = new Battle(0, save(), { baseHp: 100, money: 0, rate: 0, waves: [], reward: 0, mods: ['veil'] });
+  assert.equal(plain.makeAlly(U.archer, 200).attackRange, U.archer.range);
+  assert.ok(foggy.makeAlly(U.archer, 200).attackRange < U.archer.range);
+  assert.equal(foggy.spawnEnemy('ballista', 800).attackRange, E.ballista.range);
+});
+test('Tribute cuts income and the war chest; the fort rebuilds itself under siege', () => {
+  const stage = { baseHp: 10000, money: 1000, rate: 100, waves: [], reward: 0 };
+  const rich = new Battle(0, save(), stage);
+  const taxed = new Battle(0, save(), { ...stage, mods: ['tribute'] });
+  assert.ok(taxed.income < rich.income && taxed.money < rich.money);
+  const under = new Battle(0, save(), { ...stage, mods: ['siege'] });
+  under.enemyCastle.hp = 5000; under.tick(1);
+  assert.ok(under.enemyCastle.hp > 5000, 'the fort rebuilds');
+  const plain = new Battle(0, save(), stage);
+  plain.enemyCastle.hp = 5000; plain.tick(1);
+  assert.equal(plain.enemyCastle.hp, 5000);
+});
+test('Haste never overwrites a stronger haste already running', () => {
+  const b = battle(); const h = b.makeAlly(U.herald, 500), a = b.makeAlly(U.spear, 520);
+  b.allies.push(h, a);
+  a.hasteMul = 0.5; a.hasteT = 5; h.abCd = 0;
+  b.supportTick(h, b.allies, 0.01, true);
+  assert.equal(a.hasteMul, 0.5, 'the weaker horn cannot slow him down');
+  a.hasteMul = 1; a.hasteT = 0; h.abCd = 0;
+  b.supportTick(h, b.allies, 0.01, true);
+  assert.equal(a.hasteMul, U.herald.ab.haste.mul);
+});
+test('Mythic strikes are as grand as legendary ones', () => {
+  const b = battle(); const g = b.makeAlly(U.gumiho, 500); b.allies.push(g);
+  b.castFx(g, 560, 1, false);
+  assert.equal(b.fx.some(e => e.type === 'cast' && e.big), true);
+});
+test('An assassin with nobody to jump keeps its leap for later', () => {
+  const b = battle(); const wall = b.makeAlly(U.shield, 500); b.allies.push(wall);
+  const x = b.spawnEnemy('assassin', 600);
+  b.tryLeap(x, b.allies);
+  assert.equal(x.leapt, undefined, 'no ranged target, no leap spent');
+  const archer = b.makeAlly(U.archer, 380); b.allies.push(archer);
+  b.tryLeap(x, b.allies); assert.equal(x.leapt, true);
+});
+test('A fort never heals from a negative hit', () => {
+  const b = battle(); const c = b.enemyCastle; c.hp = 500;
+  c.takeDamage(-900); assert.equal(c.hp, 500);
+});
+test('The new mob roles each answer a different question', () => {
+  // 하피는 뒷줄을, 작살은 줄을, 군종사제는 앞줄을 지킨다
+  const b = battle();
+  const near = b.makeAlly(U.shield, 620), far = b.makeAlly(U.archer, 520);
+  b.allies.push(near, far);
+  const h = b.spawnEnemy('harpy', 700);
+  assert.equal(b.findTarget(h, b.allies, b.allyCastle), far, 'harpies dive past the wall');
+  const wp = b.spawnEnemy('warpriest', 760), orc = b.spawnEnemy('orcspear', 780);
+  wp.abCd = 0; b.supportTick(wp, b.enemies, 0.01, false);
+  assert.ok(orc.barrier > 0, 'war priests shield the horde');
+  const beast = b.spawnEnemy('warbeast', 800);
+  assert.ok(beast.ab.feast && beast.ab.kbImmune);
+});
+test('Act three brings four new bosses, each with escorts and patterns', () => {
+  const ids = ['deathknight', 'plaguemother', 'stormtitan', 'abysslord'];
+  for (const id of ids) {
+    assert.ok(E[id].boss, id);
+    assert.ok(E[id].phases && E[id].phases.length >= 3, id + ' phases');
+    assert.ok(E[id].special, id + ' special');
+    const st = STAGES.find(s => s.bossId === id);
+    assert.ok(st, id + ' leads a stage');
+    const t = st.waves.find(w => w.e === id).t;
+    assert.ok(st.waves.some(w => w.t > t && w.t <= t + 3 && !E[w.e].boss), id + ' arrives escorted');
+  }
+});
+test('Terror and doom calls reach the whole front line', () => {
+  const b = battle();
+  const crowd = [];
+  for (let i = 0; i < 4; i++) { const a = b.makeAlly(U.spear, 520 + i * 20); b.allies.push(a); crowd.push(a); }
+  const boss = b.spawnEnemy('abysslord', 600);
+  b.bossAct(boss, { t: 'terror', r: 400, dur: 2, name: '심연이 울린다' });
+  assert.ok(crowd.every(a => a.fearT > 0));
+  b.bossAct(boss, { t: 'doomcall', r: 400, n: 3, delay: 3, radius: 100, dmg: 100, name: '심연의 선고' });
+  assert.equal(crowd.filter(a => a.doomT > 0).length, 3, 'only as many sentences as announced');
+});
+test('Forty stages, nine field palettes and a third act of traits', () => {
+  const { STAGE_MODS } = vm.runInContext('({STAGE_MODS})', ctx);
+  for (const key of ['veil', 'siege', 'tribute']) assert.ok(STAGE_MODS[key], key);
+  const act3 = STAGES.slice(30);
+  assert.equal(act3.length, 10);
+  assert.ok(act3.every(st => st.mods && st.mods.length), 'every act three stage has traits');
+  assert.ok(act3.filter(st => st.bossId).length === 4);
+  assert.ok(act3.every(st => st.hint), 'every act three stage tells you what it wants');
 });
 
 console.log(count + ' regression checks passed');

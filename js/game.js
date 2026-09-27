@@ -51,6 +51,10 @@ const CURSE_HEAL = 0.5;       // 저주: 아군 회복·흡혈 배율
 const CURSE_WITHER = 0.1;     // 저주: 소환물이 초당 잃는 최대 체력 비율
 const SLOW_SPEED_MUL = 0.45; // 둔화 시 이동
 const SLOW_RATE_MUL = 1.7;   // 둔화 시 공격 간격
+const FEAR_BACK_MUL = 0.85;  // 공포: 뒤로 물러나는 속도 (앞으로 나가지도, 치지도 못한다)
+const VEIL_RANGE_MUL = 0.7;  // 짙은 안개: 아군 사거리
+const SIEGE_REGEN = 0.0038;  // 요새 재건: 적 요새가 초당 되찾는 최대 체력 비율
+const TRIBUTE_MUL = 0.55;    // 징세: 군자금 수입 배율
 
 /* ------------------------------- 병사 ------------------------------- */
 class Fighter {
@@ -84,6 +88,12 @@ class Fighter {
     this.weakT = 0; this.weakMul = 1;   // 무당의 액막이: 이 적이 주는 피해가 준다
     this.charmT = 0;                    // 구미호의 홀림: 제 편을 친다
     this.spin = 0;                      // 증기 거상: 쏠수록 빨라진다
+    this.fearT = 0;                     // 공포: 등을 보이고 물러난다
+    this.doomT = 0;                     // 파멸 선고: 시간이 다하면 그 자리에서 터진다
+    this.doomDmg = 0; this.doomR = 0;
+    this.doomCd = 0;                    // 선고를 내리는 쪽의 대기 — 한 번에 한 명씩만
+    this.feast = 0;                     // 포식: 쓰러뜨린 수만큼 자란다
+    this.rangeMul = 1;                  // 짙은 안개 전장에서는 사거리가 준다
     this.scale = stats.scale || 1;
     this.radius = 26 * this.scale;
 
@@ -130,7 +140,7 @@ class Fighter {
     }
     return Math.max(0.12, v);
   }
-  get attackRange() { return this.s.range; }
+  get attackRange() { return this.s.range * this.rangeMul; }
 
   heal(amount) {
     if (this.dead) return;
@@ -197,7 +207,8 @@ class Castle {
     this.ab = {};
   }
   takeDamage(d) {
-    const dealt = Math.min(this.hp, Math.max(0, d));
+    d = Math.max(0, d);
+    const dealt = Math.min(this.hp, d);
     this.hp -= d;
     this.hitFlash = 0.15;
     if (this.hp <= 0) { this.hp = 0; this.dead = true; }
@@ -215,6 +226,10 @@ class Battle {
     this.endless = !!this.stage.endless;
     this.save = save;
 
+    // 전장 특성은 수입·사거리까지 건드리므로 가장 먼저 읽어 둔다
+    this.mods = {};
+    (this.stage.mods || []).forEach(m => { this.mods[m] = true; });
+
     const up = save.upgrades;
     this.buff = {
       hp: 1 + 0.08 * (up.vitality || 0),
@@ -223,11 +238,13 @@ class Battle {
     this.levels = save.levels || {};
 
     this.walletMax = 900 + 260 * (up.wallet || 0);
-    this.income = this.stage.rate * (1 + 0.12 * (up.income || 0));
+    this.income = this.stage.rate * (1 + 0.12 * (up.income || 0)) *
+                  (this.mods.tribute ? TRIBUTE_MUL : 1);
     this.cdMul = Math.max(0.4, 1 - 0.03 * (up.logistics || 0));
     this.goldMul = 1 + 0.08 * (up.spoils || 0);
     this.money = Math.min(this.walletMax,
-                          this.stage.money + 60 * (up.treasury || 0));
+                          Math.round((this.stage.money + 60 * (up.treasury || 0)) *
+                                     (this.mods.tribute ? TRIBUTE_MUL : 1)));
 
     // 왕의 명령
     const cmdLv = up.command || 0;
@@ -267,8 +284,6 @@ class Battle {
     this.speed = 1;
 
     this.queue = [];
-    this.mods = {};
-    (this.stage.mods || []).forEach(m => { this.mods[m] = true; });
     this.stage.waves.forEach((w0, index) => {
       // 물량: 보스가 아닌 무리는 1.8배로, 더 촘촘하게
       const w = (this.mods.horde && !(ENEMIES[w0.e] && ENEMIES[w0.e].boss))
@@ -341,6 +356,7 @@ class Battle {
     const buff = { hp: this.buff.hp * lm, atk: this.buff.atk * lm };
     const f = new Fighter(u, 'ally', x, buff);
     if (this.mods && this.mods.curse) f.healMul = CURSE_HEAL;
+    if (this.mods && this.mods.veil) f.rangeMul = VEIL_RANGE_MUL;
     return f;
   }
 
@@ -412,6 +428,7 @@ class Battle {
       a.hasteMul = COMMAND.hasteMul;
       a.stunT = 0;
       a.slowT = 0;
+      a.fearT = 0;
       this.fx.push({ type: 'rally', x: a.x, row: a.row, t: 0.6, life: 0.6 });
     }
     this.shake = Math.max(this.shake, 9);
@@ -446,6 +463,11 @@ class Battle {
     if (this.bossAlert > 0) this.bossAlert -= dt;
     if (this.patternT > 0) this.patternT -= dt;
     this.updatePending(dt);
+    // 요새 재건: 적 요새가 스스로 무너진 벽을 되쌓는다. 화력이 모자라면 영영 못 깬다.
+    if (this.mods.siege && !this.endless && !this.enemyCastle.dead) {
+      const c = this.enemyCastle;
+      c.hp = Math.min(c.maxHp, c.hp + c.maxHp * SIEGE_REGEN * dt);
+    }
     for (const k in this.cooldowns) {
       if (this.cooldowns[k] > 0) this.cooldowns[k] = Math.max(0, this.cooldowns[k] - dt);
     }
@@ -632,7 +654,13 @@ class Battle {
       if (f.rallyT > 0) { f.rallyT -= dt; if (f.rallyT <= 0) f.rallyMul = 1; }
       if (f.vulnT > 0) { f.vulnT -= dt; if (f.vulnT <= 0) f.vulnMul = 1; }
       if (f.reCd > 0) f.reCd -= dt;
+      if (f.doomCd > 0) f.doomCd -= dt;
       if (f.weakT > 0) { f.weakT -= dt; if (f.weakT <= 0) f.weakMul = 1; }
+      // 파멸 선고: 표식이 다하면 그 자리에서 터진다 (먼저 쓰러지면 선고도 사라진다)
+      if (f.doomT > 0) {
+        f.doomT -= dt;
+        if (f.doomT <= 0) { this.detonateDoom(f, list); if (f.dead) continue; }
+      }
       f.bob += dt * (f.speedNow / 22);
 
       const burning = f.burnT > 0;
@@ -667,6 +695,15 @@ class Battle {
       if (f.kbTimer > 0) {
         f.kbTimer -= dt;
         f.x -= f.dir * 150 * dt;
+        f.x = Math.max(60, Math.min(WORLD - 60, f.x));
+        continue;
+      }
+
+      // 공포: 등을 보이고 물러난다. 치지도, 앞으로 나가지도 못한다.
+      if (f.fearT > 0) {
+        f.fearT -= dt;
+        f.moving = f.speedNow > 0;
+        f.x -= f.dir * f.speedNow * FEAR_BACK_MUL * dt;
         f.x = Math.max(60, Math.min(WORLD - 60, f.x));
         continue;
       }
@@ -740,7 +777,7 @@ class Battle {
 
     if (ab.cleanse) {
       for (const m of mates) if (!m.dead && Math.abs(m.x - f.x) <= ab.radius) {
-        m.poisonT = 0; m.poisonDps = 0; m.burnT = 0; m.burnDps = 0; m.slowT = 0;
+        m.poisonT = 0; m.poisonDps = 0; m.burnT = 0; m.burnDps = 0; m.slowT = 0; m.fearT = 0;
       }
       this.fx.push({type:'aura',x:f.x,row:f.row,r:ab.radius,color:'#a4f6cc',t:.5,life:.5});
     }
@@ -773,8 +810,9 @@ class Battle {
       for (const m of mates) {
         if (m.dead || m === f) continue;
         if (Math.abs(m.x - f.x) > ab.radius) continue;
+        // 이미 더 센 가속을 받고 있으면 덮어써서 느려지게 하지 않는다
+        m.hasteMul = m.hasteT > 0 ? Math.min(m.hasteMul, ab.haste.mul) : ab.haste.mul;
         m.hasteT = Math.max(m.hasteT, ab.haste.dur);
-        m.hasteMul = ab.haste.mul;
       }
       f.auraPulse = 0.5;
       this.fx.push({ type: 'aura', x: f.x, row: f.row, r: ab.radius,
@@ -887,7 +925,9 @@ class Battle {
   bossAct(f, a) {
     const foes = this.foesOf(f.side);
     const r = a.r || 300;
-    this.announce(a.name);
+    // 화면 한가운데 이름이 뜨는 건 보스의 몫이다. 공성 마녀 같은 잡몹이 기술을 써도
+    // 예고 원만 깜박일 뿐, 보스 패턴 간판을 빼앗지는 않는다.
+    if (f.boss) this.announce(a.name);
 
     switch (a.t) {
       case 'roar': {                       // 포효: 밀어내고 기절
@@ -966,6 +1006,32 @@ class Battle {
         f.heal(sum * (a.ratio || 0.6));
         this.fx.push({ type: 'cast', kind: 'runes', x: f.x, row: f.row,
                        color: '#a06be0', r: r * 0.5, big: true, dir: f.dir, t: 0.6, life: 0.6 });
+        break;
+      }
+      case 'terror': {                     // 공포: 전열이 등을 보이고 물러난다
+        for (const e of foes) {
+          if (e.dead || e.boss || Math.abs(e.x - f.x) > r) continue;
+          e.fearT = Math.max(e.fearT, a.dur || 1.8);
+          this.fx.push({ type: 'fear', x: e.x, row: e.row, t: 0.7, life: 0.7 });
+        }
+        this.fx.push({ type: 'cast', kind: 'wail', x: f.x, row: f.row,
+                       color: f.s.accent, r: r * 0.6, big: true, dir: f.dir, t: 0.7, life: 0.7 });
+        this.shake = Math.max(this.shake, 11);
+        sfx('bossIn');
+        break;
+      }
+      case 'doomcall': {                   // 파멸 선고: 여럿에게 표식을 남긴다
+        let marked = 0;
+        for (const e of foes) {
+          if (e.dead || Math.abs(e.x - f.x) > r || e.doomT > 0) continue;
+          if (marked++ >= (a.n || 3)) break;
+          e.doomT = a.delay || 3.2;
+          e.doomR = a.radius || 110;
+          e.doomDmg = a.dmg || Math.round(f.atk * 0.8);
+          this.fx.push({ type: 'doommark', x: e.x, row: e.row, t: 0.8, life: 0.8 });
+        }
+        this.fx.push({ type: 'cast', kind: 'doom', x: f.x, row: f.row,
+                       color: '#c49bff', r: r * 0.5, big: true, dir: f.dir, t: 0.7, life: 0.7 });
         break;
       }
       case 'meteor': {                     // 예고 후 떨어지는 폭격
@@ -1070,7 +1136,7 @@ class Battle {
   castFx(f, x, row, crit) {
     const kind = f.s.castFx;
     if (!kind) return;
-    const big = f.s.rarity === 'SSR';
+    const big = f.s.rarity === 'SSR' || f.s.rarity === 'UR';
     // 같은 순간에 연출이 몰리면 프레임이 무너진다. 살아 있는 수를 세어 막는다.
     let live = 0, liveBig = 0;
     for (const e of this.fx) {
@@ -1101,12 +1167,20 @@ class Battle {
     const r = this.rollDamage(f);
     if (f.s.ranged) {
       sfx('arrow');
-      this.shots.push({
-        x: f.x, y0: f.row, tx: target.x, side: f.side, t: 0,
-        dur: Math.max(0.18, Math.abs(target.x - f.x) / 900),
-        color: f.s.accent, dmg: r.dmg, crit: r.crit, src: f,
-        area: f.s.area, areaRadius: f.s.areaRadius, dir: f.dir
-      });
+      // 연사: 한 번 당길 때 여러 발이 부챗살로 날아간다. 덧붙는 화살은 조금 약하다.
+      const vol = f.ab.volley;
+      const shots = vol ? 1 + (vol.n || 1) : 1;
+      for (let k = 0; k < shots; k++) {
+        const fall = k === 0 ? 1 : (vol.fall || 0.6);
+        const off = k === 0 ? 0 : (k % 2 ? 1 : -1) * (30 + 22 * Math.floor((k - 1) / 2));
+        const tx = Math.max(60, Math.min(WORLD - 60, target.x + off));
+        this.shots.push({
+          x: f.x, y0: f.row, tx: tx, side: f.side, t: 0,
+          dur: Math.max(0.18, Math.abs(tx - f.x) / 900) + k * 0.04,
+          color: f.s.accent, dmg: r.dmg * fall, crit: r.crit && k === 0, src: f,
+          area: f.s.area, areaRadius: f.s.areaRadius, dir: f.dir
+        });
+      }
     } else {
       const cx = f.x + f.dir * f.attackRange * 0.6;
       if (f.s.area) this.areaHit(r.dmg, cx, f.s.areaRadius, foes, foeCastle, f, r.crit);
@@ -1130,7 +1204,14 @@ class Battle {
     // 영웅 사냥꾼: 적이 비싼(비용 350 이상) 아군 — 영웅·전설·신화 — 을 골라 두 배로 친다
     if (this.mods && this.mods.giantslayer && src && src.side === 'enemy' &&
         !target.isCastle && target.side === 'ally' && (target.s.cost || 0) >= HUNT_COST) dmg *= HUNT_MUL;
+    // 수호 연결: 곁에 선 수호자가 이 피해를 나눠 받는다
+    if (!target.isCastle) dmg = this.aegisShare(target, dmg);
     const dealt = target.takeDamage(dmg, pierce) || 0;
+    // 포식: 제 손으로 쓰러뜨릴 때마다 자란다
+    if (src && src.ab.feast && !target.isCastle && target.dead && !target.feasted) {
+      target.feasted = true;
+      this.feed(src, src.ab.feast);
+    }
     if (src && src.ab.sunmark && !target.isCastle && !target.dead) {
       target.vulnT = Math.max(target.vulnT, src.ab.sunmark.dur);
       target.vulnMul = Math.max(target.vulnMul, 1 + src.ab.sunmark.vuln);
@@ -1182,11 +1263,72 @@ class Battle {
       target.charmT = Math.max(target.charmT, ab.charm.dur);
       this.fx.push({ type: 'charm', x: target.x, row: target.row, t: 0.7, life: 0.7 });
     }
+    if (ab.fear && !target.boss && Math.random() < ab.fear.chance) {
+      target.fearT = Math.max(target.fearT, ab.fear.dur);
+      this.fx.push({ type: 'fear', x: target.x, row: target.row, t: 0.7, life: 0.7 });
+    }
+    if (ab.doom && !target.boss && target.doomT <= 0 && src.doomCd <= 0) {
+      const d = ab.doom;
+      src.doomCd = d.cd || 2.5;
+      target.doomT = d.delay || 3;
+      target.doomR = d.radius || 100;
+      target.doomDmg = Math.round(src.atk * (d.mul || 1.5));
+      this.fx.push({ type: 'doommark', x: target.x, row: target.row, t: 0.7, life: 0.7 });
+    }
     if (ab.bounty && src.side === 'ally' && Math.random() < ab.bounty.chance) {
       this.money = Math.min(this.walletMax, this.money + ab.bounty.gold);
       this.fx.push({ type: 'coin', x: target.x, row: target.row, v: ab.bounty.gold, t: 0.8, life: 0.8 });
     }
     if (ab.execute) this.tryExecute(target, ab.execute);
+  }
+
+  /* 수호 연결: 지켜 주는 병사가 곁에 있으면 그가 피해의 일부를 대신 받는다.
+   * 수호자 자신에게 오는 피해는 나누지 않는다 — 그러면 아무도 죽지 않는다. */
+  aegisShare(target, dmg) {
+    if (dmg <= 0 || target.ab.aegis) return dmg;
+    const mates = target.side === 'ally' ? this.allies : this.enemies;
+    for (const g of mates) {
+      const a = g.ab.aegis;
+      if (!a || g.dead || g === target) continue;
+      if (Math.abs(g.x - target.x) > a.radius) continue;
+      const share = dmg * a.share;
+      g.takeDamage(share);
+      this.fx.push({ type: 'link', x: g.x, x2: target.x, row: target.row,
+                     t: 0.2, life: 0.2, color: '#a9e8ff' });
+      return dmg - share;
+    }
+    return dmg;
+  }
+
+  /* 포식: 쓰러뜨린 수만큼 공격력과 체력이 붙는다. 상한이 있어 끝없이 자라지는 않는다. */
+  feed(f, ft) {
+    if (f.dead || f.feast >= (ft.max || 5)) return;
+    f.feast++;
+    f.atk = Math.round(f.atk * (1 + (ft.atk || 0.08)));
+    if (ft.hp) {
+      const gain = Math.round(f.maxHp * ft.hp);
+      f.maxHp += gain;
+      f.heal(gain);
+    }
+    f.auraPulse = 0.5;
+    this.fx.push({ type: 'feast', x: f.x, row: f.row, t: 0.5, life: 0.5, color: f.s.accent });
+  }
+
+  /* 파멸 선고가 다했다. 선고를 받은 자리에서 터져 곁에 선 편까지 휘말린다. */
+  detonateDoom(f, list) {
+    const dmg = f.doomDmg, r = f.doomR || 100;
+    f.doomDmg = 0; f.doomT = 0;
+    const side = list || (f.side === 'ally' ? this.allies : this.enemies);
+    for (const e of side) {
+      if (e.dead || Math.abs(e.x - f.x) > r + e.radius) continue;
+      // 갑주를 무시하지는 않는다 — 갑주를 깨는 건 파쇄(토르)의 몫이다
+      e.takeDamage(e === f ? dmg : dmg * 0.5);
+    }
+    this.fx.push({ type: 'cast', kind: 'doom', x: f.x, row: f.row, color: '#c49bff',
+                   r: r, big: true, dir: f.dir, t: 0.6, life: 0.6 });
+    this.fx.push({ type: 'boom', x: f.x, r: r, t: 0.32, life: 0.32 });
+    this.shake = Math.max(this.shake, 9);
+    sfx('boom');
   }
 
   /* 저승사자: 명부에 오른(체력이 낮은) 적은 그 자리에서 거둔다. 보스는 예외. */
@@ -1212,7 +1354,7 @@ class Battle {
     if (!best || f.cd > 0) return;
     f.cd = f.intervalNow;
     f.swing = 0.22;
-    this.hitOne(f.atk, best, null, false);
+    this.hitOne(this.rollDamage(f).dmg, best, null, false);
     this.fx.push({ type: 'hit', x: best.x, row: best.row, dir: -f.dir, t: 0.2, life: 0.2 });
   }
 
@@ -1422,14 +1564,15 @@ class Battle {
       if (d > 0 && d < front) front = d;
     }
     if (front > lp.trigger) return;
-    f.leapt = true;
     let target = null, td = -1;
     for (const e of foes) {
       if (e.dead || !e.s.ranged || e.ab.hold) continue;
       const d = (e.x - f.x) * f.dir;
       if (d > front && d <= lp.range && d > td) { td = d; target = e; }
     }
+    // 뛰어넘을 만한 표적이 없으면 도약을 아껴 둔다 (뒷줄이 나타나면 그때 뛴다)
     if (!target) return;
+    f.leapt = true;
     const from = f.x;
     f.x = target.x - f.dir * 30;
     f.cd = Math.min(f.cd, 0.2);

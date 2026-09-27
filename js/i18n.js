@@ -352,7 +352,7 @@ const I18N_EN = {
   '끝없는 증원 · ': 'Endless reinforcements · ', '다음 증원 · ': 'Next reinforcements · ', '보스 예고 · ': 'Boss incoming · ',
   '마지막 웨이브 · 남은 적을 처치하라': 'Final wave · defeat the rest',
   '적 증원 시작': 'Enemy reinforcements incoming!', ' 증원': ' reinforcements', '보스 등장': 'BOSS', '왕 의 명 령': "KING'S COMMAND",
-  '획득 골드 💰 ': 'Gold 💰 ', '  ·  남은 성채 ': '  ·  Castle ', '  (별 보너스 ': '  (star bonus ', '  ·  소환석 🔮 ': '  ·  Stones 🔮 ',
+  '획득 골드 💰 ': 'Gold 💰 ', '  ·  남은 성채 ': '  ·  Castle ', '  (별 보너스 ': '  (star bonus ', '  ·  소환석 🔮 ': '  ·  Stones 🔮 ', '소환석 🔮 ': 'Stones 🔮 ', ' · 소환석 ': ' · Stones ', '소환석': 'Summon Stone',
   '무한 전장 · 최고 ': 'Endless · best ', '최대 강화 완료': 'Fully upgraded', ' 골드로 강화': ' gold to upgrade',
   '기록을 초기화했습니다': 'Progress reset', '진행도와 소환한 병종이 모두 삭제됩니다. 정말 초기화하시겠습니까?': 'All progress and summoned units will be erased. Really delete?',
   '진행도 복원': 'Restore progress', '진행도를 복원했습니다.': 'Progress restored.', '이전 자동 백업으로 진행도를 복구했습니다.': 'Recovered progress from the previous auto-backup.',
@@ -363,7 +363,154 @@ const I18N_EN = {
   '전체화면을 지원하지 않는 기기입니다': "This device doesn't support fullscreen",
   '백업 파일은 앱 밖에 보관됩니다. 앱을 삭제하기 전에 백업을 따로 저장해 주세요.': 'Backups are stored outside the app. Save one before uninstalling.',
   '▶ 이어하기': '▶ Continue', '필살': 'ULT', '충전': 'CHARGE', '발동!': 'GO!', '초 남음': 's left', '(출전 중에 한 번 더 누르면 발동)': '(tap again while deployed to use)', '시즌 변경 시 누적 유지 · 신화 획득 시 두 누적 초기화': 'Kept when switching seasons · both reset on a Mythic', '회': '', '보상': 'Reward', '출진': 'Deploy', '돌파': 'Cleared', '웨이브': 'waves', '전장': 'Stage', '병종': 'units', '개 칸을 채웠습니다': ' slots filled',
-  '단축키': 'Key', '보유': 'owned', '분': 'm', '레벨 +1 · 💰': 'Lv +1 · 💰'
+  '단축키': 'Key', '보유': 'owned', '분': 'm', '레벨 +1 · 💰': 'Lv +1 · 💰',
+  /* ---------------- 2.7 시즌 6 · 서천취경 ---------------- */
+  '서천취경': 'Journey to the West', '서유기': 'Journey to the West',
+  '경을 구하러 서쪽으로 간 일행이 왕국의 길을 함께 열어 준다.': 'The pilgrims bound west for the scriptures clear the kingdom\u2019s road as well.',
+  '손오공': 'Sun Wukong', '오공': 'Wukong', '제천대성': 'Great Sage',
+  '분신 · 7초마다 분신 1기(최대 2) · 쓰러뜨릴수록 자란다(최대 6) · 여의봉 회전':
+    'Clones · 1 clone every 7s (max 2) · grows with every kill (max 6) · Spinning Staff',
+  '털 한 올로 분신을 세우고, 쓰러뜨릴수록 스스로 자란다. 다만 자라려면 제 손으로 적을 쓰러뜨려야 하니, 앞줄이 버텨 주지 않으면 한 번도 크지 못하고 넘어진다.':
+    'A single hair becomes a clone, and every kill of his own makes him bigger. He has to land the killing blow himself, so without a front line holding he never grows at all.',
+  '여의봉 회전': 'Spinning Staff',
+  '가장 가까운 적 주변을 후려 피해·밀쳐 냄·0.7초 기절. 성채에는 피해 없음.':
+    'Sweeps around the nearest foe: damage, knockback and a 0.7s stun. No damage to forts.',
+  '관음보살': 'Guanyin', '관음': 'Guanyin', '자비': 'Mercy',
+  '수호 연결 · 주변 아군이 맞는 공격의 35%를 대신 받음 · 회복과 정화 · 공격 안 함':
+    'Ward link · takes 35% of every blow struck at nearby allies · heals and cleanses · no attack',
+  '곁에 선 병사가 맞을 매를 대신 받고, 상처와 액을 함께 씻는다. 스스로는 한 대도 치지 못하니 때려 줄 주력이 반드시 있어야 한다.':
+    'She takes the blows meant for those beside her and washes away wounds and curses alike. She never strikes once herself, so she needs a real attacker along.',
+  '감로수': 'Sweet Dew',
+  '이랑진군': 'Erlang Shen', '이랑': 'Erlang', '천안': 'Third Eye',
+  '단일 저격 · 3초마다 한 명에게 파멸 선고(3초 뒤 그 자리에서 터진다, 보스 제외)':
+    'Single shot · a doom sentence on one foe every 3s (bursts after 3s, never bosses)',
+  '세 번째 눈이 고른 한 놈에게만 선고가 내린다. 무리 속에 선 적을 골라 찍으면 곁에 선 것들까지 함께 터진다. 떼를 쓸어내는 병종은 따로 챙겨야 한다.':
+    'Only the one his third eye picks is sentenced. Mark a foe standing in a crowd and its neighbours burst with it. Bring something else to sweep the crowd itself.',
+  '저팔계': 'Zhu Bajie', '팔계': 'Bajie', '탐식': 'Gluttony',
+  '넉백 면역 · 근접 피해 25% 되돌림 · 흡혈 18% · 먹을수록 자란다':
+    'Knockback immune · returns 25% of melee damage · lifesteal 18% · grows as he eats',
+  '쇠스랑을 들고 버티며 먹어 치운다. 밀리지 않고, 저를 친 자에게 되돌려 준다.':
+    'He plants his rake, holds, and eats. Never pushed back, and whoever hits him gets it back.',
+  '사오정': 'Sha Wujing', '오정': 'Wujing', '항마': 'Warding',
+  '항마장 · 30% 확률로 적을 물러나게 함(보스 제외) · 둔화':
+    'Warding staff · 30% chance to send a foe backing off (never bosses) · slow',
+  '월아산으로 길게 밀어낸다. 겁먹은 적은 등을 보이고 물러나 전선을 저 혼자 늦춘다.':
+    'His crescent staff keeps foes at arm\u2019s length. A frightened one turns its back and stalls the line all by itself.',
+  '용왕 태자': 'Dragon Prince', '용태자': 'Dragon Prince', '연사': 'Volley',
+  '연사 · 한 번에 세 발이 부챗살로 날아간다': 'Volley · three shots fan out at once',
+  '용의 아들이 쏘는 세 갈래 물살. 몰려오는 무리에 두루 꽂힌다.':
+    'Three streams of water from the dragon\u2019s son. They land all across a crowd.',
+  '승병': 'Warrior Monk', '곤봉': 'Staff',
+  '값싼 근접 · 긴 곤봉': 'Cheap melee · long staff',
+  '절을 지키던 승병. 싸고 빠르게 전열을 채운다.': 'A monk who guarded the temple. Cheap and quick to fill the line.',
+  '분신 원숭이': 'Monkey Clone',
+  '털 한 올에서 태어난 분신. 본체만큼은 못 하지만 공짜로 전선을 채운다.':
+    'A clone born from one hair. Not the real thing, but it fills the line for free.',
+
+  /* ---------------- 2.7 심연 군단 ---------------- */
+  '하피': 'Harpy',
+  '급강하 · 사거리 안에서 가장 뒤에 선 아군을 노린다': 'Dive · strikes the rearmost ally in range',
+  '오크 작살병': 'Orc Harpooner',
+  '작살 관통 · 한 줄로 선 아군을 통째로 꿰뚫는다': 'Harpoon pierce · skewers a whole line of allies',
+  '오크 군종사제': 'Orc War Priest',
+  '전투 축복 · 주변 적에게 보호막 620 (중독·화상은 보호막을 뚫는다)':
+    'War blessing · shields nearby foes for 620 (poison and burn go straight through shields)',
+  '통곡의 정령': 'Wailing Spirit',
+  '통곡 · 들은 아군은 등을 보이고 물러난다 (정화·왕명으로 해제)':
+    'Wail · allies who hear it turn and back away (cleanse or the royal command lifts it)',
+  '폭풍 주술사': 'Storm Shaman',
+  '연쇄 번개 · 붙어 선 아군에게 줄줄이 옮겨 붙는다': 'Chain lightning · hops along allies standing together',
+  '무덤 수호병': 'Grave Warden',
+  '갑주 20% · 넉백 면역 · 한 번 쓰러져도 다시 일어난다':
+    'Armor 20% · knockback immune · rises once after falling',
+  '독알 거미': 'Venom Spawn',
+  '독 · 쓰러지면 독안개가 터진다 (해독 훈련과 정화로 버틴다)':
+    'Poison · bursts into a venom cloud when killed (antidote drill and cleanse carry you through)',
+  '전투 멧돼지': 'War Boar',
+  '돌진 · 넉백 면역 · 쓰러뜨릴수록 커진다 (먹이를 주지 말 것)':
+    'Charge · knockback immune · grows with every kill (do not feed it)',
+  '서리 망령': 'Hoarfrost Wraith',
+  '서리 손 · 둔화 · 쓰러지면 한파가 터진다': 'Frost grasp · slow · bursts into a cold snap when killed',
+  '공성 마녀': 'Siege Witch', '마녀의 포격': 'Witch Barrage',
+  '원거리 포격 · 예고 원을 보면 그 자리를 비워라': 'Long bombardment · clear the marked circle',
+  '파멸의 흑기사': 'Doom Knight', '파멸 선고': 'Doom Sentence',
+  '절망의 외침': 'Cry of Despair', '검은 맹세': 'Black Oath', '피의 갈증': 'Blood Thirst',
+  '역병의 어미': 'Plague Mother', '역병 산란': 'Plague Spawning',
+  '알집이 터진다': 'The Egg Sac Bursts', '어미의 분노': 'Mother\u2019s Fury', '마지막 산란': 'Final Spawning',
+  '폭풍의 거신': 'Storm Titan', '벼락 낙하': 'Thunderfall', '천둥 포효': 'Thunder Roar',
+  '폭풍 한파': 'Storm Chill', '벼락의 격노': 'Thunder Wrath', '폭풍의 갑주': 'Storm Plate',
+  '심연의 군주': 'Abyss Lord', '심연의 선고': 'Abyssal Sentence', '심연의 부름': 'Call of the Abyss',
+  '심연이 울린다': 'The Abyss Howls', '군주의 포효': 'Lord\u2019s Roar', '군주의 진노': 'Lord\u2019s Wrath',
+  '최후의 심연': 'The Last Abyss',
+
+  /* ---------------- 2.7 3막 전장 ---------------- */
+  '잿빛 관문': 'Ashen Gate',
+  '안개로 사거리가 준다 — 뒤에서 쏘는 대신 근접으로 붙어라':
+    'The fog cuts your reach \u2014 close in with melee instead of shooting from behind',
+  '통곡의 벌판': 'Wailing Plains',
+  '통곡은 정화사와 왕명으로 끊고, 몰려오는 수는 범위로 쓸어라':
+    'Break the wailing with a purifier and the royal command, and sweep the numbers with area attacks',
+  '★ 파멸의 흑기사': '\u2605 The Doom Knight',
+  '파멸 선고가 붙은 병사는 흩어 세워라 — 뭉쳐 있으면 함께 터진다':
+    'Spread out anyone under a doom sentence \u2014 bunched up, they burst together',
+  '역병 산란지': 'Brood Pits',
+  '독알 거미는 쓰러질 때 터진다 — 값싼 전열로 받고 해독 훈련을 올려라':
+    'Venom spawn burst when they die \u2014 soak them with cheap troops and raise the antidote drill',
+  '★ 역병의 어미': '\u2605 The Plague Mother',
+  '알집을 깨려면 광역 화력이 필요하다 — 군자금이 줄었으니 값싼 병종을 섞어라':
+    'Cracking the egg sacs takes area firepower \u2014 funds are short, so mix in cheap units',
+  '번개 치는 절벽': 'Thunder Cliffs',
+  '붙어 서면 번개가 옮겨 붙는다 — 흩어 세우고 멧돼지에게 먹이를 주지 마라':
+    'Lightning hops between units standing together \u2014 spread out, and do not feed the boars',
+  '★ 폭풍의 거신': '\u2605 The Storm Titan',
+  '거신이 비싼 아군만 노린다 — 값싼 몸통으로 받고, 파쇄와 지속 피해로 갑주를 깎아라':
+    'The titan hunts your costly units \u2014 soak with cheap bodies and grind the armor with sunder and damage over time',
+  '무너지는 성벽': 'Crumbling Rampart',
+  '적 요새가 스스로 되쌓는다 — 오래 끌지 말고 공성 화력으로 단숨에 부숴라':
+    'The enemy fort rebuilds itself \u2014 do not drag it out, break it fast with siege firepower',
+  '심연의 계단': 'Abyssal Stair',
+  '비싼 병종은 과녁이 된다 — 값싼 몸통으로 버티며 금을 벌어라':
+    'Costly units are just targets \u2014 hold with cheap bodies and earn your gold',
+  '★ 심연의 군주': '\u2605 The Abyss Lord',
+  '선고는 흩어서 받고, 호위를 먼저 걷어 낸 뒤 액티브와 왕명을 군주에게 몰아라':
+    'Take the sentences spread out, clear the escort first, then pour actives and the royal command into the lord',
+
+  /* ---------------- 2.7 전장 특성 ---------------- */
+  '짙은 안개': 'Dense Fog',
+  '아군 사거리 30% 감소 — 뒤에서 쏘는 전술이 안 통한다': 'Ally range -30% \u2014 shooting from the back stops working',
+  '근접 주력 · 돌격 · 두꺼운 전열': 'Melee mainline · assault · a thick front row',
+  '요새 재건': 'Rebuilding Fort',
+  '적 요새가 초당 최대 체력 0.38%를 되쌓는다 — 오래 끌면 못 깬다':
+    'The enemy fort regains 0.38% of its max HP each second \u2014 drag it out and you never break it',
+  '공성 화력 · 한 방이 큰 병종 · 빠른 돌파': 'Siege firepower · big single hits · a fast push',
+  '징세': 'Tribute',
+  '군자금 수입과 시작 자금이 45% 줄어든다': 'War funds income and starting funds are cut by 45%',
+  '금을 버는 병종 · 값싼 병종 위주 편성': 'Gold-earning units · a squad built around cheap troops',
+
+  /* ---------------- 2.7 임무와 업적 ---------------- */
+  '적 300명 처치': 'Defeat 300 foes', '보스 3체 처치': 'Defeat 3 bosses',
+  '왕의 명령 5회 사용': "Use the King's Command 5\u00d7", '별 3개로 승리 3회': 'Win 3\u00d7 with three stars',
+  '별의 수장': 'Star Keeper', '별 60개 획득': 'Collect 60 stars',
+  '모든 전장 별 3개 (120개)': 'Three stars on every stage (120)',
+  '모든 신화': 'Every Myth', '모든 시즌에서 전설 이상을 각각 보유': 'Own a Legendary or better from every season',
+  '심연의 등반자': 'Abyss Climber', '35전장 돌파': 'Clear 35 stages',
+  '심연의 정복자': 'Conqueror of the Abyss', '40전장 모두 돌파': 'Clear all 40 stages',
+  '끝을 본 자': 'One Who Saw the End', '무한 전장 40웨이브 돌파': 'Survive 40 endless waves',
+  '성채의 전설': 'Legend of the Keep', '무한 전장 60웨이브 돌파': 'Survive 60 endless waves',
+
+  /* ---------------- 2.7 화면에 붙는 말 ---------------- */
+  '3막': 'Act III', '심연의 문': 'Gate of the Abyss',
+  '공포': 'Fear', '수호 연결': 'Ward link', '포식': 'Feast', '보호막 지원': 'Shield support',
+  '연쇄 번개': 'Chain lightning', '뒷줄 노림': 'Backline hunter', '예고 포격': 'Marked barrage',
+  '급강하 · 궁수 곁을 비우지 말고 빠르게 떨어뜨려라': 'Dive · keep a guard by your archers and drop it fast',
+  '공포 · 정화사와 왕명으로 풀고, 원거리로 먼저 끊어라': 'Fear · lift it with a purifier or the royal command, and cut it down at range first',
+  '보호막 지원 · 중독과 화상은 보호막을 뚫는다': 'Shield support · poison and burn go straight through shields',
+  '연쇄 번개 · 뭉치지 말고 전열을 흩어 세워라': 'Chain lightning · do not bunch up, spread the line',
+  '포식 · 먹이를 주지 말고 둔화로 묶어 한꺼번에 쓰러뜨려라': 'Feast · do not feed it, pin it with slows and drop it at once',
+  '관통 · 한 줄로 서지 말고 앞줄을 두껍게': 'Pierce · do not line up, thicken the front row',
+  '예고 포격 · 바닥의 예고 원을 보면 그 자리를 비워라': 'Marked barrage · when a circle appears on the ground, clear that spot',
+  '파멸 선고가 붙은 병사': 'a unit under a doom sentence'
+
 };
 
 /* 목록 문단처럼 굵은 글씨가 섞인 덩어리는 통째로 바꾼다 */
