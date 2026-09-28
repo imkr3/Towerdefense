@@ -508,6 +508,7 @@ class Battle {
     const buff = total > 1 ? { hp: total, atk: total } : null;
     const f = new Fighter(st, 'enemy', atX !== undefined ? atX : ENEMY_SPAWN_X - Math.random() * 40, buff);
     f.gold = spec.gold || 0;
+    f.kind = id;
     f.boss = !!spec.boss;
     if (mods.horde && !f.boss) { f.maxHp = Math.round(f.maxHp * 0.6); f.hp = f.maxHp; }
     // 캠페인의 보스는 전장에 하나뿐이라 훨씬 강하다 (무한 전장은 그대로)

@@ -113,8 +113,12 @@ function show(id) {
   if (id === 'scr-gacha') renderGacha();
   if (id === 'scr-quest') { checkAchievements(); renderQuest(); }
   if (id === 'scr-battle' && renderer) renderer.resize();
-  if (id !== 'scr-battle') BGM.play(id === 'scr-title' ? 'title' : 'map');
+  if (id !== 'scr-battle') BGM.play(SCREEN_MUSIC[id] || 'map');
 }
+
+/* 화면마다 곡: 진군도·임무는 행진, 병영·훈련소·편성은 가벼운 곡, 소환은 신비로운 곡 */
+const SCREEN_MUSIC = { 'scr-title': 'title', 'scr-map': 'map', 'scr-quest': 'map', 'scr-shop': 'barracks',
+  'scr-units': 'barracks', 'scr-formation': 'barracks', 'scr-gacha': 'altar' };
 
 /* 브라우저 기본 confirm 대신 게임 톤에 맞춘 확인창 */
 let confirmYes = null;
@@ -401,7 +405,7 @@ function renderMap() {
                    (i === mapSel ? ' sel' : '');
     el.style.left = p.x + '%';
     el.style.top = p.y + '%';
-    el.style.setProperty('--field', FIELD_PALETTES[i % FIELD_PALETTES.length].ridge);
+    el.style.setProperty('--field', lookOf(STAGES[i]).ridge);
     el.setAttribute('aria-label', (i + 1) + '. ' + (locked ? '잠김' : st.name));
     el.innerHTML =
       '<span class="stage-no">' + (locked ? '🔒' : (st.boss ? '♛' : (i + 1))) + '</span>' +
@@ -999,7 +1003,7 @@ function beginBattle() {
   $('#btn-pause').textContent = '❚❚';
   bossMusic = false;
   bossMusicT = 0;
-  BGM.play('battle');
+  BGM.play(stageMusic(battle.stage));
   setPaused(false);
   autoTimer = 0;
   refreshAutoBtn();
@@ -1258,10 +1262,13 @@ function loop(ts) {
   // 보스가 서면 곡을 바꾼다. 매 프레임 적을 훑을 필요는 없다.
   if (!bossMusic && battle.state === 'play' && (bossMusicT -= dt) <= 0) {
     bossMusicT = 0.5;
-    if (battle.aliveBoss()) { bossMusic = true; BGM.play('boss'); }
+    const boss = battle.aliveBoss();
+    if (boss) { bossMusic = true; BGM.play(bossTrack(battle.stage, boss.kind)); }
   }
   if (before === 'play' && battle.state !== 'play') {
-    BGM.stop(0.6);
+    // 승리는 팡파르, 패배는 애가. 음악을 꺼 두었으면 효과음이 대신한다.
+    if (BGM.vol > 0) BGM.sting(battle.state === 'win' || (battle.endless && battle.newRecord) ? 'victory' : 'defeat');
+    else BGM.stop(0.6);
     const ended = battle;
     resultTimer = setTimeout(() => {
       if (battle === ended && $('#scr-battle').classList.contains('active')) showResult();

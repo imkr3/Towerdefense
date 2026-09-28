@@ -47,6 +47,25 @@
 휴대폰에서는 목록 스크롤과 끌기가 부딪히므로, 가로로 끌거나 0.17초 눌렀다 끌면 끌기,
 세로로 쓸면 스크롤이다. 저장 칸 3개, 빈 칸 채우기, 근접·원거리·전설 분류가 있다.
 
+## 음악 (2.9)
+
+`js/audio.js` 의 `BGM` 은 음원 파일 없이 WebAudio 로 즉석 연주하는 작은 관현악단이다
+(현악·금관·호른·합창·목관·하프·첼레스타·팀파니·타이코·심벌·징 + 컨볼버 잔향 + 압축기).
+곡은 `js/music.js` 에 코드 진행과 선율, 스타일(`BGM_STYLES`: epic·action·march·pastoral·folk·mystic·
+eerie·tribal·ice·desert·dark·light)만 적고, 스타일이 반주를 짠다. 선율은 한 마디 16칸이고
+`'D5*4'` 는 D5 를 네 칸. 곡마다 들리는 크기는 `BGM_GAIN` 으로 맞춘다.
+
+- 전장 곡: `STAGE_MUSIC` 으로 30전장 모두 다른 곡. 보스가 나오면 `boss_<보스>` 곡, 30전장은 `finale`.
+- 메뉴: title · map(진군도·임무) · barracks(병영·훈련소·편성) · altar(소환) · endless.
+- 승리 `victory` · 패배 `defeat` 는 한 번만 울린다(`BGM.sting`).
+- `node tools/check-music.js` 가 모든 곡의 마디 길이·코드·음 이름을 확인한다(`npm test` 에 포함).
+
+## 전장 풍경 (2.9)
+
+전장마다 `look` 이 있다(`STAGE_LOOKS`). `render.js` 의 `FIELD_LOOKS` 가 하늘·산 모양·땅 색을,
+`LOOK_LAYERS` 가 배경 층(풍차·강·다리·숲·묘비·동굴 천장·성벽·화산·피라미드·떠 있는 섬…)을,
+`PROP_DRAW` 가 땅 위 소품을, `WEATHER` 가 날씨(눈·불티·반딧불·혼…)를 그린다.
+
 ## 설정 · 언어 · 음악
 
 타이틀·진군도·전투 중 ⚙ 에서 연다. 설정은 게임 저장과 따로 기기에 남는다(`stick-kingdom-settings-v1`).

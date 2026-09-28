@@ -1084,6 +1084,22 @@ STAGES.forEach((st, i) => {
   ];
 });
 
+/* ------------------------------------------------------------------
+ *  전장 컨셉: 모습(look)과 전장 곡(music). 곡은 서른 전장이 모두 다르다.
+ *  보스가 나오면 보스곡으로 바뀌고, 마지막 전장은 따로 한 곡(finale).
+ * ------------------------------------------------------------------ */
+const STAGE_LOOKS = ['meadow', 'wheat', 'river', 'forest', 'graveyard', 'cave', 'hills', 'camp', 'canyon', 'fortress',
+  'darkforest', 'ruins', 'graveyard', 'fortress', 'fortress', 'swamp', 'snow', 'volcano', 'warcamp', 'warcamp',
+  'blackriver', 'underworld', 'thorns', 'underworld', 'blizzard', 'snow', 'snow', 'desert', 'eclipse', 'mythic'];
+const STAGE_MUSIC = ['meadow', 'wheat', 'river', 'wolfwood', 'graveyard', 'cave', 'hills', 'camp', 'canyon', 'fortress',
+  'darkwood', 'ruins', 'return', 'shieldwall', 'gate', 'swamp', 'snowpass', 'volcano', 'warcamp', 'throne',
+  'blackriver', 'underworld', 'thorngate', 'seal', 'blizzard', 'siege', 'winterthrone', 'desert', 'eclipse', 'mythic'];
+STAGES.forEach((st, i) => {
+  st.look = st.look || STAGE_LOOKS[i] || 'meadow';
+  st.music = st.music || STAGE_MUSIC[i] || 'meadow';
+});
+STAGES[STAGES.length - 1].finale = true;
+
 /* 전장 길이. 예전엔 모두 2000 이라 병사가 적과 부딪히기까지 40초 넘게 걸어야 했다.
  * 초반은 짧게 붙고, 뒤로 갈수록·보스 전장일수록 조금씩 길어진다. */
 STAGES.forEach((st, i) => {
@@ -1147,7 +1163,7 @@ function makeEndlessStage(waveCount) {
     t = spec.next;
   }
   return {
-    name: '무한 전장', endless: true, infinite: !waveCount, len: 1250,
+    name: '무한 전장', endless: true, infinite: !waveCount, len: 1250, look: 'endless',
     baseHp: 99999999,          // 적 요새는 부술 수 없다. 버티는 것이 전부다
     money: 320, rate: 40, reward: 0,
     waves: waves
