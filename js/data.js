@@ -24,21 +24,21 @@ const UNITS = [
     body: '#2b3038', accent: '#c3cad2', tunic: '#3f6bb5',
     hp: 340, atk: 44, range: 90, speed: 46, interval: 1.0,
     cost: 55, cooldown: 2.2, kb: 3, unlockStage: 1,
-    desc: '값싸고 빨리 나오는 징집병. 창이 길어 한 방은 먼저 내지른다.'
+    desc: '값싸고 빨리 나오는 징집병입니다. 긴 창으로 적보다 한발 먼저 찌릅니다.'
   }),
   mk({
     id: 'shield', name: '방패병', role: '방어', shape: 'shield',
     body: '#2b3038', accent: '#8d6a3f', tunic: '#6b7480',
     hp: 2300, atk: 30, range: 58, speed: 26, interval: 1.5,
     cost: 120, cooldown: 6.5, kb: 1, scale: 1.1, unlockStage: 2,
-    desc: '두꺼운 방패로 전선을 버틴다. 오래 버티며 조금씩 갉는다.'
+    desc: '두꺼운 방패로 전선을 지킵니다. 오래 버티며 조금씩 적을 깎습니다.'
   }),
   mk({
     id: 'archer', name: '궁수', role: '원거리', shape: 'archer',
     body: '#2b3038', accent: '#3f7a43', tunic: '#4a7c4e',
     hp: 300, atk: 80, range: 265, speed: 36, interval: 1.25,
     cost: 145, cooldown: 5.0, kb: 2, ranged: true, unlockStage: 3,
-    desc: '뒤에서 활을 쏜다. 앞줄이 뚫리면 순식간에 쓰러진다.'
+    desc: '뒤에서 활을 쏩니다. 앞줄이 뚫리면 순식간에 쓰러집니다.'
   }),
   mk({
     id: 'priest', name: '사제', role: '치유', shape: 'priest',
@@ -47,14 +47,14 @@ const UNITS = [
     cost: 175, cooldown: 12, kb: 1, unlockStage: 4,
     ab: { heal: 120, radius: 230, interval: 2.4, noAttack: true },
     abText: '주변 아군 회복 · 공격 안 함',
-    desc: '싸우지 않는 대신 2.4초마다 주변 아군의 상처를 꿰맨다.'
+    desc: '직접 싸우지 않는 대신 2.4초마다 주변 아군을 치료합니다.'
   }),
   mk({
     id: 'berserk', castFx: 'slash', name: '광전사', role: '돌격', shape: 'berserk',
     body: '#2b3038', accent: '#b0b6bd', tunic: '#a63a2e',
     hp: 600, atk: 52, range: 70, speed: 74, interval: 0.45,
     cost: 200, cooldown: 6.0, kb: 3, unlockStage: 5,
-    desc: '쌍도끼를 미친 듯이 휘두른다. 방패병 뒤에 세워야 산다.'
+    desc: '쌍도끼를 미친 듯이 휘두릅니다. 방패병 뒤에 세워야 오래 살아남습니다.'
   }),
   mk({
     id: 'venom', name: '독침 궁수', short: '독침궁수', role: '중독', shape: 'venom',
@@ -63,7 +63,7 @@ const UNITS = [
     cost: 190, cooldown: 6.5, kb: 2, ranged: true, unlockStage: 6,
     ab: { poison: { dps: 48, dur: 5 } },
     abText: '중독 48/초 · 5초',
-    desc: '독을 바른 화살을 쏜다. 체력 큰 적일수록 독이 잘 듣는다.'
+    desc: '독을 바른 화살을 쏩니다. 체력이 많은 적일수록 독이 잘 듣습니다.'
   }),
   mk({
     id: 'bomber', castFx: 'firestorm', name: '화약병', role: '자폭형', shape: 'bomber',
@@ -71,7 +71,7 @@ const UNITS = [
     hp: 300, atk: 300, range: 78, speed: 96, interval: 3.0,
     cost: 165, cooldown: 8.0, kb: 1, area: true, areaRadius: 95, unlockStage: 7,
     abText: '범위 폭발',
-    desc: '적진까지 달려가 화약통을 터뜨린다. 한 방이 아주 아프다.'
+    desc: '적진까지 달려가 화약통을 터뜨립니다. 한 방이 매우 강력합니다.'
   }),
   mk({
     id: 'merchant', name: '종군 상인', short: '상인', role: '보급', shape: 'merchant',
@@ -80,7 +80,7 @@ const UNITS = [
     cost: 150, cooldown: 20, kb: 1, unlockStage: 8, maxActive: 3,
     ab: { gold: 12, hold: true, noAttack: true, interval: 3 },
     abText: '초당 군자금 +12 · 최대 3명 · 공격 강화 미적용',
-    desc: '성문 앞에 자리를 잡고 물자를 판다. 살아 있는 동안 군자금이 더 빨리 찬다.'
+    desc: '성문 앞에 자리를 잡고 물자를 팝니다. 살아 있는 동안 군자금이 더 빨리 찹니다.'
   }),
   mk({
     id: 'knight', castFx: 'slash', name: '기사', role: '주력', shape: 'knight',
@@ -88,7 +88,7 @@ const UNITS = [
     hp: 1600, atk: 165, range: 76, speed: 32, interval: 1.9,
     cost: 245, cooldown: 9.5, kb: 2, area: true, areaRadius: 80, scale: 1.1, unlockStage: 9,
     abText: '범위 공격',
-    desc: '대검을 휘둘러 앞의 여럿을 함께 벤다. 왕국군의 중핵.'
+    desc: '대검을 휘둘러 앞의 여러 적을 함께 벱니다. 왕국군의 중추입니다.'
   }),
   mk({
     id: 'frost', castFx: 'iceburst', name: '서리 마도사', short: '마도사', role: '둔화', shape: 'frost',
@@ -97,7 +97,7 @@ const UNITS = [
     cost: 240, cooldown: 8.5, kb: 2, ranged: true, area: true, areaRadius: 75, unlockStage: 10,
     ab: { slow: 2.5 },
     abText: '범위 · 2.5초 둔화',
-    desc: '서리를 흩뿌려 적 무리의 발과 공격을 함께 늦춘다.'
+    desc: '서리를 흩뿌려 적 무리의 이동과 공격을 함께 늦춥니다.'
   }),
   mk({
     id: 'catapult', castFx: 'shockwave', name: '투석기', role: '공성', shape: 'catapult',
@@ -106,7 +106,7 @@ const UNITS = [
     cost: 340, cooldown: 15, kb: 1, ranged: true, area: true, areaRadius: 110,
     scale: 1.15, unlockStage: 11,
     abText: '초장거리 범위',
-    desc: '전장 반대편까지 바위를 던진다. 몰려오는 적을 통째로 정리.'
+    desc: '전장 반대편까지 바위를 던집니다. 몰려오는 적을 한꺼번에 정리합니다.'
   }),
   mk({
     id: 'duelist', castFx: 'slash', name: '결투가', role: '암살', shape: 'duelist',
@@ -115,7 +115,7 @@ const UNITS = [
     cost: 265, cooldown: 9.0, kb: 2, unlockStage: 12,
     ab: { crit: { chance: 0.3, mul: 2.6 }, lifesteal: 0.35 },
     abText: '30% 치명타 2.6배 · 흡혈 35%',
-    desc: '급소만 노리고 벤 만큼 회복한다. 오래 살아남을수록 무서워진다.'
+    desc: '급소만 노리고, 벤 만큼 회복합니다. 오래 살아남을수록 무서워집니다.'
   }),
   mk({
     id: 'sniper', castFx: 'holy', name: '석궁 저격수', short: '저격수', role: '관통', shape: 'sniper',
@@ -124,7 +124,7 @@ const UNITS = [
     cost: 310, cooldown: 13, kb: 1, ranged: true, unlockStage: 13,
     ab: { pierce: true },
     abText: '일직선 관통 · 사거리 520',
-    desc: '거대 석궁으로 전선을 꿰뚫는다. 한 발이 줄 서 있는 적 전부를 관통한다.'
+    desc: '거대 석궁으로 전선을 꿰뚫습니다. 한 발로 줄지어 선 적을 모두 관통합니다.'
   }),
   mk({
     id: 'mage', castFx: 'runes', name: '대마법사', role: '섬멸', shape: 'mage',
@@ -133,7 +133,7 @@ const UNITS = [
     cost: 520, cooldown: 42, kb: 1, area: true, areaRadius: 130, scale: 1.3, unlockStage: 14,
     abText: '광역 폭발 · 20% 기절',
     ab: { stun: { chance: 0.2, dur: 1.2 } },
-    desc: '왕국의 최종 카드. 폭발에 휘말린 적은 종종 얼어붙는다.'
+    desc: '왕국의 최종 병기입니다. 폭발에 휘말린 적은 종종 얼어붙습니다.'
   }),
   mk({
     id: 'colossus', castFx: 'shockwave', name: '강철 거인', short: '거인', role: '불굴', shape: 'colossus',
@@ -142,7 +142,7 @@ const UNITS = [
     cost: 470, cooldown: 30, kb: 1, scale: 1.45, unlockStage: 16,
     ab: { kbImmune: true, barrier: 280, radius: 210, interval: 6 },
     abText: '넉백 면역 · 주변 아군 보호막 280',
-    desc: '밀리지 않는 강철 덩어리. 6초마다 주변 아군에게 보호막을 씌운다.'
+    desc: '밀리지 않는 강철 덩어리입니다. 6초마다 주변 아군에게 보호막을 씌웁니다.'
   }),
   mk({
     id: 'necro', castFx: 'pillar', name: '사령술사', role: '소환', shape: 'necro',
@@ -151,7 +151,7 @@ const UNITS = [
     cost: 395, cooldown: 22, kb: 1, ranged: true, unlockStage: 18,
     ab: { summon: { id: 'skeleton', n: 2 }, interval: 6 },
     abText: '6초마다 해골 병사 2기 소환',
-    desc: '쓰러진 병사를 다시 세운다. 소환된 해골은 공짜로 전선을 채운다.'
+    desc: '쓰러진 병사를 다시 일으킵니다. 소환된 해골이 공짜로 전선을 채웁니다.'
   }),
   mk({
     id: 'herald', name: '나팔수', role: '지휘', shape: 'herald',
@@ -160,7 +160,7 @@ const UNITS = [
     cost: 195, cooldown: 14, kb: 2, unlockStage: 6,
     ab: { haste: { mul: 0.7, dur: 4 }, radius: 240, interval: 3.5, noAttack: true },
     abText: '주변 아군 공격 간격 30% 감소',
-    desc: '진군 나팔을 분다. 싸우지 않지만 주변 아군이 훨씬 빨리 때린다.'
+    desc: '진군 나팔을 붑니다. 직접 싸우지 않지만 주변 아군의 공격 속도가 크게 오릅니다.'
   }),
   mk({
     id: 'longbow', name: '대궁병', role: '장거리', shape: 'longbow',
@@ -168,7 +168,7 @@ const UNITS = [
     hp: 340, atk: 118, range: 400, speed: 30, interval: 2.0,
     cost: 225, cooldown: 7.0, kb: 2, ranged: true, unlockStage: 9,
     abText: '사거리 400 · 뒤에서 안전하게',
-    desc: '장궁으로 전선 훨씬 뒤에서 쏜다. 사거리 하나로 먹고산다.'
+    desc: '장궁으로 전선 훨씬 뒤에서 쏩니다. 긴 사거리가 최대 무기입니다.'
   }),
   mk({
     id: 'pyro', castFx: 'firestorm', name: '불꽃술사', role: '화염', shape: 'pyro',
@@ -178,7 +178,7 @@ const UNITS = [
     unlockStage: 12,
     ab: { burn: { dps: 70, dur: 4 } },
     abText: '범위 화염 · 화상 70/초 4초',
-    desc: '불덩이를 던져 넓게 태운다. 몰려 있을수록 잘 듣는다.'
+    desc: '불덩이를 던져 넓게 태웁니다. 적이 몰려 있을수록 효과적입니다.'
   }),
   mk({
     id: 'paladin', castFx: 'holy', name: '성기사', role: '불굴', shape: 'paladin',
@@ -187,7 +187,7 @@ const UNITS = [
     cost: 380, cooldown: 18, kb: 1, scale: 1.15, unlockStage: 15,
     ab: { revive: 0.6, heal: 70, radius: 170, interval: 4 },
     abText: '쓰러져도 1회 부활 · 주변 아군 회복',
-    desc: '한 번 쓰러져도 다시 일어난다. 버티면서 주변을 치유하는 전선의 기둥.'
+    desc: '한 번 쓰러져도 다시 일어납니다. 버티면서 주변을 치유하는 전선의 기둥입니다.'
   }),
   mk({
     id: 'engineer', name: '공병', role: '축성', shape: 'engineer',
@@ -196,7 +196,7 @@ const UNITS = [
     cost: 210, cooldown: 16, kb: 2, unlockStage: 17,
     ab: { summon: { id: 'barricade', n: 1 }, interval: 9 },
     abText: '9초마다 방벽 설치',
-    desc: '전진하며 나무 방벽을 세운다. 방벽은 움직이지 않고 얻어맞아 준다.'
+    desc: '전진하며 나무 방벽을 세웁니다. 방벽은 움직이지 않고 적의 공격을 대신 받아 냅니다.'
   }),
   mk({
     id: 'rogue', castFx: 'slash', name: '쌍검 도적', role: '연타', shape: 'rogue',
@@ -205,28 +205,28 @@ const UNITS = [
     cost: 300, cooldown: 11, kb: 3, unlockStage: 19,
     ab: { crit: { chance: 0.22, mul: 2.2 }, lifesteal: 0.2 },
     abText: '초당 3회 연타 · 치명타 22%',
-    desc: '눈에 안 보일 속도로 두 자루를 번갈아 찌른다.'
+    desc: '눈에 보이지 않는 속도로 두 자루 창을 번갈아 찌릅니다.'
   }),
   mk({id:'runeguard',name:'룬 수호병',role:'보호막',shape:'runeguard',
     body:'#384d68',accent:'#76e5eb',tunic:'#315783',hp:1600,atk:32,range:65,speed:28,interval:1.5,
     cost:240,cooldown:13,kb:1,unlockStage:7,maxActive:2,
     ab:{barrier:95,radius:145,interval:6},abText:'6초마다 주변 보호막 95 · 최대 2명',
-    desc:'룬 방패로 좁은 전선을 지킨다. 보호막은 중첩되지 않고 더 큰 값으로 갱신된다.'}),
+    desc:'룬 방패로 좁은 전선을 지킵니다. 보호막은 중첩되지 않고 더 큰 값으로 갱신됩니다.'}),
   mk({id:'musketeer',name:'왕실 총사',role:'관통',shape:'musketeer',
     body:'#35364d',accent:'#edbc70',tunic:'#754764',hp:360,atk:190,range:290,speed:32,interval:2.5,
     cost:285,cooldown:11,kb:2,unlockStage:10,ranged:true,
     ab:{pierce:true},abText:'사선 위 적 관통 · 느린 장전',
-    desc:'긴 총신으로 밀집 대열을 관통한다. 빠른 적에게 접근을 허용하지 말자.'}),
+    desc:'긴 총신으로 밀집 대열을 관통합니다. 빠른 적이 접근하지 못하게 하세요.'}),
   mk({id:'purifier',name:'새벽 정화사',role:'정화',shape:'purifier',
     body:'#d5ddd6',accent:'#a4f6cc',tunic:'#478479',hp:550,atk:0,range:0,speed:31,interval:3,
     cost:230,cooldown:16,kb:2,unlockStage:12,maxActive:2,
     ab:{cleanse:true,heal:55,radius:185,interval:4,noAttack:true},abText:'4초마다 중독·화상·둔화 해제 및 회복 · 최대 2명',
-    desc:'향로의 빛으로 상태이상을 씻는다. 직접 공격하지 않으며 기절은 해제하지 못한다.'}),
+    desc:'향로의 빛으로 상태이상을 정화합니다. 직접 공격하지 않으며, 기절은 해제하지 못합니다.'}),
   mk({id:'frostlancer',name:'서리 창기사',role:'둔화',shape:'frostlancer',
     body:'#4b6482',accent:'#c0efff',tunic:'#648aa8',hp:1250,atk:110,range:145,speed:39,interval:1.5,
     cost:270,cooldown:10,kb:2,unlockStage:14,
     ab:{slow:1.6},abText:'타격 시 1.6초 둔화',
-    desc:'긴 얼음 창으로 돌격을 저지한다. 방패 뒤에서 늑대 기수를 견제하자.'}),
+    desc:'긴 얼음 창으로 돌격을 저지합니다. 방패 뒤에서 늑대 기수를 견제하세요.'}),
   // 소환 전용
   mk({
     id: 'barricade', name: '나무 방벽', role: '구조물', shape: 'barricade',
@@ -234,7 +234,7 @@ const UNITS = [
     hp: 1600, atk: 0, range: 0, speed: 0, interval: 3,
     cost: 0, cooldown: 0, kb: 1, unlockStage: 999,
     ab: { hold: true, noAttack: true, kbImmune: true },
-    desc: '공병이 세운 방벽. 때리지는 못해도 오래 버틴다.'
+    desc: '공병이 세운 방벽입니다. 공격은 못 하지만 오래 버팁니다.'
   }),
   // 소환 전용 (카드에는 나오지 않는다)
   mk({
@@ -242,7 +242,7 @@ const UNITS = [
     body: '#d8d2c0', accent: '#8a8375', tunic: '#b9b2a0',
     hp: 210, atk: 30, range: 60, speed: 58, interval: 0.9,
     cost: 0, cooldown: 0, kb: 2, unlockStage: 999,
-    desc: '사령술사가 불러낸 해골. 오래 버티지는 못한다.'
+    desc: '사령술사가 불러낸 해골입니다. 오래 버티지는 못합니다.'
   })
 ];
 
@@ -283,7 +283,7 @@ const SEASON_UNITS = [
     cost: 480, cooldown: 40, kb: 2, ranged: true, scale: 1.35, maxActive: 1,
     ab: { chain: { n: 4, fall: 0.75, range: 130 } },
     abText: '연쇄 번개 · 4번 튕김 · 몸이 약함',
-    desc: '번개가 적에서 적으로 옮겨 붙는다. 떼로 몰려올수록 무섭지만, 단단한 한 놈 앞에서는 약하고 몸도 가볍다. 앞을 지켜 줄 병력이 있어야 산다.'
+    desc: '번개가 적에서 적으로 옮겨 붙습니다. 떼로 몰려올수록 강력하지만, 단단한 적 하나에는 약하고 몸도 약합니다. 앞을 지켜 줄 병력이 꼭 필요합니다.'
   }),
   mk({
     id: 'ares', castFx: 'slash', name: '아레스', short: '아레스', role: '전신', shape: 'ares',
@@ -293,7 +293,7 @@ const SEASON_UNITS = [
     cost: 400, cooldown: 26, kb: 1, area: true, areaRadius: 95, scale: 1.15,
     ab: { enrage: 1.8, lifesteal: 0.12 },
     abText: '범위 · 피가 깎일수록 가속 · 흡혈 12%',
-    desc: '전쟁 그 자체. 상처가 깊어질수록 창은 더 빨라진다.'
+    desc: '전쟁 그 자체입니다. 상처가 깊어질수록 창이 더 빨라집니다.'
   }),
   mk({
     id: 'artemis', castFx: 'holy', name: '아르테미스', short: '아르테미스', role: '사냥', shape: 'artemis',
@@ -303,7 +303,7 @@ const SEASON_UNITS = [
     cost: 380, cooldown: 22, kb: 2, ranged: true,
     ab: { pierce: true },
     abText: '일직선 관통 · 1.15초마다 사격',
-    desc: '달의 사냥꾼. 화살 한 발이 줄지어 선 적을 전부 꿰뚫는다.'
+    desc: '달의 사냥꾼입니다. 화살 한 발로 줄지어 선 적을 모두 꿰뚫습니다.'
   }),
   mk({
     id: 'medusa', castFx: 'iceburst', name: '메두사', short: '메두사', role: '석화', shape: 'medusa',
@@ -313,7 +313,7 @@ const SEASON_UNITS = [
     cost: 260, cooldown: 10, kb: 2, ranged: true,
     ab: { stun: { chance: 0.5, dur: 1.6 }, slow: 2 },
     abText: '50% 석화(기절) · 둔화',
-    desc: '눈을 마주친 자는 돌이 된다. 전선을 통째로 굳혀 버린다.'
+    desc: '눈을 마주친 자는 돌이 됩니다. 적의 전선을 통째로 굳혀 버립니다.'
   }),
   mk({
     id: 'spartan', name: '스파르타 전사', short: '스파르타', role: '밀집', shape: 'spartan',
@@ -323,7 +323,7 @@ const SEASON_UNITS = [
     cost: 230, cooldown: 9, kb: 1, scale: 1.1,
     ab: { kbImmune: true },
     abText: '넉백 면역 · 밀리지 않는 방진',
-    desc: '한 발도 물러서지 않는다. 방패를 맞대고 버티는 것이 임무다.'
+    desc: '한 발도 물러서지 않습니다. 방패를 맞대고 버티는 것이 임무입니다.'
   }),
 
   /* ---------------- 시즌 2 · 라그나로크 ---------------- */
@@ -335,7 +335,7 @@ const SEASON_UNITS = [
     cost: 460, cooldown: 36, kb: 1, scale: 1.4, maxActive: 1,
     ab: { breaker: 1.8, push: 30 },
     abText: '파쇄 · 갑주 무시 · 보스·중장갑에게 1.8배 · 단일 대상',
-    desc: '묠니르는 갑옷도 성벽도 가리지 않는다. 보스와 중장갑을 깨는 데는 따를 자가 없지만, 한 번에 하나밖에 못 친다. 떼는 다른 병력이 맡아야 한다.'
+    desc: '묠니르는 갑옷도 성벽도 가리지 않습니다. 보스와 중장갑을 깨는 데는 따를 자가 없지만, 한 번에 하나밖에 못 칩니다. 적 무리는 다른 병력에게 맡기세요.'
   }),
   mk({
     id: 'valkyrie', castFx: 'holy', name: '발키리', short: '발키리', role: '전선', shape: 'valkyrie',
@@ -345,7 +345,7 @@ const SEASON_UNITS = [
     cost: 390, cooldown: 24, kb: 2,
     ab: { revive: 0.5, heal: 60, radius: 160, interval: 4 },
     abText: '1회 부활 · 주변 아군 회복',
-    desc: '쓰러진 자를 거두는 전장의 처녀. 자기 자신도 한 번은 일어난다.'
+    desc: '쓰러진 자를 거두는 전장의 처녀입니다. 자신도 한 번은 다시 일어납니다.'
   }),
   mk({
     id: 'fenrir', castFx: 'slash', name: '펜리르', short: '펜리르', role: '맹수', shape: 'fenrir',
@@ -355,7 +355,7 @@ const SEASON_UNITS = [
     cost: 390, cooldown: 24, kb: 2, scale: 1.25,
     ab: { lifesteal: 0.25 },
     abText: '초고속 돌진 · 흡혈 25%',
-    desc: '사슬을 끊고 나온 늑대. 물어뜯은 만큼 스스로 회복한다.'
+    desc: '사슬을 끊고 나온 늑대입니다. 물어뜯은 만큼 스스로 회복합니다.'
   }),
   mk({
     id: 'viking', name: '바이킹 전사', short: '바이킹', role: '광전', shape: 'viking',
@@ -365,7 +365,7 @@ const SEASON_UNITS = [
     cost: 260, cooldown: 10, kb: 3,
     ab: { enrage: 1.7, crit: { chance: 0.25, mul: 2.2 } },
     abText: '광폭화 · 25% 치명타',
-    desc: '피를 볼수록 웃는다. 죽기 직전이 가장 강하다.'
+    desc: '피를 볼수록 웃습니다. 죽기 직전에 가장 강해집니다.'
   }),
   mk({
     id: 'runeseer', name: '룬 주술사', short: '룬술사', role: '지원', shape: 'runeseer',
@@ -375,7 +375,7 @@ const SEASON_UNITS = [
     cost: 240, cooldown: 12, kb: 1,
     ab: { haste: { mul: 0.78, dur: 4 }, barrier: 190, radius: 210, interval: 4, noAttack: true },
     abText: '주변 아군 가속 + 보호막 190',
-    desc: '룬을 새겨 아군을 감싼다. 싸우지 않지만 없으면 아쉽다.'
+    desc: '룬을 새겨 아군을 보호막으로 감쌉니다. 싸우지는 않지만 없으면 아쉽습니다.'
   }),
 
   /* ---------------- 시즌 3 · 나일의 왕가 ---------------- */
@@ -387,7 +387,7 @@ const SEASON_UNITS = [
     cost: 420, cooldown: 34, kb: 1, scale: 1.35, maxActive: 1,
     ab: { summon: { id: 'mummy', n: 1 }, interval: 8 },
     abText: '8초마다 미라 1기 · 본인 화력 약함',
-    desc: '미라를 세워 전열을 대신 막게 한다. 스스로는 거의 싸우지 못하니, 미라 뒤에서 때려 줄 병력과 함께 써야 한다.'
+    desc: '미라를 일으켜 전열을 대신 막게 합니다. 스스로는 거의 싸우지 못하니, 미라 뒤에서 때려 줄 병력과 함께 쓰세요.'
   }),
   mk({
     id: 'rapriest', castFx: 'firestorm', name: '라의 사제', short: '라사제', role: '태양', shape: 'rapriest',
@@ -397,7 +397,7 @@ const SEASON_UNITS = [
     cost: 350, cooldown: 18, kb: 2, ranged: true, area: true, areaRadius: 105,
     ab: { burn: { dps: 60, dur: 5 } },
     abText: '태양광 범위 · 화상 60/초 5초',
-    desc: '태양을 조각내 던진다. 맞은 자리는 한참을 탄다.'
+    desc: '태양을 조각내 던집니다. 맞은 자리는 한참 동안 불탑니다.'
   }),
   mk({
     id: 'scarab', name: '황금 스카라베', short: '스카라베', role: '보물', shape: 'scarab',
@@ -407,7 +407,7 @@ const SEASON_UNITS = [
     cost: 220, cooldown: 12, kb: 3,
     ab: { gold: 8 },
     abText: '빠름 · 살아 있는 동안 군자금 +8/초',
-    desc: '황금 껍질을 두른 풍뎅이. 굴러다니며 금화를 흘린다.'
+    desc: '황금 껍질을 두른 풍뎅이입니다. 굴러다니며 금화를 흘립니다.'
   }),
   mk({
     id: 'desertarcher', name: '사막 궁수', short: '사막궁수', role: '원거리', shape: 'desertarcher',
@@ -416,7 +416,7 @@ const SEASON_UNITS = [
     hp: 270, atk: 47, range: 285, speed: 40, interval: 1.2,
     cost: 150, cooldown: 7, kb: 2, ranged: true,
     abText: '값싼 원거리',
-    desc: '모래바람 속에서 자란 궁수. 싸고 빠르게 자리를 채운다.'
+    desc: '모래바람 속에서 자란 궁수입니다. 싸고 빠르게 자리를 채웁니다.'
   }),
   mk({
     id: 'hoplite', name: '아테네 창병', short: '아테네창', role: '방진', shape: 'hoplite',
@@ -425,7 +425,7 @@ const SEASON_UNITS = [
     hp: 620, atk: 41, range: 72, speed: 44, interval: 1.0,
     cost: 140, cooldown: 6, kb: 2,
     abText: '값싼 창방패 보병',
-    desc: '도시국가의 시민병. 싸고 빠르게 전열을 채운다.'
+    desc: '도시국가의 시민병입니다. 싸고 빠르게 전열을 채웁니다.'
   }),
   mk({
     id: 'northarcher', name: '북방 궁수', short: '북방궁수', role: '원거리', shape: 'northarcher',
@@ -434,7 +434,7 @@ const SEASON_UNITS = [
     hp: 300, atk: 52, range: 300, speed: 38, interval: 1.15,
     cost: 155, cooldown: 7, kb: 2, ranged: true,
     abText: '값싼 원거리',
-    desc: '얼음 바람 속에서 활을 당기는 사냥꾼.'
+    desc: '얼음 바람 속에서 활을 당기는 사냥꾼입니다.'
   }),
   mk({
     id: 'pharaoh', name: '파라오 근위대', short: '근위대', role: '수호', shape: 'pharaoh',
@@ -444,7 +444,7 @@ const SEASON_UNITS = [
     cost: 370, cooldown: 24, kb: 1, scale: 1.15,
     ab: { kbImmune: true, barrier: 200, radius: 180, interval: 6 },
     abText: '넉백 면역 · 주변 아군 보호막 200',
-    desc: '왕의 무덤을 지키던 창병. 한 걸음도 밀리지 않는다.'
+    desc: '왕의 무덤을 지키던 창병입니다. 한 걸음도 밀리지 않습니다.'
   }),
   // 소환 전용
   mk({
@@ -453,7 +453,7 @@ const SEASON_UNITS = [
     hp: 720, atk: 62, range: 62, speed: 26, interval: 1.4,
     cost: 0, cooldown: 0, kb: 1, unlockStage: 999,
     ab: { kbImmune: true },
-    desc: '아누비스가 일으킨 미라. 느리지만 밀리지 않는다.'
+    desc: '아누비스가 일으킨 미라입니다. 느리지만 밀리지 않습니다.'
   })
 ];
 
@@ -464,31 +464,31 @@ SEASON_UNITS.push(
     cost:560,cooldown:45,kb:2,ranged:true,area:true,areaRadius:80,scale:1.2,maxActive:1,
     ab:{lifesteal:.1,reanimate:{id:'skeleton',radius:260,cd:1.4,max:8}},
     abText:'명계 · 주변에서 쓰러진 적을 해골로 일으킴(최대 8) · 명계의 문',
-    desc:'근처에서 쓰러진 적을 해골 병사로 일으킨다. 싸움이 길어질수록 군세가 불어나지만, 스스로는 시체를 만들 힘이 없다. 적을 쓰러뜨려 줄 주력과 함께여야 한다.',
+    desc:'근처에서 쓰러진 적을 해골 병사로 일으킵니다. 싸움이 길어질수록 군세가 불어나지만, 스스로 적을 쓰러뜨릴 힘은 없습니다. 적을 쓰러뜨려 줄 주력과 함께 쓰세요.',
     active:{name:'명계의 문',kind:'underworld',cd:52,radius:230,mul:2.6,slow:3,desc:'가장 가까운 적 주변 피해·3초 둔화. 성채에는 피해 없음.'}}),
   mk({id:'odin',name:'오딘',role:'룬의 지배자',shape:'odin',season:'ragnarok',rarity:'UR',gacha:true,unlockStage:999,
     body:'#b4bdc4',accent:'#7be6ff',tunic:'#28495e',hp:1600,atk:150,range:290,speed:27,interval:2.2,
     cost:560,cooldown:45,kb:2,ranged:true,maxActive:1,scale:1.15,
     ab:{pierce:true,rally:{atk:.35,radius:300},interval:2.5},
     abText:'지휘 · 주변 아군 공격력 +35% (자신 제외) · 운명의 룬',
-    desc:'궁니르를 들어 전군을 지휘한다. 곁에 선 병사들이 한층 세게 친다. 혼자서는 평범한 창잡이일 뿐 — 거느린 군대가 강할수록 오딘도 강해진다.',
+    desc:'궁니르를 들어 전군을 지휘합니다. 곁에 선 병사들이 한층 세게 칩니다. 혼자서는 평범한 창잡이일 뿐 — 거느린 군대가 강할수록 오딘도 강해집니다.',
     active:{name:'운명의 룬',kind:'runeveil',cd:48,radius:300,barrier:320,desc:'주변 아군 보호막·중독과 화상 정화. 보호막 중첩 없음.'}}),
   mk({id:'ra',name:'라',role:'태양신',shape:'ra',season:'nile',rarity:'UR',gacha:true,unlockStage:999,
     body:'#c9a466',accent:'#ffca62',tunic:'#f0e0ae',hp:1500,atk:140,range:260,speed:26,interval:2.2,
     cost:540,cooldown:45,kb:2,ranged:true,area:true,areaRadius:85,maxActive:1,scale:1.2,
     ab:{burn:{dps:18,dur:3},sunmark:{vuln:.3,dur:4}},
     abText:'태양 낙인 · 맞은 적은 4초간 모든 피해 +30% · 태양의 심판',
-    desc:'태양빛으로 적을 낙인찍는다. 낙인 찍힌 적은 누구에게 맞든 더 아프다. 라 혼자서는 약하지만, 주력의 화력을 한 단계 끌어올린다.',
+    desc:'태양빛으로 적에게 낙인을 새깁니다. 낙인 찍힌 적은 누구에게 맞든 더 큰 피해를 받습니다. 라 혼자서는 약하지만, 주력의 화력을 한 단계 끌어올립니다.',
     active:{name:'태양의 심판',kind:'sunfall',cd:55,radius:215,mul:3,burn:5,desc:'가장 가까운 적 주변 피해·5초 화상·낙인. 성채에는 피해 없음.'}}),
   mk({id:'persephone',name:'페르세포네',role:'봄과 명계',shape:'persephone',season:'olympus',rarity:'SR',gacha:true,unlockStage:999,
     body:'#e2c4cf',accent:'#f6a5d4',tunic:'#713d79',hp:700,atk:75,range:235,speed:32,interval:1.8,
-    cost:280,cooldown:18,kb:2,ranged:true,ab:{heal:45,radius:175,interval:4},abText:'주변 회복 · 꽃잎 탄환',desc:'석류와 꽃관을 지닌 봄의 여왕. 명계의 군대에도 생명을 되돌린다.'}),
+    cost:280,cooldown:18,kb:2,ranged:true,ab:{heal:45,radius:175,interval:4},abText:'주변 회복 · 꽃잎 탄환',desc:'석류와 꽃관을 지닌 봄의 여왕입니다. 명계의 군대에도 생명을 되돌려 줍니다.'}),
   mk({id:'skadi',name:'스카디',role:'겨울 사냥꾼',shape:'skadi',season:'ragnarok',rarity:'SR',gacha:true,unlockStage:999,
     body:'#bfd4e1',accent:'#a9eaff',tunic:'#4e698a',hp:560,atk:95,range:315,speed:43,interval:1.7,
-    cost:285,cooldown:17,kb:2,ranged:true,ab:{slow:1.2},abText:'1.2초 둔화 · 서리 화살',desc:'털 망토를 두른 산의 사냥꾼. 서리 활로 돌격의 발걸음을 묶는다.'}),
+    cost:285,cooldown:17,kb:2,ranged:true,ab:{slow:1.2},abText:'1.2초 둔화 · 서리 화살',desc:'털 망토를 두른 산의 사냥꾼입니다. 서리 활로 돌격하는 적의 발을 묶습니다.'}),
   mk({id:'bastet',name:'바스테트',role:'고양이 수호신',shape:'bastet',season:'nile',rarity:'SR',gacha:true,unlockStage:999,
     body:'#39364e',accent:'#e9bf65',tunic:'#287d7a',hp:1100,atk:76,range:70,speed:80,interval:.9,
-    cost:280,cooldown:17,kb:3,ab:{crit:{chance:.2,mul:1.8},lifesteal:.12},abText:'치명타 20% · 흡혈 12%',desc:'고양이 귀와 황금 발톱을 지닌 수호신. 낮은 자세로 전선의 빈틈을 파고든다.'})
+    cost:280,cooldown:17,kb:3,ab:{crit:{chance:.2,mul:1.8},lifesteal:.12},abText:'치명타 20% · 흡혈 12%',desc:'고양이 귀와 황금 발톱을 지닌 수호신입니다. 낮은 자세로 전선의 빈틈을 파고듭니다.'})
 );
 /* ---------------- 시즌 4 · 요괴록 (한국 설화) ----------------
  * 신이 아니라 옛이야기 속 요괴와 저승의 관리들. 싸움을 비트는 쪽이다:
@@ -499,44 +499,44 @@ SEASON_UNITS.push(
     cost:540,cooldown:45,kb:2,ranged:true,area:true,areaRadius:70,scale:1.15,
     ab:{charm:{chance:.25,dur:3}},
     abText:'여우불 · 맞은 적 25%를 3초 홀림(제 편을 침, 보스 제외) · 여우 구슬',
-    desc:'아홉 꼬리의 여우. 여우불에 홀린 적은 잠시 제 편을 친다. 몰려오는 무리를 서로 싸우게 만들지만, 스스로 적을 쓰러뜨리는 힘은 크지 않다.',
+    desc:'아홉 꼬리의 여우입니다. 여우불에 홀린 적은 잠시 제 편을 공격합니다. 몰려오는 무리를 서로 싸우게 만들지만, 스스로 적을 쓰러뜨리는 힘은 약합니다.',
     active:{name:'여우 구슬',kind:'foxbead',cd:50,radius:220,mul:1.6,charm:4,desc:'가장 가까운 적 주변 피해·4초 홀림(보스 제외). 성채에는 피해 없음.'}}),
   mk({id:'saja',name:'저승사자',role:'명부',shape:'saja',castFx:'inkslash',season:'yokai',rarity:'SSR',gacha:true,unlockStage:999,
     body:'#e9e4dc',accent:'#9fd3ff',tunic:'#17171d',hp:1700,atk:120,range:95,speed:32,interval:1.6,
     cost:440,cooldown:36,kb:1,scale:1.15,
     ab:{execute:.2},
     abText:'명부 · 체력 20% 이하인 적을 즉시 거둠(보스 제외) · 명부 호명',
-    desc:'검은 갓을 쓴 저승의 관리. 명부에 이름이 오른 적은 한 번의 손짓으로 데려간다. 단단한 적을 깎아 줄 동료가 있어야 제 몫을 한다.',
+    desc:'검은 갓을 쓴 저승의 관리입니다. 명부에 이름이 오른 적은 손짓 한 번으로 데려갑니다. 단단한 적을 깎아 줄 동료가 있어야 제 몫을 합니다.',
     active:{name:'명부 호명',kind:'reaproll',cd:48,radius:240,mul:1.4,execute:.35,desc:'가장 가까운 적 주변 피해 뒤, 체력 35% 이하는 즉시 거둠(보스 제외).'}}),
   mk({id:'dokkaebi',name:'도깨비',role:'방망이',shape:'dokkaebi',castFx:'goldburst',season:'yokai',rarity:'SR',gacha:true,unlockStage:999,
     body:'#4f8a6a',accent:'#f2c14e',tunic:'#7b4a2a',hp:1500,atk:100,range:80,speed:36,interval:1.3,
     cost:330,cooldown:20,kb:1,area:true,areaRadius:80,scale:1.15,
     ab:{bounty:{chance:.3,gold:18}},
     abText:'범위 · 때릴 때 30% 확률로 군자금 +18',
-    desc:'"금 나와라 뚝딱!" 방망이를 휘두를 때마다 이따금 금이 쏟아진다.'}),
+    desc:'"금 나와라 뚝딱!" 방망이를 휘두를 때마다 이따금 금이 쏟아집니다.'}),
   mk({id:'haetae',name:'해치',role:'수호수',shape:'haetae',castFx:'shockwave',season:'yokai',rarity:'SR',gacha:true,unlockStage:999,
     body:'#e4d6b0',accent:'#3e9c8f',tunic:'#b98a3a',hp:2600,atk:60,range:70,speed:26,interval:1.5,
     cost:320,cooldown:22,kb:1,scale:1.2,
     ab:{kbImmune:true,thorns:.3},
     abText:'넉백 면역 · 근접 피해 30% 되돌림',
-    desc:'옳고 그름을 가리는 상상의 짐승. 밀리지 않고, 저를 친 자에게 그대로 돌려준다.'}),
+    desc:'옳고 그름을 가리는 상상의 짐승입니다. 밀리지 않으며, 자신을 친 자에게 피해를 그대로 돌려줍니다.'}),
   mk({id:'mudang',name:'무당',role:'액막이',shape:'mudang',castFx:'holy',season:'yokai',rarity:'R',gacha:true,unlockStage:999,
     body:'#2b3038',accent:'#e84d6b',tunic:'#f2e3c6',hp:520,atk:40,range:230,speed:34,interval:1.6,
     cost:240,cooldown:12,kb:2,ranged:true,
     ab:{weaken:{mul:.7,dur:4}},
     abText:'액막이 방울 · 맞은 적의 공격력 -30% (4초)',
-    desc:'방울과 부채로 액을 막는다. 무서운 적일수록 이 방울 소리가 반갑다.'}),
+    desc:'방울과 부채로 액운을 막습니다. 적이 무서울수록 이 방울 소리가 반갑습니다.'}),
   mk({id:'hwarang',name:'화랑',role:'풍류 검객',shape:'hwarang',castFx:'slash',season:'yokai',rarity:'R',gacha:true,unlockStage:999,
     body:'#2b3038',accent:'#f4d06f',tunic:'#3a7ca5',hp:780,atk:68,range:70,speed:60,interval:.85,
     cost:230,cooldown:10,kb:2,
     ab:{lifesteal:.15},
     abText:'빠른 검 · 흡혈 15%',
-    desc:'꽃처럼 차려입은 젊은 검객. 빠르게 파고들어 벤 만큼 회복한다.'}),
+    desc:'꽃처럼 차려입은 젊은 검객입니다. 빠르게 파고들어 벤 만큼 회복합니다.'}),
   mk({id:'pojol',name:'포졸',role:'육모방망이',shape:'pojol',season:'yokai',rarity:'N',gacha:true,unlockStage:999,
     body:'#2b3038',accent:'#c0392b',tunic:'#2f3e5c',hp:600,atk:40,range:95,speed:44,interval:1.2,
     cost:145,cooldown:6,kb:2,
     abText:'값싼 창 · 긴 사거리',
-    desc:'고을을 지키던 포졸. 싸고 빠르게 전열을 채운다.'})
+    desc:'고을을 지키던 포졸입니다. 싸고 빠르게 전열을 채웁니다.'})
 );
 
 /* ---------------- 시즌 5 · 태엽 공방 (증기와 톱니) ----------------
@@ -548,50 +548,50 @@ SEASON_UNITS.push(
     cost:540,cooldown:45,kb:2,ranged:true,scale:1.1,
     ab:{summon:{id:'turret',n:1,max:3},interval:7},
     abText:'7초마다 포탑 설치(최대 3) · 과부하',
-    desc:'톱니와 증기로 전장을 설계한다. 제자리에 박힌 포탑이 쉬지 않고 쏜다. 앞줄이 버텨 주면 포탑이 늘고, 무너지면 아무것도 못 세운다.',
+    desc:'톱니와 증기로 전장을 설계합니다. 제자리에 세운 포탑이 쉬지 않고 쏩니다. 앞줄이 버텨 주면 포탑이 늘고, 무너지면 아무것도 세우지 못합니다.',
     active:{name:'과부하',kind:'overdrive',cd:50,radius:320,haste:{mul:.55,dur:6},desc:'주변 아군 공격 속도 크게 증가(6초)·기절 해제.'}}),
   mk({id:'steammech',name:'증기 거상',role:'예열 포격',shape:'steammech',castFx:'steamburst',season:'clockwork',rarity:'SSR',gacha:true,unlockStage:999,
     body:'#8a7a66',accent:'#ff8c42',tunic:'#4a4038',hp:2600,atk:70,range:250,speed:20,interval:1.2,
     cost:470,cooldown:38,kb:1,ranged:true,area:true,areaRadius:75,scale:1.35,
     ab:{spinup:{per:.1,max:1.2}},
     abText:'예열 · 쏠수록 빨라짐(최대 2.2배) · 걸으면 식음 · 증기 폭발',
-    desc:'굴뚝에서 연기를 뿜는 걸어 다니는 포대. 처음엔 느리지만 멈춰 서서 쏠수록 불을 뿜는다. 전선이 자주 흔들리면 영영 예열되지 않는다.',
+    desc:'굴뚝에서 연기를 뿜는 걸어 다니는 포대입니다. 처음엔 느리지만 멈춰 서서 쏠수록 불을 뿜습니다. 전선이 자주 흔들리면 좀처럼 예열되지 않습니다.',
     active:{name:'증기 폭발',kind:'steamburst',cd:46,radius:200,mul:2.2,push:90,desc:'가장 가까운 적 주변 피해·크게 밀쳐 냄.'}}),
   mk({id:'airship',name:'비행선 폭격수',short:'비행선',role:'뒷줄 폭격',shape:'airship',castFx:'firestorm',season:'clockwork',rarity:'SR',gacha:true,unlockStage:999,
     body:'#6b4b2a',accent:'#ff9f43',tunic:'#b8a27a',hp:700,atk:120,range:380,speed:30,interval:2.4,
     cost:360,cooldown:24,kb:2,ranged:true,area:true,areaRadius:70,
     ab:{backline:true,burn:{dps:30,dur:3}},
     abText:'뒷줄 폭격 · 사거리 안 가장 먼 적 · 화상',
-    desc:'하늘에서 폭탄을 떨군다. 앞줄 너머의 주술사와 투석기를 노린다.'}),
+    desc:'하늘에서 폭탄을 떨굽니다. 앞줄 너머의 주술사와 투석기를 노립니다.'}),
   mk({id:'teslaknight',name:'테슬라 기사',short:'테슬라',role:'방전',shape:'teslaknight',castFx:'tesla',season:'clockwork',rarity:'SR',gacha:true,unlockStage:999,
     body:'#2b3038',accent:'#7fe3ff',tunic:'#3b4a5c',hp:1500,atk:90,range:80,speed:34,interval:1.3,
     cost:340,cooldown:22,kb:1,scale:1.1,
     ab:{chain:{n:2,fall:.6,range:110},stun:{chance:.12,dur:.6}},
     abText:'방전 · 2번 튕김 · 12% 기절',
-    desc:'등에 코일을 짊어진 기사. 창끝에서 튄 전기가 옆의 적까지 태운다.'}),
+    desc:'등에 코일을 짊어진 기사입니다. 창끝에서 튄 전기가 옆의 적까지 태웁니다.'}),
   mk({id:'clocksoldier',name:'태엽 병정',short:'태엽병정',role:'자폭 톱니',shape:'clocksoldier',season:'clockwork',rarity:'R',gacha:true,unlockStage:999,
     body:'#b08d57',accent:'#e0c080',tunic:'#6b4f2e',hp:700,atk:45,range:70,speed:40,interval:1.1,
     cost:200,cooldown:9,kb:2,
     ab:{deathBomb:{dmg:160,radius:95}},
     abText:'쓰러지면 톱니 폭발(범위 160)',
-    desc:'태엽을 감아 움직이는 병정. 부서질 때 톱니가 사방으로 튄다.'}),
+    desc:'태엽을 감아 움직이는 병정입니다. 부서질 때 톱니가 사방으로 튑니다.'}),
   mk({id:'mechanic',name:'정비공',role:'수리',shape:'mechanic',season:'clockwork',rarity:'R',gacha:true,unlockStage:999,
     body:'#2b3038',accent:'#f5c542',tunic:'#3e5f7a',hp:560,atk:28,range:70,speed:36,interval:1.4,
     cost:230,cooldown:12,kb:2,
     ab:{heal:70,radius:180,interval:3.5},
     abText:'주변 아군 수리(회복) · 약한 렌치',
-    desc:'렌치 하나로 사람도 기계도 고친다. 포탑과 거상 곁에 두면 오래 버틴다.'}),
+    desc:'렌치 하나로 사람도 기계도 고칩니다. 포탑과 거상 곁에 두면 오래 버팁니다.'}),
   mk({id:'rifleman',name:'소총수',role:'원거리',shape:'rifleman',season:'clockwork',rarity:'N',gacha:true,unlockStage:999,
     body:'#2b3038',accent:'#b0b6bd',tunic:'#5a6b3a',hp:280,atk:50,range:300,speed:40,interval:1.3,
     cost:150,cooldown:7,kb:2,ranged:true,
     abText:'값싼 원거리',
-    desc:'공방에서 찍어 낸 소총을 든 민병. 싸고 멀리 쏜다.'}),
+    desc:'공방에서 찍어 낸 소총을 든 민병입니다. 싸고 멀리 쏩니다.'}),
   // 소환 전용
   mk({id:'turret',name:'증기 포탑',role:'소환물',shape:'turret',unlockStage:999,
     body:'#6b5a48',accent:'#ffb347',tunic:'#4a4038',hp:900,atk:55,range:300,speed:0,interval:.8,
     cost:0,cooldown:0,kb:1,ranged:true,
     ab:{hold:true,kbImmune:true},
-    desc:'대발명가가 세운 포탑. 움직이지 않고 쏘기만 한다.'})
+    desc:'대발명가가 세운 포탑입니다. 움직이지 않고 쏘기만 합니다.'})
 );
 // 전설·신화는 한 명씩만 전장에 설 수 있다. 머릿수로 밀어붙이는 병종이 아니라
 // 판을 바꾸는 특수 병종이기 때문이다.
@@ -620,23 +620,23 @@ function rollSummon(s, pick) {
 const SEASONS = [
   { id: 'olympus', name: '올림포스', sub: '그리스 신화',
     color: '#d8c47a', accent: '#8e6b1f',
-    desc: '번개와 창의 신들이 왕국의 부름에 응했다.',
+    desc: '번개와 창의 신들이 왕국의 부름에 응합니다.',
     units: ['hades', 'persephone', 'zeus', 'ares', 'artemis', 'medusa', 'spartan', 'hoplite'] },
   { id: 'ragnarok', name: '라그나로크', sub: '북유럽 신화',
     color: '#8fb6d8', accent: '#2f5f8e',
-    desc: '최후의 전투를 앞둔 북방의 전사들이 내려왔다.',
+    desc: '최후의 전투를 앞둔 북방의 전사들이 내려옵니다.',
     units: ['odin', 'skadi', 'thor', 'valkyrie', 'fenrir', 'viking', 'runeseer', 'northarcher'] },
   { id: 'nile', name: '나일의 왕가', sub: '이집트 신화',
     color: '#e8c65a', accent: '#8a6a1f',
-    desc: '모래 아래 잠들어 있던 사자의 신과 사제들이 깨어났다.',
+    desc: '모래 아래 잠들어 있던 사자의 신과 사제들이 깨어납니다.',
     units: ['ra', 'bastet', 'anubis', 'rapriest', 'pharaoh', 'scarab', 'desertarcher'] },
   { id: 'yokai', name: '요괴록', sub: '한국 설화',
     color: '#e0707a', accent: '#8e1f2f',
-    desc: '달 밝은 밤, 옛이야기 속 요괴와 저승의 관리들이 왕국 편에 섰다.',
+    desc: '달 밝은 밤, 옛이야기 속 요괴와 저승의 관리들이 왕국 편에 섭니다.',
     units: ['gumiho', 'saja', 'dokkaebi', 'haetae', 'mudang', 'hwarang', 'pojol'] },
   { id: 'clockwork', name: '태엽 공방', sub: '증기와 톱니',
     color: '#d9a066', accent: '#6b4a24',
-    desc: '연기 자욱한 공방에서 발명가들이 기계 군단을 끌고 나왔다.',
+    desc: '연기 자욱한 공방에서 발명가들이 기계 군단을 이끌고 나옵니다.',
     units: ['inventor', 'steammech', 'airship', 'teslaknight', 'clocksoldier', 'mechanic', 'rifleman'] }
 ];
 
@@ -775,7 +775,7 @@ const ENEMIES = {
   /* ---------- 2.5 새 잡몹: 역할이 다른 여덟 ---------- */
   slinger:  { name: '고블린 투석병', body: '#4d6b3a', accent: '#a07a4a', tunic: '#5a4a2f', shape: 'slinger',
               hp: 260, atk: 30, range: 200, speed: 40, interval: 1.4, kb: 2, gold: 14, scale: .85, ranged: true,
-              abText: '값싼 원거리 · 초반부터 뒤에서 돌을 던진다' },
+              abText: '값싼 원거리 · 초반부터 뒤에서 돌을 던집니다' },
   drummer:  { name: '오크 북잡이', body: '#4a6b46', accent: '#c0392b', tunic: '#6b4a2a', shape: 'drummer',
               hp: 900, atk: 20, range: 60, speed: 32, interval: 1.6, kb: 2, gold: 40,
               ab: { rally: { atk: .3, radius: 220 }, interval: 2.5 }, abText: '전쟁 북 · 주변 적 공격력 +30%' },
@@ -784,20 +784,20 @@ const ENEMIES = {
               ab: { weaken: { mul: .7, dur: 4 } }, abText: '저주 · 맞은 아군의 공격력 -30% (4초)' },
   skelarcher:{ name: '해골 궁수', body: '#d8d2c0', accent: '#8a8f7a', tunic: '#5a5448', shape: 'skelarcher',
               hp: 520, atk: 55, range: 280, speed: 34, interval: 1.3, kb: 2, gold: 28, ranged: true,
-              ab: { revive: .4 }, abText: '한 번 쓰러져도 다시 일어난다' },
+              ab: { revive: .4 }, abText: '한 번 쓰러져도 다시 일어납니다' },
   boneguard:{ name: '해골 방패병', body: '#d8d2c0', accent: '#7a8a9a', tunic: '#4a4a52', shape: 'boneguard',
               hp: 1800, atk: 60, range: 60, speed: 30, interval: 1.3, kb: 1, gold: 40,
-              ab: { revive: .5, armor: .1 }, abText: '갑주 10% · 한 번 쓰러져도 다시 일어난다' },
+              ab: { revive: .5, armor: .1 }, abText: '갑주 10% · 한 번 쓰러져도 다시 일어납니다' },
   assassin: { name: '고블린 암살자', body: '#3f5a2f', accent: '#c0392b', tunic: '#1f2a1f', shape: 'assassin',
               hp: 700, atk: 110, range: 60, speed: 70, interval: .9, kb: 2, gold: 38, scale: .9,
               ab: { leap: { trigger: 170, range: 320 }, crit: { chance: .2, mul: 2 } },
-              abText: '도약 · 전열을 뛰어넘어 궁수와 마법사를 노린다' },
+              abText: '도약 · 전열을 뛰어넘어 궁수와 마법사를 노립니다' },
   burrower: { name: '땅굴 고블린', body: '#4d6b3a', accent: '#8a6a3a', tunic: '#5a4a2f', shape: 'burrower',
               hp: 1100, atk: 90, range: 60, speed: 55, interval: 1.0, kb: 2, gold: 36,
               ab: { burrow: { stun: 1.0, radius: 90 } }, abText: '땅굴 · 땅속으로 다가와 전열 밑에서 튀어나오며 기절' },
   chariot:  { name: '오크 전차', body: '#4a6b46', accent: '#8a5a2a', tunic: '#6b4a2a', shape: 'chariot',
               hp: 5200, atk: 280, range: 80, speed: 64, interval: 1.8, kb: 1, gold: 90, scale: 1.3,
-              ab: { kbImmune: true, push: 35 }, abText: '돌격 전차 · 넉백 면역 · 들이받아 밀쳐 낸다' },
+              ab: { kbImmune: true, push: 35 }, abText: '돌격 전차 · 넉백 면역 · 들이받아 밀쳐 냅니다' },
 };
 
 /* -------------------- 전장 20개 -------------------- */
@@ -883,7 +883,7 @@ STAGES.push(
     W(2,'orcshield',3,2),W(20,'lich',1),W(40,'plaguer',5,2),W(60,'wraith',6,1.4),W(84,'lich',1),W(108,'dark',5,2),W(134,'totem',2,4),W(158,'lich',1),W(182,'orcberserk',7,1)]},
   {name:'가시 왕관의 성문',hint:'가시 반격은 원거리 병종으로 대응',baseHp:35000,money:410,rate:50,reward:1100,enemyMul:1.94,waves:[
     W(2,'orcshield',4,2),W(22,'shaman',3,3),W(44,'golem',2,5),W(66,'siegeram',2,5),W(92,'orcshield',5,2),W(116,'ballista',5,2),W(140,'warchief',2,5),W(168,'dark',6,2),W(196,'troll',1)]},
-  {name:'★ 명계의 삼중 봉인',hint:'근접 벽 뒤에서 해골을 부르는 리치를 먼저 노려라',baseHp:38000,money:420,rate:51,reward:1350,boss:true,enemyMul:3.2,waves:[
+  {name:'★ 명계의 삼중 봉인',hint:'근접 벽 뒤에서 해골을 부르는 리치를 먼저 노리세요',baseHp:38000,money:420,rate:51,reward:1350,boss:true,enemyMul:3.2,waves:[
     W(2,'wraith',5,2),W(24,'lich',1),W(48,'spiderqueen',1),W(70,'plaguer',6,1.8),W(96,'troll',1),W(122,'lich',1),W(148,'orcshield',5,2),W(174,'spiderqueen',1),W(204,'wraith',8,1)]},
   {name:'눈보라 추격전',hint:'빠른 늑대 기수를 둔화로 저지',baseHp:39500,money:425,rate:52,reward:1250,enemyMul:2.29,waves:[
     W(2,'wolf',10,.8),W(24,'dark',5,2),W(48,'frostgiant',1),W(72,'wolf',10,.8),W(96,'orccatapult',2,5),W(120,'orcberserk',7,1.2),W(148,'frostgiant',1),W(180,'golem',2,5),W(208,'wolf',12,.7)]},
@@ -895,7 +895,7 @@ STAGES.push(
     W(2,'hellhound',9,.8),W(26,'powder',6,1.8),W(52,'drake',1),W(80,'plaguer',6,2),W(108,'orcshield',6,1.8),W(138,'drake',1),W(170,'hellhound',10,.8),W(200,'siegeram',2,4),W(230,'dark',7,1.5)]},
   {name:'황금 일식의 제단',hint:'치유·가속 토템을 범위 공격으로 압박',baseHp:47500,money:450,rate:56,reward:1650,boss:true,enemyMul:3.05,waves:[
     W(2,'orcshield',5,2),W(26,'totem',2,6),W(50,'shaman',5,3),W(78,'warlord',1),W(108,'golem',2,5),W(140,'drake',1),W(174,'warchief',3,5),W(208,'orcberserk',8,1),W(240,'lich',2,8)]},
-  {name:'★ 세 신화의 종착지',hint:'원거리 호위를 먼저 걷어 내고, 대군주에게 액티브와 왕명을 몰아 쓰라',baseHp:51000,money:465,rate:58,reward:2200,boss:true,enemyMul:6.2,waves:[
+  {name:'★ 세 신화의 종착지',hint:'원거리 호위를 먼저 걷어 내고, 대군주에게 액티브와 왕명을 집중하세요',baseHp:51000,money:465,rate:58,reward:2200,boss:true,enemyMul:6.2,waves:[
     W(2,'orcshield',5,2),W(26,'lich',1),W(52,'frostgiant',1),W(82,'drake',1),W(114,'warlord',1),W(148,'warchief',2,5),W(182,'spiderqueen',1),W(216,'golem',3,5),W(248,'warlord',1),W(276,'hellhound',10,.8)]}
 );
 
@@ -903,9 +903,9 @@ STAGES.push(
 /* 전장 특성. 어려운 전장에는 특성이 붙어서, 스탯 높은 병종을 몰아 넣는 것만으로는
  * 풀리지 않고 그 특성을 받아칠 병종을 챙겨야 한다. */
 const STAGE_MODS = {
-  ironclad: { name: '중갑', desc: '모든 적이 방어 60% — 받는 피해가 크게 준다 (중독·화상은 그대로)',
+  ironclad: { name: '중갑', desc: '모든 적이 방어 60% — 아군의 공격 피해가 크게 줄어듭니다 (중독·화상은 그대로)',
               counter: '토르(파쇄) · 중독 · 화상 · 태양 낙인', color: '#8fa3b5' },
-  horde:    { name: '물량', desc: '적이 1.8배 많이 몰려온다 (하나하나는 약하다)',
+  horde:    { name: '물량', desc: '적이 1.8배 많이 몰려옵니다 (하나하나는 약함)',
               counter: '범위 공격 · 연쇄 번개 · 값싼 방패 벽', color: '#c98a4b' },
   giantslayer: { name: '영웅 사냥꾼', desc: '적이 비용 350 이상인 아군(영웅·전설·신화)에게 3배 피해',
               counter: '값싼 병력을 많이 · 소환물 · 비싼 병종은 뒤에', color: '#9b6bd1' },
@@ -1157,7 +1157,7 @@ function missionById(id) {
 }
 
 const ACHIEVEMENTS = [
-  { id: 'first',    name: '첫 승리',      desc: '전장을 하나 돌파한다',        gold: 200,  stone: 1,
+  { id: 'first',    name: '첫 승리',      desc: '전장 1개 돌파',        gold: 200,  stone: 1,
     test: s => s.cleared >= 1 },
   { id: 'clear5',   name: '국경 수호',    desc: '5전장 돌파',                  gold: 500,  stone: 1,
     test: s => s.cleared >= 5 },
@@ -1205,9 +1205,9 @@ const UPGRADES = {
   resistance:{name:'해독 훈련',max:5,base:350,step:1.65,desc:'아군 중독·화상 피해 -5%/레벨'},
   deployment:{name:'출진 보호진',max:5,base:380,step:1.7,desc:'직접 출진한 병사에게 보호막 25/레벨 (소환수 제외)'},
   wallet:  { name: '군자금 금고', max: 10, base: 100, step: 1.5,
-             desc: '전투 중 보유할 수 있는 군자금 한도가 늘어난다.' },
+             desc: '전투 중 보유할 수 있는 군자금 한도가 늘어납니다.' },
   income:  { name: '세금 징수', max: 10, base: 115, step: 1.52,
-             desc: '전투 중 군자금이 차는 속도가 빨라진다.' },
+             desc: '전투 중 군자금이 차는 속도가 빨라집니다.' },
   power:   { name: '무기 연마', max: 10, base: 130, step: 1.55,
              desc: '모든 아군 병사의 공격력 +6%/레벨' },
   vitality:{ name: '갑옷 강화', max: 10, base: 130, step: 1.55,
@@ -1260,11 +1260,11 @@ function upgradeCost(key, level) {
 /* Tactical descriptions shared by the campaign and enemy codex. */
 function enemyTactic(e) {
   if (e.boss) return '보스 · 왕명을 아껴 폭격 후 회복';
-  if (e.ab && e.ab.leap) return '암살 · 궁수 곁에 방패병이나 근접을 한 명 두자';
+  if (e.ab && e.ab.leap) return '암살 · 궁수 곁에 방패병이나 근접 병종을 두세요';
   if (e.ab && e.ab.burrow) return '땅굴 · 전열을 두껍게, 기절 뒤 왕명으로 수습';
-  if (e.ab && e.ab.rally) return '지휘 · 북잡이부터 원거리로 끊어라';
-  if (e.ab && e.ab.weaken) return '저주 · 정화사로 해제, 멀리서 먼저 쓰러뜨려라';
-  if (e.ab && e.ab.revive) return '부활 · 한 번 더 쓰러뜨려야 한다, 범위 공격이 유리';
+  if (e.ab && e.ab.rally) return '지휘 · 북잡이부터 원거리로 끊어 내세요';
+  if (e.ab && e.ab.weaken) return '저주 · 정화사로 해제, 멀리서 먼저 쓰러뜨리세요';
+  if (e.ab && e.ab.revive) return '부활 · 두 번 쓰러뜨려야 합니다, 범위 공격이 유리';
   if (e.ab && e.ab.armor) return '중장갑 · 중독과 화상으로 지속 피해';
   if (e.ab && e.ab.heal) return '치유 지원 · 범위 공격으로 후열 압박';
   if (e.ab && e.ab.deathBomb) return '사망 폭발 · 저렴한 전열로 피해 분산';

@@ -1051,3 +1051,35 @@ body{background:var(--bg0);color:var(--tx)}
 .fi-head canvas,.unit-ico,.sd-foe canvas{background:radial-gradient(circle at 50% 38%,#8aa6bd 0%,#4f6e88 55%,#2c4358 100%)}
 .sd-foe.boss canvas{background:radial-gradient(circle at 50% 38%,#d9868a 0%,#8a3a40 60%,#4a1a20 100%)}
 .f-tile canvas,.f-slot canvas{filter:drop-shadow(0 0 3px #cfe3f255)}
+
+/* ================= 2.6.1 다듬기 ================= */
+/* 기록 초기화는 버튼이 아니라 작은 글씨 링크처럼 */
+.title-btns .btn.danger{background:transparent;border-color:transparent;box-shadow:none;color:#e2a7a4;font-size:11px}
+/* 알림은 탭·제목을 가리지 않게 화면 가운데 조금 위에 */
+.toast{top:30%;bottom:auto}
+/* 도움말이 길어도 닫기 버튼은 늘 보이게 */
+.modal-card>.btn:last-child{position:sticky;bottom:-16px;margin-top:6px}
+.modal-card>.btn:last-child::before{content:'';position:absolute;left:-20px;right:-20px;bottom:100%;height:16px;
+  background:linear-gradient(180deg,#15253700,#152537);pointer-events:none}
+.modal-card ul{font-size:12px;line-height:1.6}
+/* 소환 결과: 낮은 화면에서 제목과 카드가 겹치지 않게 */
+.pull-result{overflow-y:auto;justify-content:safe center}
+@media(max-height:420px){
+  .pull-result{gap:6px;padding:8px}
+  .pull-head{font-size:18px}
+  .pull-card{width:66px;padding:2px 1px 3px}
+  .pull-card canvas{width:40px;height:40px}
+  .pull-name{font-size:9.5px}.pull-rarity,.pull-note{font-size:8.5px}
+  .pull-grid{gap:5px}
+}
+.pull-result{background:radial-gradient(ellipse at 50% 40%,#1a2c43f2,#05080dfa)}
+/* 낮은 화면의 전장 정보: 적 목록이 출진 버튼 뒤로 숨지 않게 설명은 짧게 */
+@media(max-height:420px){
+  .sd-open span,.sd-mod small{display:none}
+  .sd-open,.sd-mod{padding:3px 7px}
+  .sd-open b{display:inline}
+  .sd-stars{font-size:12px;line-height:1}
+  .sd-btns .btn{padding:7px 6px;font-size:12.5px;white-space:nowrap}
+  .sd-name{font-size:15px}
+}
+@media(max-width:780px){#scr-map .bar .progress{display:none}#scr-map .bar .progress-wrap{flex-basis:auto}}
