@@ -181,7 +181,8 @@ async function runSize(browser, size) {
   await page.evaluate(()=>{Settings.set('shake',true);});
 
   // 전장을 한 번 누르면 고르고, 출진 버튼으로 나간다 (고른 전장을 또 누르면 바로 출진)
-  await page.evaluate(()=>{mapChapter=-1;mapSel=12;renderMap();});
+  // 소환 결과가 빈 칸에 들어가 편성이 매번 달라지면 승패가 운에 달린다. 전투 전에 편성을 고정한다.
+  await page.evaluate(()=>{save.loadout=['spear','shield','venom','mage'];saveGame(save);mapChapter=-1;mapSel=12;renderMap();});
   await page.click('#stage-list .stage[data-stage="13"]');
   if(!await page.evaluate(()=>mapSel===13&&$('#scr-map').classList.contains('active')))failures.push(size.name+': 전장 선택 오류');
   await page.click('#btn-sortie');
@@ -232,10 +233,14 @@ async function runSize(browser, size) {
     if (done) break;
   }
   const st = await page.evaluate(() => ({
-    state: battle.state, allies: battle.allies.length, kills: battle.kills
+    state: battle.state, allies: battle.allies.length, kills: battle.kills,
+    time: Math.round(battle.time), enemies: battle.enemies.length,
+    fort: Math.round(battle.enemyCastle.hp) + '/' + battle.enemyCastle.maxHp,
+    castle: Math.round(battle.allyCastle.hp), loadout: battle.roster.map(u => u.id).join(','),
+    front: Math.round(Math.max(0, ...battle.allies.map(a => a.x)))
   }));
   if (st.kills < 1) failures.push(size.name + ': 전투에서 처치가 0이다');
-  if (st.state === 'play') failures.push(size.name + ': 5분 안에 전투가 끝나지 않았다');
+  if (st.state === 'play') failures.push(size.name + ': 5분 안에 전투가 끝나지 않았다 ' + JSON.stringify(st));
 
   // Exercise new shapes, genuine skill buttons, pause guards, and bounded effects.
   await page.evaluate(()=>{

@@ -346,6 +346,7 @@ class Battle {
     this.reinfPool = pool.length ? pool : ['orcspear'];
     this.reinfHeavy = heavy;
     this.reinfWave = 0;
+    this.reinfIdx = 0;          // 증원 무리를 돌아가며 고른다 (무리 수가 3의 배수여도 고루 나오게)
     this.reinfT = REINFORCE_FIRST;
     this.reinfOn = false;
 
@@ -477,8 +478,8 @@ class Battle {
     this.cmdUses++;
     for (const a of this.allies) {
       a.heal(a.maxHp * this.cmdHeal);
+      a.hasteMul = a.hasteT > 0 ? Math.min(a.hasteMul, COMMAND.hasteMul) : COMMAND.hasteMul;
       a.hasteT = Math.max(a.hasteT, COMMAND.hasteDur);
-      a.hasteMul = COMMAND.hasteMul;
       a.stunT = 0;
       a.slowT = 0;
       this.fx.push({ type: 'rally', x: a.x, row: a.row, t: 0.6, life: 0.6 });
@@ -559,7 +560,7 @@ class Battle {
     if (!this.endless && this.enemyCastle.dead) { this.shake = 16; this.finish('win'); }
     else if (this.allyCastle.dead) { this.shake = 16; this.finish(this.endless ? 'over' : 'lose'); }
     // 웨이브 수가 정해진 무한 전장(검사용)만 다 버티면 끝. 진짜 무한 전장은 성채가 무너질 때까지.
-    else if (this.endless && !this.stage.infinite && this.qi >= this.queue.length && this.enemies.length === 0) {
+    else if (this.endless && !this.stage.infinite && this.qi >= this.queue.length && this.enemies.length === 0 && this.burrowers.length === 0) {
       this.finish('over');
     }
   }
@@ -951,8 +952,9 @@ class Battle {
       for (const m of mates) {
         if (m.dead || m === f) continue;
         if (Math.abs(m.x - f.x) > ab.radius) continue;
+        // 약한 가속이 이미 걸린 강한 가속을 덮어쓰지 않는다
+        m.hasteMul = m.hasteT > 0 ? Math.min(m.hasteMul, ab.haste.mul) : ab.haste.mul;
         m.hasteT = Math.max(m.hasteT, ab.haste.dur);
-        m.hasteMul = ab.haste.mul;
       }
       f.auraPulse = 0.5;
       this.fx.push({ type: 'aura', x: f.x, row: f.row, r: ab.radius,
@@ -1006,11 +1008,11 @@ class Battle {
 
     // 숫자로 밀어붙이면 화면도 프레임도 무너진다. 머릿수는 묶어 두고
     // 대신 한 마리 한 마리를 계속 세게 만든다.
-    if (this.enemies.length >= REINFORCE_CAP) return;
+    if (this.enemies.length + this.burrowers.length >= REINFORCE_CAP) return;
     const mul = this.reinfMul();
     const n = 1 + Math.min(2, Math.floor(this.reinfWave / 5));
     for (let i = 0; i < n; i++) {
-      const id = this.reinfPool[(this.reinfWave * 3 + i) % this.reinfPool.length];
+      const id = this.reinfPool[this.reinfIdx++ % this.reinfPool.length];
       this.spawnEnemy(id, ENEMY_SPAWN_X - Math.random() * 70, mul);
     }
     // 여섯 번에 한 번은 중장 병력도 딸려 온다. 다만 이미 버티고 선 보스가
@@ -1073,7 +1075,7 @@ class Battle {
         for (const e of foes) {
           if (e.dead || Math.abs(e.x - f.x) > r) continue;
           if (a.stun) e.stun(a.stun);
-          if (a.push && !e.ab.kbImmune) {
+          if (a.push && !e.ab.kbImmune && !e.ab.hold) {
             e.x = Math.max(60, Math.min(WORLD - 60, e.x + f.dir * a.push));
             e.kbTimer = Math.max(e.kbTimer, 0.2);
           }
@@ -1138,9 +1140,7 @@ class Battle {
         let sum = 0;
         for (const e of foes) {
           if (e.dead || Math.abs(e.x - f.x) > r) continue;
-          const d = a.dmg || 120;
-          e.takeDamage(d);
-          sum += d;
+          sum += e.takeDamage(a.dmg || 120);   // 보호막에 막힌 만큼은 빨아들이지 못한다
         }
         f.heal(sum * (a.ratio || 0.6));
         this.fx.push({ type: 'cast', kind: 'runes', x: f.x, row: f.row,
@@ -1167,12 +1167,14 @@ class Battle {
   /* 예고 표시를 띄우고, 시간이 되면 그 자리에 내리꽂는다.
    * 무작정 터지지 않으니 피할 틈이 있다. */
   queueStrike(f, o) {
+    // 예고 원은 실제 시간이 아니라 이 공격의 시계(배속·정지 반영)를 따라 줄어든다
+    const fx = { type: 'warn', x: o.x, r: o.r, t: o.warn, life: o.warn, sync: true,
+                 color: f.side === 'ally' ? '#6fc0ff' : '#e0503c' };
     this.pending.push({
-      t: o.warn, side: f.side, x: o.x, r: o.r, dmg: o.dmg,
+      t: o.warn, side: f.side, x: o.x, r: o.r, dmg: o.dmg, fx,
       burn: o.burn, stun: o.stun, kind: o.kind, color: f.s.accent, row: f.row
     });
-    this.fx.push({ type: 'warn', x: o.x, r: o.r, t: o.warn, life: o.warn,
-                   color: f.side === 'ally' ? '#6fc0ff' : '#e0503c' });
+    this.fx.push(fx);
   }
 
   updatePending(dt) {
@@ -1180,6 +1182,7 @@ class Battle {
     let landed = false;
     for (const s of this.pending) {
       s.t -= dt;
+      if (s.fx) s.fx.t = Math.max(0, s.t);
       if (s.t > 0) continue;
       s.done = landed = true;
       const foes = this.foesOf(s.side);
@@ -1290,7 +1293,7 @@ class Battle {
       f.chargeDist = 0;
     }
     if (charged && !target.isCastle) {
-      if (!target.ab.kbImmune && !target.boss) {
+      if (!target.ab.kbImmune && !target.ab.hold && !target.boss) {
         target.x = Math.max(60, Math.min(WORLD - 60, target.x + f.dir * f.ab.charge.push));
         target.kbTimer = Math.max(target.kbTimer, 0.3);
       }
@@ -1431,7 +1434,7 @@ class Battle {
     if (ab.stun && Math.random() < ab.stun.chance && target.stun(ab.stun.dur)) {
       this.fx.push({ type: 'stun', x: target.x, row: target.row, t: 0.5, life: 0.5 });
     }
-    if (ab.push && !target.ab.kbImmune) {
+    if (ab.push && !target.ab.kbImmune && !target.ab.hold) {
       target.x += src.dir * ab.push * 0.01 * 60;
       target.kbTimer = Math.max(target.kbTimer, 0.12);
     }
@@ -1562,7 +1565,8 @@ class Battle {
   }
 
   updateFx(dt) {
-    for (const e of this.fx) e.t -= dt;
+    const live = this.state === 'play';
+    for (const e of this.fx) if (!(e.sync && live)) e.t -= dt;
     this.fx = this.fx.filter(e => e.t > 0);
     if (this.fx.length > FX_LIMIT) this.fx.splice(0, this.fx.length - FX_LIMIT);
     this.dmgFxCount = 0;
@@ -1615,7 +1619,7 @@ class Battle {
     const heavy = this.reinfHeavy.length && (this.reinfWave + 1) % 6 === 0;
     const id = heavy
       ? this.reinfHeavy[((this.reinfWave + 1) / 6 - 1) % this.reinfHeavy.length]
-      : this.reinfPool[((this.reinfWave + 1) * 3) % this.reinfPool.length];
+      : this.reinfPool[this.reinfIdx % this.reinfPool.length];
     const spec = ENEMIES[id];
     return { name: (spec ? spec.name : '적') + ' 증원', boss: heavy, reinforce: true,
              seconds: Math.max(0, Math.ceil(this.reinfT)) };

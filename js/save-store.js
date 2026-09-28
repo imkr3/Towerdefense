@@ -2,16 +2,18 @@
 const SaveStore = {
   key: 'stick-kingdom-save-v1', backupKey: 'stick-kingdom-save-v1-backup',
   blocked: false, recovered: false, error: '',
+  // 모양만 검사한다. 전장 수·임무 목록처럼 업데이트로 바뀔 수 있는 내용은
+  // normalizeSave 가 고친다 — 여기서 막으면 업데이트 한 번에 저장을 못 읽게 된다.
   validate(s) {
     const obj = v => v && typeof v === 'object' && !Array.isArray(v);
     const num = v => Number.isFinite(v) && v >= 0;
-    if (!obj(s) || !Number.isInteger(s.cleared) || s.cleared < 0 || s.cleared > STAGES.length || !num(s.coins)) throw Error('게임 저장 데이터가 아닙니다.');
+    if (!obj(s) || !Number.isInteger(s.cleared) || s.cleared < 0 || !num(s.coins)) throw Error('게임 저장 데이터가 아닙니다.');
     for (const k of ['levels','upgrades','owned','stars','achv','stats']) if (s[k] !== undefined && !obj(s[k])) throw Error('저장 항목 형식 오류: ' + k);
     for (const k of ['stones','pity','mythPity','pulls','totalKills','endlessBest']) if (s[k] !== undefined && !num(s[k])) throw Error('저장 숫자 오류: ' + k);
     for (const k of ['levels','upgrades','stars','stats']) for (const v of Object.values(s[k] || {})) if (!num(v)) throw Error('저장 능력치 오류: ' + k);
     if (s.evo !== undefined && (!obj(s.evo) || Object.values(s.evo).some(v => typeof v !== 'boolean'))) throw Error('진화 데이터 오류');
     if (s.loadout !== undefined && (!Array.isArray(s.loadout) || s.loadout.some(v => typeof v !== 'string'))) throw Error('편성 데이터 오류');
-    if (s.daily != null && (!obj(s.daily) || !Array.isArray(s.daily.list) || s.daily.list.some(m => !obj(m) || !missionById(m.id) || !num(m.got)))) throw Error('일일 임무 데이터 오류');
+    if (s.daily != null && (!obj(s.daily) || !Array.isArray(s.daily.list) || s.daily.list.some(m => !obj(m) || typeof m.id !== 'string' || !num(m.got)))) throw Error('일일 임무 데이터 오류');
     return s;
   },
   parse(raw) {

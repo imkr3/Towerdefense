@@ -541,6 +541,14 @@ const I18N_EN = {
   '강철 의지': 'Will of Iron', '하드코어 전장 10곳 돌파': 'Clear 10 stages on Hardcore',
   '꺾이지 않는 왕국': 'The Unbroken Kingdom', '하드코어 전장 30곳 모두 돌파': 'Clear all 30 stages on Hardcore',
   '모든 시즌에서 전설 이상을 각각 보유': 'Own a Legend or better from every season',
+  '기존 저장을 읽지 못해 덮어쓰기를 막았습니다. 저장 관리에서 원본을 백업하거나 복원해 주세요.': 'Your existing save could not be read, so overwriting it was blocked. Back it up or restore it from Save Manager.',
+  '저장에 실패했습니다. 저장 관리에서 백업을 내보내 주세요.': 'Saving failed. Export a backup from Save Manager.',
+  '게임 저장 데이터가 아닙니다.': 'This is not game save data.',
+  '백업은 1MB 이하의 JSON 파일이어야 합니다.': 'A backup must be a JSON file of 1MB or less.',
+  '지원하지 않는 백업 버전입니다.': 'Unsupported backup version.',
+  '진화 데이터 오류': 'Bad evolution data',
+  '편성 데이터 오류': 'Bad squad data',
+  '일일 임무 데이터 오류': 'Bad daily mission data'
 };
 
 /* 목록 문단처럼 굵은 글씨가 섞인 덩어리는 통째로 바꾼다 */
@@ -567,6 +575,14 @@ const I18N_EN_HTML = {
 
 /* 숫자가 붙은 말. 구절 치환보다 먼저 한다. */
 const I18N_EN_PATTERNS = [
+  [/ 레벨 (\d+) 완료$/g, ' upgraded to Lv $1'],
+  [/무한 전장은 (\d+)전장을 돌파하면 열립니다/g, 'Endless unlocks after clearing Stage $1'],
+  [/^전장 (\d+)개 돌파 · 골드 (\d+) · 소환석 (\d+)\. 이 데이터로 교체할까요\? 현재 저장은 자동 백업에 남깁니다\.$/g,
+   '$1 stages cleared · $2 gold · $3 stones. Replace your progress with this data? Your current save is kept as an automatic backup.'],
+  [/^복원하지 않았습니다: /g, 'Not restored: '],
+  [/저장 항목 형식 오류: /g, 'Bad save section: '],
+  [/저장 숫자 오류: /g, 'Bad save number: '],
+  [/저장 능력치 오류: /g, 'Bad save stat: '],
   [/(\d+)\s*전장 돌파/g, 'Stage $1 cleared'],
   [/전장 (\d+)/g, 'Stage $1'],
   [/(\d+)\s*전장/g, 'Stage $1'],

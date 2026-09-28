@@ -23,7 +23,10 @@ const SFX = {
   },
 
   resume: function () {
-    if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+    if (this.ctx && this.ctx.state === 'suspended') {
+      const p = this.ctx.resume();
+      if (p && p.catch) p.catch(() => {});      // 사용자 동작 전에는 거부될 수 있다
+    }
   },
 
   /* 짧은 음정 */

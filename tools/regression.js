@@ -617,4 +617,27 @@ test('Hardcore wins record a crown, pay double and stones once', () => {
   assert.equal(H.hardCount(s), 1);
 });
 
+test('A weaker haste never overrides a stronger one still running', () => {
+  const b = battle(), herald = b.makeAlly(U.herald, 500), a = b.makeAlly(U.spear, 520);
+  b.allies.push(herald, a);
+  a.hasteT = 6; a.hasteMul = 0.55; herald.abCd = 0;
+  b.supportTick(herald, b.allies, 0.1, true);
+  assert.equal(a.hasteMul, 0.55); assert.equal(a.hasteT, 6);
+  a.hasteT = 0; herald.abCd = 0; b.supportTick(herald, b.allies, 0.1, true);
+  assert.equal(a.hasteMul, U.herald.ab.haste.mul);
+});
+test('Strike warning ring follows game time, not wall time', () => {
+  const b = battle(), f = b.makeAlly(U.spear, 500);
+  b.queueStrike(f, { x: 600, r: 60, dmg: 10, warn: 1 });
+  const ring = b.fx.find(e => e.type === 'warn');
+  b.updateFx(5);                           // 정지 중에도 연출은 흐른다
+  assert.ok(b.fx.includes(ring) && ring.t === 1);
+  b.speed = 3; b.update(0.1);              // 3배속: 0.3초 흐른다
+  assert.ok(Math.abs(ring.t - 0.7) < 1e-6);
+});
+test('Knockback never shoves units that hold their post', () => {
+  const b = battle(), m = b.makeAlly(U.merchant, 300), x = m.x;
+  const e = new Fighter({ ...E.goblin, ab: { push: 30 } }, 'enemy', 340);
+  b.hitOne(1, m, e, false); assert.equal(m.x, x);
+});
 console.log(count + ' regression checks passed');

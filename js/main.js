@@ -54,6 +54,8 @@ function normalizeSave(raw) {
     s.upgrades = Object.assign(d.upgrades, s.upgrades || {});
     s.levels = Object.assign(d.levels, s.levels || {});
     s.cleared = Math.max(0, Math.min(STAGES.length, s.cleared | 0));
+    // 업데이트로 사라진 임무가 오늘 목록에 남아 있으면 목록을 새로 뽑는다
+    if (s.daily && s.daily.list.some(m => !missionById(m.id))) s.daily = null;
     // 밸런스 패치로 상한이 바뀌어도 이미 획득한 레벨은 보존한다.
     UNITS.forEach(u => {
       s.levels[u.id] = Math.max(1, Math.floor(s.levels[u.id]) || 1);
@@ -335,6 +337,7 @@ function trailPoint(k, n) {
 
 function renderMap() {
   $('#map-coins').textContent = fmtNum(save.coins);
+  $('#tab-stones').textContent = save.stones;
   updateQuestBadge();
   const pct = (save.cleared / STAGES.length) * 100;
   $('#map-progress').style.width = pct + '%';
@@ -445,7 +448,8 @@ function renderStageDetail(i) {
     const fb = document.createElement('button');
     fb.className = 'btn ghost sd-formation';
     fb.textContent = '편성';
-    fb.addEventListener('click', () => openFormation(ch.endless ? 'endless' : null));
+    const endlessOpen = ch.endless && save.cleared >= ENDLESS_UNLOCK_STAGE;
+    fb.addEventListener('click', () => openFormation(endlessOpen ? 'endless' : null));
     box.appendChild(fb);
     return;
   }
@@ -728,6 +732,7 @@ function renderTraining() {
             if (save.loadout.length <= 1) { toast('최소 1개 병종은 편성해야 합니다'); return; }
             save.loadout = save.loadout.filter(id => id !== u.id);
           } else {
+            if (!heroRoom(u.id)) return;
             save.loadout.push(u.id);
           }
           saveGame(save);
@@ -1010,6 +1015,7 @@ function drawBanner(sn) {
 
 /* ------------------------------ 전투 ------------------------------ */
 function startEndless() {
+  if (save.cleared < ENDLESS_UNLOCK_STAGE) { toast('무한 전장은 ' + ENDLESS_UNLOCK_STAGE + '전장을 돌파하면 열립니다'); return; }
   battle = new Battle(0, save, makeEndlessStage());
   $('#scr-battle').classList.remove('hardcore');
   $('#battle-stage').textContent = '무한 전장 · 최고 ' + (save.endlessBest || 0) + '웨이브';
@@ -1145,11 +1151,22 @@ function autoDeploy(dt) {
   if (ready.length) battle.deploy(ready[0].id);
 }
 
+/* HUD 는 매 프레임 갱신된다. 글자가 실제로 바뀔 때만 쓴다.
+ * 영어에서는 번역된 글자와 비교해야 한다 (번역 감시자가 이미 바꿔 놓았으므로). */
+function setText(el, s) {
+  s = t(String(s));
+  if (el.textContent !== s) el.textContent = s;
+}
+function setAttr(el, name, s) {
+  s = t(String(s));
+  if (el.getAttribute(name) !== s) el.setAttribute(name, s);
+}
+
 function updateHud() {
   const money = Math.floor(battle.money);
-  $('#kill-count').textContent = battle.kills;
+  setText($('#kill-count'), battle.kills);
   // 증원이 돌기 시작하면 남은 적을 셀 수 없다
-  $('#foe-left').textContent = (battle.endless || battle.reinforcing()) ? '∞' : battle.foesLeft();
+  setText($('#foe-left'), (battle.endless || battle.reinforcing()) ? '∞' : battle.foesLeft());
   const cmdBtn = $('#btn-command');
   const ready = battle.canCommand();
   cmdBtn.disabled = !canBattleInput() || !ready;
@@ -1157,8 +1174,8 @@ function updateHud() {
   const enemyPct = Math.max(0, battle.enemyCastle.hp / battle.enemyCastle.maxHp * 100);
   $('#ally-hp').style.width = allyPct + '%';
   $('#enemy-hp').style.width = enemyPct + '%';
-  $('#ally-hp-txt').textContent = Math.ceil(allyPct) + '%';
-  $('#enemy-hp-txt').textContent = Math.ceil(enemyPct) + '%';
+  setText($('#ally-hp-txt'), Math.ceil(allyPct) + '%');
+  setText($('#enemy-hp-txt'), Math.ceil(enemyPct) + '%');
   $('#castle-status').classList.toggle('critical', allyPct < 30);
   // 적이 언제 나오는지는 알려 주지 않는다. 무한 전장만 몇 웨이브째인지 보여 준다.
   const preview = battle.endless
@@ -1166,16 +1183,16 @@ function updateHud() {
     : (battle.wardUp() ? '보스의 결계 · 보스를 쓰러뜨려야 요새가 무너집니다'
       : (battle.reinforcing() ? '적 증원 중' : ''));
   const wp = $('#wave-preview');
-  if (wp.textContent !== preview) wp.textContent = preview;
+  setText(wp, preview);
   wp.hidden = !preview;
-  $('#battle-clock').textContent = Math.floor(battle.time / 60) + ':' + String(Math.floor(battle.time % 60)).padStart(2, '0');
+  setText($('#battle-clock'), Math.floor(battle.time / 60) + ':' + String(Math.floor(battle.time % 60)).padStart(2, '0'));
   cmdBtn.classList.toggle('ready', ready);
-  $('#cmd-cd').textContent = ready ? '준비'
-    : (battle.cmdCd > 0 ? Math.ceil(battle.cmdCd) : '대기');
+  setText($('#cmd-cd'), ready ? '준비'
+    : (battle.cmdCd > 0 ? Math.ceil(battle.cmdCd) : '대기'));
   // 시간 주술사가 살아 있으면 카드가 느리게 찬다는 걸 보여 준다
   $('#cards').classList.toggle('chrono', !!battle.chronoOn);
-  $('#money-txt').textContent = money;
-  $('#wallet-txt').textContent = battle.walletMax;
+  setText($('#money-txt'), money);
+  setText($('#wallet-txt'), battle.walletMax);
   $('#wallet-fill').style.width = (battle.money / battle.walletMax * 100) + '%';
   cardEls.forEach(el => {
     const id = el.dataset.id;
@@ -1195,20 +1212,20 @@ function updateHud() {
         const k = acd > 0 && !ready ? '충전' : '필살';
         const v = ready ? '발동!' : (acd > 0 ? Math.ceil(acd) + '초' : '대상 없음');
         const kEl = act.querySelector('.c-act-k'), vEl = act.querySelector('.c-act-v');
-        if (kEl.textContent !== k) kEl.textContent = k;
-        if (vEl.textContent !== v) vEl.textContent = v;
+        setText(kEl, k);
+        setText(vEl, v);
         el.style.setProperty('--act', (u.active.cd ? Math.min(1, acd / u.active.cd) : 0) * 100 + '%');
-        el.setAttribute('aria-label', u.name + ' ' + u.active.name + ' ' + v);
+        setAttr(el, 'aria-label', u.name + ' ' + u.active.name + ' ' + v);
       } else {
         el.classList.remove('act-ready');
-        el.setAttribute('aria-label', u.name + ' 출진, 비용 ' + u.cost);
+        setAttr(el, 'aria-label', u.name + ' 출진, 비용 ' + u.cost);
       }
     }
-    if (cd > 0 && !alive) { cool.classList.remove('hide'); cool.textContent = cd.toFixed(1); }
+    if (cd > 0 && !alive) { cool.classList.remove('hide'); setText(cool, cd.toFixed(1)); }
     else cool.classList.add('hide');
     el.classList.toggle('poor', !alive && money < u.cost);
     el.classList.toggle('available', alive ? battle.canHeroActive(id) : battle.canDeploy(id));
-    el.setAttribute('aria-disabled', String(!canBattleInput() || !(battle.canDeploy(id) || (u.active && battle.canHeroActive(id)))));
+    setAttr(el, 'aria-disabled', !canBattleInput() || !(battle.canDeploy(id) || (u.active && battle.canHeroActive(id))));
     const max = u.cooldown * battle.cdMul;
     el.style.setProperty('--cooldown', (max ? cd / max * 100 : 0) + '%');
   });
@@ -1221,8 +1238,11 @@ function flushPlayTime() {
   playAccum = 0;
 }
 
-function showResult() {
-  // 누적 기록과 임무 진행
+/* 누적 기록과 임무 진행. 결과창을 띄우기 전에 곧바로 적는다 —
+ * 결과창이 뜨기 전에 전장을 나가도 기록이 사라지지 않게. */
+function recordBattleEnd() {
+  if (battle.recorded) return;
+  battle.recorded = true;
   flushPlayTime();
   save.stats.bossKills += battle.bossKills || 0;
   addStat('kills', battle.kills);
@@ -1235,7 +1255,10 @@ function showResult() {
   }
   saveGame(save);
   checkAchievements();
+}
 
+function showResult() {
+  recordBattleEnd();
   if (battle.endless) { showEndlessResult(); return; }
 
   const win = battle.state === 'win';
@@ -1316,6 +1339,7 @@ function loop(ts) {
     if (BGM.vol > 0) BGM.sting(battle.state === 'win' || (battle.endless && battle.newRecord) ? 'victory' : 'defeat');
     else BGM.stop(0.6);
     const ended = battle;
+    recordBattleEnd();
     resultTimer = setTimeout(() => {
       if (battle === ended && $('#scr-battle').classList.contains('active')) showResult();
     }, 700);
@@ -1522,8 +1546,7 @@ function init() {
     const glfx = new GLFx($('#cv-fx'));
     if (glfx.ok) {
       renderer.glfx = glfx;
-      renderer.syncGlSize();
-      window.addEventListener('resize', () => renderer.syncGlSize());
+      renderer.syncGlSize();          // 이후 크기 맞춤은 renderer.resize() 가 한다
       // Canvas2D 때문에 4개로 묶어 두었던 제한을 넓힌다. 다만 무한정은 아니다 —
       // 가산 합성이라 너무 많이 겹치면 화면이 빛으로 덮여 전장이 안 보인다.
       if (typeof setCastLimits === 'function') setCastLimits(8, 3);
@@ -1566,6 +1589,8 @@ function init() {
         const fresh = defaultSave();
         if (!SaveStore.write(fresh, true)) { toast(SaveStore.error); return; }
         save = fresh;
+        mapChapter = -1; mapSel = -1;
+        $('#save-warning').hidden = true;
         refreshTitleBadges();
         toast('기록을 초기화했습니다');
       });
@@ -1644,11 +1669,15 @@ function init() {
   });
   initSettings();
   initFormation();
+  // 결과창 버튼을 두 번 눌러 전투가 두 번 시작되지 않게
+  const resultOpen = () => { const r = $('#result'); if (!r.classList.contains('show')) return false; r.classList.remove('show'); return true; };
   $('#btn-retry').addEventListener('click', () => {
+    if (!resultOpen()) return;
     if (battle && battle.endless) startEndless();
     else startBattle(battle.stageIndex, battle.hard);
   });
   $('#btn-next').addEventListener('click', () => {
+    if (!resultOpen()) return;
     $('#btn-retry').textContent = '다시 도전';
     startBattle(battle.stageIndex + 1, battle.hard);
   });
@@ -1672,7 +1701,11 @@ function init() {
   document.addEventListener('visibilitychange', () => {
     if (document.hidden && battle && battle.state === 'play') setPaused(true);
     // 앱이 뒤로 가면 음악도 멈춘다 (배터리)
-    if (SFX.ctx) { if (document.hidden) SFX.ctx.suspend(); else SFX.ctx.resume(); }
+    // 사용자 동작 없이 resume 을 거부하는 브라우저가 있다 (Safari). 다음 터치에서 다시 켜진다.
+    if (SFX.ctx) {
+      const p = document.hidden ? SFX.ctx.suspend() : SFX.ctx.resume();
+      if (p && p.catch) p.catch(() => {});
+    }
     lastTs = 0;
   });
   window.addEventListener('keydown', e => {
@@ -1837,7 +1870,7 @@ window.receiveSaveBackup = function(raw) {
     askConfirm('진행도 복원', '전장 ' + candidate.cleared + '개 돌파 · 골드 ' + candidate.coins +
       ' · 소환석 ' + candidate.stones + '. 이 데이터로 교체할까요? 현재 저장은 자동 백업에 남깁니다.', () => {
       if (!SaveStore.write(candidate, true)) { toast(SaveStore.error); return; }
-      save=candidate;
+      save=candidate; mapChapter = -1; mapSel = -1;
       $('#modal-save').classList.remove('show'); $('#save-warning').hidden=true;
       show('scr-title'); toast('진행도를 복원했습니다.');
     });

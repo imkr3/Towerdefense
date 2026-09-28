@@ -66,15 +66,19 @@ void main() {
   outColor = vec4(rgb * a, a);
 }`;
 
+/* 신화 필살기처럼 따로 그리지 않은 연출은 닮은 연출을 빌려 쓴다 */
+const GLFX_ALIAS = { thunderseal: 'lightning', sunfall: 'pillar', runeveil: 'runes', underworld: 'shockwave' };
+
 /* WebGL1 로 떨어질 때 쓰는 문법 */
 function glfxDowngrade(src) {
   return src
     .replace('#version 300 es\n', '')
-    .replace(/\bin vec/g, 'attribute vec').replace(/\bin float/g, 'attribute float')
+    // varying 을 먼저 바꾼다. 아니면 조각 셰이더의 in 까지 attribute 가 되어 컴파일이 깨진다.
     .replace(/\bout vec2 v_uv;/, 'varying vec2 v_uv;')
     .replace(/\bout vec4 v_color;/, 'varying vec4 v_color;')
     .replace(/\bin vec2 v_uv;/, 'varying vec2 v_uv;')
     .replace(/\bin vec4 v_color;/, 'varying vec4 v_color;')
+    .replace(/\bin vec/g, 'attribute vec').replace(/\bin float/g, 'attribute float')
     .replace(/\bout vec4 outColor;\n/, '')
     .replace(/\boutColor\b/g, 'gl_FragColor');
 }
@@ -97,6 +101,13 @@ class GLFx {
     // 합성식이 포화형이어서 1 을 넘겨도 흰 덩어리로 터지지는 않는다.
     this.gain = 1.15;
     this.ok = this._init();
+    // 앱이 뒤로 가거나 GPU 가 초기화되면 컨텍스트를 잃는다. 그동안은 캔버스 연출로 돌리고,
+    // 돌아오면 셰이더와 버퍼를 새로 만든다.
+    canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); this.ok = false; this.count = 0; });
+    canvas.addEventListener('webglcontextrestored', () => {
+      this.ok = this._init();
+      if (this.ok) this.resize(this.w, this.h, this.dpr);
+    });
   }
 
   _init() {
@@ -324,6 +335,7 @@ class GLFx {
     const N = n => Math.max(1, Math.round(n * q));
     const TAU = Math.PI * 2;
 
+    kind = GLFX_ALIAS[kind] || kind;
     switch (kind) {
       /* 하늘에서 내리꽂는 번개 */
       case 'lightning': {
@@ -736,6 +748,8 @@ class GLFx {
         }
         break;
       }
+      default:                                         // 모르는 연출도 빈손으로 두지 않는다
+        if (kind !== 'burst') this.emit('burst', x, y, opt);
     }
   }
 }

@@ -48,4 +48,9 @@ test('Completed original campaign and expansion progress survive backup round tr
     const data={...old,cleared,stars:{19:3,20:2}};assert.equal(s.parse(s.export(data)).cleared,cleared);
   }
 });
+test('A content update (removed mission, fewer stages) never locks a save out',()=>{
+  const {store:s,data}=fixture();
+  data.set(s.key,JSON.stringify({...old,cleared:99,daily:{date:'x',list:[{id:'gone-mission',got:1,claimed:false}]}}));
+  assert.equal(s.read().cleared,99);assert.equal(s.blocked,false);
+});
 console.log(n+' save protection checks passed');
