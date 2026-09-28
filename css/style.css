@@ -1113,3 +1113,27 @@ body{background:var(--bg0);color:var(--tx)}
 .unit-card.evolved .unit-ico{border-color:var(--au);box-shadow:0 0 10px #f6d36555}
 .card.evo{border-color:#e2bf72;box-shadow:0 0 0 1px #e2bf7255,0 2px 8px #0006}
 .card.evo .c-name{color:var(--au-l)}
+
+/* ---------- 3.0 하드코어 · 시간 주술사 ---------- */
+.sd-hard{border-left:3px solid #c0392b;background:#2a0e1299;border-radius:6px;padding:5px 8px;font-size:11.5px;line-height:1.35;color:var(--tx2,#d8d0c0)}
+.sd-hard b{display:block;color:#ff8a7a;font-size:11.5px;letter-spacing:.04em}
+.sd-hard span{display:block}
+.sd-hard small{display:block;color:#f0c27a;font-weight:800}
+.sd-hard.done{border-left-color:#e8c65a}
+.sd-hard.done b{color:#f0d08d}
+.sd-hard{display:flex;align-items:center;gap:8px}
+.sd-hard-txt{flex:1;min-width:0}
+.sd-hardgo{flex:none;padding:7px 12px;font-size:13px;background:linear-gradient(180deg,#5a1a1e,#35090d)!important;color:#ffd0c8!important;
+  border:1px solid #c0392b!important;font-weight:900;text-shadow:0 1px 2px #000;border-radius:8px}
+.sd-hardgo:hover{filter:brightness(1.15)}
+#scr-map .stage .stage-hard{position:absolute;top:-9px;left:-9px;font-size:13px;filter:drop-shadow(0 1px 1px #000)}
+.hard-crown{font-size:40px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.6))}
+#scr-battle.hardcore .hud-top,#scr-battle.hardcore #battle-stage{color:#ffb4a8}
+#scr-battle.hardcore::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:1;
+  box-shadow:inset 0 0 70px rgba(150,20,30,.45)}
+#cards.chrono .card .cool{background:rgba(40,80,120,.72)}
+#cards.chrono .card::after{content:'⏳';position:absolute;top:1px;left:50%;margin-left:-6px;font-size:11px;z-index:3;
+  animation:chronoPulse 1.2s ease-in-out infinite}
+@keyframes chronoPulse{0%,100%{opacity:.4}50%{opacity:1}}
+@media(max-height:420px){.sd-hard span,.sd-hard small{display:none}.sd-hard{padding:2px 4px 2px 7px}.sd-hardgo{padding:3px 10px;font-size:12px}}
+.sd-hard i{font-style:normal}

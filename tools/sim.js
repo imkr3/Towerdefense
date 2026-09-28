@@ -15,6 +15,7 @@ const path = require('path');
 const vm = require('vm');
 
 const ROOT = path.join(__dirname, '..');
+let SIM_HARD = false;             // --hardcore 로 켠다
 
 /* 고정 난수 (mulberry32) - CI 에서 결과가 흔들리지 않게 */
 function makeRandom(seed) {
@@ -42,7 +43,7 @@ function loadEngine(seed) {
   vm.createContext(ctx);
   for (const f of ['js/data.js', 'js/game.js']) {
     let src = fs.readFileSync(path.join(ROOT, f), 'utf8');
-    if (process.env.SIM_PATCH) for (const kv of process.env.SIM_PATCH.split(';;')) { const [a, b] = kv.split('=>'); if (src.includes(a)) src = src.split(a).join(b); }
+    if (process.env.SIM_PATCH) for (const kv of process.env.SIM_PATCH.split('||')) { const [a, b] = kv.split('=>'); if (src.includes(a)) src = src.split(a).join(b); }
     vm.runInContext(src, ctx, { filename: f });
   }
   return vm.runInContext(
@@ -103,11 +104,11 @@ function comboLoadout(g, index) {
 /* 공략 편성: 전장 특성을 받아칠 병종을 먼저 챙기고 나머지는 전장 병종으로 채운다.
  * "특정 조합이면 풀린다" 를 재는 쪽이다. 소환 병종은 전부 가졌다고 본다. */
 const COUNTERS = {
-  ironclad: ['thor', 'venom', 'shield', 'pyro', 'rapriest', 'knight', 'ra'],
+  ironclad: ['thor', 'javelin', 'venom', 'shield', 'alchemist', 'pyro', 'rapriest', 'knight', 'ra'],
   horde:    ['zeus', 'frost', 'pyro', 'catapult', 'knight', 'shield', 'spear'],
-  blitz:    ['shield', 'frostlancer', 'frost', 'skadi', 'spartan', 'colossus', 'medusa'],
-  giantslayer: ['spear', 'shield', 'venom', 'catapult', 'sniper', 'pyro', 'musketeer', 'frost'],
-  curse: ['knight', 'shield', 'spear', 'venom', 'pyro', 'frost']
+  blitz:    ['shield', 'frostlancer', 'frost', 'skadi', 'spartan', 'monk', 'colossus', 'medusa'],
+  giantslayer: ['spear', 'shield', 'javelin', 'venom', 'catapult', 'sniper', 'pyro', 'musketeer', 'frost'],
+  curse: ['knight', 'shield', 'spear', 'javelin', 'venom', 'pyro', 'frost']
 };
 function counterLoadout(g, index) {
   const st = g.STAGES[index];
@@ -144,6 +145,7 @@ function runStage(g, index, upLv, unitLv, trace, gacha, basic) {
       ? g.UNITS.filter(u => u.gacha && (u.rarity === 'UR' || u.rarity === 'SSR' || u.rarity === 'SR') && u.id !== gacha.slice(7))
           .sort((a, b) => ({ UR: 0, SSR: 1, SR: 2 }[a.rarity] - { UR: 0, SSR: 1, SR: 2 }[b.rarity]) || (b.cost - a.cost))
           .slice(0, g.LOADOUT_MAX).map(u => u.id)
+    : (typeof gacha === 'string' && gacha.indexOf('mono:') === 0) ? [gacha.slice(5)]
     : gacha === 'combo' ? comboLoadout(g, index)
     : gacha === 'counter' ? counterLoadout(g, index)
     : (typeof gacha === 'string' && gacha.indexOf('with:') === 0)
@@ -171,7 +173,7 @@ function runStage(g, index, upLv, unitLv, trace, gacha, basic) {
     }
   };
 
-  const b = new g.Battle(index, save);
+  const b = new g.Battle(index, save, null, { hard: !!SIM_HARD });
   const dt = 1 / 30;
   let t = 0, nextLog = 20;
   while (b.state === 'play' && t < 420) {
@@ -263,8 +265,13 @@ const LEGEND_PROOF = [
 /* 시즌마다 대표 셋. 어느 시즌을 뽑든 비슷한 값어치여야 한다. */
 const SEASON_TRIOS = [
   ['hades', 'zeus', 'artemis'], ['odin', 'thor', 'valkyrie'], ['ra', 'anubis', 'pharaoh'],
-  ['gumiho', 'saja', 'dokkaebi'], ['inventor', 'steammech', 'mechanic']
+  ['gumiho', 'saja', 'dokkaebi'], ['inventor', 'steammech', 'mechanic'], ['wukong', 'nezha', 'bajie']
 ];
+/* 3.0: 병종 하나만 들고 전장을 쓸어 담으면 안 된다 (메두사 하나로 30전장 중 18곳을 넘던 것).
+ * 한 병종 편성으로 넘을 수 있는 전장 수 상한. 겹쳐 세우기 좋은 병종들로 잰다. */
+const MONO_MAX = 12;
+const MONO_SUSPECTS = ['medusa', 'catapult', 'mage', 'necro', 'rogue', 'engineer', 'colossus', 'paladin',
+  'rapriest', 'wukong', 'bajie', 'lancer', 'monk', 'alchemist', 'falconer', 'javelin'];
 const SEASON_SPREAD = 2;
 const LEGEND_PROOF_MAX = 1;      // 전설만 편성이 이길 수 있는 최대 판 수
 const COUNTER_MIN = 4;           // 공략 편성이 이겨야 하는 최소 판 수
@@ -366,6 +373,20 @@ function check() {
     if (spread > SEASON_SPREAD) { console.error(`  ✗ 시즌 격차 ${spread} (최대 ${SEASON_SPREAD}): ${tag}`); failed++; }
     else console.log(`  ✓ 시즌 균형 (강화 3/Lv5) ${tag}`);
   }
+  // 병종 하나만으로 쓸어 담지 못한다
+  {
+    const worst = MONO_SUSPECTS.map(id => {
+      const g = loadEngine(12345), u = g.UNIT_BY_ID[id]; let w = 0;
+      for (let i = 0; i < g.STAGES.length; i++) {
+        if (!u.gacha && u.unlockStage > i + 1) continue;
+        if (runStage(g, i, 5, 10, false, 'mono:' + id).win) w++;
+      }
+      return [id, w];
+    }).sort((a, b) => b[1] - a[1]);
+    const tag = worst.slice(0, 4).map(([id, w]) => id + ' ' + w).join(' · ');
+    if (worst[0][1] > MONO_MAX) { console.error(`  ✗ 병종 하나로 너무 많이 넘는다 (강화 5/Lv10): ${tag} (최대 ${MONO_MAX}/30)`); failed++; }
+    else console.log(`  ✓ 병종 하나로는 못 쓸어 담는다 (강화 5/Lv10): ${tag} (최대 ${MONO_MAX}/30)`);
+  }
   // 제대로 편성하는 플레이어는 충분히 키우면 넘는다
   {
     const g = loadEngine(12345), rows = [];
@@ -449,6 +470,27 @@ if (args[0] === '--check') {
     const w = runAll(upLv, unitLv, 12345, 'with:' + id, 20).filter(r => r.win).length;
     console.log('  + ' + id.padEnd(14) + w + '  (' + (w - base >= 0 ? '+' : '') + (w - base) + ')');
   }
+} else if (args[0] === '--hardcore') {
+  // node tools/sim.js --hardcore [강화Lv] [병종Lv] [시작] [끝]   공략 편성으로 하드코어
+  SIM_HARD = true;
+  const upLv = +(args[1] || 10), unitLv = +(args[2] || 15), from = +(args[3] || 0), to = +(args[4] || 30);
+  const g = loadEngine(12345), rows = [];
+  for (let i = from; i < to; i++) rows.push(runStage(g, i, upLv, unitLv, false, 'smart'));
+  printTable(rows, upLv, unitLv);
+} else if (args[0] === '--mono') {
+  // node tools/sim.js --mono <강화> <Lv> [id,...]  그 병종 하나만 들고 30전장
+  const upLv = +args[1], unitLv = +args[2];
+  const g0 = loadEngine(12345);
+  const ids = args[3] ? args[3].split(',') : g0.UNITS.filter(u => u.cost > 0).map(u => u.id);
+  const res = ids.map(id => {
+    const g = loadEngine(12345); const wins = [], u = g.UNIT_BY_ID[id];
+    for (let i = 0; i < g.STAGES.length; i++) {
+      if (!u.gacha && u.unlockStage > i + 1) continue;          // 아직 해금 전: 편성이 통째로 바뀌므로 세지 않는다
+      if (runStage(g, i, upLv, unitLv, false, 'mono:' + id).win) wins.push(i + 1);
+    }
+    return { id, n: wins.length, wins };
+  }).sort((a, b) => b.n - a.n);
+  res.forEach(r => console.log('  ' + r.id.padEnd(14) + String(r.n).padStart(2) + '  ' + r.wins.join(',')));
 } else if (args[0] === '--minus') {
   // node tools/sim.js --minus <강화> <Lv> id,...  전설만 편성에서 하나씩 뺐을 때
   const upLv = +args[1], unitLv = +args[2];

@@ -51,6 +51,14 @@ const CURSE_HEAL = 0.5;       // 저주: 아군 회복·흡혈 배율
 const CURSE_WITHER = 0.1;     // 저주: 소환물이 초당 잃는 최대 체력 비율
 const SLOW_SPEED_MUL = 0.45; // 둔화 시 이동
 const SLOW_RATE_MUL = 1.7;   // 둔화 시 공격 간격
+/* 3.0: 기절이 풀리면 잠깐은 다시 기절하지 않는다. 기절을 거는 병사를 줄지어 세워
+ * 적을 영원히 굳히던 것(메두사 열 명)을 막는다. 보스는 짧게 기절하고 오래 버틴다. */
+const STUN_GUARD = 1.2;
+const STUN_GUARD_BOSS = 2.5;
+const WARD_FLOOR = 0.05;     // 보스가 살아 있는 동안 적 요새는 이 아래로 무너지지 않는다
+const CHRONO_RATE = 0.6;     // 시간 주술사가 살아 있으면 카드 재사용 대기가 이 속도로 준다
+const BOSS_MUL_EXP = 0.5;    // 캠페인 보스가 받는 전장 배율의 지수
+const BOSS_HEAL_TAKEN = 0.4; // 보스는 다른 적의 치유를 이만큼만 받는다 (주술사 떼가 보스를 영원히 살리지 못하게)
 
 /* ------------------------------- 병사 ------------------------------- */
 class Fighter {
@@ -115,6 +123,24 @@ class Fighter {
     this.phaseIdx = 0;      // 지금까지 넘긴 페이즈
     this.specialCd = (stats.special && stats.special.first) || 6;
     this.enraged = false;
+
+    // 3.0
+    this.stunImm = 0;       // 기절 뒤 잠깐의 면역
+    this.chargeDist = 0;    // 창기병: 쉬지 않고 달려온 거리
+    this.baseAtk = this.atk;
+    this.baseScale = this.scale;
+    this.souls = 0;         // 흡혼귀가 삼킨 영혼
+    this.stolen = 0;        // 금화 도둑이 훔친 군자금
+    this.hookCd = 2.5;      // 사슬 간수 첫 갈고리
+  }
+
+  /* 기절. 면역 중이거나 부동심이면 걸리지 않는다. 걸렸으면 true */
+  stun(d) {
+    if (this.dead || !(d > 0) || this.ab.unshakable || this.stunImm > 0) return false;
+    if (this.boss) d *= 0.5;
+    this.stunT = Math.max(this.stunT, d);
+    this.stunImm = d + (this.boss ? STUN_GUARD_BOSS : STUN_GUARD);
+    return true;
   }
 
   get speedNow() { return this.s.speed * this.speedMul * (this.slowT > 0 ? SLOW_SPEED_MUL : 1); }
@@ -195,9 +221,14 @@ class Castle {
     this.isCastle = true;
     this.radius = 60;
     this.ab = {};
+    this.floor = 0;           // 이 아래로는 무너지지 않는다 (보스의 결계)
+    this.wardHit = 0;
   }
   takeDamage(d) {
-    const dealt = Math.min(this.hp, Math.max(0, d));
+    d = Math.max(0, d);
+    // 보스의 결계: 보스를 쓰러뜨리기 전에는 요새가 끝까지 무너지지 않는다
+    if (this.floor > 0 && this.hp - d < this.floor) { d = Math.max(0, this.hp - this.floor); this.wardHit = 0.35; }
+    const dealt = Math.min(this.hp, d);
     this.hp -= d;
     this.hitFlash = 0.15;
     if (this.hp <= 0) { this.hp = 0; this.dead = true; }
@@ -209,11 +240,14 @@ class Castle {
 
 /* ------------------------------ 전투 ------------------------------ */
 class Battle {
-  constructor(stageIndex, save, customStage) {
+  constructor(stageIndex, save, customStage, opts) {
     this.stageIndex = stageIndex;
     this.stage = customStage || STAGES[stageIndex];
     this.endless = !!this.stage.endless;
     this.save = save;
+    // 하드코어: 돌파한 전장을 더 모질게 (적 ×1.5 · 특성 하나 더 · 성채 60% · 왕명 느림)
+    this.hard = !!(opts && opts.hard) && !this.endless;
+    this.enemyMulBase = this.hard ? hardcoreEnemyMul(this.stage) : (this.stage.enemyMul || 1);
 
     const up = save.upgrades;
     this.buff = {
@@ -231,7 +265,7 @@ class Battle {
 
     // 왕의 명령
     const cmdLv = up.command || 0;
-    this.cmdMax = Math.max(25, COMMAND.baseCooldown - COMMAND.cooldownPerLv * cmdLv);
+    this.cmdMax = Math.max(25, COMMAND.baseCooldown - COMMAND.cooldownPerLv * cmdLv) * (this.hard ? HARDCORE.cmdMul : 1);
     this.cmdCd = this.cmdMax;   // 시작하자마자는 쓸 수 없다
     this.cmdHeal = COMMAND.healRatio + COMMAND.healPerLv * cmdLv;
     this.cmdUses = 0;
@@ -239,9 +273,9 @@ class Battle {
     this.heroGlobalCd = 0;
 
     setWorld(this.stage.len);
-    const castleHp = Math.round(4000 * (1 + 0.10 * (up.castle || 0)));
+    const castleHp = Math.round(4000 * (1 + 0.10 * (up.castle || 0)) * (this.hard ? HARDCORE.castleMul : 1));
     this.allyCastle = new Castle('ally', castleHp, ALLY_BASE_X);
-    this.enemyCastle = new Castle('enemy', this.stage.baseHp, ENEMY_BASE_X);
+    this.enemyCastle = new Castle('enemy', this.hard ? hardcoreFortHp(this.stage) : this.stage.baseHp, ENEMY_BASE_X);
 
     this.allies = [];
     this.enemies = [];
@@ -266,9 +300,15 @@ class Battle {
     this.cooldowns = {};
     this.speed = 1;
 
+    // 보스는 반드시 쓰러뜨려야 한다. 원거리로 요새만 두드려 보스를 건너뛰던 것을 막는다.
+    this.bossWard = !!(this.stage.bossId && !this.endless);
+    this.bossSpawned = false;
+    this.bossDown = false;
+    this.chronoOn = false;
+
     this.queue = [];
     this.mods = {};
-    (this.stage.mods || []).forEach(m => { this.mods[m] = true; });
+    (this.hard ? hardcoreMods(this.stage, stageIndex) : (this.stage.mods || [])).forEach(m => { this.mods[m] = true; });
     this.stage.waves.forEach((w0, index) => {
       // 물량: 보스가 아닌 무리는 1.8배로, 더 촘촘하게
       const w = (this.mods.horde && !(ENEMIES[w0.e] && ENEMIES[w0.e].boss))
@@ -293,6 +333,8 @@ class Battle {
       const ab = spec.ab || {};
       // 보스는 증원으로 절대 다시 오지 않는다. 전장마다 하나뿐이다.
       if (spec.boss) return;
+      // 시간술·갈고리·포식·자폭처럼 판을 비트는 적은 증원으로 끝없이 오면 풀 수가 없다
+      if (spec.noReinf) return;
       // 장거리 공성은 증원에서 아예 뺀다. 전선이 닿지 않는 자리에서 쏘기만 하니
       // 죽지 않고 계속 쌓여 전장을 영영 멈춰 세운다.
       if (spec.range > 300) return;
@@ -401,14 +443,26 @@ class Battle {
         this.hitOne(f.atk*a.mul,e,f,false);
         if(!e.dead) {
           if(a.slow)e.slowT=Math.max(e.slowT,a.slow);
-          if(a.stun)e.stunT=Math.max(e.stunT,a.stun);
+          if(a.stun)e.stun(a.stun);
           if(a.charm&&!e.boss){e.charmT=Math.max(e.charmT,a.charm);this.fx.push({type:'charm',x:e.x,row:e.row,t:.7,life:.7});}
           if(a.execute)this.tryExecute(e,a.execute);
           if(a.push&&!e.ab.kbImmune&&!e.dead){e.x=Math.max(60,Math.min(WORLD-60,e.x+f.dir*a.push));e.kbTimer=Math.max(e.kbTimer,.3);}
           if(a.burn){if(e.burnT<=0)e.burnDps=0;e.burnT=Math.max(e.burnT,a.burn);e.burnDps=Math.max(e.burnDps,24*f.abMul);}
+          // 혼천릉: 붉은 비단으로 묶어 한곳에 끌어모은다 (보스·넉백 면역은 버틴다)
+          if(a.pull&&!e.dead&&!e.ab.kbImmune&&!e.boss){const dx=target.x-e.x;e.x+=Math.sign(dx)*Math.min(Math.abs(dx),a.pull);e.kbTimer=Math.max(e.kbTimer,.2);}
         }
       }
       this._chaining = false;
+      // 여의봉 강타: 분신이 곧바로 튀어나온다
+      if (a.clones && f.ab.summon) {
+        const u = UNIT_BY_ID[f.ab.summon.id];
+        for (let k = 0; u && k < a.clones; k++) {
+          const m = this.makeAlly(u, f.x + f.dir * (30 + k * 24), f);
+          m.summoned = true; m.summonedBy = f; m.lifeT = f.ab.summon.life || 8;
+          this.allies.push(m);
+          this.fx.push({ type: 'spawn', x: m.x, row: m.row, t: 0.4, life: 0.4 });
+        }
+      }
     }
     this.fx.push({type:'mythic',kind:a.kind,x:target.x,row:target.row,r:a.radius,color:f.s.accent,t:1.15,life:1.15});
     this.shake=Math.max(this.shake,5);f.swing=.22;
@@ -461,10 +515,24 @@ class Battle {
     if (this.bossAlert > 0) this.bossAlert -= dt;
     if (this.patternT > 0) this.patternT -= dt;
     this.updatePending(dt);
+    for (const c of [this.allyCastle, this.enemyCastle]) {
+      if (c.hitFlash > 0) c.hitFlash = Math.max(0, c.hitFlash - dt);
+      if (c.wardHit > 0) c.wardHit = Math.max(0, c.wardHit - dt);
+    }
+    // 시간 주술사가 하나라도 살아 있으면 카드가 느리게 찬다
+    this.chronoOn = false;
+    for (const e of this.enemies) if (!e.dead && e.ab.chrono) { this.chronoOn = true; break; }
+    const cdStep = dt * (this.chronoOn ? CHRONO_RATE : 1);
     for (const k in this.cooldowns) {
-      if (this.cooldowns[k] > 0) this.cooldowns[k] = Math.max(0, this.cooldowns[k] - dt);
+      if (this.cooldowns[k] > 0) this.cooldowns[k] = Math.max(0, this.cooldowns[k] - cdStep);
     }
 
+    // 보스의 결계: 보스를 쓰러뜨릴 때까지 요새는 끝까지 무너지지 않는다.
+    // 보스가 나오기 전에 요새를 결계까지 깎으면 보스가 먼저 뛰쳐나온다.
+    if (this.bossWard) {
+      this.enemyCastle.floor = this.bossDown ? 0 : this.enemyCastle.maxHp * WARD_FLOOR;
+      if (!this.bossSpawned && this.wardUp()) this.callBoss();
+    }
     while (this.qi < this.queue.length && this.queue[this.qi].t <= this.time) {
       const entry = this.queue[this.qi];
       this.spawnEnemy(entry.e, undefined, entry.mul).wave = entry.wave;
@@ -496,20 +564,43 @@ class Battle {
     }
   }
 
+  /* 보스를 앞당겨 부른다 (호위는 원래 오던 때에 온다) */
+  callBoss() {
+    const id = this.stage.bossId;
+    let hit = null;
+    for (let j = this.qi; j < this.queue.length; j++) if (this.queue[j].e === id) { hit = this.queue[j]; break; }
+    if (!hit) { this.bossSpawned = true; return; }
+    hit.t = this.time;
+    const rest = this.queue.slice(this.qi).sort((a, b) => a.t - b.t);
+    this.queue.length = this.qi;
+    rest.forEach(q => this.queue.push(q));
+    this.announce('보스가 요새에서 뛰쳐나온다!', 2.4);
+    this.shake = Math.max(this.shake, 12);
+  }
+
+  /* 보스가 버티고 있어 요새가 무너지지 않는 중인가 (화면 표시용) */
+  wardUp() { return this.bossWard && !this.bossDown && this.enemyCastle.hp <= this.enemyCastle.maxHp * (WARD_FLOOR + 0.001); }
+
   spawnEnemy(id, atX, mul) {
     const spec = ENEMIES[id];
     const st = Object.assign({ range: 60, speed: 40, interval: 1.2, kb: 1, scale: 1 }, spec);
     const mods = this.mods || {};
     if (mods.blitz) { st.speed *= 1.45; st.interval *= 0.83; }
-    if (mods.ironclad) st.ab = Object.assign({}, st.ab, { armor: Math.max(0.6, (st.ab && st.ab.armor) || 0) });
+    // 중갑: 방어 60%. 보스는 이제 반드시 쓰러뜨려야 하므로 30%까지만 두른다.
+    if (mods.ironclad) st.ab = Object.assign({}, st.ab, { armor: Math.max(spec.boss ? 0.3 : 0.6, (st.ab && st.ab.armor) || 0) });
     // 전장 자체가 거느린 강화 배율(2막처럼 같은 적이 더 억센 곳)과
     // 증원 배율을 함께 얹는다.
-    const total = (this.stage.enemyMul || 1) * (mul && mul > 1 ? mul : 1);
+    let total = this.enemyMulBase * (mul && mul > 1 ? mul : 1);
+    // 보스는 이제 반드시 쓰러뜨려야 하니, 전장 배율을 그대로 받으면 뒤쪽 보스가 끝없이 버틴다.
+    // 배율을 누그러뜨려 받는다 (보스 자체 배율 BOSS_HP_MUL 은 따로 곱한다).
+    if (spec.boss && this.stage.bossId && !this.endless && total > 1) total = Math.pow(total, BOSS_MUL_EXP);
     const buff = total > 1 ? { hp: total, atk: total } : null;
     const f = new Fighter(st, 'enemy', atX !== undefined ? atX : ENEMY_SPAWN_X - Math.random() * 40, buff);
     f.gold = spec.gold || 0;
     f.kind = id;
+    f.mul = mul;
     f.boss = !!spec.boss;
+    if (f.boss) this.bossSpawned = true;
     if (mods.horde && !f.boss) { f.maxHp = Math.round(f.maxHp * 0.6); f.hp = f.maxHp; }
     // 캠페인의 보스는 전장에 하나뿐이라 훨씬 강하다 (무한 전장은 그대로)
     if (f.boss && this.stage.bossId && !this.endless) {
@@ -545,6 +636,19 @@ class Battle {
     }
   }
 
+  feedSouls(dead) {
+    for (const e of this.enemies) {
+      const se = e.ab.souleater;
+      if (!se || e.dead || Math.abs(e.x - dead.x) > se.radius || e.souls >= se.max) continue;
+      e.souls++;
+      e.atk = Math.round(e.baseAtk * (1 + se.atk * e.souls));
+      e.scale = e.baseScale * (1 + 0.025 * e.souls);
+      e.radius = 26 * e.scale;
+      e.heal(e.maxHp * 0.08);
+      this.fx.push({ type: 'soul', x: dead.x, x2: e.x, row: dead.row, row2: e.row, t: 0.6, life: 0.6 });
+    }
+  }
+
   /* 아직 정리하지 않은 시체가 남았는가 */
   hasUnreaped() {
     for (const f of this.allies) if (f.dead && !f.reaped) return true;
@@ -557,16 +661,37 @@ class Battle {
     for (const f of list) {
       if (!f.dead || f.reaped) continue;
       f.reaped = true;
+      // 분신처럼 시간이 다 되어 사라지는 것은 연기만 남긴다
+      if (f.vanish) {
+        this.fx.push({ type: 'poof', x: f.x, row: f.row, t: 0.45, life: 0.45, color: '#f3e6c8' });
+        continue;
+      }
       if (f.ab.deathBomb) {
         const b = f.ab.deathBomb;
         this.areaHit(b.dmg * f.abMul, f.x, b.radius, foes, foeCastle, null, false);
         this.fx.push({ type: 'boom', x: f.x, r: b.radius, t: 0.35, life: 0.35 });
       }
-      if (isEnemySide) {
+      if (isEnemySide && !f.exploded) {
         this.coins += Math.round((f.gold || 0) * KILL_GOLD_RATE * this.goldMul);
         this.kills++;
         this.reanimate(f);
+        if (f.stolen > 0) {                       // 도둑이 훔친 군자금을 되찾는다
+          this.money = Math.min(this.walletMax, this.money + f.stolen);
+          this.fx.push({ type: 'coin', x: f.x, row: f.row, v: Math.round(f.stolen), t: 0.9, life: 0.9 });
+          f.stolen = 0;
+        }
+        if (f.ab.split) {                         // 분열: 작은 것 둘로 갈라진다
+          const sp = f.ab.split, n = sp.n || 2;
+          for (let k = 0; k < n; k++) {
+            const m = this.spawnEnemy(sp.id, Math.max(80, Math.min(WORLD - 80, f.x + (k - (n - 1) / 2) * 30)), f.mul);
+            m.summoned = true; m.wave = f.wave; m.row = f.row; m.age = 0;
+          }
+          this.fx.push({ type: 'poof', x: f.x, row: f.row, t: 0.45, life: 0.45, color: f.s.accent, big: true });
+        }
       }
+      if (f.boss && isEnemySide) { this.bossDown = true; this.enemyCastle.floor = 0; }   // 결계가 걷힌다
+      // 흡혼귀: 근처에서 쓰러진 아군의 넋을 삼킨다 (불려 나온 것은 넋이 없다)
+      if (!isEnemySide && !f.summoned) this.feedSouls(f);
       // 쓰러지는 연출 + 먼지
       this.fx.push({ type: 'corpse', st: f.s, x: f.x, row: f.row, dir: f.dir,
                      scale: f.scale, t: 0.9, life: 0.9 });
@@ -596,6 +721,21 @@ class Battle {
       // 웨이브 수에 따른 보상
       this.coins += this.wavesCleared * 120;
       this.stoneGain = Math.floor(this.wavesCleared / 5);
+      this.save.stones = (this.save.stones || 0) + this.stoneGain;
+      this.save.coins += this.coins;
+      this.save.totalKills = (this.save.totalKills || 0) + this.kills;
+      saveGame(this.save);
+      return;
+    }
+    if (result === 'win' && this.hard) {
+      // 하드코어는 별 대신 왕관 하나. 보상 골드 두 배, 처음 이기면 소환석.
+      const ratio = this.allyCastle.hp / this.allyCastle.maxHp;
+      this.stars = ratio >= 0.9 ? 3 : (ratio >= 0.5 ? 2 : 1);
+      this.coins += this.stage.reward * HARDCORE.reward;
+      if (!this.save.hard || typeof this.save.hard !== 'object') this.save.hard = {};
+      this.firstHard = !this.save.hard[this.stageIndex];
+      this.save.hard[this.stageIndex] = true;
+      this.stoneGain = this.firstHard ? HARDCORE.stones : 0;
       this.save.stones = (this.save.stones || 0) + this.stoneGain;
       this.save.coins += this.coins;
       this.save.totalKills = (this.save.totalKills || 0) + this.kills;
@@ -649,6 +789,10 @@ class Battle {
       if (f.vulnT > 0) { f.vulnT -= dt; if (f.vulnT <= 0) f.vulnMul = 1; }
       if (f.reCd > 0) f.reCd -= dt;
       if (f.weakT > 0) { f.weakT -= dt; if (f.weakT <= 0) f.weakMul = 1; }
+      if (f.stunImm > 0) f.stunImm -= dt;
+      if (f.ab.unshakable) { f.stunT = 0; f.slowT = 0; }          // 무승: 흔들리지 않는다
+      // 분신은 잠깐만 머문다
+      if (f.lifeT !== undefined) { f.lifeT -= dt; if (f.lifeT <= 0) { f.dead = true; f.vanish = true; continue; } }
       f.bob += dt * (f.speedNow / 22);
 
       const burning = f.burnT > 0;
@@ -695,6 +839,7 @@ class Battle {
       }
 
       if (f.ab.leap && !f.leapt) this.tryLeap(f, foes);
+      if (f.ab.hook) this.tryHook(f, foes, dt);
 
       // 지원 능력 (표적과 무관하게 주기적으로 발동)
       this.supportTick(f, list, dt, isAlly);
@@ -714,6 +859,7 @@ class Battle {
         f.moving = f.speedNow > 0;
         f.x += f.dir * f.speedNow * dt;
         f.x = Math.max(60, Math.min(WORLD - 60, f.x));
+        if (f.ab.charge) f.chargeDist += f.speedNow * dt;   // 달려온 만큼 창끝이 무거워진다
       }
     }
   }
@@ -733,7 +879,7 @@ class Battle {
   supportTick(f, mates, dt, isAlly) {
     const ab = f.ab;
     if (!ab.heal && !ab.gold && !ab.summon && !ab.barrier && !ab.haste && !ab.cleanse &&
-        !ab.rally) return;
+        !ab.rally && !ab.ward && !ab.pacify) return;
     if (ab.gold && isAlly) {
       this.money = Math.min(this.walletMax, this.money + ab.gold * dt);
     }
@@ -754,6 +900,22 @@ class Battle {
                      t: 0.5, life: 0.5, color: f.s.accent });
     }
 
+    if (ab.ward) {
+      // 종지기: 종소리가 닿은 아군은 기절·둔화가 풀리고 잠깐 기절하지 않는다
+      for (const m of mates) if (!m.dead && Math.abs(m.x - f.x) <= ab.radius) {
+        m.stunT = 0; m.slowT = 0; m.stunImm = Math.max(m.stunImm, ab.ward.dur);
+      }
+      f.auraPulse = 0.5;
+      this.fx.push({ type: 'bell', x: f.x, row: f.row, r: ab.radius, t: 0.7, life: 0.7, color: '#f6d365' });
+    }
+    if (ab.pacify) {
+      // 삼장법사: 경을 읊으면 주변 적의 살기가 누그러진다
+      for (const e of this.foesOf(f.side)) if (!e.dead && Math.abs(e.x - f.x) <= ab.radius) {
+        e.weakT = Math.max(e.weakT, ab.pacify.dur);
+        e.weakMul = Math.min(e.weakMul, ab.pacify.mul);
+      }
+      this.fx.push({ type: 'aura', x: f.x, row: f.row, r: ab.radius, t: 0.6, life: 0.6, color: '#f6e6a0' });
+    }
     if (ab.cleanse) {
       for (const m of mates) if (!m.dead && Math.abs(m.x - f.x) <= ab.radius) {
         m.poisonT = 0; m.poisonDps = 0; m.burnT = 0; m.burnDps = 0; m.slowT = 0;
@@ -766,7 +928,7 @@ class Battle {
         if (m.dead || m === f) continue;
         if (Math.abs(m.x - f.x) > ab.radius) continue;
         if (m.hp >= m.maxHp) continue;
-        m.heal(ab.heal * f.abMul * (isAlly ? 1 + .06 * Math.min(5, this.save.upgrades.medicine || 0) : 1));
+        m.heal(ab.heal * f.abMul * (isAlly ? 1 + .06 * Math.min(5, this.save.upgrades.medicine || 0) : (m.boss ? BOSS_HEAL_TAKEN : 1)));
         healed = true;
       }
       if (healed) {
@@ -811,6 +973,7 @@ class Battle {
             const m = this.makeAlly(u, sx, f);
             m.summoned = true;
             m.summonedBy = f;
+            if (ab.summon.life) m.lifeT = ab.summon.life;       // 분신은 잠깐만 머문다
             this.allies.push(m);
           }
         } else {
@@ -909,7 +1072,7 @@ class Battle {
       case 'roar': {                       // 포효: 밀어내고 기절
         for (const e of foes) {
           if (e.dead || Math.abs(e.x - f.x) > r) continue;
-          if (a.stun) e.stunT = Math.max(e.stunT, a.stun);
+          if (a.stun) e.stun(a.stun);
           if (a.push && !e.ab.kbImmune) {
             e.x = Math.max(60, Math.min(WORLD - 60, e.x + f.dir * a.push));
             e.kbTimer = Math.max(e.kbTimer, 0.2);
@@ -1029,7 +1192,7 @@ class Battle {
           e.burnT = Math.max(e.burnT, s.burn.dur);
           e.burnDps = Math.max(e.burnDps, s.burn.dps);
         }
-        if (s.stun) e.stunT = Math.max(e.stunT, s.stun);
+        if (s.stun) e.stun(s.stun);
       }
       if (!castle.dead && Math.abs(castle.x - s.x) <= s.r + castle.radius) {
         castle.takeDamage(s.dmg);
@@ -1053,6 +1216,10 @@ class Battle {
   findTarget(f, foes, foeCastle) {
     if (f.ab.noAttack) return null;
     const reach = f.attackRange + f.radius;
+    // 성벽 파괴병: 병사는 거들떠보지 않고 성채만 노린다
+    if (f.ab.sapper) {
+      return (!foeCastle.dead && (foeCastle.x - f.x) * f.dir <= reach + foeCastle.radius) ? foeCastle : null;
+    }
     let best = null, bestD = Infinity;
     // 비행선 폭격: 사거리 안에서 가장 먼(뒷줄) 적을 노린다
     const back = !!f.ab.backline;
@@ -1114,7 +1281,23 @@ class Battle {
   }
 
   attack(f, target, foes, foeCastle) {
+    if (f.ab.sapper) { this.sapperBlast(f, foes, foeCastle); return; }
     const r = this.rollDamage(f);
+    // 창기병 돌격: 달려온 첫 일격이 몇 배로 들어가고 적을 밀쳐 낸다
+    let charged = false;
+    if (f.ab.charge) {
+      if (f.chargeDist >= f.ab.charge.dist) { r.dmg *= f.ab.charge.mul; charged = true; }
+      f.chargeDist = 0;
+    }
+    if (charged && !target.isCastle) {
+      if (!target.ab.kbImmune && !target.boss) {
+        target.x = Math.max(60, Math.min(WORLD - 60, target.x + f.dir * f.ab.charge.push));
+        target.kbTimer = Math.max(target.kbTimer, 0.3);
+      }
+      this.fx.push({ type: 'cast', kind: 'shockwave', x: target.x, row: target.row, color: f.s.accent, r: 70,
+                     big: false, dir: f.dir, t: 0.45, life: 0.45 });
+      this.shake = Math.max(this.shake, 6);
+    }
     if (f.s.ranged) {
       sfx('arrow');
       this.shots.push({
@@ -1134,9 +1317,58 @@ class Battle {
     }
   }
 
+  /* 성벽 파괴병: 성채에 닿으면 짊어진 화약을 터뜨린다. 보상도 없다. */
+  sapperBlast(f, foes, foeCastle) {
+    const sp = f.ab.sapper, dmg = sp.dmg * f.abMul;
+    foeCastle.takeDamage(dmg);
+    for (const a of foes) if (!a.dead && Math.abs(a.x - f.x) <= sp.radius + a.radius) a.takeDamage(dmg * 0.3);
+    this.fx.push({ type: 'cast', kind: 'firestorm', x: f.x, row: f.row, color: '#ff8a3c', r: sp.radius * 1.4,
+                   big: true, dir: f.dir, t: 0.6, life: 0.6 });
+    this.fx.push({ type: 'boom', x: f.x, r: sp.radius, t: 0.4, life: 0.4 });
+    this.shake = Math.max(this.shake, 14);
+    sfx('boom');
+    f.hp = 0; f.dead = true; f.exploded = true;
+  }
+
+  /* 사슬 간수: 뒤에서 쏘는 아군을 갈고리로 끌어와 기절시킨다 */
+  tryHook(f, foes, dt) {
+    f.hookCd -= dt;
+    if (f.hookCd > 0) return;
+    const hk = f.ab.hook;
+    let best = null, bd = 120;
+    for (const e of foes) {
+      if (e.dead || !e.s.ranged || e.ab.kbImmune || e.ab.hold) continue;
+      const d = (e.x - f.x) * f.dir;
+      if (d > bd && d <= hk.range) { bd = d; best = e; }
+    }
+    if (!best) { f.hookCd = 1; return; }
+    f.hookCd = hk.cd;
+    const from = best.x;
+    best.x = Math.max(60, Math.min(WORLD - 60, f.x + f.dir * 40));
+    best.stun(hk.stun);
+    f.swing = 0.22;
+    this.fx.push({ type: 'chain', x: f.x, x2: from, row: f.row, row2: best.row, t: 0.45, life: 0.45 });
+    this.fx.push({ type: 'poof', x: best.x, row: best.row, t: 0.35, life: 0.35, color: '#9aa3ab' });
+    this.shake = Math.max(this.shake, 4);
+    sfx('slash');
+  }
+
   /* 단일 대상 타격 + 부가 효과 */
   hitOne(dmg, target, src, crit) {
+    // 회피: 원숭이·분신·무승은 가끔 몸을 빼 흘려보낸다
+    if (!target.isCastle && target.ab.dodge && src && Math.random() < target.ab.dodge) {
+      this.fx.push({ type: 'miss', x: target.x, row: target.row, t: 0.5, life: 0.5 });
+      return;
+    }
     let pierce = false;
+    // 매 조련사: 뒤에서 쏘는 적을 더 세게 친다
+    if (src && src.ab.hunter && !target.isCastle && target.s.ranged) dmg *= src.ab.hunter;
+    // 거울 마녀: 원거리 공격은 반쯤 막고 일부를 되쏜다
+    let mirror = null;
+    if (src && src.s.ranged && !target.isCastle && target.ab.mirror && src.side !== target.side) {
+      mirror = target.ab.mirror;
+      dmg *= 1 - mirror.cut;
+    }
     if (src && src.ab.breaker && !target.isCastle) {
       // 파쇄: 갑주를 무시하고, 보스·중장갑·넉백 면역에게는 더 세게 들어간다
       pierce = true;
@@ -1147,6 +1379,20 @@ class Battle {
     if (this.mods && this.mods.giantslayer && src && src.side === 'enemy' &&
         !target.isCastle && target.side === 'ally' && (target.s.cost || 0) >= HUNT_COST) dmg *= HUNT_MUL;
     const dealt = target.takeDamage(dmg, pierce) || 0;
+    if (mirror && dealt > 0 && !src.dead) {
+      src.takeDamage(Math.min(120, dealt * mirror.reflect));
+      this.fx.push({ type: 'mirror', x: target.x, x2: src.x, row: target.row, row2: src.row, t: 0.3, life: 0.3 });
+    }
+    // 금화 도둑: 때릴 때마다 군자금을 훔친다 (쓰러뜨리면 돌려받는다)
+    if (src && src.ab.thief && src.side === 'enemy' && target.side === 'ally' && !src.dead) {
+      const take = Math.min(this.money, src.ab.thief.steal);
+      if (take > 0) {
+        this.money -= take; src.stolen += take;
+        this.fx.push({ type: 'coin', x: target.x, row: target.row === undefined ? 1 : target.row, v: -Math.round(take), t: 0.8, life: 0.8 });
+      }
+    }
+    // 저팔계: 쓰러뜨린 만큼 배를 채운다
+    if (src && src.ab.feast && dealt > 0 && target.dead && !target.isCastle) src.heal(src.maxHp * src.ab.feast);
     if (src && src.ab.sunmark && !target.isCastle && !target.dead) {
       target.vulnT = Math.max(target.vulnT, src.ab.sunmark.dur);
       target.vulnMul = Math.max(target.vulnMul, 1 + src.ab.sunmark.vuln);
@@ -1182,8 +1428,7 @@ class Battle {
       target.burnT = Math.max(target.burnT, ab.burn.dur);
       target.burnDps = Math.max(target.burnDps, ab.burn.dps * src.abMul);
     }
-    if (ab.stun && Math.random() < ab.stun.chance) {
-      target.stunT = Math.max(target.stunT, ab.stun.dur);
+    if (ab.stun && Math.random() < ab.stun.chance && target.stun(ab.stun.dur)) {
       this.fx.push({ type: 'stun', x: target.x, row: target.row, t: 0.5, life: 0.5 });
     }
     if (ab.push && !target.ab.kbImmune) {
@@ -1393,7 +1638,7 @@ class Battle {
       const bw = b.ab.burrow;
       for (const a of this.allies) {
         if (a.dead || a.ab.kbImmune || Math.abs(a.x - b.x) > bw.radius) continue;
-        a.stunT = Math.max(a.stunT, bw.stun);
+        a.stun(bw.stun);
       }
       this.fx.push({ type: 'boom', x: b.x, r: bw.radius, t: 0.35, life: 0.35 });
       this.fx.push({ type: 'poof', x: b.x, row: b.row, t: 0.5, life: 0.5, color: '#8a6a3a', big: true });
@@ -1412,7 +1657,7 @@ class Battle {
       const sy = list[this.sallyDone++];
       for (const a of this.allies) {
         if (a.dead || a.ab.hold || Math.abs(c.x - a.x) > 380) continue;
-        a.stunT = Math.max(a.stunT, 0.4);
+        a.stun(0.4);
         if (a.ab.kbImmune) continue;
         a.x = Math.max(60, a.x - 140);
         a.kbTimer = Math.max(a.kbTimer, 0.42);

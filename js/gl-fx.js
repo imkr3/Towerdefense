@@ -659,6 +659,58 @@ class GLFx {
         break;
       }
 
+      /* 여의봉: 황금 충격 고리와 뭉게구름 (손오공) */
+      case 'staff': {
+        const gold = [1, 0.82, 0.3], cloud = [0.96, 0.95, 0.9];
+        for (let ring = 0; ring < 2; ring++) {
+          const n = N(52), sp = (320 + ring * 170) * sc;
+          for (let i = 0; i < n; i++) {
+            const a = i / n * TAU;
+            this.add(x, y, Math.cos(a) * sp, Math.sin(a) * sp * 0.28, 0.36 + ring * 0.1,
+                     (20 - ring * 6) * sc * big, 2 * sc, ring ? gold : white, 0.95, 2.4, a, 0, 0, 1.3);
+          }
+        }
+        for (let i = 0, n = N(40); i < n; i++) {        // 근두운 연기
+          const a = rnd(-Math.PI, 0), sp = rnd(60, 200) * sc;
+          this.add(x + rnd(-R, R) * 0.4, y - 10 * sc, Math.cos(a) * sp, Math.sin(a) * sp * 0.5,
+                   rnd(0.6, 1.1), rnd(20, 34) * sc, rnd(50, 80) * sc, cloud, 0.3, 1, 0, 0, -30, 1.3);
+        }
+        for (let i = 0, n = N(40); i < n; i++) {
+          const a = rnd(-Math.PI, 0), sp = rnd(200, 480) * sc;
+          this.add(x, y - 10 * sc, Math.cos(a) * sp, Math.sin(a) * sp, rnd(0.3, 0.7), rnd(5, 10) * sc, 1,
+                   i % 3 ? col : white, 1, 2.2, a, 0, 800, 2);
+        }
+        break;
+      }
+
+      /* 풍화륜: 돌며 번지는 불고리 (나타) */
+      case 'firering': {
+        const fire = [1, 0.55, 0.2];
+        for (let i = 0, n = N(70); i < n; i++) {
+          const a = i / n * TAU, rr = R * rnd(0.4, 0.9);
+          this.add(x + Math.cos(a) * rr, y - 10 * sc + Math.sin(a) * rr * 0.3,
+                   -Math.sin(a) * rr * 2, rnd(-160, -60) * sc, rnd(0.35, 0.7),
+                   rnd(12, 24) * sc * big, 3 * sc, i % 4 ? (i % 2 ? col : fire) : white, 0.9, 1.3, 0, rnd(-4, 4), -60, 1.5);
+        }
+        break;
+      }
+
+      /* 혼천릉: 소용돌이치며 조여드는 붉은 비단 (나타) */
+      case 'skybind': {
+        const silk = [0.85, 0.27, 0.23];
+        for (let j = 0; j < 3; j++) {
+          const n = N(60);
+          for (let i = 0; i < n; i++) {
+            const t = i / n, a = t * Math.PI * 3 + j * 2.1, rr = R * (1 - t * 0.85);
+            this.add(x + Math.cos(a) * rr, y - 45 * sc + Math.sin(a) * rr * 0.3 - t * 20 * sc,
+                     -Math.cos(a) * rr * 0.8, -Math.sin(a) * rr * 0.25, rnd(0.5, 0.9),
+                     rnd(10, 18) * sc * big, 4 * sc, i % 5 ? silk : white, 0.9, 2, a, 0, 0, 1.3);
+          }
+        }
+        this.add(x, y - 45 * sc, 0, 0, 0.5, 30 * sc, 160 * sc, col, 0.6, 1, 0, 0, 0, 1.4);
+        break;
+      }
+
       /* 교차 참격 */
       case 'slash': {
         const cy = y - 34 * sc;

@@ -227,6 +227,38 @@ const UNITS = [
     cost:270,cooldown:10,kb:2,unlockStage:14,
     ab:{slow:1.6},abText:'타격 시 1.6초 둔화',
     desc:'긴 얼음 창으로 돌격을 저지합니다. 방패 뒤에서 늑대 기수를 견제하세요.'}),
+  /* ---------- 3.0 새 전장 병종: 새 적들을 받아칠 손 ---------- */
+  mk({id:'javelin',name:'투창병',role:'투창',shape:'javelin',
+    body:'#2b3038',accent:'#d0b07a',tunic:'#7a5a2e',hp:420,atk:58,range:175,speed:44,interval:1.35,
+    cost:130,kb:2,ranged:true,unlockStage:5,
+    ab:{breaker:1.3},abText:'파쇄 · 갑주 무시 · 중장갑·보스에게 1.3배',
+    desc:'무거운 투창을 던져 방패째 꿰뚫습니다. 궁수보다 짧게 던지지만 단단한 적에게 강합니다.'}),
+  mk({id:'falconer',name:'매 조련사',short:'매조련사',role:'사냥',shape:'falconer',
+    body:'#2b3038',accent:'#c98a3a',tunic:'#5a6b3a',hp:380,atk:84,range:340,speed:34,interval:1.6,
+    cost:235,kb:2,ranged:true,unlockStage:10,
+    ab:{backline:true,hunter:1.6},abText:'매가 뒷줄을 노림 · 원거리 적에게 1.6배',
+    desc:'매를 날려 적 뒷줄의 궁수와 주술사부터 낚아챕니다. 앞의 덩치는 다른 병력에게 맡기세요.'}),
+  mk({id:'bellringer',name:'종지기',role:'부동',shape:'bellringer',
+    body:'#2b3038',accent:'#e8c65a',tunic:'#6b4a7a',hp:720,atk:0,range:0,speed:30,interval:3,
+    cost:220,kb:1,unlockStage:15,maxActive:2,
+    ab:{ward:{dur:3},heal:40,radius:220,interval:5,noAttack:true},
+    abText:'5초마다 종소리 · 기절·둔화 풀고 3초 기절 면역 · 조금 회복 · 최대 2명',
+    desc:'성당의 큰 종을 울려 휘청이는 아군을 다시 세웁니다. 기절을 거는 보스 앞에서 진가가 나옵니다.'}),
+  mk({id:'lancer',name:'창기병',role:'기병 돌격',shape:'lancer',
+    body:'#2b3038',accent:'#c8ced6',tunic:'#3f6bb5',hp:1500,atk:150,range:95,speed:72,interval:1.8,
+    cost:320,kb:2,scale:1.15,unlockStage:21,
+    ab:{charge:{mul:2.6,dist:110,push:55}},abText:'돌격 · 달려온 첫 일격 2.6배 + 밀쳐 냄',
+    desc:'말을 달려 적진에 창을 꽂습니다. 달려온 만큼 첫 일격이 무겁고, 밀려났다가 다시 달리면 또 돌격합니다.'}),
+  mk({id:'alchemist',name:'연금술사',role:'부식',shape:'alchemist',
+    body:'#2b3038',accent:'#7fe0a0',tunic:'#4a3a6b',hp:520,atk:66,range:260,speed:30,interval:1.9,
+    cost:290,kb:2,ranged:true,area:true,areaRadius:70,unlockStage:24,
+    ab:{sunmark:{vuln:.2,dur:4},poison:{dps:40,dur:4}},abText:'산성 플라스크 · 범위 부식(받는 피해 +20%) · 중독',
+    desc:'산이 든 플라스크를 던집니다. 녹아내린 갑옷은 누구에게 맞든 더 아픕니다.'}),
+  mk({id:'monk',name:'무승',role:'부동심',shape:'monk',
+    body:'#2b3038',accent:'#e8a23a',tunic:'#c0662a',hp:1400,atk:62,range:66,speed:60,interval:.55,
+    cost:300,kb:2,unlockStage:27,
+    ab:{unshakable:true,kbImmune:true,lifesteal:.12},abText:'부동심 · 기절·둔화·넉백 무시 · 흡혈 12%',
+    desc:'산사에서 수련한 권법가입니다. 어떤 충격에도 흔들리지 않고 주먹을 쉬지 않습니다.'}),
   // 소환 전용
   mk({
     id: 'barricade', name: '나무 방벽', role: '구조물', shape: 'barricade',
@@ -593,6 +625,56 @@ SEASON_UNITS.push(
     ab:{hold:true,kbImmune:true},
     desc:'대발명가가 세운 포탑입니다. 움직이지 않고 쏘기만 합니다.'})
 );
+
+/* ---------------- 시즌 6 · 서유기 (천궁 대란) ----------------
+ * 구름을 타고 온 원숭이 왕과 서역으로 가던 일행. 싸움을 불리는 쪽이다:
+ * 분신을 뿌리고(손오공), 적을 한데 묶고(나타), 쓰러뜨린 만큼 배를 채운다(저팔계). */
+SEASON_UNITS.push(
+  mk({id:'wukong',name:'손오공',role:'제천대성',shape:'wukong',castFx:'staff',season:'journey',rarity:'UR',gacha:true,unlockStage:999,
+    body:'#c98a4a',accent:'#ffd24a',tunic:'#b8322e',hp:1700,atk:130,range:120,speed:46,interval:1.6,
+    cost:550,kb:2,area:true,areaRadius:80,scale:1.15,
+    ab:{summon:{id:'monkeyclone',n:2,max:4,life:9},interval:9},
+    abText:'분신술 · 9초마다 분신 2기(최대 4, 9초 유지) · 여의봉 강타',
+    desc:'털 한 가닥을 뽑아 불면 분신이 튀어나옵니다. 분신은 금방 사라지니 싸움을 쉬지 않고 이어 가야 합니다. 혼자서는 적을 다 쓸어 낼 힘이 없습니다.',
+    active:{name:'여의봉 강타',kind:'staff',cd:50,radius:210,mul:2.4,stun:1,clones:2,desc:'가장 가까운 적 주변 피해·1초 기절, 분신 2기를 곧바로 부름.'}}),
+  mk({id:'nezha',name:'나타',role:'풍화륜',shape:'nezha',castFx:'firering',season:'journey',rarity:'SSR',gacha:true,unlockStage:999,
+    body:'#e8c8a8',accent:'#ff7a3c',tunic:'#d8453a',hp:1300,atk:95,range:80,speed:95,interval:1.1,
+    cost:450,kb:2,area:true,areaRadius:70,scale:1.1,
+    ab:{burn:{dps:45,dur:3}},abText:'풍화륜 · 빠른 범위 화염 · 혼천릉',
+    desc:'불타는 바퀴를 타고 전장을 가로지르는 소년 장수입니다. 빠르게 파고들어 무리를 불태우지만, 몸이 가벼워 오래 버티지는 못합니다.',
+    active:{name:'혼천릉',kind:'skybind',cd:46,radius:240,mul:1.5,pull:90,slow:3,desc:'가장 가까운 적 주변을 붉은 비단으로 묶어 한데 끌어모음·3초 둔화.'}}),
+  mk({id:'sanzang',name:'삼장법사',short:'삼장',role:'자비',shape:'sanzang',season:'journey',rarity:'SR',gacha:true,unlockStage:999,
+    body:'#e8d4b0',accent:'#e8c65a',tunic:'#c9a227',hp:800,atk:0,range:0,speed:28,interval:3,
+    cost:330,kb:1,
+    ab:{heal:55,pacify:{mul:.75,dur:4},radius:220,interval:4,noAttack:true},
+    abText:'독경 · 주변 아군 회복 · 주변 적 공격력 -25%',
+    desc:'경을 읊어 아군을 돌보고 적의 살기마저 누그러뜨립니다. 직접 싸우지는 않습니다.'}),
+  mk({id:'bajie',name:'저팔계',role:'대식가',shape:'bajie',season:'journey',rarity:'SR',gacha:true,unlockStage:999,
+    body:'#e8a8a0',accent:'#b0b6bd',tunic:'#3a4a6b',hp:2600,atk:105,range:80,speed:28,interval:1.6,
+    cost:340,kb:1,area:true,areaRadius:80,scale:1.2,
+    ab:{kbImmune:true,feast:.12},abText:'쇠스랑 · 범위 · 넉백 면역 · 처치할 때마다 체력 12% 회복',
+    desc:'아홉 날 쇠스랑을 휘두르는 대식가입니다. 쓰러뜨린 적만큼 배를 채우며 버팁니다.'}),
+  mk({id:'wujing',name:'사오정',role:'강의 수호',shape:'wujing',season:'journey',rarity:'R',gacha:true,unlockStage:999,
+    body:'#6b8fa0',accent:'#c8ced6',tunic:'#3f5a6b',hp:1250,atk:72,range:88,speed:32,interval:1.5,
+    cost:250,kb:2,area:true,areaRadius:70,
+    ab:{slow:1.2},abText:'월아산 · 범위 · 1.2초 둔화',
+    desc:'유사하의 강물에서 올라온 과묵한 장수입니다. 초승달 삽날로 적 무리의 발을 묶습니다.'}),
+  mk({id:'monkey',name:'화과산 원숭이',short:'원숭이',role:'척후',shape:'monkey',season:'journey',rarity:'R',gacha:true,unlockStage:999,
+    body:'#b0763a',accent:'#e8c65a',tunic:'#6b4a2a',hp:620,atk:52,range:62,speed:100,interval:.7,
+    cost:210,kb:3,scale:.9,
+    ab:{dodge:.3,crit:{chance:.15,mul:2}},abText:'날렵함 · 30% 회피 · 치명타 15%',
+    desc:'화과산에서 내려온 원숭이 병사입니다. 요리조리 피하며 적을 할퀴어 댑니다.'}),
+  mk({id:'celestial',name:'천병',role:'천궁 수비',shape:'celestial',season:'journey',rarity:'N',gacha:true,unlockStage:999,
+    body:'#2b3038',accent:'#e8c65a',tunic:'#8e2f3a',hp:640,atk:40,range:74,speed:42,interval:1.1,
+    cost:145,kb:2,
+    ab:{armor:.15},abText:'값싼 창방패 · 갑주 15%',
+    desc:'천궁을 지키는 하늘의 병사입니다. 싸고 단단하게 전열을 채웁니다.'}),
+  // 소환 전용
+  mk({id:'monkeyclone',name:'분신',role:'소환수',shape:'monkeyclone',unlockStage:999,
+    body:'#c98a4a',accent:'#ffd24a',tunic:'#b8322e',hp:520,atk:60,range:80,speed:60,interval:1.0,
+    cost:0,cooldown:0,kb:2,ab:{dodge:.2},
+    desc:'손오공의 털 한 가닥이 변한 분신입니다. 잠시 뒤 연기처럼 사라집니다.'})
+);
 // 전설·신화는 한 명씩만 전장에 설 수 있다. 머릿수로 밀어붙이는 병종이 아니라
 // 판을 바꾸는 특수 병종이기 때문이다.
 SEASON_UNITS.forEach(u => {
@@ -602,6 +684,13 @@ SEASON_UNITS.forEach(u => {
 });
 UNITS.push.apply(UNITS, SEASON_UNITS);
 SEASON_UNITS.forEach(u => { UNIT_BY_ID[u.id] = u; });
+
+/* 3.0: 같은 병종을 끝없이 겹쳐 세울 수 없다. 한 병종만 몰아 넣은 편성으로 전장을
+ * 다 쓸어 담던 것을 막는다(메두사 열 명이 적을 영원히 굳히는 식). 비쌀수록 적게 선다. */
+function stackCap(cost) {
+  return cost < 100 ? 12 : cost < 170 ? 9 : cost < 250 ? 6 : cost < 330 ? 4 : cost < 450 ? 3 : 2;
+}
+UNITS.forEach(u => { if (u.cost > 0 && !u.maxActive) u.maxActive = stackCap(u.cost); });
 
 UNIT_BY_ID.zeus.active={name:'천둥의 칙령',kind:'thunderseal',cd:48,radius:180,mul:3.0,stun:.8,desc:'가장 가까운 적 주변 번개 피해·0.8초 기절.'};
 UNIT_BY_ID.thor.active={name:'묠니르 강타',kind:'thunderseal',cd:45,radius:190,mul:2.6,stun:.6,desc:'가장 가까운 적 주변 충격파 피해·0.6초 기절.'};
@@ -623,7 +712,10 @@ const UNIT_COOLDOWN = {
   haetae: 21.5, dokkaebi: 22.7, catapult: 24.0, teslaknight: 24.4, rapriest: 25.3, airship: 26.6,
   artemis: 29.4, fenrir: 30.9, ares: 32.4, pharaoh: 33.6, paladin: 35.3, necro: 35.8, valkyrie: 37.1,
   saja: 41.9, anubis: 43.0, thor: 45.6, steammech: 47.5, zeus: 49.4, colossus: 52.8, mage: 55.0,
-  ra: 62.0, gumiho: 62.6, odin: 66.5, inventor: 69.4, hades: 74.5
+  ra: 62.0, gumiho: 62.6, odin: 66.5, inventor: 69.4, hades: 74.5,
+  // 3.0
+  javelin: 5.4, celestial: 6.1, monkey: 12.8, falconer: 13.0, wujing: 13.8, bellringer: 14.2,
+  alchemist: 18.0, monk: 18.8, lancer: 20.0, sanzang: 26.0, bajie: 27.5, nezha: 44.0, wukong: 68.0
 };
 const TIER_FROM = 200, TIER_TO = 560, TIER_MAX = 0.35;
 function costTierMul(cost) {
@@ -667,7 +759,11 @@ const SEASONS = [
   { id: 'clockwork', name: '태엽 공방', sub: '증기와 톱니',
     color: '#d9a066', accent: '#6b4a24',
     desc: '연기 자욱한 공방에서 발명가들이 기계 군단을 이끌고 나옵니다.',
-    units: ['inventor', 'steammech', 'airship', 'teslaknight', 'clocksoldier', 'mechanic', 'rifleman'] }
+    units: ['inventor', 'steammech', 'airship', 'teslaknight', 'clocksoldier', 'mechanic', 'rifleman'] },
+  { id: 'journey', name: '서유기', sub: '천궁 대란',
+    color: '#e8a23a', accent: '#8e3a1f',
+    desc: '구름을 타고 온 제천대성과 서역으로 가던 일행이 왕국의 전장에 내려섭니다.',
+    units: ['wukong', 'nezha', 'sanzang', 'bajie', 'wujing', 'monkey', 'celestial'] }
 ];
 
 /* 소환 풀: 시즌 병종 + (다른 시즌은 낮은 확률로) */
@@ -828,6 +924,30 @@ const ENEMIES = {
   chariot:  { name: '오크 전차', body: '#4a6b46', accent: '#8a5a2a', tunic: '#6b4a2a', shape: 'chariot',
               hp: 5200, atk: 280, range: 80, speed: 64, interval: 1.8, kb: 1, gold: 90, scale: 1.3,
               ab: { kbImmune: true, push: 35 }, abText: '돌격 전차 · 넉백 면역 · 들이받아 밀쳐 냅니다' },
+  /* ---------- 3.0 특이한 적: 편성 한 가지로는 못 받아치는 일곱 ---------- */
+  ooze:     { name: '분열 슬라임', body: '#5fae5a', accent: '#bff5a8', tunic: '#3f7a3c', shape: 'ooze',
+              hp: 1500, atk: 55, range: 60, speed: 30, interval: 1.3, kb: 1, gold: 30, scale: 1.1,
+              ab: { split: { id: 'oozelet', n: 2 } }, abText: '분열 · 쓰러지면 꼬마 슬라임 둘로 갈라집니다' },
+  oozelet:  { name: '꼬마 슬라임', body: '#7cc46e', accent: '#d8ffc8', tunic: '#4f8f48', shape: 'oozelet',
+              hp: 460, atk: 28, range: 56, speed: 46, interval: 1.0, kb: 2, gold: 6, scale: .7 },
+  mirror:   { name: '거울 마녀', body: '#5a4a6b', accent: '#bfe9ff', tunic: '#3a2a4a', shape: 'mirror',
+              hp: 1100, atk: 64, range: 220, speed: 30, interval: 1.7, kb: 2, gold: 50, ranged: true,
+              ab: { mirror: { cut: .5, reflect: .35 } }, abText: '거울 방패 · 원거리 피해 50% 감소, 35%를 쏜 자에게 되돌림' },
+  jailer:   { name: '사슬 간수', body: '#4a6b46', accent: '#9aa3ab', tunic: '#3a3f48', shape: 'jailer',
+              hp: 3400, atk: 150, range: 80, speed: 26, interval: 1.8, kb: 1, gold: 70, scale: 1.25, noReinf: true,
+              ab: { hook: { cd: 8, range: 460, stun: 1.2 } }, abText: '갈고리 사슬 · 뒤쪽 원거리 아군을 끌어와 기절시킵니다' },
+  thief:    { name: '금화 도둑', body: '#4d6b3a', accent: '#e8c65a', tunic: '#3a3a2a', shape: 'thief',
+              hp: 620, atk: 38, range: 60, speed: 108, interval: .7, kb: 2, gold: 30, scale: .85,
+              ab: { thief: { steal: 18 } }, abText: '소매치기 · 때릴 때마다 군자금을 훔치고, 쓰러뜨리면 되찾습니다' },
+  chrono:   { name: '시간 주술사', body: '#3f5a3c', accent: '#8fe0ff', tunic: '#2a3a5a', shape: 'chrono',
+              hp: 1300, atk: 50, range: 270, speed: 24, interval: 2.0, kb: 2, gold: 65, ranged: true, noReinf: true,
+              ab: { chrono: .6 }, abText: '모래시계 · 살아 있는 동안 아군 카드 재사용 대기가 40% 느려집니다' },
+  souleater:{ name: '흡혼귀', body: '#2a2438', accent: '#9d7bff', tunic: '#1c1828', shape: 'souleater',
+              hp: 2600, atk: 150, range: 70, speed: 40, interval: 1.3, kb: 1, gold: 75, scale: 1.15, noReinf: true,
+              ab: { souleater: { atk: .1, max: 10, radius: 320 } }, abText: '영혼 포식 · 근처에서 아군이 쓰러질 때마다 강해지고 회복합니다' },
+  sapper:   { name: '성벽 파괴병', body: '#4d6b3a', accent: '#c0392b', tunic: '#5a4a2f', shape: 'sapper',
+              hp: 950, atk: 0, range: 60, speed: 74, interval: 1, kb: 1, gold: 40, noReinf: true,
+              ab: { sapper: { dmg: 650, radius: 90 } }, abText: '돌파 · 병사를 무시하고 성채로 달려가 자폭합니다' },
 };
 
 /* -------------------- 전장 20개 -------------------- */
@@ -933,7 +1053,7 @@ STAGES.push(
 /* 전장 특성. 어려운 전장에는 특성이 붙어서, 스탯 높은 병종을 몰아 넣는 것만으로는
  * 풀리지 않고 그 특성을 받아칠 병종을 챙겨야 한다. */
 const STAGE_MODS = {
-  ironclad: { name: '중갑', desc: '모든 적이 방어 60% — 아군의 공격 피해가 크게 줄어듭니다 (중독·화상은 그대로)',
+  ironclad: { name: '중갑', desc: '모든 적이 방어 60%(보스는 30%) — 아군의 공격 피해가 크게 줄어듭니다 (중독·화상은 그대로)',
               counter: '토르(파쇄) · 중독 · 화상 · 태양 낙인', color: '#8fa3b5' },
   horde:    { name: '물량', desc: '적이 1.8배 많이 몰려옵니다 (하나하나는 약함)',
               counter: '범위 공격 · 연쇄 번개 · 값싼 방패 벽', color: '#c98a4b' },
@@ -946,7 +1066,7 @@ const STAGE_MODS = {
 };
 const HARD_STAGE_MODS = {
   9: ['ironclad'], 14: ['blitz'], 16: ['horde'], 17: ['ironclad', 'giantslayer'],
-  19: ['horde', 'ironclad'],
+  19: ['horde', 'ironclad', 'giantslayer'],
   21: ['horde'], 23: ['horde', 'giantslayer', 'curse'], 24: ['blitz'], 26: ['blitz', 'giantslayer', 'curse'],
   27: ['horde', 'ironclad'], 29: ['giantslayer', 'curse', 'horde', 'blitz']
 };
@@ -957,8 +1077,9 @@ STAGES[15].enemyMul = 2.3;              // 끼어 있던 보스 둘이 정예로
 STAGES[11].enemyMul = 1.78;             // 2.7: 쿨타임·비용 등급 조정 뒤 중반이 물러져서
 STAGES[12].enemyMul = 1.72;
 STAGES[16].enemyMul = 1.65;
-STAGES[17].enemyMul = 2.2;             // 2.7: 비싼 병종 강화·진화에 맞춰 다시 조율
-STAGES[19].enemyMul = 5.5;
+STAGES[17].enemyMul = 2.15;            // 2.7: 비싼 병종 강화·진화에 맞춰 다시 조율 (3.0: 보스를 반드시 쓰러뜨리게 되어 다시)
+STAGES[23].enemyMul = 6;               // 3.0: 보스 배율을 누그러뜨린 만큼 삼중 봉인 자체를 올린다
+STAGES[19].enemyMul = 3.4;             // 3.0: 대군주를 반드시 쓰러뜨려야 하는 대신 영웅 사냥꾼이 붙었다
 
 /* ------------------------------------------------------------------
  *  보스는 전장마다 하나.
@@ -987,8 +1108,24 @@ const NEW_MOB_WAVES = {
   28: [[100, 'drummer', 2, 3], [180, 'hexer', 3, 1.5]],
   29: [[160, 'burrower', 3, 1.4], [200, 'chariot', 2, 4], [230, 'assassin', 4, 1.3]]
 };
+/* 3.0 특이한 적. 한 종류씩 전장에 처음 얼굴을 비추고, 뒤로 갈수록 섞여 나온다. */
+const ODD_MOB_WAVES = {
+  5: [[30, 'thief', 2, 1.6]], 7: [[46, 'thief', 3, 1.3]], 8: [[56, 'sapper', 1]],
+  9: [[70, 'sapper', 2, 3]], 10: [[36, 'ooze', 2, 3]], 11: [[58, 'ooze', 2, 3], [88, 'thief', 3, 1.2]],
+  12: [[40, 'mirror', 2, 2.5]], 13: [[70, 'mirror', 2, 2], [96, 'sapper', 2, 3]], 14: [[50, 'ooze', 3, 2.4]],
+  15: [[70, 'jailer', 1], [110, 'mirror', 2, 2]], 16: [[60, 'jailer', 1], [100, 'thief', 4, 1]],
+  17: [[90, 'ooze', 3, 2], [130, 'sapper', 2, 2.5]], 18: [[70, 'chrono', 1], [120, 'jailer', 1]],
+  19: [[90, 'chrono', 1], [150, 'mirror', 3, 1.8]],
+  20: [[80, 'souleater', 1], [140, 'ooze', 3, 2]], 21: [[90, 'souleater', 1], [160, 'sapper', 3, 2]],
+  22: [[100, 'jailer', 2, 5], [170, 'chrono', 1]], 23: [[90, 'mirror', 3, 2], [150, 'souleater', 1]],
+  24: [[70, 'thief', 5, .9], [170, 'jailer', 1]], 25: [[100, 'ooze', 4, 1.8], [190, 'chrono', 1]],
+  26: [[120, 'souleater', 2, 4], [200, 'sapper', 3, 2]], 27: [[80, 'sapper', 3, 2], [160, 'mirror', 4, 1.6]],
+  28: [[110, 'chrono', 2, 6], [190, 'souleater', 2, 4]],
+  29: [[130, 'jailer', 2, 5], [210, 'ooze', 5, 1.5], [240, 'chrono', 1]]
+};
 STAGES.forEach((st, i) => {
   (NEW_MOB_WAVES[i] || []).forEach(([t, e, n, gap]) => st.waves.push(W(t, e, n, gap)));
+  (ODD_MOB_WAVES[i] || []).forEach(([t, e, n, gap]) => st.waves.push(W(t, e, n, gap)));
   st.waves.sort((a, b) => a.t - b.t);
 });
 
@@ -1005,7 +1142,7 @@ const STAGE_BOSS = { 4: 'lich', 9: 'troll', 12: 'lich', 14: 'troll', 16: 'frostg
                      28: 'drake', 29: 'warlord' };
 const ELITE_FOR = { troll: ['ogre', 1], lich: ['shaman', 2], frostgiant: ['golem', 1],
                     drake: ['hellhound', 3], spiderqueen: ['spider', 4], warlord: ['warchief', 1] };
-const BOSS_HP_MUL = 2.5;       // 하나뿐인 보스는 그만큼 단단하다
+const BOSS_HP_MUL = 2.0;       // 하나뿐인 보스는 그만큼 단단하다
 const BOSS_ATK_MUL = 1.2;
 (function oneBossPerStage() {
   // 잡몹은 원래 처음 나오던 전장 즈음부터만 쓴다 (1전장에 투석기가 나오면 안 된다)
@@ -1125,7 +1262,11 @@ const ENDLESS_POOL = [
   { id: 'slinger',  from: 1 },  { id: 'drummer',  from: 6 },
   { id: 'skelarcher', from: 8 },{ id: 'boneguard', from: 9 },
   { id: 'hexer',    from: 10 }, { id: 'assassin', from: 12 },
-  { id: 'burrower', from: 13 }, { id: 'chariot',  from: 15 }
+  { id: 'burrower', from: 13 }, { id: 'chariot',  from: 15 },
+  { id: 'thief',    from: 3 },  { id: 'ooze',     from: 6 },
+  { id: 'sapper',   from: 7 },  { id: 'mirror',   from: 9 },
+  { id: 'jailer',   from: 11 }, { id: 'chrono',   from: 13 },
+  { id: 'souleater', from: 14 }
 ];
 const ENDLESS_BOSSES = ['lich', 'troll', 'frostgiant', 'drake', 'warlord'];
 
@@ -1227,7 +1368,7 @@ const ACHIEVEMENTS = [
     test: s => (s.pulls || 0) >= 100 },
   { id: 'legend',   name: '신화의 계약',  desc: '전설 이상 병종 보유',              gold: 2000, stone: 2,
     test: s => SEASON_UNITS.some(u => (u.rarity === 'SSR' || u.rarity === 'UR') && s.owned && s.owned[u.id]) },
-  { id: 'allseason',name: '세 신화',      desc: '세 시즌에서 전설 이상을 각각 보유',    gold: 8000, stone: 10,
+  { id: 'allseason',name: '세 신화',      desc: '모든 시즌에서 전설 이상을 각각 보유',    gold: 8000, stone: 10,
     test: s => SEASONS.every(sn => sn.units.some(id => {
       const u = UNIT_BY_ID[id];
       return u && (u.rarity === 'SSR' || u.rarity === 'UR') && s.owned && s.owned[id];
@@ -1238,8 +1379,15 @@ const ACHIEVEMENTS = [
   { id: 'endless10',name: '끝없는 전장',  desc: '무한 전장 10웨이브 돌파',       gold: 2000, stone: 3,
     test: s => (s.endlessBest || 0) >= 10 },
   { id: 'endless25',name: '불굴의 성채',  desc: '무한 전장 25웨이브 돌파',       gold: 7000, stone: 8,
-    test: s => (s.endlessBest || 0) >= 25 }
+    test: s => (s.endlessBest || 0) >= 25 },
+  { id: 'hard1',    name: '모진 싸움',    desc: '하드코어 전장 1곳 돌파',         gold: 1000, stone: 2,
+    test: s => hardCount(s) >= 1 },
+  { id: 'hard10',   name: '강철 의지',    desc: '하드코어 전장 10곳 돌파',        gold: 5000, stone: 5,
+    test: s => hardCount(s) >= 10 },
+  { id: 'hard30',   name: '꺾이지 않는 왕국', desc: '하드코어 전장 30곳 모두 돌파', gold: 15000, stone: 15,
+    test: s => hardCount(s) >= 30 }
 ];
+function hardCount(s) { let n = 0; for (const k in (s.hard || {})) if (s.hard[k]) n++; return n; }
 
 function totalStars(s) {
   let n = 0;
@@ -1383,14 +1531,30 @@ const EVOLUTIONS = {
   teslaknight:{ name: '번개 기사단장', short: '번개단장', plus: '3번 튕김 · 기절 18%', ab: { chain: { n: 3 }, stun: { chance: 0.18 } }, cost: { atk: 0.9 } },
   clocksoldier:{ name: '태엽 척탄병', short: '태엽척탄', plus: '톱니 폭발 1.7배 · 범위 +30', mul: { 'deathBomb.dmg': 1.7 }, abAdd: { 'deathBomb.radius': 30 }, cost: { hp: 0.85 } },
   mechanic:{ name: '수석 정비공', short: '수석정비', plus: '수리할 때 보호막 70', ab: { barrier: 70 }, cost: { 'ab.heal': 0.7 } },
-  rifleman:{ name: '명사수', plus: '치명타 25% (2배)', ab: { crit: { chance: 0.25, mul: 2 } }, cost: { interval: 1.1 } }
+  rifleman:{ name: '명사수', plus: '치명타 25% (2배)', ab: { crit: { chance: 0.25, mul: 2 } }, cost: { interval: 1.1 } },
+  // 3.0 새 전장 병종
+  javelin: { name: '중투창병', plus: '투창이 줄지어 선 적을 관통', ab: { pierce: true }, cost: { interval: 1.12 } },
+  falconer:{ name: '매사냥 대장', short: '매사냥장', plus: '원거리 적에게 1.9배 · 매 두 마리', ab: { hunter: 1.9 }, cost: { hp: 0.85 } },
+  bellringer:{ name: '대성당 종지기', short: '대종지기', plus: '기절 면역 4.5초 · 종소리 보호막 80', ab: { ward: { dur: 4.5 }, barrier: 80 }, cost: { 'ab.heal': 0.5 } },
+  lancer:  { name: '성기사단 창기병', short: '성창기병', plus: '돌격 3.4배 · 넉백 면역', ab: { charge: { mul: 3.4 }, kbImmune: true }, cost: { speed: 0.9 } },
+  alchemist:{ name: '대연금술사', short: '대연금', plus: '부식 +75% · 범위 +20', add: { areaRadius: 20 }, mul: { 'sunmark.vuln': 1.75 }, cost: { 'ab.poison.dps': 0.6 } },
+  monk:    { name: '금강 무승', short: '금강승', plus: '회피 20% · 흡혈 20%', ab: { dodge: 0.2, lifesteal: 0.2 }, cost: { atk: 0.9 } },
+  // 3.0 서유기
+  wukong:  { name: '투전승불', plus: '분신 최대 6 · 여의봉 강타 강화', ab: { summon: { max: 6 } }, active: { mul: 2.9 }, cost: { atk: 0.85 } },
+  nezha:   { name: '삼두육비 나타', short: '삼두육비', plus: '화상 +50% · 혼천릉 강화', mul: { 'burn.dps': 1.5 }, active: { pull: 130, slow: 4 }, cost: { hp: 0.9 } },
+  sanzang: { name: '전단공덕불', short: '공덕불', plus: '회복 +30% · 적 공격력 -35%', mul: { heal: 1.3 }, ab: { pacify: { mul: 0.65 } }, cost: { 'ab.interval': 1.15 } },
+  bajie:   { name: '정단사자', plus: '포식 25% · 근접 피해 15% 반사', ab: { feast: 0.25, thorns: 0.15 }, cost: { speed: 0.85 } },
+  wujing:  { name: '금신나한', plus: '둔화 2초 · 12% 기절', ab: { slow: 2, stun: { chance: 0.12, dur: 0.6 } }, cost: { interval: 1.1 } },
+  monkey:  { name: '원숭이 대장', short: '원숭대장', plus: '회피 40% · 치명타 25%', ab: { dodge: 0.4, crit: { chance: 0.25, mul: 2 } }, cost: { hp: 0.85 } },
+  celestial:{ name: '천궁 근위병', short: '천궁근위', plus: '갑주 25%', ab: { armor: 0.25 }, cost: { speed: 0.85 } }
 };
 /* 대가 글에 쓰는 이름 */
 const EVO_LABELS = {
   interval: '공격 간격', atk: '공격력', hp: '체력', speed: '이동 속도', areaRadius: '공격 범위',
   'ab.heal': '회복량', 'ab.slow': '둔화 시간', 'ab.stun.chance': '기절 확률', 'ab.lifesteal': '흡혈',
   'ab.barrier': '보호막', 'ab.burn.dps': '화상 피해', 'ab.interval': '능력 주기', 'ab.radius': '능력 범위',
-  'ab.crit.chance': '치명타 확률', 'ab.spinup.per': '예열 속도', 'ab.breaker': '파쇄 배율'
+  'ab.crit.chance': '치명타 확률', 'ab.spinup.per': '예열 속도', 'ab.breaker': '파쇄 배율',
+  'ab.poison.dps': '중독 피해'
 };
 function evoCostText(e) {
   return Object.keys(e.cost || {}).map(k => {
@@ -1451,7 +1615,7 @@ function growUnit(r, lv) {
   const ab = r.ab;
   if (r.ranged && r.range) r.range = Math.round(r.range * (1 + 0.008 * k));
   if (!ab) return;
-  const support = ab.heal || ab.barrier || ab.haste || ab.cleanse || ab.rally || ab.summon;
+  const support = ab.heal || ab.barrier || ab.haste || ab.cleanse || ab.rally || ab.summon || ab.ward || ab.pacify;
   if (support && ab.interval) ab.interval = _r2(ab.interval * Math.max(0.7, 1 - 0.02 * k));
   if (ab.radius) ab.radius = Math.round(ab.radius * (1 + 0.015 * k));
   if (ab.haste) ab.haste = { mul: _r2(Math.max(0.5, ab.haste.mul - 0.008 * k)), dur: _r2(ab.haste.dur + 0.1 * k) };
@@ -1474,6 +1638,14 @@ function growUnit(r, lv) {
   if (ab.deathBomb) ab.deathBomb = { dmg: ab.deathBomb.dmg, radius: Math.round(ab.deathBomb.radius + 1.5 * k) };
   if (ab.reanimate) ab.reanimate = Object.assign({}, ab.reanimate, { max: ab.reanimate.max + Math.floor(k / 3) });
   if (ab.sunmark) ab.sunmark = { vuln: _r2(ab.sunmark.vuln + 0.006 * k), dur: ab.sunmark.dur };
+  // 3.0
+  if (ab.hunter) ab.hunter = _r2(ab.hunter + 0.01 * k);
+  if (ab.ward) ab.ward = { dur: _r2(ab.ward.dur + 0.05 * k) };
+  if (ab.charge) ab.charge = Object.assign({}, ab.charge, { mul: _r2(ab.charge.mul + 0.03 * k) });
+  if (ab.dodge) ab.dodge = _r2(Math.min(0.5, ab.dodge + 0.004 * k));
+  if (ab.feast) ab.feast = _r2(ab.feast + 0.003 * k);
+  if (ab.pacify) ab.pacify = { mul: _r2(Math.max(0.5, ab.pacify.mul - 0.005 * k)), dur: ab.pacify.dur };
+  if (ab.summon && ab.summon.life) ab.summon = Object.assign({}, ab.summon, { life: _r2(ab.summon.life + 0.1 * k) });
 }
 
 /* 병종이 하는 일을 숫자로. 훈련소가 레벨마다 무엇이 오르는지 보여 줄 때 쓴다.
@@ -1483,12 +1655,14 @@ const STAT_LABELS = {
   rally: '지휘', gold: '군자금', poison: '중독', burn: '화상', slow: '둔화', stun: '기절',
   crit: '치명타', lifesteal: '흡혈', charm: '홀림', execute: '명부', bounty: '금화', thorns: '반사',
   revive: '부활', chain: '연쇄', summon: '소환', spinup: '예열', weaken: '액막이', sunmark: '낙인',
-  reanimate: '해골', range: '사거리', sec: '초', perSec: '/초', times: '번', max: '최대'
+  reanimate: '해골', range: '사거리', sec: '초', perSec: '/초', times: '번', max: '최대',
+  hunter: '사냥', ward: '기절 면역', charge: '돌격', dodge: '회피', feast: '포식', pacify: '독경',
+  armor: '갑주', life: '유지'
 };
 function unitRoleStats(r, pw) {
   const ab = r.ab || {}, L = STAT_LABELS, out = [];
   const pct = v => Math.round(v * 100) + '%';
-  const support = ab.heal || ab.barrier || ab.haste || ab.cleanse || ab.rally || ab.summon;
+  const support = ab.heal || ab.barrier || ab.haste || ab.cleanse || ab.rally || ab.summon || ab.ward || ab.pacify;
   if (ab.heal) out.push([L.heal, Math.round(ab.heal * pw)]);
   if (ab.barrier) out.push([L.barrier, Math.round(ab.barrier * pw)]);
   if (ab.haste) out.push([L.haste, '-' + pct(1 - ab.haste.mul) + ' · ' + ab.haste.dur + L.sec]);
@@ -1513,6 +1687,14 @@ function unitRoleStats(r, pw) {
   if (ab.weaken) out.push([L.weaken, '-' + pct(1 - ab.weaken.mul)]);
   if (ab.sunmark) out.push([L.sunmark, '+' + pct(ab.sunmark.vuln)]);
   if (ab.reanimate) out.push([L.reanimate, L.max + ' ' + ab.reanimate.max]);
+  if (ab.summon && ab.summon.life) out.push([L.life, ab.summon.life + L.sec]);
+  if (ab.hunter) out.push([L.hunter, '×' + ab.hunter]);
+  if (ab.ward) out.push([L.ward, ab.ward.dur + L.sec]);
+  if (ab.charge) out.push([L.charge, '×' + ab.charge.mul]);
+  if (ab.dodge) out.push([L.dodge, pct(ab.dodge)]);
+  if (ab.feast) out.push([L.feast, pct(ab.feast)]);
+  if (ab.pacify) out.push([L.pacify, '-' + pct(1 - ab.pacify.mul)]);
+  if (ab.armor) out.push([L.armor, pct(ab.armor)]);
   return out;
 }
 
@@ -1543,6 +1725,28 @@ function unitFor(save, id) {
   return resolveUnit(u, (save && save.levels && save.levels[id]) || 1, usesEvo(save, id));
 }
 
+/* =======================================================================
+ *  하드코어. 돌파한 전장을 한 번 더, 훨씬 모질게.
+ *   - 적 체력·공격 ×1.5(최소 ×3), 적 요새 체력 ×2(최소 40000), 전장 특성 하나가 더 붙는다
+ *   - 아군 성채 체력 60%, 왕의 명령 재사용 대기 1.5배
+ *   - 이기면 보상 골드 2배, 처음 이기면 소환석 3개와 왕관 기록
+ * ======================================================================= */
+const HARDCORE = { enemyMul: 1.5, fortMul: 2, castleMul: 0.6, cmdMul: 1.5, reward: 2, stones: 3,
+                   // 앞쪽 전장도 모질게: 적 배율과 요새 체력에 바닥을 깐다 (2막 초입 수준)
+                   mulFloor: 3, fortFloor: 40000,
+                   twists: ['blitz', 'horde', 'ironclad', 'curse'] };
+function hardcoreEnemyMul(st) { return Math.max((st.enemyMul || 1) * HARDCORE.enemyMul, HARDCORE.mulFloor); }
+function hardcoreFortHp(st) { return Math.max(Math.round(st.baseHp * HARDCORE.fortMul), HARDCORE.fortFloor); }
+function hardcoreMods(st, i) {
+  const base = (st && st.mods) || [];
+  const tw = HARDCORE.twists;
+  for (let k = 0; k < tw.length; k++) {
+    const m = tw[(i + k) % tw.length];
+    if (base.indexOf(m) < 0) return base.concat([m]);
+  }
+  return base.slice();
+}
+
 function upgradeCost(key, level) {
   const u = UPGRADES[key];
   return Math.round(u.base * Math.pow(u.step, level));
@@ -1551,6 +1755,13 @@ function upgradeCost(key, level) {
 /* Tactical descriptions shared by the campaign and enemy codex. */
 function enemyTactic(e) {
   if (e.boss) return '보스 · 왕명을 아껴 폭격 후 회복';
+  if (e.ab && e.ab.split) return '분열 · 범위 공격과 화상으로 갈라진 것까지 한꺼번에';
+  if (e.ab && e.ab.mirror) return '거울 · 원거리는 튕겨 나오니 근접 병종으로 붙으세요';
+  if (e.ab && e.ab.hook) return '갈고리 · 원거리만 두면 끌려갑니다, 넉백 면역이나 종지기로';
+  if (e.ab && e.ab.thief) return '도둑 · 빨라서 둔화·장거리로 끊어야 군자금을 지킵니다';
+  if (e.ab && e.ab.chrono) return '시간술 · 뒷줄에 숨으니 매 조련사·비행선·저격수로 먼저';
+  if (e.ab && e.ab.souleater) return '포식 · 값싼 병사를 흘려보내면 커집니다, 한 번에 몰아치세요';
+  if (e.ab && e.ab.sapper) return '돌파 · 전열을 지나쳐 가니 둔화·기절·원거리로 성채 앞에서';
   if (e.ab && e.ab.leap) return '암살 · 궁수 곁에 방패병이나 근접 병종을 두세요';
   if (e.ab && e.ab.burrow) return '땅굴 · 전열을 두껍게, 기절 뒤 왕명으로 수습';
   if (e.ab && e.ab.rally) return '지휘 · 북잡이부터 원거리로 끊어 내세요';

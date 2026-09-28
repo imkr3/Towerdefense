@@ -339,9 +339,9 @@ test('A squad brings at most five legends and mythics', () => {
   assert.equal(ids.filter(id => U[id].rarity === 'UR' || U[id].rarity === 'SSR').length, 5);
   assert.ok(ids.includes('spear')); assert.ok(!ids.includes('zeus'));
 });
-test('Five seasons, every summon points at a real unit', () => {
+test('Six seasons, every summon points at a real unit', () => {
   const { SEASONS } = vm.runInContext('({SEASONS})', ctx);
-  assert.equal(SEASONS.length, 5);
+  assert.equal(SEASONS.length, 6);
   for (const sn of SEASONS) for (const id of sn.units) { assert.ok(U[id], id); assert.equal(U[id].season, sn.id); }
   for (const u of UNITS) if (u.ab && u.ab.summon) assert.ok(U[u.ab.summon.id], u.id);
 });
@@ -365,9 +365,11 @@ test('Escorts complement the boss: bruisers bring ranged, casters bring a melee 
   assert.ok(near.some(ranged), 'warlord arrives with ranged escort: ' + near);
 });
 test('The single campaign boss is much stronger; endless bosses are not', () => {
-  const { BOSS_HP_MUL } = vm.runInContext('({BOSS_HP_MUL})', ctx);
+  const { BOSS_HP_MUL, BOSS_MUL_EXP } = vm.runInContext('({BOSS_HP_MUL, BOSS_MUL_EXP})', ctx);
   const b = new Battle(9, save()); const t = b.spawnEnemy('troll', 900);
-  assert.equal(t.maxHp, Math.round(Math.round(E.troll.hp * STAGES[9].enemyMul) * BOSS_HP_MUL));
+  // 3.0: 보스는 반드시 쓰러뜨려야 하므로 전장 배율은 누그러뜨려(지수) 받는다
+  assert.equal(t.maxHp, Math.round(Math.round(E.troll.hp * Math.pow(STAGES[9].enemyMul, BOSS_MUL_EXP)) * BOSS_HP_MUL));
+  assert.ok(t.maxHp > E.troll.hp * 2);
   const en = new Battle(0, save(), makeEndlessStage()); const t2 = en.spawnEnemy('troll', 900);
   assert.equal(t2.maxHp, E.troll.hp);
 });
@@ -485,6 +487,134 @@ test('Summons grow with the summoner at half rate', () => {
   b.deploy('necro'); const n = b.allies[0]; n.abCd = 0; b.supportTick(n, b.allies, 0.01, true);
   const sk = b.allies.find(a => a.summoned);
   assert.ok(sk && sk.maxHp > U.skeleton.hp && sk.maxHp < U.skeleton.hp * 2);
+});
+
+/* ---------------- 3.0 보스의 결계 · 겹쳐 세우기 · 기절 면역 ---------------- */
+const H = vm.runInContext('({HARDCORE, hardcoreMods, hardcoreEnemyMul, hardcoreFortHp, hardCount, stackCap})', ctx);
+function bossStage(extra) { return Object.assign({ baseHp: 10000, money: 900, rate: 0, reward: 100, bossId: 'troll',
+  waves: [{ t: 999, e: 'troll', n: 1, gap: 1 }] }, extra || {}); }
+test('The fort cannot fall while the boss lives, and falls once it is slain', () => {
+  const b = new Battle(0, save(), bossStage()); b.update(1 / 30);
+  b.enemyCastle.takeDamage(1e9); assert.equal(b.enemyCastle.dead, false);
+  assert.ok(Math.abs(b.enemyCastle.hp - b.enemyCastle.maxHp * 0.05) < 1e-6, 'held at the ward floor');
+  b.update(1 / 30); assert.ok(b.wardUp());
+  const boss = b.enemies.find(e => e.boss); assert.ok(boss, 'reaching the ward calls the boss out early');
+  boss.hp = 0; boss.dead = true; b.update(1 / 30); assert.equal(b.bossDown, true);
+  b.enemyCastle.takeDamage(1e9); b.update(1 / 30); assert.equal(b.state, 'win');
+});
+test('Stages without a boss keep the old fort rules', () => {
+  const b = battle(); b.enemyCastle.takeDamage(1e9); b.update(1 / 30); assert.equal(b.state, 'win');
+});
+test('A stunned foe gets a short immunity, bosses stun for half as long', () => {
+  const b = battle(); const e = b.spawnEnemy('goblin', 900);
+  assert.equal(e.stun(1), true); assert.equal(e.stun(1), false, 'no chain stun');
+  e.stunT = 0; e.stunImm = 0; const boss = b.spawnEnemy('troll', 900);
+  boss.stun(1); assert.equal(boss.stunT, 0.5);
+  const m = b.makeAlly(U.monk, 500); assert.equal(m.stun(2), false, 'the monk is unshakable');
+});
+test('Every card unit has a stacking cap; pricier units stand in fewer copies', () => {
+  for (const u of UNITS.filter(u => u.cost > 0)) assert.ok(u.maxActive >= 1 && u.maxActive <= 12, u.id);
+  assert.ok(U.spear.maxActive > U.medusa.maxActive && U.medusa.maxActive > U.mage.maxActive);
+  const s = save(); s.owned.medusa = 1; s.loadout = ['medusa'];
+  const b = new Battle(0, s, { baseHp: 10000, money: 99999, rate: 0, waves: [], reward: 0 });
+  let n = 0; for (let i = 0; i < 10; i++) { b.cooldowns.medusa = 0; b.money = 900; if (b.deploy('medusa')) n++; }
+  assert.equal(n, U.medusa.maxActive);
+});
+test('Enemy healers mend bosses at reduced strength', () => {
+  const b = battle(); const sh = b.spawnEnemy('shaman', 900), boss = b.spawnEnemy('troll', 920), orc = b.spawnEnemy('orcspear', 910);
+  boss.hp = 1; orc.hp = 1; sh.abCd = 0; b.supportTick(sh, b.enemies, 0.01, false);
+  assert.ok(boss.hp - 1 < orc.hp - 1, 'boss heals less');
+});
+
+/* ---------------- 3.0 특이한 적 ---------------- */
+test('Splitting ooze bursts into two little oozes', () => {
+  const b = battle(); const o = b.spawnEnemy('ooze', 900); o.hp = 0; o.dead = true;
+  b.update(1 / 30); assert.equal(b.enemies.filter(e => e.kind === 'oozelet').length, 2);
+});
+test('Mirror witch halves ranged damage and bounces some back', () => {
+  const b = battle(); const w = b.spawnEnemy('mirror', 900), a = b.makeAlly(U.archer, 600);
+  const hp0 = w.hp, ahp = a.hp; b.hitOne(100, w, a, false);
+  assert.equal(hp0 - w.hp, 50); assert.ok(a.hp < ahp, 'shooter takes the reflection');
+  const k = b.makeAlly(U.knight, 880); const hp1 = w.hp; b.hitOne(100, w, k, false); assert.equal(hp1 - w.hp, 100, 'melee is not mirrored');
+});
+test('Coin thief steals funds, and slaying him returns them', () => {
+  const b = battle(); b.money = 100; const th = b.spawnEnemy('thief', 700), a = b.makeAlly(U.spear, 690);
+  b.hitOne(1, a, th, false); assert.equal(b.money, 100 - E.thief.ab.thief.steal);
+  th.hp = 0; th.dead = true; b.update(1 / 30); assert.ok(b.money >= 100);
+});
+test('Wall breaker walks past soldiers and blows up at the castle', () => {
+  const b = battle(); const sp = b.spawnEnemy('sapper', 400), a = b.makeAlly(U.shield, 380); b.allies.push(a);
+  assert.equal(b.findTarget(sp, b.allies, b.allyCastle), null, 'ignores soldiers');
+  sp.x = b.allyCastle.x + 60; const hp = b.allyCastle.hp;
+  const t = b.findTarget(sp, b.allies, b.allyCastle); assert.equal(t, b.allyCastle);
+  b.attack(sp, t, b.allies, b.allyCastle); assert.ok(b.allyCastle.hp < hp && sp.dead && sp.exploded);
+  const k = b.kills; b.update(1 / 30); assert.equal(b.kills, k, 'no bounty for a blast');
+});
+test('Chain jailer hooks the farthest ranged ally and stuns them', () => {
+  const b = battle(); const j = b.spawnEnemy('jailer', 900), near = b.makeAlly(U.spear, 800), far = b.makeAlly(U.archer, 560);
+  b.allies.push(near, far); j.hookCd = 0; b.tryHook(j, b.allies, 0.01);
+  assert.ok(Math.abs(far.x - (j.x - 40)) < 1e-6 && far.stunT > 0); assert.equal(near.x, 800);
+});
+test('Chronomancer slows card cooldowns while alive', () => {
+  const b = battle(); b.deploy('spear'); const cd = b.cooldowns.spear; b.spawnEnemy('chrono', 1700);
+  b.update(1 / 30); assert.equal(b.chronoOn, true); assert.ok(cd - b.cooldowns.spear < 1 / 30 * 0.7);
+});
+test('Soul eater grows when allies fall nearby, not from summons', () => {
+  const b = battle(); const se = b.spawnEnemy('souleater', 900); const a = b.makeAlly(U.spear, 880), sk = b.makeAlly(U.skeleton, 880);
+  sk.summoned = true; b.allies.push(a, sk); a.dead = sk.dead = true; const atk = se.atk; b.update(1 / 30);
+  assert.equal(se.souls, 1); assert.ok(se.atk > atk);
+});
+
+/* ---------------- 3.0 새 병종 ---------------- */
+test('New units: charge, dodge, feast, hunter, ward, pacify and fading clones', () => {
+  const b = battle(); const l = b.makeAlly(U.lancer, 500), g = b.spawnEnemy('orcspear', 560);
+  l.chargeDist = 999; const hp = g.hp; b.attack(l, g, b.enemies, b.enemyCastle);
+  assert.ok(hp - g.hp > l.atk * 2, 'charged hit'); assert.equal(l.chargeDist, 0);
+  const m = b.makeAlly(U.monkey, 500), undo = rnd(0); b.hitOne(100, m, g, false); undo(); assert.equal(m.hp, m.maxHp, 'dodged');
+  const pig = b.makeAlly(U.bajie, 500), gob = b.spawnEnemy('goblin', 560); pig.hp = 100; b.hitOne(9999, gob, pig, false);
+  assert.ok(pig.hp > 100, 'feast heals on kill');
+  const fal = b.makeAlly(U.falconer, 500), bal = b.spawnEnemy('ballista', 800), bhp = bal.hp; b.hitOne(100, bal, fal, false);
+  assert.equal(bhp - bal.hp, 100 * U.falconer.ab.hunter);
+  const bell = b.makeAlly(U.bellringer, 500), mate = b.makeAlly(U.spear, 520); mate.stunT = 3; bell.abCd = 0;
+  b.supportTick(bell, [bell, mate], 0.01, true); assert.equal(mate.stunT, 0); assert.equal(mate.stun(1), false, 'ward protects');
+  const s = save(); s.owned.sanzang = 1; const b2 = new Battle(0, s, { baseHp: 10000, money: 900, rate: 0, waves: [], reward: 0 });
+  const sz = b2.makeAlly(U.sanzang, 500), foe = b2.spawnEnemy('orcspear', 600); sz.abCd = 0; b2.supportTick(sz, [sz], 0.01, true);
+  assert.equal(foe.weakMul, U.sanzang.ab.pacify.mul);
+  const s3 = save(); s3.owned.wukong = 1; s3.loadout = ['wukong'];
+  const b3 = new Battle(0, s3, { baseHp: 10000, money: 9999, rate: 0, waves: [], reward: 0 }); b3.deploy('wukong');
+  const wk = b3.allies[0]; wk.abCd = 0; b3.supportTick(wk, b3.allies, 0.01, true);
+  const clones = b3.allies.filter(a => a.summoned); assert.equal(clones.length, 2);
+  b3.step(b3.allies, [], b3.enemyCastle, U.wukong.ab.summon.life + 0.1, true); assert.ok(clones.every(c => c.dead && c.vanish));
+});
+test('Every new unit and enemy has a drawing, an evolution and English text', () => {
+  const render = fs.readFileSync(path.join(__dirname, '../js/render.js'), 'utf8');
+  const i18n = fs.readFileSync(path.join(__dirname, '../js/i18n.js'), 'utf8');
+  for (const id of ['javelin', 'falconer', 'bellringer', 'lancer', 'alchemist', 'monk', 'wukong', 'nezha', 'sanzang', 'bajie', 'wujing', 'monkey', 'celestial']) {
+    assert.ok(render.indexOf("case '" + U[id].shape + "'") >= 0, id); assert.ok(G.EVOLUTIONS[id], id);
+    assert.ok(i18n.indexOf("'" + U[id].name + "'") >= 0, id + ' name translated');
+  }
+  for (const id of ['ooze', 'oozelet', 'mirror', 'jailer', 'thief', 'chrono', 'souleater', 'sapper']) {
+    assert.ok(render.indexOf("case '" + E[id].shape + "'") >= 0, id); assert.ok(i18n.indexOf("'" + E[id].name + "'") >= 0, id);
+  }
+});
+
+/* ---------------- 3.0 하드코어 ---------------- */
+test('Hardcore: tougher foes and fort, weaker castle, an extra trait', () => {
+  const s = save(), st = STAGES[2];
+  const n = new Battle(2, s), h = new Battle(2, s, null, { hard: true });
+  assert.equal(h.hard, true); assert.equal(h.enemyCastle.maxHp, H.hardcoreFortHp(st));
+  assert.ok(h.enemyCastle.maxHp > n.enemyCastle.maxHp && h.allyCastle.maxHp < n.allyCastle.maxHp && h.cmdMax > n.cmdMax);
+  assert.ok(h.spawnEnemy('goblin', 900).maxHp >= E.goblin.hp * H.HARDCORE.mulFloor - 1);
+  assert.equal(Object.keys(h.mods).length, (st.mods || []).length + 1);
+  assert.equal(new Battle(0, s, makeEndlessStage(3), { hard: true }).hard, false, 'endless is never hardcore');
+  for (let i = 0; i < STAGES.length; i++) assert.ok(H.hardcoreMods(STAGES[i], i).length >= (STAGES[i].mods || []).length);
+});
+test('Hardcore wins record a crown, pay double and stones once', () => {
+  const s = save(); s.stones = 0; const b = new Battle(2, s, null, { hard: true });
+  b.finish('win'); assert.equal(s.hard[2], true); assert.equal(b.stoneGain, H.HARDCORE.stones);
+  assert.ok(b.coins >= STAGES[2].reward * 2); assert.equal(s.cleared, 20, 'progress is untouched');
+  const b2 = new Battle(2, s, null, { hard: true }); b2.finish('win'); assert.equal(b2.stoneGain, 0);
+  assert.equal(H.hardCount(s), 1);
 });
 
 console.log(count + ' regression checks passed');

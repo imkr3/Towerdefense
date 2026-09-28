@@ -13,7 +13,7 @@ function defaultSave() {
     levels: lv, loadout: ['spear'], knownUnits: ['spear'],
     stars: {}, totalKills: 0, sound: true,
     owned: {}, stones: 3, pity: 0, mythPity: 0, season: 'olympus', pulls: 0, tutorial: false,
-    endlessBest: 0, achv: {}, daily: null, auto: false, evo: {},
+    endlessBest: 0, achv: {}, daily: null, auto: false, evo: {}, hard: {},
     stats: { battles: 0, wins: 0, bossKills: 0, trains: 0, playSec: 0 }
   };
 }
@@ -69,6 +69,10 @@ function normalizeSave(raw) {
       s.knownUnits = UNITS.filter(u => u.unlockStage <= s.cleared + 1 || (u.gacha && s.owned && s.owned[u.id])).map(u => u.id);
     }
     if (!s.stars || typeof s.stars !== 'object') s.stars = {};
+    // 하드코어 왕관: 전장 번호 → true
+    const hard = {};
+    if (s.hard && typeof s.hard === 'object') for (const k in s.hard) if (s.hard[k] === true && +k >= 0 && +k < STAGES.length) hard[k] = true;
+    s.hard = hard;
     if (typeof s.sound !== 'boolean') s.sound = true;
     if (!s.owned || typeof s.owned !== 'object') s.owned = {};
     if (!s.achv || typeof s.achv !== 'object') s.achv = {};
@@ -355,10 +359,12 @@ function renderMap() {
     if (!ch.endless) for (let i = ch.from; i < ch.to; i++) stars += save.stars[i] || 0;
     b.className = 'chapter-tab' + (c === mapChapter ? ' on' : '') + (open ? '' : ' locked');
     b.setAttribute('aria-pressed', String(c === mapChapter));
+    let crowns = 0;
+    if (!ch.endless) for (let i = ch.from; i < ch.to; i++) if (save.hard[i]) crowns++;
     b.innerHTML = '<span class="ch-name">' + (open ? '' : '🔒 ') + ch.name + '</span>' +
       '<span class="ch-sub">' + ch.sub + '</span>' +
       (ch.endless ? '<span class="ch-star">' + (save.endlessBest || 0) + '</span>'
-                  : '<span class="ch-star">★ ' + stars + '/' + ((ch.to - ch.from) * 3) + '</span>');
+                  : '<span class="ch-star">★ ' + stars + '/' + ((ch.to - ch.from) * 3) + (crowns ? ' · 💀' + crowns : '') + '</span>');
     b.addEventListener('click', () => {
       mapChapter = c;
       if (!ch.endless && (mapSel < ch.from || mapSel >= ch.to)) mapSel = Math.min(save.cleared, ch.to - 1);
@@ -410,6 +416,7 @@ function renderMap() {
     el.innerHTML =
       '<span class="stage-no">' + (locked ? '🔒' : (st.boss ? '♛' : (i + 1))) + '</span>' +
       (st.mods && !locked ? '<span class="stage-mods">' + st.mods.map(m => '<i style="background:' + STAGE_MODS[m].color + '"></i>').join('') + '</span>' : '') +
+      (save.hard[i] ? '<span class="stage-hard" title="하드코어 돌파">💀</span>' : '') +
       '<span class="stage-mark">' + (cleared ? starMarks(save.stars[i] || 0) : (i === save.cleared ? '▶' : '')) + '</span>';
     if (!locked) {
       el.addEventListener('click', () => {
@@ -463,6 +470,29 @@ function renderStageDetail(i) {
       '<span>' + stageLenLabel(st) + '</span>' +
     '</div>';
   box.appendChild(head);
+  // 하드코어: 돌파한 전장만. 무엇이 모질어지는지 한눈에.
+  const hardOpen = i < save.cleared;
+  if (hardOpen) {
+    const hc = document.createElement('div');
+    hc.className = 'sd-hard' + (save.hard[i] ? ' done' : '');
+    const extra = hardcoreMods(st, i).filter(m => !(st.mods || []).includes(m)).map(m => STAGE_MODS[m].name);
+    // 글자 조각마다 따로 감싸 둔다 — 영어일 때 조각이 통째로 번역된다
+    const w = k => '<i>' + k + '</i>';
+    hc.innerHTML = '<div class="sd-hard-txt"><b>' + (save.hard[i] ? '💀 하드코어 돌파 완료' : '💀 하드코어') + '</b>' +
+      '<span>' + w('적 체력·공격') + ' ×' + (hardcoreEnemyMul(st) / (st.enemyMul || 1)).toFixed(1) +
+      ' · ' + w('요새') + ' ' + fmtNum(hardcoreFortHp(st)) +
+      ' · ' + w('성채') + ' ' + Math.round(HARDCORE.castleMul * 100) + '% · ' + w('왕명 느림') +
+      (extra.length ? ' · ' + w('특성 +') + extra.map(w).join('·') : '') + '</span>' +
+      '<small>' + w('보상 골드') + ' ×' + HARDCORE.reward + (save.hard[i] ? '' : ' · ' + w('첫 돌파') + ' 🔮 +' + HARDCORE.stones) + '</small></div>';
+    const hb = document.createElement('button');
+    hb.className = 'btn sd-hardgo';
+    hb.id = 'btn-hardcore';
+    hb.textContent = '도전';
+    hb.setAttribute('aria-label', '하드코어 도전');
+    hb.addEventListener('click', () => startBattle(i, true));
+    hc.appendChild(hb);
+    box.appendChild(hc);
+  }
   const foes = document.createElement('div');
   foes.className = 'sd-foes';
   types.slice(0, 8).forEach(id => {
@@ -981,16 +1011,20 @@ function drawBanner(sn) {
 /* ------------------------------ 전투 ------------------------------ */
 function startEndless() {
   battle = new Battle(0, save, makeEndlessStage());
+  $('#scr-battle').classList.remove('hardcore');
   $('#battle-stage').textContent = '무한 전장 · 최고 ' + (save.endlessBest || 0) + '웨이브';
   beginBattle();
 }
 
-function startBattle(index) {
-  battle = new Battle(index, save);
-  $('#battle-stage').textContent = (index + 1) + '. ' + battle.stage.name;
+function startBattle(index, hard) {
+  battle = new Battle(index, save, null, { hard: !!hard });
+  $('#battle-stage').textContent = (hard ? '💀 ' : '') + (index + 1) + '. ' + battle.stage.name;
+  $('#scr-battle').classList.toggle('hardcore', !!hard);
   beginBattle();
   // 특성 전장은 시작하자마자 무엇이 다른지 크게 알린다
-  if (battle.stage.mods) battle.announce('전장 특성 · ' + battle.stage.mods.map(m => STAGE_MODS[m].name).join(' · '), 3.2);
+  const mods = Object.keys(battle.mods);
+  if (hard) battle.announce('하드코어 · ' + (mods.length ? mods.map(m => STAGE_MODS[m].name).join(' · ') : '적이 훨씬 모질다'), 3.4);
+  else if (mods.length) battle.announce('전장 특성 · ' + mods.map(m => STAGE_MODS[m].name).join(' · '), 3.2);
   else if (battle.stage.opening === 'calm') battle.announce('폭풍 전야 · 적이 곧 몰려옵니다', 3);
   else if (battle.stage.opening === 'sally') battle.announce('요새 반격 · 요새를 치면 수비대가 나옵니다', 3);
 }
@@ -1129,7 +1163,8 @@ function updateHud() {
   // 적이 언제 나오는지는 알려 주지 않는다. 무한 전장만 몇 웨이브째인지 보여 준다.
   const preview = battle.endless
     ? '웨이브 ' + battle.currentWave() + ' · 적 ×' + endlessMul(battle.currentWave() - 1).toFixed(1)
-    : (battle.reinforcing() ? '적 증원 중' : '');
+    : (battle.wardUp() ? '보스의 결계 · 보스를 쓰러뜨려야 요새가 무너집니다'
+      : (battle.reinforcing() ? '적 증원 중' : ''));
   const wp = $('#wave-preview');
   if (wp.textContent !== preview) wp.textContent = preview;
   wp.hidden = !preview;
@@ -1137,6 +1172,8 @@ function updateHud() {
   cmdBtn.classList.toggle('ready', ready);
   $('#cmd-cd').textContent = ready ? '준비'
     : (battle.cmdCd > 0 ? Math.ceil(battle.cmdCd) : '대기');
+  // 시간 주술사가 살아 있으면 카드가 느리게 찬다는 걸 보여 준다
+  $('#cards').classList.toggle('chrono', !!battle.chronoOn);
   $('#money-txt').textContent = money;
   $('#wallet-txt').textContent = battle.walletMax;
   $('#wallet-fill').style.width = (battle.money / battle.walletMax * 100) + '%';
@@ -1202,26 +1239,32 @@ function showResult() {
   if (battle.endless) { showEndlessResult(); return; }
 
   const win = battle.state === 'win';
-  $('#result-title').textContent = win ? '승 리' : '패 배';
+  $('#result-title').textContent = win ? (battle.hard ? '하드코어 돌파' : '승 리') : '패 배';
   $('#result-stars').innerHTML = win
-    ? starMarks(battle.stars) + (battle.newStars ? '<span class="new-star">신규</span>' : '')
+    ? (battle.hard ? '<span class="hard-crown">💀</span>' + (battle.firstHard ? '<span class="new-star">첫 돌파</span>' : '')
+                   : starMarks(battle.stars) + (battle.newStars ? '<span class="new-star">신규</span>' : ''))
     : '';
   const lines = [];
   lines.push('획득 골드 💰 ' + battle.coins +
              (battle.starBonus ? '  (별 보너스 ' + battle.starBonus + ')' : ''));
   lines.push('처치 ' + battle.kills + '  ·  남은 성채 ' +
              Math.round(battle.allyCastle.hp / battle.allyCastle.maxHp * 100) + '%');
-  if (win) {
+  if (win && battle.hard) {
+    if (battle.stoneGain) lines.push('소환석 🔮 +' + battle.stoneGain);
+    lines.push('하드코어 ' + hardCount(save) + ' / ' + STAGES.length + ' 돌파');
+  } else if (win) {
     const nextUnit = ROSTER_UNITS.find(u => u.unlockStage === battle.stageIndex + 2);
     if (nextUnit) lines.push('새 병종 해금: ' + nextUnit.name);
     if (battle.stars < 3) lines.push('성채를 더 지켜내면 ★3을 받을 수 있습니다.');
     if (battle.stoneGain) lines.push('소환석 🔮 +' + battle.stoneGain);
     if (battle.stageIndex + 1 >= STAGES.length) lines.push('왕국 방어전 전 전장 제패!');
   } else {
-    lines.push('강화를 올리거나 편성을 바꿔 다시 도전하세요!');
+    lines.push(battle.hard ? '하드코어는 강화와 편성을 끝까지 다듬어야 넘을 수 있습니다.'
+                           : '강화를 올리거나 편성을 바꿔 다시 도전하세요!');
   }
   $('#result-desc').textContent = lines.join('\n');
-  const hasNext = win && battle.stageIndex + 1 < STAGES.length;
+  // 하드코어의 다음 전장은 이미 돌파한 곳일 때만
+  const hasNext = win && battle.stageIndex + 1 < STAGES.length && (!battle.hard || battle.stageIndex + 1 < save.cleared);
   $('#btn-next').style.display = hasNext ? '' : 'none';
   $('#result').classList.add('show');
 }
@@ -1603,11 +1646,11 @@ function init() {
   initFormation();
   $('#btn-retry').addEventListener('click', () => {
     if (battle && battle.endless) startEndless();
-    else startBattle(battle.stageIndex);
+    else startBattle(battle.stageIndex, battle.hard);
   });
   $('#btn-next').addEventListener('click', () => {
     $('#btn-retry').textContent = '다시 도전';
-    startBattle(battle.stageIndex + 1);
+    startBattle(battle.stageIndex + 1, battle.hard);
   });
   $('#btn-tomap').addEventListener('click', () => {
     $('#btn-retry').textContent = '다시 도전';
