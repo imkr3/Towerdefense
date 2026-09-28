@@ -438,4 +438,53 @@ test('A sally fires once per threshold, shoves nearby allies back and releases t
   c.hp = c.maxHp * 0.3; b.checkSally(); assert.equal(b.sallyDone, 2);
 });
 
+/* ---------------- 2.7 비용 등급 · 레벨 성장 · 진화 ---------------- */
+const G = vm.runInContext('({resolveUnit, unitFor, EVOLUTIONS, EVO_LEVEL, costTierMul, unitRoleStats, evoCost})', ctx);
+test('Every card unit has its own cooldown, and pricier units wait longer', () => {
+  const cards = UNITS.filter(u => u.cost > 0);
+  assert.equal(new Set(cards.map(u => u.cooldown)).size, cards.length, 'cooldowns are unique');
+  const cheap = cards.filter(u => u.cost < 200), dear = cards.filter(u => u.cost >= 450);
+  assert.ok(Math.max(...cheap.map(u => u.cooldown)) < Math.min(...dear.map(u => u.cooldown)));
+  assert.ok(G.costTierMul(560) > G.costTierMul(300) && G.costTierMul(150) === 1);
+});
+test('Level-ups improve what a unit does, not just HP/ATK', () => {
+  const p1 = G.resolveUnit(U.priest, 1), p9 = G.resolveUnit(U.priest, 9);
+  assert.ok(p9.ab.radius > p1.ab.radius && p9.ab.interval < p1.ab.interval, 'healer: wider and more often');
+  assert.ok(G.resolveUnit(U.herald, 9).ab.haste.mul < U.herald.ab.haste.mul, 'herald: stronger haste');
+  assert.ok(G.resolveUnit(U.merchant, 9).ab.gold > U.merchant.ab.gold, 'merchant: more funds');
+  assert.ok(G.resolveUnit(U.longbow, 9).range > U.longbow.range, 'ranged: longer reach');
+  assert.equal(U.priest.ab.radius, 230, 'base data is never mutated');
+  assert.ok(G.unitRoleStats(p9, 1).length >= 3, 'role stats are shown');
+});
+test('Every card unit has a Lv10 evolution that adds something and costs something', () => {
+  for (const u of UNITS.filter(u => u.cost > 0)) {
+    const e = G.EVOLUTIONS[u.id];
+    assert.ok(e && e.name && e.plus && e.cost && Object.keys(e.cost).length, u.id);
+    assert.ok(G.evoCost(u) > 1000, u.id + ' evolution has a price');
+    const r = G.resolveUnit(u, G.EVO_LEVEL, true);
+    assert.equal(r.evo, true, u.id); assert.equal(r.name, e.name);
+    assert.ok(r.evoMinus && r.abText.indexOf(e.plus) >= 0, u.id + ' shows plus and trade-off');
+  }
+  assert.equal(G.resolveUnit(U.spear, G.EVO_LEVEL - 1, true).evo, undefined, 'no evolution below Lv10');
+  const sp = G.resolveUnit(U.spear, 10, true);
+  assert.equal(sp.range, G.resolveUnit(U.spear, 10, false).range + 20); assert.ok(sp.ab.push > 0);
+  assert.ok(sp.interval > U.spear.interval, 'trade-off applied');
+});
+test('Battles deploy the chosen form, and the base form can be switched back', () => {
+  const s = save(); s.levels = { spear: 10 }; s.loadout = ['spear'];
+  s.evo = { spear: true };
+  let b = new Battle(0, s, {baseHp:10000,money:900,rate:0,waves:[],reward:0});
+  assert.equal(b.roster[0].evo, true); b.deploy('spear'); assert.equal(b.allies[0].s.evo, true);
+  s.evo = { spear: false };
+  b = new Battle(0, s, {baseHp:10000,money:900,rate:0,waves:[],reward:0});
+  b.deploy('spear'); assert.ok(!b.allies[0].s.evo); assert.equal(b.allies[0].s.name, U.spear.name);
+});
+test('Summons grow with the summoner at half rate', () => {
+  const s = save(); s.levels = { necro: 11 }; s.loadout = ['necro'];
+  const b = new Battle(0, s, {baseHp:10000,money:900,rate:0,waves:[],reward:0});
+  b.deploy('necro'); const n = b.allies[0]; n.abCd = 0; b.supportTick(n, b.allies, 0.01, true);
+  const sk = b.allies.find(a => a.summoned);
+  assert.ok(sk && sk.maxHp > U.skeleton.hp && sk.maxHp < U.skeleton.hp * 2);
+});
+
 console.log(count + ' regression checks passed');

@@ -13,7 +13,7 @@ function defaultSave() {
     levels: lv, loadout: ['spear'], knownUnits: ['spear'],
     stars: {}, totalKills: 0, sound: true,
     owned: {}, stones: 3, pity: 0, mythPity: 0, season: 'olympus', pulls: 0, tutorial: false,
-    endlessBest: 0, achv: {}, daily: null, auto: false,
+    endlessBest: 0, achv: {}, daily: null, auto: false, evo: {},
     stats: { battles: 0, wins: 0, bossKills: 0, trains: 0, playSec: 0 }
   };
 }
@@ -58,6 +58,12 @@ function normalizeSave(raw) {
     UNITS.forEach(u => {
       s.levels[u.id] = Math.max(1, Math.floor(s.levels[u.id]) || 1);
     });
+    // 진화: 있으면 진화를 마친 병종, 값은 지금 진화 형태를 쓰는지
+    const evo = {};
+    if (s.evo && typeof s.evo === 'object') {
+      for (const k in s.evo) if (EVOLUTIONS[k] && typeof s.evo[k] === 'boolean') evo[k] = s.evo[k];
+    }
+    s.evo = evo;
     if (!Array.isArray(s.loadout)) s.loadout = [];
     if (!Array.isArray(s.knownUnits) || !Object.prototype.hasOwnProperty.call(raw, 'knownUnits')) {
       s.knownUnits = UNITS.filter(u => u.unlockStage <= s.cleared + 1 || (u.gacha && s.owned && s.owned[u.id])).map(u => u.id);
@@ -564,34 +570,75 @@ function renderTraining() {
     const atCap = lv >= cap;
     const inTeam = save.loadout.indexOf(u.id) >= 0;
     const teamFull = save.loadout.length >= LOADOUT_MAX;
+    const evoDef = EVOLUTIONS[u.id];
+    const evolved = save.evo[u.id] !== undefined;          // 진화를 마쳤나
+    const r = unitFor(save, u.id);                          // 지금 쓰는 형태
+    const vit = 1 + .08 * (save.upgrades.vitality || 0), pow = 1 + .06 * (save.upgrades.power || 0);
+    const attacks = r.atk > 0 && !(r.ab && r.ab.noAttack);
+    const roleNow = unitRoleStats(r, mul * pow);
+
+    // 다음 레벨에 무엇이 오르나 — 체력·공격만이 아니라 병종이 하는 일까지
+    let grow = '';
+    if (unlocked && !atCap) {
+      const r2 = resolveUnit(u, lv + 1, r.evo), mul2 = unitLevelMul(lv + 1);
+      const d = [['체력', Math.round(r.hp * mul * vit), Math.round(r2.hp * mul2 * vit)]];
+      if (attacks) d.push(['공격', Math.round(r.atk * mul * pow), Math.round(r2.atk * mul2 * pow)]);
+      if (r.ranged && r2.range !== r.range) d.push([STAT_LABELS.range, r.range, r2.range]);
+      const next = unitRoleStats(r2, mul2 * pow);
+      roleNow.forEach(([k, v], i) => { if (next[i] && next[i][0] === k && String(next[i][1]) !== String(v)) d.push([k, v, next[i][1]]); });
+      grow = '<div class="grow-line"><b>다음 레벨 ▲</b> ' +
+        d.map(x => '<span>' + x[0] + ' ' + x[1] + '→<i>' + x[2] + '</i></span>').join('') + '</div>';
+    }
+
+    // 진화: 레벨 10 이 되면 금화로 진화, 그 뒤로는 언제든 형태를 바꿔 쓴다
+    let evoHtml = '';
+    if (unlocked && evoDef) {
+      const minus = evoCostText(evoDef);
+      const info = '<b>✦ ' + evoDef.name + '</b> ' + evoDef.plus + (minus ? ' <em>· 대가: ' + minus + '</em>' : '');
+      if (!evolved) {
+        evoHtml = '<div class="evo-box' + (lv >= EVO_LEVEL ? ' ready' : '') + '">' +
+          '<div class="evo-info">' + (lv >= EVO_LEVEL ? '' : '<small>레벨 10에 진화</small> ') + info + '</div>' +
+          (lv >= EVO_LEVEL ? '<button class="btn evo-btn">✦ 진화 · 💰 ' + evoCost(u) + '</button>' : '') + '</div>';
+      } else {
+        const on = save.evo[u.id] === true;
+        evoHtml = '<div class="evo-box done' + (on ? ' on' : '') + '">' +
+          '<div class="evo-info">' + info + '</div>' +
+          '<div class="evo-seg" role="group" aria-label="형태 선택">' +
+            '<button class="evo-form' + (on ? '' : ' sel') + '" data-form="base">기본 형태</button>' +
+            '<button class="evo-form' + (on ? ' sel' : '') + '" data-form="evo">진화 형태</button>' +
+          '</div></div>';
+      }
+    }
 
     const el = document.createElement('div');
     el.className = 'unit-card' + (unlocked ? '' : ' dim') + (inTeam ? ' teamed' : '') +
-                   (u.gacha ? ' summoned r-' + rarityOf(u) : '');
+                   (u.gacha ? ' summoned r-' + rarityOf(u) : '') + (r.evo ? ' evolved' : '');
     el.innerHTML =
       '<div class="unit-ico">' + (unlocked ? '<canvas></canvas>' : '<span>?</span>') + '</div>' +
       '<div class="unit-body">' +
-        '<div class="unit-name">' + (unlocked ? u.name : '미합류 병종') +
+        '<div class="unit-name">' + (unlocked ? r.name : '미합류 병종') +
+          (unlocked && r.evo ? '<small class="base-name">' + u.name + '</small>' : '') +
           '<span class="unit-tag' + (unlocked ? '' : ' lock') + '">' +
           (unlocked ? u.role : u.unlockStage + '전장') + '</span>' +
           (u.gacha ? '<span class="rare-tag r-' + rarityOf(u) + '">' +
                      RARITY[rarityOf(u)].name + '</span>' : '') +
           (unlocked ? '<span class="lv-tag">레벨 ' + lv + '</span>' : '') +
           (unlocked && inTeam ? '<span class="team-tag">편성</span>' : '') + '</div>' +
-        (unlocked && u.active ? '<div class="active-desc">액티브 · ' + u.active.name + ' (' + u.active.cd + '초): ' + u.active.desc + '</div>' : '') +
-        (unlocked && u.abText ? '<div class="ab-text">◆ ' + u.abText + '</div>' : '') +
+        (unlocked && r.active ? '<div class="active-desc">액티브 · ' + r.active.name + ' (' + r.active.cd + '초): ' + r.active.desc + '</div>' : '') +
+        (unlocked && r.abText ? '<div class="ab-text">◆ ' + r.abText + '</div>' : '') +
         '<div class="unit-desc">' +
           (unlocked ? u.desc : '전장 ' + u.unlockStage + '에 도달하면 합류합니다.') + '</div>' +
         (unlocked ?
           '<div class="stat-row">' +
-            '<span class="stat">비용 ' + u.cost + '</span>' +
-            '<span class="stat hl">체력 ' + Math.round(u.hp * mul * (1 + .08 * (save.upgrades.vitality || 0))) + '</span>' +
-            (u.atk ? '<span class="stat hl">공격 ' + Math.round(u.atk * mul * (1 + .06 * (save.upgrades.power || 0))) + '</span>' : '') +
-            (u.range ? '<span class="stat">사거리 ' + u.range + '</span>' : '') +
-            '<span class="stat">속도 ' + u.speed + '</span>' +
-            '<span class="stat">쿨타임 ' + u.cooldown + '초</span>' +
-            (u.maxActive ? '<span class="stat">동시 출진 ' + u.maxActive + '명</span>' : '') +
-          '</div>' +
+            '<span class="stat">비용 ' + r.cost + '</span>' +
+            '<span class="stat hl">체력 ' + Math.round(r.hp * mul * vit) + '</span>' +
+            (attacks ? '<span class="stat hl">공격 ' + Math.round(r.atk * mul * pow) + '</span>' : '') +
+            (r.range ? '<span class="stat">사거리 ' + r.range + '</span>' : '') +
+            '<span class="stat">속도 ' + r.speed + '</span>' +
+            '<span class="stat cd">쿨타임 ' + r.cooldown + '초</span>' +
+            (r.maxActive ? '<span class="stat">동시 출진 ' + r.maxActive + '명</span>' : '') +
+            roleNow.map(([k, v]) => '<span class="stat role">' + k + ' ' + v + '</span>').join('') +
+          '</div>' + grow + evoHtml +
           '<div class="btn-row">' +
             '<button class="btn train-btn"' + (atCap ? ' disabled' : '') + '>' +
               (atCap ? (lv >= hardCap ? '최대 레벨' : '상한 도달')
@@ -604,7 +651,7 @@ function renderTraining() {
       '</div>';
 
     if (unlocked) {
-      drawUnitIcon(el.querySelector('.unit-ico canvas'), u, 54);
+      drawUnitIcon(el.querySelector('.unit-ico canvas'), r, 54);
       if (!atCap) {
         el.querySelector('.train-btn').addEventListener('click', () => {
           if (save.coins < cost) { toast('골드가 부족합니다'); return; }
@@ -616,8 +663,28 @@ function renderTraining() {
           renderTraining();
           SFX.levelUp();
           toast(u.name + ' 레벨 ' + (lv + 1) + ' 훈련 완료');
+          if (lv + 1 === EVO_LEVEL && evoDef && !evolved) setTimeout(() => toast('✦ ' + u.name + ' 진화 가능!'), 900);
         });
       }
+      const eb = el.querySelector('.evo-btn');
+      if (eb) eb.addEventListener('click', () => {
+        const price = evoCost(u);
+        if (save.coins < price) { toast('골드가 부족합니다'); return; }
+        save.coins -= price;
+        save.evo[u.id] = true;
+        saveGame(save);
+        renderTraining();
+        SFX.levelUp();
+        toast('✦ ' + u.name + ' → ' + evoDef.name + ' 진화 완료!');
+      });
+      el.querySelectorAll('.evo-form').forEach(b => b.addEventListener('click', () => {
+        const want = b.dataset.form === 'evo';
+        if (save.evo[u.id] === want) return;
+        save.evo[u.id] = want;
+        saveGame(save);
+        renderTraining();
+        toast(want ? '✦ ' + evoDef.name + ' 형태로 출진합니다' : u.name + ' 기본 형태로 출진합니다');
+      }));
       const tb = el.querySelector('.team-btn');
       if (tb && !(!inTeam && teamFull)) {
         tb.addEventListener('click', () => {
@@ -955,7 +1022,7 @@ function buildCards() {
   box.innerHTML = '';
   battle.roster.forEach((u, i) => {
     const b = document.createElement('button');
-    b.className = 'card';
+    b.className = 'card' + (u.evo ? ' evo' : '');
     b.dataset.id = u.id;
     b.style.setProperty('--role', unitRoleColor(u));
     b.title = u.name + ' · ' + u.role + '\n' + (u.abText || u.desc) + '\n단축키 ' + ((i + 1) % 10);
@@ -1070,7 +1137,7 @@ function updateHud() {
     const id = el.dataset.id;
     const cd = battle.cooldowns[id];
     const cool = el.querySelector('.cool');
-    const u = UNIT_BY_ID[id];
+    const u = battle.stats(id);
     // 전설·신화가 전장에 서 있으면 카드는 액티브 버튼이 된다
     const alive = !!(u.active && battle.heroCaster(id));
     el.classList.toggle('alive', alive);
@@ -1098,7 +1165,7 @@ function updateHud() {
     el.classList.toggle('poor', !alive && money < u.cost);
     el.classList.toggle('available', alive ? battle.canHeroActive(id) : battle.canDeploy(id));
     el.setAttribute('aria-disabled', String(!canBattleInput() || !(battle.canDeploy(id) || (u.active && battle.canHeroActive(id)))));
-    const max = UNIT_BY_ID[id].cooldown * battle.cdMul;
+    const max = u.cooldown * battle.cdMul;
     el.style.setProperty('--cooldown', (max ? cd / max * 100 : 0) + '%');
   });
 }

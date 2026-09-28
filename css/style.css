@@ -1083,3 +1083,33 @@ body{background:var(--bg0);color:var(--tx)}
   .sd-name{font-size:15px}
 }
 @media(max-width:780px){#scr-map .bar .progress{display:none}#scr-map .bar .progress-wrap{flex-basis:auto}}
+
+/* ================= 2.7 레벨 성장 · 진화 ================= */
+.stat.role{background:#1d3a36;color:#a8e6cf;border-color:#6fcf8a44}
+.stat.cd{background:#2a2438;color:#d6c3f5;border-color:#b98adf44}
+.grow-line{display:flex;flex-wrap:wrap;gap:3px 8px;align-items:baseline;margin:-2px 0 8px;font-size:10.5px;color:var(--tx2)}
+.grow-line b{color:var(--ok);font-size:10.5px;letter-spacing:.02em}
+.grow-line span{white-space:nowrap}
+.grow-line i{font-style:normal;color:#b8f0c8;font-weight:800}
+.base-name{font-size:10.5px;font-weight:600;color:var(--tx3)}
+.evo-box{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:0 0 8px;padding:7px 9px;border-radius:9px;
+  border:1px dashed #e2bf7255;background:#0b152099;font-size:11px;line-height:1.45;color:var(--tx2)}
+.evo-box .evo-info{flex:1 1 200px;min-width:0}
+.evo-box b{color:var(--au-l)}
+.evo-box em{font-style:normal;color:#f0a39a}
+.evo-box small{display:inline-block;margin-right:4px;padding:0 6px;border-radius:8px;background:#ffffff10;color:var(--tx3);font-size:9.5px}
+.evo-box.ready{border-style:solid;border-color:var(--au);background:linear-gradient(100deg,#3a2f18cc,#172839cc);
+  box-shadow:0 0 0 1px #e2bf7233,0 0 16px #e2bf7222}
+.evo-box.done{border-style:solid;border-color:#e2bf7266}
+.evo-box.done.on{background:linear-gradient(100deg,#3a2f18aa,#172839aa)}
+.evo-btn{padding:7px 12px;font-size:12px;white-space:nowrap;background:linear-gradient(180deg,#fbe3a6,#c99a52)!important;color:#2a1d08!important;
+  border-color:#fff0c0!important;animation:evoGlow 1.8s ease-in-out infinite}
+@keyframes evoGlow{0%,100%{box-shadow:0 1px 0 #fff8 inset,0 3px 0 #6b4d1c}50%{box-shadow:0 1px 0 #fff8 inset,0 3px 0 #6b4d1c,0 0 16px #f6d365aa}}
+.evo-seg{display:flex;border:1px solid var(--ln2);border-radius:8px;overflow:hidden;flex-shrink:0}
+.evo-form{border:0;background:#0b1520;color:var(--tx2);padding:6px 10px;font-size:11px;cursor:pointer;font-family:inherit}
+.evo-form+.evo-form{border-left:1px solid var(--ln)}
+.evo-form.sel{background:linear-gradient(180deg,#fbe3a6,#c99a52);color:#2a1d08;font-weight:800}
+.unit-card.evolved{border-color:#e2bf7288;box-shadow:0 0 0 1px #e2bf7233,var(--panel-shadow)}
+.unit-card.evolved .unit-ico{border-color:var(--au);box-shadow:0 0 10px #f6d36555}
+.card.evo{border-color:#e2bf72;box-shadow:0 0 0 1px #e2bf7255,0 2px 8px #0006}
+.card.evo .c-name{color:var(--au-l)}

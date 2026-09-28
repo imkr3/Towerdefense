@@ -426,6 +426,16 @@ class Renderer {
         ctx.stroke();
         ctx.globalAlpha = 1;
     }
+    if (f.s.evo) {                                         // 진화한 병사: 발밑 금빛 문양
+      const pulse = 0.85 + Math.sin(f.bob * 1.8) * 0.15;
+      ctx.globalAlpha = 0.55 * pulse;
+      ctx.strokeStyle = '#f6d365';
+      ctx.lineWidth = 1.8 * s;
+      ctx.beginPath(); ctx.ellipse(0, 1, 26 * s, 7 * s, 0, 0, 7); ctx.stroke();
+      ctx.globalAlpha = 0.3 * pulse;
+      ctx.beginPath(); ctx.ellipse(0, 1, 33 * s * pulse, 9 * s * pulse, 0, 0, 7); ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
     if (f.enraged) {                                       // 광폭화한 보스의 붉은 기운
       const pulse = 0.8 + Math.sin(f.bob * 3.2) * 0.2;
       ctx.globalAlpha = 0.45 * pulse;
@@ -1345,6 +1355,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   if (HUMANOID[st.shape]) armSwing(S);
+  if (st.evo) (NO_CAPE[st.shape] ? evoBanner : evoCape)(S);   // 진화: 등 뒤로 망토, 기계·짐승은 군기
 
   switch (st.shape) {
     /* ---------------------- 왕국군 ---------------------- */
@@ -2951,6 +2962,8 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
       legs(S); torso(S); head(S, 'cap');
   }
 
+  if (st.evo) evoCrest(S);                        // 진화: 머리 위 금빛 문장
+
   if (hurt) {
     ctx.strokeStyle = 'rgba(255,255,255,.8)';
     ctx.lineWidth = 2 * s;
@@ -2959,6 +2972,61 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
     ctx.moveTo(-2 * s, -74 * s); ctx.lineTo(-2 * s, -82 * s); ctx.stroke();
   }
   ctx.restore();
+}
+
+/* ---------------------- 진화 장식 ----------------------
+ * 병종마다 따로 그리지 않고 공통 장식을 얹는다: 등 뒤 망토, 머리 위 금빛 문장.
+ * 망토는 사람 모양이 아닌 병종(수레·짐승·기계)에는 두르지 않는다. */
+const NO_CAPE = { catapult: 1, scarab: 1, fenrir: 1, airship: 1, steammech: 1, merchant: 1,
+  medusa: 1, sniper: 1, turret: 1, barricade: 1, colossus: 1 };
+function evoCape(S) {
+  const { ctx, s } = S;
+  const w = Math.sin((S.phase || 0) * 1.3) * 3 * s + (S.moving ? 5 * s : 0);
+  ctx.fillStyle = S.flash ? '#ffffff' : (S.raw.evoCape || '#8a1f2e');
+  ctx.beginPath();
+  ctx.moveTo(-4 * s, -42 * s); ctx.lineTo(4 * s, -42 * s);
+  ctx.quadraticCurveTo(-5 * s, -24 * s, -12 * s - w, -5 * s);
+  ctx.lineTo(-24 * s - w * 1.4, -8 * s);
+  ctx.quadraticCurveTo(-15 * s, -27 * s, -4 * s, -42 * s);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = S.flash ? '#ffffff' : '#e8c65a';
+  ctx.lineWidth = 1.8 * s;
+  ctx.beginPath(); ctx.moveTo(-12 * s - w, -5 * s); ctx.lineTo(-24 * s - w * 1.4, -8 * s); ctx.stroke();
+  ctx.fillStyle = S.flash ? '#ffffff' : '#e8c65a';
+  ctx.beginPath(); ctx.arc(1 * s, -41 * s, 2.2 * s, 0, 7); ctx.fill();   // 망토 고리
+}
+function evoBanner(S) {
+  const { ctx, s } = S;
+  const wave = Math.sin((S.phase || 0) * 1.6) * 3 * s;
+  const x = -20 * s, top = -78 * s;
+  ctx.strokeStyle = S.flash ? '#ffffff' : '#6b4b2a';
+  ctx.lineWidth = 2.4 * s;
+  ctx.beginPath(); ctx.moveTo(x, -2 * s); ctx.lineTo(x, top); ctx.stroke();
+  ctx.fillStyle = S.flash ? '#ffffff' : (S.raw.evoCape || '#8a1f2e');
+  ctx.beginPath();
+  ctx.moveTo(x, top + 2 * s); ctx.lineTo(x - 22 * s, top + 6 * s + wave);
+  ctx.lineTo(x - 15 * s, top + 12 * s + wave * 0.6); ctx.lineTo(x - 22 * s, top + 18 * s + wave);
+  ctx.lineTo(x, top + 20 * s); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = S.flash ? '#ffffff' : '#e8c65a'; ctx.lineWidth = 1.4 * s; ctx.stroke();
+  ctx.fillStyle = S.flash ? '#ffffff' : '#f6d365';
+  ctx.beginPath(); ctx.arc(x, top, 2.6 * s, 0, 7); ctx.fill();
+}
+function evoCrest(S) {
+  const { ctx, s } = S;
+  const y = (-86 + Math.sin((S.phase || 0) * 2) * 2) * s;
+  const a0 = ctx.globalAlpha;
+  if (!S.flash) {
+    ctx.globalAlpha = a0 * 0.35; ctx.fillStyle = '#ffe28a';
+    ctx.beginPath(); ctx.arc(0, y, 8 * s, 0, 7); ctx.fill();
+    ctx.globalAlpha = a0;
+  }
+  ctx.fillStyle = S.flash ? '#ffffff' : '#f6d365';
+  ctx.beginPath();
+  ctx.moveTo(0, y - 7 * s); ctx.lineTo(2 * s, y - 2 * s); ctx.lineTo(7 * s, y);
+  ctx.lineTo(2 * s, y + 2 * s); ctx.lineTo(0, y + 7 * s); ctx.lineTo(-2 * s, y + 2 * s);
+  ctx.lineTo(-7 * s, y); ctx.lineTo(-2 * s, y - 2 * s); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = S.flash ? '#ffffff' : '#fff6d0';
+  ctx.beginPath(); ctx.arc(0, y, 1.6 * s, 0, 7); ctx.fill();
 }
 
 /* 걸을 때 반대쪽 팔을 흔드는 인간형 병종 */

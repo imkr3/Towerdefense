@@ -326,27 +326,42 @@ class Battle {
     const list = picked.length ? picked.map(id => UNIT_BY_ID[id]) : unlocked.slice(0, LOADOUT_MAX);
     // 전설·신화는 앞에서부터 HERO_SLOT_MAX 명까지만 데려간다
     let heroes = 0;
-    return list.filter(u => !isHeroUnit(u) || ++heroes <= HERO_SLOT_MAX).slice(0, LOADOUT_MAX);
+    return list.filter(u => !isHeroUnit(u) || ++heroes <= HERO_SLOT_MAX).slice(0, LOADOUT_MAX)
+      .map(u => this.stats(u.id));
+  }
+
+  /* 레벨·진화를 반영한 이 판의 병종 스탯 */
+  stats(id) {
+    return unitFor(this.save, id);
   }
 
   canDeploy(id) {
-    const u = UNIT_BY_ID[id];
+    const u = this.stats(id);
     return !!u && this.state === 'play' && this.roster.some(r => r.id === id) &&
       this.cooldowns[id] <= 0 && this.money >= u.cost &&
       (!u.maxActive || this.allies.filter(a => !a.dead && a.s.id === id).length < u.maxActive);
   }
 
-  makeAlly(u, x) {
-    const lm = unitLevelMul(this.levels[u.id] || 1);
+  /* owner 가 있으면 소환물이다. 소환한 병종 레벨의 절반만큼 자란다. */
+  makeAlly(u, x, owner) {
+    let st, lm;
+    if (owner) {
+      const lv = (owner.s && owner.s.level) || 1;
+      st = resolveUnit(u.base || u, 1, false);
+      lm = 1 + UNIT_LEVEL_GAIN * 0.35 * (lv - 1);
+    } else {
+      st = u.base ? u : this.stats(u.id);
+      lm = unitLevelMul(st.level || this.levels[u.id] || 1);
+    }
     const buff = { hp: this.buff.hp * lm, atk: this.buff.atk * lm };
-    const f = new Fighter(u, 'ally', x, buff);
+    const f = new Fighter(st, 'ally', x, buff);
     if (this.mods && this.mods.curse) f.healMul = CURSE_HEAL;
     return f;
   }
 
   deploy(id) {
     if (!this.canDeploy(id)) return false;
-    const u = UNIT_BY_ID[id];
+    const u = this.stats(id);
     this.money -= u.cost;
     this.cooldowns[id] = u.cooldown * this.cdMul;
     const f = this.makeAlly(u, ALLY_SPAWN_X + Math.random() * 40);
@@ -366,7 +381,7 @@ class Battle {
       .sort((a,b)=>Math.abs(a.x-f.x)-Math.abs(b.x-f.x))[0] || null;
   }
   canHeroActive(id) {
-    const f=this.heroCaster(id), u=UNIT_BY_ID[id];
+    const f=this.heroCaster(id), u=this.stats(id);
     return !!(this.state==='play' && u && u.active && this.roster.some(r=>r.id===id) && f &&
       f.stunT<=0 && f.kbTimer<=0 && (this.heroCooldowns[id]||0)<=0 && this.heroGlobalCd<=0 &&
       (u.active.barrier || u.active.haste || this.heroTarget(f)));
@@ -519,7 +534,7 @@ class Battle {
       if (raised >= r.max) continue;
       const u = UNIT_BY_ID[r.id];
       if (!u) return;
-      const m = this.makeAlly(u, corpse.x);
+      const m = this.makeAlly(u, corpse.x, h);
       m.summoned = true;
       m.raisedBy = h;
       this.allies.push(m);
@@ -792,7 +807,7 @@ class Battle {
               for (const a of this.allies) if (!a.dead && a.summonedBy === f) mine++;
               if (mine >= ab.summon.max) break;
             }
-            const m = this.makeAlly(u, sx);
+            const m = this.makeAlly(u, sx, f);
             m.summoned = true;
             m.summonedBy = f;
             this.allies.push(m);
@@ -925,7 +940,7 @@ class Battle {
           const sx = f.x - f.dir * (30 + i * 26);
           if (f.side === 'ally') {
             const u = UNIT_BY_ID[a.id];
-            if (u) { const m = this.makeAlly(u, sx); m.summoned = true; this.allies.push(m); }
+            if (u) { const m = this.makeAlly(u, sx, f); m.summoned = true; this.allies.push(m); }
           } else {
             const m = this.spawnEnemy(a.id, sx); m.summoned = true; m.wave = f.wave;
           }

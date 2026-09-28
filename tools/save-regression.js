@@ -38,6 +38,11 @@ test('Invalid and future backups are rejected without mutation',()=>{
 test('Missing primary recovers backup',()=>{
   const {store:s,data}=fixture();data.set(s.backupKey,JSON.stringify(old));assert.equal(s.read().cleared,13);
 });
+test('Evolution flags are kept and malformed ones are rejected',()=>{
+  const {store:s}=fixture();
+  assert.equal(JSON.stringify(s.parse(JSON.stringify({...old,evo:{spear:true,archer:false}})).evo),'{"spear":true,"archer":false}');
+  assert.throws(()=>s.parse(JSON.stringify({...old,evo:{spear:'yes'}})));
+});
 test('Completed original campaign and expansion progress survive backup round trips',()=>{
   const {store:s}=fixture();for(const cleared of [20,21,30]){
     const data={...old,cleared,stars:{19:3,20:2}};assert.equal(s.parse(s.export(data)).cleared,cleared);

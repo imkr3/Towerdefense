@@ -573,7 +573,7 @@ SEASON_UNITS.push(
     body:'#b08d57',accent:'#e0c080',tunic:'#6b4f2e',hp:700,atk:45,range:70,speed:40,interval:1.1,
     cost:200,cooldown:9,kb:2,
     ab:{deathBomb:{dmg:160,radius:95}},
-    abText:'쓰러지면 톱니 폭발(범위 160)',
+    abText:'쓰러지면 톱니 폭발 (피해 160)',
     desc:'태엽을 감아 움직이는 병정입니다. 부서질 때 톱니가 사방으로 튑니다.'}),
   mk({id:'mechanic',name:'정비공',role:'수리',shape:'mechanic',season:'clockwork',rarity:'R',gacha:true,unlockStage:999,
     body:'#2b3038',accent:'#f5c542',tunic:'#3e5f7a',hp:560,atk:28,range:70,speed:36,interval:1.4,
@@ -606,6 +606,36 @@ SEASON_UNITS.forEach(u => { UNIT_BY_ID[u.id] = u; });
 UNIT_BY_ID.zeus.active={name:'천둥의 칙령',kind:'thunderseal',cd:48,radius:180,mul:3.0,stun:.8,desc:'가장 가까운 적 주변 번개 피해·0.8초 기절.'};
 UNIT_BY_ID.thor.active={name:'묠니르 강타',kind:'thunderseal',cd:45,radius:190,mul:2.6,stun:.6,desc:'가장 가까운 적 주변 충격파 피해·0.6초 기절.'};
 UNIT_BY_ID.anubis.active={name:'사자의 결계',kind:'underworld',cd:50,radius:250,barrier:240,desc:'주변 아군에게 보호막·중독과 화상 정화.'};
+
+/* ------------------------------------------------------------------
+ *  비용 등급: 비싼 병종은 스펙을 크게, 대신 다시 부르기까지 오래 걸린다.
+ *  - 체력·공격은 비용 200 부터 오르기 시작해 560 에서 +50%
+ *  - 재출진 대기(쿨타임)는 병종마다 모두 다르다. 대략 2 + 0.00019×비용² 에
+ *    지원·소환 병종은 조금 더, 값싼 벽과 징집병은 조금 덜.
+ * ------------------------------------------------------------------ */
+const UNIT_COOLDOWN = {
+  spear: 2.2, shield: 5.1, hoplite: 5.7, archer: 6.0, pojol: 6.3, desertarcher: 6.6, rifleman: 6.9,
+  northarcher: 7.2, bomber: 7.8, venom: 8.9, berserk: 9.6, clocksoldier: 9.9, priest: 10.5,
+  herald: 11.1, scarab: 11.4, longbow: 11.7, spartan: 12.0, engineer: 12.2, hwarang: 12.5,
+  frost: 12.9, mudang: 13.2, knight: 13.5, pyro: 14.4, purifier: 14.6, mechanic: 14.9, medusa: 15.1,
+  duelist: 15.3, viking: 15.6, runeguard: 15.8, runeseer: 16.1, frostlancer: 16.4, bastet: 16.9,
+  musketeer: 17.4, skadi: 17.7, merchant: 18.5, rogue: 19.1, sniper: 20.3, persephone: 20.6,
+  haetae: 21.5, dokkaebi: 22.7, catapult: 24.0, teslaknight: 24.4, rapriest: 25.3, airship: 26.6,
+  artemis: 29.4, fenrir: 30.9, ares: 32.4, pharaoh: 33.6, paladin: 35.3, necro: 35.8, valkyrie: 37.1,
+  saja: 41.9, anubis: 43.0, thor: 45.6, steammech: 47.5, zeus: 49.4, colossus: 52.8, mage: 55.0,
+  ra: 62.0, gumiho: 62.6, odin: 66.5, inventor: 69.4, hades: 74.5
+};
+const TIER_FROM = 200, TIER_TO = 560, TIER_MAX = 0.35;
+function costTierMul(cost) {
+  return 1 + TIER_MAX * Math.max(0, Math.min(1, (cost - TIER_FROM) / (TIER_TO - TIER_FROM)));
+}
+UNITS.forEach(u => {
+  if (!u.cost) return;                                   // 소환물은 그대로
+  const m = costTierMul(u.cost);
+  u.hp = Math.round(u.hp * m);
+  u.atk = Math.round(u.atk * m);
+  if (UNIT_COOLDOWN[u.id] !== undefined) u.cooldown = UNIT_COOLDOWN[u.id];
+});
 
 function rollSummon(s, pick) {
   s.pity = (s.pity || 0) + 1;
@@ -889,13 +919,13 @@ STAGES.push(
     W(2,'wolf',10,.8),W(24,'dark',5,2),W(48,'frostgiant',1),W(72,'wolf',10,.8),W(96,'orccatapult',2,5),W(120,'orcberserk',7,1.2),W(148,'frostgiant',1),W(180,'golem',2,5),W(208,'wolf',12,.7)]},
   {name:'얼어붙은 공성로',hint:'공성 병기를 막을 보호막 전열 필요',baseHp:41000,money:430,rate:53,reward:1320,enemyMul:2.46,waves:[
     W(2,'orcshield',4,2),W(22,'siegeram',2,5),W(46,'ballista',6,2),W(72,'frostgiant',1),W(100,'orcshield',6,1.8),W(126,'orccatapult',3,5),W(154,'warchief',2,5),W(184,'frostgiant',1),W(214,'dark',7,1.8)]},
-  {name:'★ 영원의 겨울 왕좌',hint:'연속 광역 공격 뒤 왕명으로 회복',baseHp:44000,money:440,rate:54,reward:1600,boss:true,enemyMul:6.2,waves:[
+  {name:'★ 영원의 겨울 왕좌',hint:'연속 광역 공격 뒤 왕명으로 회복',baseHp:44000,money:440,rate:54,reward:1600,boss:true,enemyMul:11,waves:[
     W(2,'wolf',8,1),W(24,'frostgiant',1),W(52,'troll',1),W(78,'orcshield',6,1.8),W(104,'frostgiant',1),W(136,'golem',2,5),W(164,'warchief',2,5),W(192,'frostgiant',1),W(224,'orcberserk',8,1)]},
-  {name:'불타는 태양 회랑',hint:'화상을 정화하며 화룡을 견제',baseHp:45500,money:445,rate:55,reward:1500,enemyMul:3.3,waves:[
+  {name:'불타는 태양 회랑',hint:'화상을 정화하며 화룡을 견제',baseHp:45500,money:445,rate:55,reward:1500,enemyMul:5.5,waves:[
     W(2,'hellhound',9,.8),W(26,'powder',6,1.8),W(52,'drake',1),W(80,'plaguer',6,2),W(108,'orcshield',6,1.8),W(138,'drake',1),W(170,'hellhound',10,.8),W(200,'siegeram',2,4),W(230,'dark',7,1.5)]},
-  {name:'황금 일식의 제단',hint:'치유·가속 토템을 범위 공격으로 압박',baseHp:47500,money:450,rate:56,reward:1650,boss:true,enemyMul:3.05,waves:[
+  {name:'황금 일식의 제단',hint:'치유·가속 토템을 범위 공격으로 압박',baseHp:47500,money:450,rate:56,reward:1650,boss:true,enemyMul:4.2,waves:[
     W(2,'orcshield',5,2),W(26,'totem',2,6),W(50,'shaman',5,3),W(78,'warlord',1),W(108,'golem',2,5),W(140,'drake',1),W(174,'warchief',3,5),W(208,'orcberserk',8,1),W(240,'lich',2,8)]},
-  {name:'★ 세 신화의 종착지',hint:'원거리 호위를 먼저 걷어 내고, 대군주에게 액티브와 왕명을 집중하세요',baseHp:51000,money:465,rate:58,reward:2200,boss:true,enemyMul:6.2,waves:[
+  {name:'★ 세 신화의 종착지',hint:'원거리 호위를 먼저 걷어 내고, 대군주에게 액티브와 왕명을 집중하세요',baseHp:51000,money:465,rate:58,reward:2200,boss:true,enemyMul:11,waves:[
     W(2,'orcshield',5,2),W(26,'lich',1),W(52,'frostgiant',1),W(82,'drake',1),W(114,'warlord',1),W(148,'warchief',2,5),W(182,'spiderqueen',1),W(216,'golem',3,5),W(248,'warlord',1),W(276,'hellhound',10,.8)]}
 );
 
@@ -923,10 +953,12 @@ const HARD_STAGE_MODS = {
 STAGES.forEach((st, i) => { if (!st.mods && HARD_STAGE_MODS[i]) st.mods = HARD_STAGE_MODS[i]; });
 // 전설·신화 풀이 넓어질수록 몰아 넣기만 한 편성도 두루 갖춘다. 조합이 필요한
 // 1막 전장은 적 배율을 따로 올려 둔다.
-STAGES[15].enemyMul = 1.85;             // 끼어 있던 보스 둘이 정예로 바뀐 만큼
+STAGES[15].enemyMul = 2.3;              // 끼어 있던 보스 둘이 정예로 바뀐 만큼
+STAGES[11].enemyMul = 1.78;             // 2.7: 쿨타임·비용 등급 조정 뒤 중반이 물러져서
+STAGES[12].enemyMul = 1.72;
 STAGES[16].enemyMul = 1.65;
-STAGES[17].enemyMul = 1.6;
-STAGES[19].enemyMul = 1.85;
+STAGES[17].enemyMul = 2.2;             // 2.7: 비싼 병종 강화·진화에 맞춰 다시 조율
+STAGES[19].enemyMul = 5.5;
 
 /* ------------------------------------------------------------------
  *  보스는 전장마다 하나.
@@ -1252,6 +1284,249 @@ function unitTrainCost(unit, level) {
   const base = 40 + unit.cost * 0.6;
   return Math.round(base * (0.6 + 0.4 * (level || 1)));
 }
+/* =======================================================================
+ *  레벨 성장 · 진화
+ *
+ *  레벨이 오르면 체력·공격(과 그것을 따르는 회복·보호막·독 세기)만이 아니라
+ *  병종이 하는 일 자체가 좋아진다. 사제는 더 넓게·자주 고치고, 나팔수는 더
+ *  세게 불고, 상인은 더 벌고, 사수는 더 멀리 쏜다. 공격하지 않는 병종도
+ *  레벨이 헛돌지 않게 하려는 것이다.
+ *
+ *  레벨 10 이 되면 진화할 수 있다. 진화하면 이름·모습이 바뀌고 능력이
+ *  하나 붙거나 바뀐다(체력·공격 +5%). 대신 무언가 하나를 내준다. 진화한 뒤에도 훈련소에서 언제든
+ *  기본 형태로 되돌려 쓸 수 있다 — 진화가 늘 정답은 아니다.
+ * ======================================================================= */
+const EVO_LEVEL = 10;
+const EVO_STAT = 1.05;
+function evoCost(u) { return Math.round(1200 + (u.cost || 0) * 6); }
+
+/* 진화는 특화다. 좋아지는 것(plus)과 대신 잃는 것(cost)이 함께 온다.
+ *  add: 스탯에 더함 · set: 스탯을 바꿈 · ab: 능력에 덧붙임 · mul: 'poison.dps' 처럼 능력 수치를 곱함
+ *  cost: 대가. 'interval' 은 스탯, 'ab.heal' 은 능력 수치에 곱한다. 글은 자동으로 붙는다. */
+const EVOLUTIONS = {
+  spear:   { name: '근위 창병', plus: '사거리 +20 · 찌를 때 적을 밀쳐 냄', add: { range: 20 }, ab: { push: 22 }, cost: { interval: 1.1 } },
+  shield:  { name: '철벽 방패병', short: '철벽병', plus: '넉백 면역 · 근접 피해 15% 반사', ab: { kbImmune: true, thorns: 0.15 }, cost: { speed: 0.85 } },
+  archer:  { name: '명궁', plus: '치명타 25% (2.2배)', ab: { crit: { chance: 0.25, mul: 2.2 } }, cost: { interval: 1.12 } },
+  priest:  { name: '대사제', plus: '치유 범위 +40 · 중독·화상·둔화 정화', ab: { cleanse: true }, abAdd: { radius: 40 }, cost: { 'ab.heal': 0.85 } },
+  berserk: { name: '피의 광전사', short: '피광전사', plus: '다칠수록 빨라짐 · 흡혈 15%', ab: { enrage: 1.8, lifesteal: 0.15 }, cost: { hp: 0.9 } },
+  venom:   { name: '맹독 궁수', short: '맹독궁수', plus: '독이 주변으로 번짐 (범위 60)', set: { area: true, areaRadius: 60 }, cost: { interval: 1.15 } },
+  bomber:  { name: '폭약 장인', short: '폭약장인', plus: '폭발 범위 +40 · 화상', add: { areaRadius: 40 }, ab: { burn: { dps: 30, dur: 3 } }, cost: { atk: 0.85 } },
+  merchant:{ name: '왕실 조달관', short: '조달관', plus: '군자금 +40%', mul: { gold: 1.4 }, cost: { hp: 0.8 } },
+  knight:  { name: '성검 기사', short: '성검기사', plus: '범위 +20 · 흡혈 10%', add: { areaRadius: 20 }, ab: { lifesteal: 0.1 }, cost: { interval: 1.1 } },
+  frost:   { name: '빙결 마도사', short: '빙결마도', plus: '15% 확률로 얼림 (기절 0.8초)', ab: { stun: { chance: 0.15, dur: 0.8 } }, cost: { 'ab.slow': 0.7 } },
+  catapult:{ name: '화염 투석기', short: '화염투석', plus: '불붙은 바위 · 화상 · 범위 +25', add: { areaRadius: 25 }, ab: { burn: { dps: 35, dur: 4 } }, cost: { interval: 1.15 } },
+  duelist: { name: '검성', plus: '체력 15% 이하 적 즉시 처치 (보스 제외)', ab: { execute: 0.15 }, cost: { 'ab.crit.chance': 0.67 } },
+  sniper:  { name: '공성 저격수', short: '공성저격', plus: '파쇄 · 보스·중장갑에게 1.6배', ab: { breaker: 1.6 }, cost: { interval: 1.15 } },
+  mage:    { name: '대현자', plus: '기절 확률 30% · 화상', ab: { stun: { chance: 0.3, dur: 1.2 }, burn: { dps: 40, dur: 3 } }, cost: { areaRadius: 0.85 } },
+  colossus:{ name: '강철 요새', short: '강철요새', plus: '보호막 +20% · 근접 피해 20% 반사', mul: { barrier: 1.2 }, ab: { thorns: 0.2 }, cost: { speed: 0.85 } },
+  necro:   { name: '사령 군주', short: '사령군주', plus: '해골을 3기씩 소환', ab: { summon: { n: 3 } }, cost: { 'ab.interval': 1.3 } },
+  herald:  { name: '전쟁 고수', short: '전쟁고수', plus: '가속에 더해 주변 아군 공격력 +12%', ab: { rally: { atk: 0.12, radius: 240 } }, cost: { 'ab.interval': 1.2 } },
+  longbow: { name: '매의 눈', plus: '화살이 줄지어 선 적을 관통', ab: { pierce: true }, cost: { atk: 0.85 } },
+  pyro:    { name: '업화술사', short: '업화술사', plus: '화상 +35% · 범위 +20', add: { areaRadius: 20 }, mul: { 'burn.dps': 1.35 }, cost: { atk: 0.85 } },
+  paladin: { name: '빛의 수호자', short: '빛수호자', plus: '부활 체력 90% · 주변 보호막 100', ab: { revive: 0.9, barrier: 100 }, cost: { 'ab.heal': 0.6 } },
+  engineer:{ name: '요새 공병', short: '요새공병', plus: '방벽을 2개씩 설치', ab: { summon: { n: 2 } }, cost: { 'ab.interval': 1.4 } },
+  rogue:   { name: '그림자 도적', short: '그림자', plus: '치명타 35% · 2.6배', ab: { crit: { chance: 0.35, mul: 2.6 } }, cost: { 'ab.lifesteal': 0.5 } },
+  runeguard:{ name: '룬 성벽', plus: '넉백 면역 · 보호막 +30%', ab: { kbImmune: true }, mul: { barrier: 1.3 }, cost: { 'ab.radius': 0.85 } },
+  musketeer:{ name: '왕실 척탄병', short: '척탄병', plus: '20% 확률로 기절 (0.7초)', ab: { stun: { chance: 0.2, dur: 0.7 } }, cost: { interval: 1.1 } },
+  purifier:{ name: '여명의 성녀', short: '여명성녀', plus: '정화할 때 보호막 60', ab: { barrier: 60 }, cost: { 'ab.heal': 0.7 } },
+  frostlancer:{ name: '빙하 창기사', short: '빙하창기', plus: '넉백 면역 · 찌를 때 밀쳐 냄', ab: { kbImmune: true, push: 25 }, cost: { 'ab.slow': 0.6 } },
+
+  zeus:    { name: '올림포스의 왕', short: '천공왕', plus: '번개 6번 튕김 · 덜 약해짐', ab: { chain: { n: 6, fall: 0.82 } }, cost: { atk: 0.85 } },
+  ares:    { name: '전쟁의 화신', short: '전쟁화신', plus: '넉백 면역 · 광폭화 강화', ab: { kbImmune: true, enrage: 2.0 }, cost: { 'ab.lifesteal': 0.5 } },
+  artemis: { name: '달의 여신', short: '달의여신', plus: '달빛 화살 · 둔화 · 치명타 20%', ab: { slow: 1.2, crit: { chance: 0.2, mul: 2 } }, cost: { interval: 1.1 } },
+  medusa:  { name: '고르곤 여왕', short: '고르곤', plus: '석화의 시선이 주변으로 퍼짐', set: { area: true, areaRadius: 70 }, cost: { 'ab.stun.chance': 0.6 } },
+  spartan: { name: '스파르타 왕', short: '스파르타왕', plus: '주변 아군 공격력 +12% · 반사 15%', ab: { thorns: 0.15, rally: { atk: 0.12, radius: 180 }, interval: 3 }, cost: { atk: 0.85 } },
+  thor:    { name: '천둥의 신', short: '천둥신', plus: '묠니르 번개가 2번 튕김', ab: { chain: { n: 2, fall: 0.5, range: 120 } }, cost: { 'ab.breaker': 0.89 } },
+  valkyrie:{ name: '발키리 대장', short: '발키리장', plus: '부활 체력 80% · 주변 보호막 90', ab: { revive: 0.8, barrier: 90 }, cost: { 'ab.heal': 0.5 } },
+  fenrir:  { name: '종말의 늑대', short: '종말늑대', plus: '치명타 25% · 12% 기절', ab: { crit: { chance: 0.25, mul: 2.2 }, stun: { chance: 0.12, dur: 0.6 } }, cost: { 'ab.lifesteal': 0.6 } },
+  viking:  { name: '바이킹 족장', short: '족장', plus: '도끼질이 범위 공격으로', set: { area: true, areaRadius: 70 }, cost: { interval: 1.15 } },
+  runeseer:{ name: '룬 현자', plus: '중독·화상·둔화 정화 추가', ab: { cleanse: true }, cost: { 'ab.barrier': 0.8 } },
+  anubis:  { name: '명계의 심판자', short: '심판자', plus: '미라를 2기씩 · 사자의 결계 강화', ab: { summon: { n: 2 } }, active: { barrier: 300 }, cost: { 'ab.interval': 1.35 } },
+  rapriest:{ name: '태양의 대사제', short: '태양사제', plus: '태양 낙인 (받는 피해 +15%)', ab: { sunmark: { vuln: 0.15, dur: 3 } }, cost: { 'ab.burn.dps': 0.7 } },
+  scarab:  { name: '태양 스카라베', short: '태양풍뎅', plus: '군자금 +50% · 때리면 금화', mul: { gold: 1.5 }, ab: { bounty: { chance: 0.2, gold: 8 } }, cost: { hp: 0.8 } },
+  desertarcher:{ name: '사막의 매', short: '사막의매', plus: '불화살 · 화상', ab: { burn: { dps: 20, dur: 3 } }, cost: { atk: 0.85 } },
+  hoplite: { name: '방진 창병', short: '방진창병', plus: '넉백 면역', ab: { kbImmune: true }, cost: { speed: 0.85 } },
+  northarcher:{ name: '서리 궁수', short: '서리궁수', plus: '서리 화살 · 둔화', ab: { slow: 0.8 }, cost: { atk: 0.85 } },
+  pharaoh: { name: '불멸 근위대', short: '불멸근위', plus: '한 번 쓰러져도 부활', ab: { revive: 0.5 }, cost: { 'ab.barrier': 0.7 } },
+  hades:   { name: '명계의 왕', short: '명계왕', plus: '해골 최대 11 · 명계의 문 강화', ab: { reanimate: { max: 11 } }, active: { mul: 3.0 }, cost: { atk: 0.85 } },
+  odin:    { name: '만물의 아버지', short: '만물의부', plus: '지휘 +45% · 범위 확대', ab: { rally: { atk: 0.45, radius: 340 } }, cost: { interval: 1.2 } },
+  ra:      { name: '태양의 화신', short: '태양화신', plus: '낙인 피해 +40% · 태양의 심판 강화', ab: { sunmark: { vuln: 0.4 } }, active: { mul: 3.3 }, cost: { atk: 0.85 } },
+  persephone:{ name: '명계의 여왕', short: '명계여왕', plus: '회복 +30% · 꽃잎 탄환 둔화', mul: { heal: 1.3 }, ab: { slow: 0.8 }, cost: { atk: 0.7 } },
+  skadi:   { name: '겨울의 여왕', short: '겨울여왕', plus: '서리 화살이 관통', ab: { pierce: true }, cost: { 'ab.slow': 0.6 } },
+  bastet:  { name: '황금 수호신', short: '황금수호', plus: '치명타 30% · 때리면 금화', ab: { crit: { chance: 0.3, mul: 2.2 }, bounty: { chance: 0.15, gold: 8 } }, cost: { 'ab.lifesteal': 0.5 } },
+  gumiho:  { name: '천년 구미호', short: '천년여우', plus: '홀림 확률 35% · 여우 구슬 강화', ab: { charm: { chance: 0.35 } }, active: { charm: 5 }, cost: { areaRadius: 0.8 } },
+  saja:    { name: '저승 차사', short: '차사', plus: '명부 26% · 명부 호명 강화', ab: { execute: 0.26 }, active: { execute: 0.42 }, cost: { interval: 1.1 } },
+  dokkaebi:{ name: '도깨비 대장', short: '도깨비장', plus: '금 나올 확률 45% · 한 번에 +22', ab: { bounty: { chance: 0.45, gold: 22 } }, cost: { atk: 0.85 } },
+  haetae:  { name: '해치 수호왕', short: '수호왕', plus: '근접 피해 45% 반사', ab: { thorns: 0.45 }, cost: { atk: 0.8 } },
+  mudang:  { name: '큰무당', plus: '액막이가 주변에 퍼짐 · 적 공격력 -40%', set: { area: true, areaRadius: 60 }, ab: { weaken: { mul: 0.6 } }, cost: { interval: 1.15 } },
+  hwarang: { name: '화랑 대장', short: '화랑대장', plus: '흡혈 20% · 치명타 20%', ab: { lifesteal: 0.2, crit: { chance: 0.2, mul: 2 } }, cost: { hp: 0.9 } },
+  pojol:   { name: '포도대장', plus: '12% 확률로 기절', ab: { stun: { chance: 0.12, dur: 0.6 } }, cost: { interval: 1.1 } },
+  inventor:{ name: '천재 발명가', short: '천재발명', plus: '포탑 최대 4 · 설치가 빨라짐', ab: { summon: { max: 4 }, interval: 6 }, cost: { atk: 0.8 } },
+  steammech:{ name: '증기 요새', short: '증기요새', plus: '예열 최대 2.6배 · 넉백 면역', ab: { spinup: { max: 1.6 }, kbImmune: true }, cost: { 'ab.spinup.per': 0.8 } },
+  airship: { name: '비행 전함', short: '비행전함', plus: '폭격 범위 +25 · 화상 +40%', add: { areaRadius: 25 }, mul: { 'burn.dps': 1.4 }, cost: { interval: 1.1 } },
+  teslaknight:{ name: '번개 기사단장', short: '번개단장', plus: '3번 튕김 · 기절 18%', ab: { chain: { n: 3 }, stun: { chance: 0.18 } }, cost: { atk: 0.9 } },
+  clocksoldier:{ name: '태엽 척탄병', short: '태엽척탄', plus: '톱니 폭발 1.7배 · 범위 +30', mul: { 'deathBomb.dmg': 1.7 }, abAdd: { 'deathBomb.radius': 30 }, cost: { hp: 0.85 } },
+  mechanic:{ name: '수석 정비공', short: '수석정비', plus: '수리할 때 보호막 70', ab: { barrier: 70 }, cost: { 'ab.heal': 0.7 } },
+  rifleman:{ name: '명사수', plus: '치명타 25% (2배)', ab: { crit: { chance: 0.25, mul: 2 } }, cost: { interval: 1.1 } }
+};
+/* 대가 글에 쓰는 이름 */
+const EVO_LABELS = {
+  interval: '공격 간격', atk: '공격력', hp: '체력', speed: '이동 속도', areaRadius: '공격 범위',
+  'ab.heal': '회복량', 'ab.slow': '둔화 시간', 'ab.stun.chance': '기절 확률', 'ab.lifesteal': '흡혈',
+  'ab.barrier': '보호막', 'ab.burn.dps': '화상 피해', 'ab.interval': '능력 주기', 'ab.radius': '능력 범위',
+  'ab.crit.chance': '치명타 확률', 'ab.spinup.per': '예열 속도', 'ab.breaker': '파쇄 배율'
+};
+function evoCostText(e) {
+  return Object.keys(e.cost || {}).map(k => {
+    const d = Math.round((e.cost[k] - 1) * 100);
+    return (EVO_LABELS[k] || k) + ' ' + (d > 0 ? '+' : '') + d + '%';
+  }).join(' · ');
+}
+
+/* 진화 망토 색: 근접은 진홍, 원거리는 청람, 지원은 보라 */
+function evoCapeColor(u) {
+  if (u.ab && (u.ab.noAttack || u.ab.heal || u.ab.barrier || u.ab.haste)) return '#5a2f86';
+  return u.ranged ? '#1f4f8a' : '#8a1f2e';
+}
+
+function _getPath(o, path) { const k = path.split('.'); for (const p of k) { if (!o) return undefined; o = o[p]; } return o; }
+function _setPath(o, path, v) { const k = path.split('.'); for (let i = 0; i < k.length - 1; i++) o = o[k[i]]; o[k[k.length - 1]] = v; }
+function _r2(v) { return Math.round(v * 100) / 100; }
+
+function applyEvolution(r, e) {
+  r.evo = true;
+  r.baseName = r.name;
+  r.name = e.name;
+  r.short = e.short || e.name;
+  r.hp = Math.round(r.hp * EVO_STAT);
+  r.atk = Math.round(r.atk * EVO_STAT);
+  r.scale = _r2((r.scale || 1) * 1.08);
+  r.evoCape = e.cape || evoCapeColor(r);
+  r.evoPlus = e.plus;
+  r.abText = (r.abText ? r.abText + ' · ' : '') + '✦ ' + e.plus;
+  if (e.add) for (const k in e.add) r[k] = (r[k] || 0) + e.add[k];
+  if (e.set) Object.assign(r, e.set);
+  if (e.ab) {
+    r.ab = r.ab || {};
+    for (const k in e.ab) {
+      const v = e.ab[k];
+      r.ab[k] = (v && typeof v === 'object' && r.ab[k] && typeof r.ab[k] === 'object')
+        ? Object.assign({}, r.ab[k], v) : (v && typeof v === 'object' ? Object.assign({}, v) : v);
+    }
+    if (r.ab.summon && !r.ab.summon.id) r.ab.summon.id = 'skeleton';
+    if (r.ab.rally && !r.ab.interval) r.ab.interval = 3;
+    if (r.ab.barrier && !r.ab.radius) r.ab.radius = 180;
+    if (r.ab.barrier && !r.ab.interval) r.ab.interval = 5;
+  }
+  if (e.mul) for (const k in e.mul) { const v = _getPath(r.ab, k); if (typeof v === 'number') _setPath(r.ab, k, _r2(v * e.mul[k])); }
+  if (e.abAdd) for (const k in e.abAdd) { const v = _getPath(r.ab, k); if (typeof v === 'number') _setPath(r.ab, k, v + e.abAdd[k]); }
+  if (e.active && r.active) Object.assign(r.active, e.active);
+  if (e.cost) for (const k in e.cost) {
+    if (k.indexOf('ab.') === 0) { const v = _getPath(r.ab, k.slice(3)); if (typeof v === 'number') _setPath(r.ab, k.slice(3), _r2(v * e.cost[k])); }
+    else if (typeof r[k] === 'number') r[k] = k === 'interval' ? _r2(r[k] * e.cost[k]) : Math.round(r[k] * e.cost[k]);
+  }
+  r.evoMinus = evoCostText(e);
+}
+
+/* 레벨이 오를 때 체력·공격 말고 좋아지는 것들. k = 레벨 - 1 */
+function growUnit(r, lv) {
+  const k = Math.max(0, (lv || 1) - 1);
+  if (!k) return;
+  const ab = r.ab;
+  if (r.ranged && r.range) r.range = Math.round(r.range * (1 + 0.008 * k));
+  if (!ab) return;
+  const support = ab.heal || ab.barrier || ab.haste || ab.cleanse || ab.rally || ab.summon;
+  if (support && ab.interval) ab.interval = _r2(ab.interval * Math.max(0.7, 1 - 0.02 * k));
+  if (ab.radius) ab.radius = Math.round(ab.radius * (1 + 0.015 * k));
+  if (ab.haste) ab.haste = { mul: _r2(Math.max(0.5, ab.haste.mul - 0.008 * k)), dur: _r2(ab.haste.dur + 0.1 * k) };
+  if (ab.rally) ab.rally = { atk: _r2(ab.rally.atk + 0.01 * k), radius: Math.round(ab.rally.radius * (1 + 0.015 * k)) };
+  if (ab.gold) ab.gold = _r2(ab.gold * (1 + 0.06 * k));
+  if (typeof ab.slow === 'number') ab.slow = _r2(ab.slow * (1 + 0.03 * k));
+  if (ab.stun) ab.stun = { chance: _r2(Math.min(ab.stun.chance + 0.12, ab.stun.chance + 0.008 * k)), dur: ab.stun.dur };
+  if (ab.crit) ab.crit = { chance: _r2(Math.min(0.6, ab.crit.chance + 0.008 * k)), mul: ab.crit.mul };
+  if (ab.poison) ab.poison = { dps: ab.poison.dps, dur: _r2(ab.poison.dur + 0.1 * k) };
+  if (ab.burn) ab.burn = { dps: ab.burn.dps, dur: _r2(ab.burn.dur + 0.08 * k) };
+  if (ab.charm) ab.charm = { chance: _r2(Math.min(0.6, ab.charm.chance + 0.006 * k)), dur: ab.charm.dur };
+  if (ab.weaken) ab.weaken = { mul: _r2(Math.max(0.5, ab.weaken.mul - 0.006 * k)), dur: ab.weaken.dur };
+  if (ab.execute) ab.execute = _r2(Math.min(0.5, ab.execute + 0.004 * k));
+  if (ab.bounty) ab.bounty = { chance: _r2(Math.min(0.8, ab.bounty.chance + 0.01 * k)), gold: ab.bounty.gold };
+  if (ab.lifesteal) ab.lifesteal = _r2(ab.lifesteal + 0.004 * k);
+  if (ab.thorns) ab.thorns = _r2(ab.thorns + 0.01 * k);
+  if (ab.revive) ab.revive = _r2(Math.min(1, ab.revive + 0.02 * k));
+  if (ab.chain) ab.chain = Object.assign({}, ab.chain, { fall: _r2(Math.min(0.95, ab.chain.fall + 0.008 * k)) });
+  if (ab.spinup) ab.spinup = { per: ab.spinup.per, max: _r2(ab.spinup.max + 0.03 * k) };
+  if (ab.deathBomb) ab.deathBomb = { dmg: ab.deathBomb.dmg, radius: Math.round(ab.deathBomb.radius + 1.5 * k) };
+  if (ab.reanimate) ab.reanimate = Object.assign({}, ab.reanimate, { max: ab.reanimate.max + Math.floor(k / 3) });
+  if (ab.sunmark) ab.sunmark = { vuln: _r2(ab.sunmark.vuln + 0.006 * k), dur: ab.sunmark.dur };
+}
+
+/* 병종이 하는 일을 숫자로. 훈련소가 레벨마다 무엇이 오르는지 보여 줄 때 쓴다.
+ * pw: 레벨·강화 배율 — 회복·보호막·독·화상 세기는 공격 배율을 따른다. */
+const STAT_LABELS = {
+  heal: '회복', barrier: '보호막', radius: '효과 범위', interval: '능력 주기', haste: '가속',
+  rally: '지휘', gold: '군자금', poison: '중독', burn: '화상', slow: '둔화', stun: '기절',
+  crit: '치명타', lifesteal: '흡혈', charm: '홀림', execute: '명부', bounty: '금화', thorns: '반사',
+  revive: '부활', chain: '연쇄', summon: '소환', spinup: '예열', weaken: '액막이', sunmark: '낙인',
+  reanimate: '해골', range: '사거리', sec: '초', perSec: '/초', times: '번', max: '최대'
+};
+function unitRoleStats(r, pw) {
+  const ab = r.ab || {}, L = STAT_LABELS, out = [];
+  const pct = v => Math.round(v * 100) + '%';
+  const support = ab.heal || ab.barrier || ab.haste || ab.cleanse || ab.rally || ab.summon;
+  if (ab.heal) out.push([L.heal, Math.round(ab.heal * pw)]);
+  if (ab.barrier) out.push([L.barrier, Math.round(ab.barrier * pw)]);
+  if (ab.haste) out.push([L.haste, '-' + pct(1 - ab.haste.mul) + ' · ' + ab.haste.dur + L.sec]);
+  if (ab.rally) out.push([L.rally, '+' + pct(ab.rally.atk)]);
+  if (ab.gold) out.push([L.gold, '+' + ab.gold + L.perSec]);
+  if (ab.summon) out.push([L.summon, (ab.summon.n || 1) + (ab.summon.max ? ' · ' + L.max + ' ' + ab.summon.max : '')]);
+  if (ab.radius && support) out.push([L.radius, ab.radius]);
+  if (ab.interval && support) out.push([L.interval, ab.interval + L.sec]);
+  if (ab.poison) out.push([L.poison, Math.round(ab.poison.dps * pw) + L.perSec + ' · ' + ab.poison.dur + L.sec]);
+  if (ab.burn) out.push([L.burn, Math.round(ab.burn.dps * pw) + L.perSec + ' · ' + ab.burn.dur + L.sec]);
+  if (typeof ab.slow === 'number') out.push([L.slow, ab.slow + L.sec]);
+  if (ab.stun) out.push([L.stun, pct(ab.stun.chance)]);
+  if (ab.crit) out.push([L.crit, pct(ab.crit.chance) + ' ×' + ab.crit.mul]);
+  if (ab.lifesteal) out.push([L.lifesteal, pct(ab.lifesteal)]);
+  if (ab.charm) out.push([L.charm, pct(ab.charm.chance)]);
+  if (ab.execute) out.push([L.execute, pct(ab.execute)]);
+  if (ab.bounty) out.push([L.bounty, pct(ab.bounty.chance) + ' · +' + ab.bounty.gold]);
+  if (ab.thorns) out.push([L.thorns, pct(ab.thorns)]);
+  if (ab.revive) out.push([L.revive, pct(ab.revive)]);
+  if (ab.chain) out.push([L.chain, ab.chain.n + L.times]);
+  if (ab.spinup) out.push([L.spinup, '×' + (1 + ab.spinup.max).toFixed(1)]);
+  if (ab.weaken) out.push([L.weaken, '-' + pct(1 - ab.weaken.mul)]);
+  if (ab.sunmark) out.push([L.sunmark, '+' + pct(ab.sunmark.vuln)]);
+  if (ab.reanimate) out.push([L.reanimate, L.max + ' ' + ab.reanimate.max]);
+  return out;
+}
+
+/* 레벨·진화를 반영한 병종. 전투·카드·훈련소가 모두 이것을 본다. */
+const _resolved = {};
+function resolveUnit(u, lv, evo) {
+  if (!u) return u;
+  lv = Math.max(1, lv || 1);
+  const ev = !!(evo && EVOLUTIONS[u.id] && lv >= EVO_LEVEL);
+  const key = u.id + '|' + lv + '|' + (ev ? 1 : 0);
+  if (_resolved[key]) return _resolved[key];
+  const r = Object.assign({}, u);
+  r.base = u;
+  r.level = lv;
+  r.ab = u.ab ? JSON.parse(JSON.stringify(u.ab)) : null;
+  if (u.active) r.active = Object.assign({}, u.active);
+  if (ev) applyEvolution(r, EVOLUTIONS[u.id]);
+  growUnit(r, lv);
+  _resolved[key] = r;
+  return r;
+}
+/* 저장에서 이 병종이 지금 진화 형태를 쓰는가 */
+function usesEvo(save, id) {
+  return !!(save && save.evo && save.evo[id] === true && (save.levels && save.levels[id] || 1) >= EVO_LEVEL);
+}
+function unitFor(save, id) {
+  const u = UNIT_BY_ID[id];
+  return resolveUnit(u, (save && save.levels && save.levels[id]) || 1, usesEvo(save, id));
+}
+
 function upgradeCost(key, level) {
   const u = UPGRADES[key];
   return Math.round(u.base * Math.pow(u.step, level));

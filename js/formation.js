@@ -123,7 +123,8 @@ function renderFormation() {
 
 function unitTileHTML(u, sub) {
   const lv = save.levels[u.id] || 1;
-  return '<canvas></canvas><span class="ft-name">' + (u.short || u.name) + '</span>' +
+  const v = unitFor(save, u.id);                // 진화 형태면 그 이름으로
+  return '<canvas></canvas><span class="ft-name">' + (v.evo ? '✦' : '') + (v.short || v.name) + '</span>' +
     '<span class="ft-sub">' + sub + '</span><span class="ft-lv">' + lv + '</span>';
 }
 
@@ -145,7 +146,7 @@ function renderFormationSlots() {
       if (u.ranged) ranged++;
       slot.innerHTML = '<span class="fs-key">' + ((i + 1) % 10) + '</span>' + unitTileHTML(u, '💰' + u.cost);
       slot.setAttribute('aria-label', (i + 1) + '번 칸 ' + u.name);
-      drawUnitIcon(slot.querySelector('canvas'), u, 38);
+      drawUnitIcon(slot.querySelector('canvas'), unitFor(save, u.id), 38);
       const x = document.createElement('button');
       x.type = 'button';
       x.className = 'fs-remove';
@@ -199,7 +200,7 @@ function renderFormationPool() {
     el.setAttribute('aria-pressed', String(inTeam));
     el.setAttribute('aria-label', u.name + (inTeam ? ' 편성됨' : ''));
     el.innerHTML = unitTileHTML(u, '💰' + u.cost) + (inTeam ? '<span class="ft-check">✓</span>' : '');
-    drawUnitIcon(el.querySelector('canvas'), u, 38);
+    drawUnitIcon(el.querySelector('canvas'), unitFor(save, u.id), 38);
     el.addEventListener('pointerdown', e => dragDown(e, { kind: 'pool', id: u.id }, el));
     el.addEventListener('keydown', e => {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fmFocus = u.id; toggleUnit(u.id); }
@@ -213,7 +214,7 @@ function renderFormationPool() {
 function renderFormationSide() {
   const side = $('#formation-side');
   side.innerHTML = '';
-  const u = UNIT_BY_ID[fmFocus];
+  const u = UNIT_BY_ID[fmFocus] ? unitFor(save, fmFocus) : null;
   if (u) {
     const info = document.createElement('div');
     info.className = 'fs-info';

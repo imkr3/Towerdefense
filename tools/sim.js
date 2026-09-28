@@ -41,10 +41,12 @@ function loadEngine(seed) {
   ctx.globalThis = ctx;
   vm.createContext(ctx);
   for (const f of ['js/data.js', 'js/game.js']) {
-    vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), ctx, { filename: f });
+    let src = fs.readFileSync(path.join(ROOT, f), 'utf8');
+    if (process.env.SIM_PATCH) for (const kv of process.env.SIM_PATCH.split(';;')) { const [a, b] = kv.split('=>'); if (src.includes(a)) src = src.split(a).join(b); }
+    vm.runInContext(src, ctx, { filename: f });
   }
   return vm.runInContext(
-    '({Battle, STAGES, UNITS, UNIT_BY_ID, ROSTER_UNITS, LOADOUT_MAX, HERO_SLOT_MAX, unitLevelCap, unitTrainCost, UPGRADES})',
+    '({Battle, STAGES, UNITS, UNIT_BY_ID, ROSTER_UNITS, LOADOUT_MAX, HERO_SLOT_MAX, unitLevelCap, unitTrainCost, UPGRADES, EVO_LEVEL, EVOLUTIONS})',
     ctx);
 }
 
@@ -156,8 +158,11 @@ function runStage(g, index, upLv, unitLv, trace, gacha, basic) {
   const owned = {};
   if (gacha) g.UNITS.forEach(u => { if (u.gacha) owned[u.id] = 1; });
 
+  // 레벨 10 을 넘긴 병종은 진화해 있다고 본다 (실제 플레이어도 그렇게 쓴다)
+  const evo = {};
+  if (!process.env.SIM_NOEVO && Math.min(unitLv, cap) >= g.EVO_LEVEL) g.UNITS.forEach(u => { if (g.EVOLUTIONS[u.id]) evo[u.id] = true; });
   const save = {
-    cleared: index, coins: 0, levels: levels, loadout: loadout, stars: {}, owned: owned,
+    cleared: index, coins: 0, levels: levels, loadout: loadout, stars: {}, owned: owned, evo: evo,
     upgrades: {
       wallet: upLv, income: upLv, power: upLv, vitality: upLv, castle: upLv,
       logistics: upLv, treasury: upLv, spoils: upLv,
@@ -467,6 +472,12 @@ if (args[0] === '--check') {
   printHard(runHard(upLv, unitLv, 12345, 0, 20), upLv, unitLv);
   if (args[3]) { printHard(runHard(+args[3], +args[4], 12345, 0, 20), +args[3], +args[4]); }
   printHard(runHard(8, 12, 12345, 20, 30), 8, 12);
+} else if (args[0] === '--proof') {
+  // node tools/sim.js --proof   조합이 필요한 전장만: 전설만 / 공략 편성 이긴 판 수
+  for (const h of LEGEND_PROOF) {
+    const [r] = runHard(h.up, h.lv, 0, h.stage - 1, h.stage);
+    console.log(`  S${h.stage} (${h.up}/Lv${h.lv}) 전장 ${r.base} · 전설만 ${r.legend} · 공략 ${r.counter}   ${r.mods}`);
+  }
 } else if (args[0] === '--legend') {
   // node tools/sim.js --legend [강화Lv] [병종Lv]
   // 전장 편성 / 무지성 전설 편성 / 조합 편성을 나란히 찍는다
