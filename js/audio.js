@@ -27,8 +27,19 @@ const SFX = {
   },
 
   /* 짧은 음정 */
+  /* 한꺼번에 울리는 소리 수를 묶어 둔다. 큰 싸움에서 노드가 수백 개 쌓이면
+   * 오디오 스레드가 밀려 소리가 지직거리고 끊긴다. */
+  voices: [],
+  slot: function (dur) {
+    const t = this.ctx.currentTime, v = this.voices;
+    for (let i = v.length - 1; i >= 0; i--) if (v[i] <= t) v.splice(i, 1);
+    if (v.length >= SFX_MAX_VOICES) return false;
+    v.push(t + dur + 0.03);
+    return true;
+  },
+
   tone: function (freq, dur, type, vol, slideTo) {
-    if (!this.on || !this.ready) return;
+    if (!this.on || !this.ready || !this.slot(dur)) return;
     const t = this.ctx.currentTime;
     const o = this.ctx.createOscillator();
     const g = this.ctx.createGain();
@@ -54,7 +65,7 @@ const SFX = {
 
   /* 잡음 (타격, 폭발) */
   noise: function (dur, freq, vol, q) {
-    if (!this.on || !this.ready || !this.noiseBuf) return;
+    if (!this.on || !this.ready || !this.noiseBuf || !this.slot(dur)) return;
     const t = this.ctx.currentTime;
     const src = this.ctx.createBufferSource();
     src.buffer = this.noiseBuf;
@@ -97,6 +108,9 @@ const SFX = {
   gold:     function () { this.tone(880, 0.06, 'square', 0.12, 1320); }
 };
 
+/* 동시에 울릴 수 있는 효과음 수 (같은 소리 솎아내기는 game.js 의 sfx 가 한다) */
+const SFX_MAX_VOICES = 14;
+
 /* =======================================================================
  *  배경 음악 - 음원 파일 없이 즉석 합성하는 작은 오케스트라 (2.9)
  *
@@ -104,7 +118,7 @@ const SFX = {
  *          플루트·오보에, 하프, 종, 콘트라베이스, 팀파니·타이코·스네어·심벌·징·프레임 드럼
  *  - 홀 잔향(컨볼버)과 압축기를 거쳐 나간다. 잔향이 오케스트라 느낌의 절반이다.
  *  - 곡은 music.js 에 코드 진행 + 선율 + 스타일로 적는다. 스타일이 반주를 짠다.
- *  16분음표 시퀀서가 0.1초마다 깨어나 0.3초 앞까지 미리 예약한다.
+ *  곡은 처음 부를 때 뒤에서 한 번 녹음(OfflineAudioContext)해 두고, 그 버퍼를 되풀이해 튼다.
  * ======================================================================= */
 function bgmNote(name) {
   const m = /^([A-G])([b#]?)(\d)$/.exec(name);
@@ -141,63 +155,51 @@ function bgmBar(str, steps) {
  * a/d/s/r 엔벌로프 · vib 비브라토 · formant 합창 모음 · pluck 튕기는 소리 */
 const BGM_INST = {
   strings: { osc: [['sawtooth', -7], ['sawtooth', 7]], cut: 2400, a: 0.09, d: 0.25, s: 0.8, r: 0.3, vib: 1, gain: 0.05 },
-  lowstr:  { osc: [['sawtooth', -5], ['sawtooth', 5]], cut: 1300, a: 0.03, d: 0.12, s: 0.7, r: 0.12, gain: 0.05 },
+  lowstr:  { osc: [['sawtooth', 0]], cut: 1300, a: 0.03, d: 0.12, s: 0.7, r: 0.12, gain: 0.05 },
   pad:     { osc: [['sawtooth', -10], ['sawtooth', 10]], cut: 1500, a: 0.6, d: 0.4, s: 0.9, r: 1.0, vib: 1, gain: 0.024 },
   trumpet: { osc: [['sawtooth', -4], ['sawtooth', 4]], cut: 900, fenv: 2600, a: 0.04, d: 0.2, s: 0.85, r: 0.18, vib: 0.6, gain: 0.05 },
   horn:    { osc: [['sawtooth', 0], ['triangle', 3]], cut: 850, fenv: 700, a: 0.08, d: 0.3, s: 0.9, r: 0.3, vib: 0.4, gain: 0.06 },
-  lowbrass:{ osc: [['sawtooth', -3], ['square', 3]], cut: 520, fenv: 900, a: 0.05, d: 0.2, s: 0.8, r: 0.2, gain: 0.055 },
-  choir:   { osc: [['sawtooth', -9], ['sawtooth', 9]], formant: [720, 1180], a: 0.35, d: 0.4, s: 0.9, r: 0.7, vib: 1, gain: 0.11 },
+  lowbrass:{ osc: [['sawtooth', 0]], cut: 520, fenv: 900, a: 0.05, d: 0.2, s: 0.8, r: 0.2, gain: 0.055 },
+  choir:   { osc: [['sawtooth', 0]], formant: [720, 1180], a: 0.35, d: 0.4, s: 0.9, r: 0.7, vib: 1, gain: 0.11 },
   flute:   { osc: [['sine', 0], ['triangle', 1200]], cut: 3400, a: 0.05, d: 0.2, s: 0.85, r: 0.15, vib: 1, gain: 0.06, mix: [1, 0.25] },
   oboe:    { osc: [['sawtooth', 0], ['square', 2]], bp: 1300, a: 0.04, d: 0.2, s: 0.85, r: 0.12, vib: 1, gain: 0.07 },
-  harp:    { osc: [['triangle', 0], ['sine', 1200]], cut: 2800, a: 0.004, d: 1.3, s: 0, r: 0.5, gain: 0.06, pluck: 1 },
-  pizz:    { osc: [['triangle', 0], ['sawtooth', 0]], cut: 1500, a: 0.004, d: 0.25, s: 0, r: 0.1, gain: 0.07, pluck: 1, mix: [1, 0.35] },
+  harp:    { osc: [['triangle', 0]], cut: 2800, a: 0.004, d: 1.3, s: 0, r: 0.5, gain: 0.06, pluck: 1 },
+  pizz:    { osc: [['sawtooth', 0]], cut: 1100, a: 0.004, d: 0.25, s: 0, r: 0.1, gain: 0.06, pluck: 1 },
   lute:    { osc: [['triangle', 0], ['sawtooth', 1200]], cut: 2000, a: 0.004, d: 0.7, s: 0, r: 0.3, gain: 0.06, pluck: 1, mix: [1, 0.2] },
-  bass:    { osc: [['sawtooth', 0], ['sine', 0]], cut: 480, a: 0.02, d: 0.2, s: 0.8, r: 0.14, gain: 0.08 },
+  bass:    { osc: [['sawtooth', 0]], cut: 480, a: 0.02, d: 0.2, s: 0.8, r: 0.14, gain: 0.08 },
   bell:    { bell: 1, gain: 0.05 },
   celesta: { bell: 2, gain: 0.04 }
 };
 
+/* 2.9.1: 곡을 실시간으로 연주하지 않는다. 처음 부를 때 한 번만 OfflineAudioContext 로
+ * 뒤에서 녹음해 두고(버퍼), 그 버퍼를 되풀이해 튼다. 연주 중 CPU 를 거의 쓰지 않고,
+ * 화면이 잠깐 멈춰도 소리가 끊기지 않는다. 잔향 꼬리는 곡 앞에 겹쳐 이음매 없이 돈다. */
+const BGM_RATE = 22050;        // 배경음 녹음 품질 (모노)
+const BGM_TAIL = 2.2;          // 잔향 꼬리
+const BGM_CACHE = 7;           // 기억해 두는 곡 수
+const BGM_GROUP = 6;           // 음 합성 묶음 크기
+
 const BGM = {
-  out: null, bus: null, vol: 0.5, name: null, track: null, timer: null, vib: null,
-  step: 0, nextT: 0, parsed: {}, onEnd: null,
+  out: null, vol: 0.5, name: null, onEnd: null,
+  parsed: {}, cache: {}, lru: [], queue: [], busy: false, waiters: {},
+  src: null, srcGain: null,
+  // 녹음 중에만 쓰는 그래프
+  ac: null, bus: null, vib: null, noise: null,
 
   ensure: function () {
     if (this.out || !SFX.ready) return !!this.out;
-    const ctx = SFX.ctx;
-    this.out = ctx.createGain(); this.out.gain.value = 0;
-    const comp = ctx.createDynamicsCompressor();
-    comp.threshold.value = -16; comp.ratio.value = 3.5; comp.attack.value = 0.01; comp.release.value = 0.25;
-    this.out.connect(comp); comp.connect(ctx.destination);
-    this.bus = ctx.createGain(); this.bus.gain.value = 1;
-    const dry = ctx.createGain(); dry.gain.value = 0.82;
-    this.bus.connect(dry); dry.connect(this.out);
-    // 홀 잔향: 2.6초 동안 잦아드는 잡음으로 만든 임펄스
-    try {
-      const len = Math.floor(ctx.sampleRate * 2.6);
-      const ir = ctx.createBuffer(2, len, ctx.sampleRate);
-      for (let c = 0; c < 2; c++) {
-        const d = ir.getChannelData(c);
-        for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.4) * (i < 240 ? i / 240 : 1);
-      }
-      const rev = ctx.createConvolver(); rev.buffer = ir;
-      const wet = ctx.createGain(); wet.gain.value = 0.42;
-      this.bus.connect(rev); rev.connect(wet); wet.connect(this.out);
-    } catch (e) { /* 잔향 없이도 돈다 */ }
-    // 모든 현·관이 함께 쓰는 비브라토 (5.2Hz, ±9센트)
-    const lfo = ctx.createOscillator(); lfo.frequency.value = 5.2;
-    this.vib = ctx.createGain(); this.vib.gain.value = 9;
-    lfo.connect(this.vib); lfo.start();
+    this.out = SFX.ctx.createGain();
+    this.out.gain.value = this.vol * 0.6;
+    this.out.connect(SFX.ctx.destination);
     return true;
   },
 
   setVolume: function (v) {
+    const was = this.vol;
     this.vol = v;
     if (!this.out) return;
-    const t = SFX.ctx.currentTime;
-    this.out.gain.cancelScheduledValues(t);
-    this.out.gain.setTargetAtTime(this.name ? v * 0.6 : 0, t, 0.08);
-    if (v <= 0) this.halt();
-    else if (this.name && !this.timer) this.start();
+    this.out.gain.setTargetAtTime(v * 0.6, SFX.ctx.currentTime, 0.08);
+    if (was <= 0 && v > 0 && this.name && !this.src) this.resume();
   },
 
   parse: function (name) {
@@ -218,74 +220,199 @@ const BGM = {
       total: total, once: !!tr.once, swing: tr.swing || 0 });
   },
 
-  /* 곡을 바꾼다. 같은 곡이면 그대로 둔다. */
+  /* ---------------- 녹음 ---------------- */
+  graph: function (ac, gain) {
+    this.ac = ac;
+    const out = ac.createDynamicsCompressor();
+    out.threshold.value = -16; out.ratio.value = 3.5; out.attack.value = 0.01; out.release.value = 0.25;
+    out.connect(ac.destination);
+    this.bus = ac.createGain(); this.bus.gain.value = gain;
+    const dry = ac.createGain(); dry.gain.value = 0.82;
+    this.bus.connect(dry); dry.connect(out);
+    const len = Math.floor(ac.sampleRate * 1.9);            // 홀 잔향 (모노, 1.9초)
+    const ir = ac.createBuffer(1, len, ac.sampleRate), d = ir.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.4) * (i < 120 ? i / 120 : 1);
+    const rev = ac.createConvolver(); rev.buffer = ir;
+    const wet = ac.createGain(); wet.gain.value = 0.42;
+    this.bus.connect(rev); rev.connect(wet); wet.connect(out);
+    const lfo = ac.createOscillator(); lfo.frequency.value = 5.2;
+    this.vib = ac.createGain(); this.vib.gain.value = 9;
+    lfo.connect(this.vib); lfo.start();
+    const nlen = ac.sampleRate, nb = ac.createBuffer(1, nlen, ac.sampleRate), nd = nb.getChannelData(0);
+    for (let i = 0; i < nlen; i++) nd[i] = Math.random() * 2 - 1;
+    this.noise = nb;
+  },
+
+  render: function (name) {
+    const AC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!AC) return Promise.reject(new Error('no offline audio'));
+    return this.makeKit().then(() => this.renderTrack(name, AC));
+  },
+  renderTrack: function (name, AC) {
+    const tr = this.parse(name);
+    const dt = 60 / tr.bpm / 4, steps = tr.total * tr.steps;
+    const SR = BGM_RATE, loopLen = Math.round(steps * dt * SR), total = loopLen + Math.round(BGM_TAIL * SR);
+    // 1) 악보를 훑어 칠 음만 받아 적는다 (노드는 아직 만들지 않는다)
+    const ev = [];
+    this.rec = ev;
+    try { for (let st = 0; st < steps; st++) this.playStep(tr, st, st * dt + ((st % 2) ? tr.swing * dt : 0), dt); }
+    finally { this.rec = null; }
+    // 2) 서로 다른 음만 합성한다 (보스곡은 같은 음이 네 번꼴로 되풀이된다).
+    //    오프라인 녹음은 아직 안 울린 노드까지 매 순간 계산하므로, 몇 음씩 작은 묶음으로 나눠 녹음한다.
+    const groups = [];
+    const bank = new Map();
+    for (const e of ev) {
+      if (!e.key) continue;
+      let b = bank.get(e.key);
+      if (!b) {
+        let g = groups[groups.length - 1];
+        if (!g || g.notes.length >= BGM_GROUP) groups.push(g = { notes: [], len: 0, data: null });
+        b = { e: e, g: g, at: g.len, len: Math.round(this.noteLen(e.inst, e.dur) * SR) };
+        g.notes.push(b); g.len += b.len + 64;
+        bank.set(e.key, b);
+      }
+      e.slot = b;
+    }
+    const keep = { ac: this.ac, bus: this.bus, vib: this.vib, noise: this.noise };
+    const renderGroup = g => {
+      const gac = new AC(1, Math.max(1, g.len), SR);
+      try {
+        this.ac = gac; this.bus = gac.createGain(); this.bus.connect(gac.destination);
+        const lfo = gac.createOscillator(); lfo.frequency.value = 5.2;
+        this.vib = gac.createGain(); this.vib.gain.value = 9; lfo.connect(this.vib); lfo.start();
+        g.notes.forEach(b => this.voice(b.e.inst, b.e.midi, b.at / SR, b.e.dur, b.e.rv));
+      } finally { Object.assign(this, keep); }
+      return gac.startRendering().then(buf => { g.data = buf.getChannelData(0); });
+    };
+    return groups.reduce((p, g) => p.then(() => renderGroup(g)), Promise.resolve()).then(() => {
+      // 3) 받아 적은 대로 표본을 제자리에 섞는다 (그냥 더하기라 빠르다)
+      const dry = new Float32Array(total);
+      const late = [];
+      for (const e of ev) {
+        const at = Math.round(e.t * SR);
+        let d, off, n;
+        if (e.slot) { d = e.slot.g.data; off = e.slot.at; n = e.slot.len; }
+        else if (e.buf) { d = e.buf.getChannelData(0); off = 0; n = d.length; }
+        else { late.push(e); continue; }
+        n = Math.min(n, total - at, d.length - off);
+        for (let i = 0; i < n; i++) dry[at + i] += d[off + i] * e.g;
+      }
+      // 4) 섞은 소리에 잔향·압축만 입힌다
+      const ac = new AC(1, total, SR);
+      const keep2 = { ac: this.ac, bus: this.bus, vib: this.vib, noise: this.noise };
+      try {
+        this.graph(ac, (typeof BGM_GAIN !== 'undefined' && BGM_GAIN[name]) || 1);
+        const dbuf = ac.createBuffer(1, total, SR);
+        dbuf.getChannelData(0).set(dry);
+        const s = ac.createBufferSource(); s.buffer = dbuf; s.connect(this.bus); s.start(0);
+        for (const e of late) this.synth[e.fn].call(this, e.t, e.a, e.b);   // 북 표본이 없을 때만
+      } finally { Object.assign(this, keep2); }
+      return ac.startRendering();
+    }).then(buf => {
+        if (tr.once) return buf;
+        // 꼬리를 앞에 겹쳐 되풀이 이음매를 없앤다
+        const d = buf.getChannelData(0), out = SFX.ctx.createBuffer(1, loopLen, BGM_RATE), o = out.getChannelData(0);
+        o.set(d.subarray(0, loopLen));
+        for (let i = loopLen; i < d.length; i++) o[i - loopLen] += d[i];
+        return out;
+      });
+  },
+
+  /* 곡 버퍼를 달라. 없으면 줄을 세워 하나씩 녹음한다 (urgent 면 맨 앞에) */
+  want: function (name, urgent) {
+    if (this.cache[name]) { this.touch(name); return Promise.resolve(this.cache[name]); }
+    if (!this.waiters[name]) {
+      this.waiters[name] = [];
+      if (urgent) this.queue.unshift(name); else this.queue.push(name);
+      this.pump();
+    } else if (urgent) {
+      const i = this.queue.indexOf(name);
+      if (i > 0) { this.queue.splice(i, 1); this.queue.unshift(name); }
+    }
+    return new Promise((res, rej) => this.waiters[name].push([res, rej]));
+  },
+  prefetch: function (names) {
+    if (!SFX.ready || this.vol <= 0) return;
+    for (const n of names) if (n && BGM_TRACKS[n] && !this.cache[n] && !this.waiters[n]) this.want(n, false).catch(() => {});
+  },
+  pump: function () {
+    if (this.busy || !this.queue.length || !SFX.ready) return;
+    const name = this.queue.shift();
+    this.busy = true;
+    const done = (err, buf) => {
+      this.busy = false;
+      const ws = this.waiters[name] || []; delete this.waiters[name];
+      if (buf) { this.cache[name] = buf; this.touch(name); }
+      ws.forEach(([res, rej]) => err ? rej(err) : res(buf));
+      setTimeout(() => this.pump(), 30);
+    };
+    this.render(name).then(buf => done(null, buf), err => done(err));
+  },
+  touch: function (name) {
+    this.lru = this.lru.filter(n => n !== name); this.lru.push(name);
+    while (this.lru.length > BGM_CACHE) {
+      const old = this.lru.shift();
+      if (old !== this.name) delete this.cache[old]; else this.lru.push(old);
+      if (this.lru.length <= BGM_CACHE) break;
+    }
+  },
+
+  /* ---------------- 재생 ---------------- */
   play: function (name, onEnd) {
     if (!BGM_TRACKS[name]) return;
-    if (this.name === name && this.timer) return;
+    if (this.name === name && (this.src || this.waiters[name])) return;
     this.name = name;
     this.onEnd = onEnd || null;
-    if (!this.ensure()) return;           // 오디오가 아직 안 열렸으면 열릴 때 시작
-    this.track = this.parse(name);
-    this.bus.gain.setValueAtTime((typeof BGM_GAIN !== 'undefined' && BGM_GAIN[name]) || 1, SFX.ctx.currentTime);
-    this.step = 0;
-    this.nextT = SFX.ctx.currentTime + 0.12;
-    const t = SFX.ctx.currentTime;
-    this.out.gain.cancelScheduledValues(t);
-    this.out.gain.setValueAtTime(this.out.gain.value, t);
-    this.out.gain.linearRampToValueAtTime(this.vol * 0.6, t + 0.6);
-    this.start();
+    if (!this.ensure() || this.vol <= 0) return;           // 오디오가 열리거나 소리를 켜면 그때
+    this.want(name, true).then(buf => { if (this.name === name) this.startBuffer(buf, name); }).catch(() => {});
+  },
+
+  startBuffer: function (buf, name) {
+    const ctx = SFX.ctx, t = ctx.currentTime;
+    this.fadeOut(0.5);
+    const src = ctx.createBufferSource(), g = ctx.createGain();
+    src.buffer = buf;
+    src.loop = !BGM_TRACKS[name].once;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(1, t + 0.5);
+    src.connect(g); g.connect(this.out);
+    src.start(t + 0.02);
+    if (!src.loop) src.onended = () => {
+      if (this.src !== src) return;
+      this.src = null; this.srcGain = null;
+      if (this.name === name) this.name = null;
+      const done = this.onEnd; this.onEnd = null;
+      if (done) done();
+    };
+    this.src = src; this.srcGain = g;
+  },
+
+  fadeOut: function (fade) {
+    if (!this.src) return;
+    const ctx = SFX.ctx, t = ctx.currentTime, src = this.src, g = this.srcGain;
+    g.gain.cancelScheduledValues(t);
+    g.gain.setValueAtTime(Math.max(0.0001, g.gain.value), t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + fade);
+    try { src.stop(t + fade + 0.05); } catch (e) { /* 이미 멈춤 */ }
+    this.src = null; this.srcGain = null;
   },
 
   /* 한 번만 울리는 곡(승리·패배) */
   sting: function (name) {
     if (!BGM_TRACKS[name]) return;
-    this.name = null; this.halt();
+    this.name = null;
     this.play(name);
-  },
-
-  start: function () {
-    if (this.timer || this.vol <= 0 || !this.track) return;
-    this.timer = setInterval(() => this.tick(), 100);
-    this.tick();
-  },
-
-  halt: function () {
-    clearInterval(this.timer);
-    this.timer = null;
   },
 
   stop: function (fade) {
     this.name = null;
-    if (!this.out) { this.halt(); return; }
-    const t = SFX.ctx.currentTime;
-    this.out.gain.cancelScheduledValues(t);
-    this.out.gain.setTargetAtTime(0, t, (fade || 0.4) / 3);
-    setTimeout(() => { if (!this.name) this.halt(); }, (fade || 0.4) * 1000 + 50);
+    if (this.out) this.fadeOut(fade || 0.4);
   },
 
+  /* 오디오가 뒤늦게 열렸을 때 미뤄 둔 곡을 튼다 */
   resume: function () {
-    if (this.name && !this.timer) { const n = this.name; this.name = null; this.play(n); }
-  },
-
-  tick: function () {
-    if (!this.track || !SFX.ctx) return;
-    const ctx = SFX.ctx;
-    if (ctx.state !== 'running') { this.nextT = ctx.currentTime + 0.1; return; }
-    const tr = this.track;
-    const dt = 60 / tr.bpm / 4;
-    if (this.nextT < ctx.currentTime - 0.3) this.nextT = ctx.currentTime + 0.05;
-    while (this.nextT < ctx.currentTime + 0.3) {
-      if (tr.once && this.step >= tr.total * tr.steps) {
-        const done = this.onEnd; this.onEnd = null;
-        this.halt(); this.track = null; this.name = null;
-        if (done) setTimeout(done, 1600);            // 마지막 울림이 잦아든 뒤
-        return;
-      }
-      const swing = (this.step % 2 === 1) ? tr.swing * dt : 0;
-      this.playStep(tr, this.step, this.nextT + swing, dt);
-      this.nextT += dt;
-      this.step++;
-    }
+    if (this.name && !this.src) { const n = this.name; this.name = null; this.play(n, this.onEnd); }
+    this.pump();
   },
 
   /* 지금 몇 번째 구간의 몇 번째 마디인가 */
@@ -333,10 +460,25 @@ const BGM = {
     return out;
   },
 
+  /* 녹음 중에는 음을 적어만 둔다. 같은 음은 나중에 한 번만 합성해 되풀이해 쓴다 */
   note: function (inst, midi, t, dur, vel) {
     const I = BGM_INST[inst];
     if (!I) return;
-    const ctx = SFX.ctx, f = bgmFreq(midi), v = I.gain * (vel || 1);
+    vel = vel || 1;
+    if (!this.rec) return this.voice(inst, midi, t, dur, vel);
+    const rv = I.fenv ? Math.round(vel * 10) / 10 || 0.1 : 1;   // 금관은 세기에 따라 음색이 바뀐다
+    this.rec.push({ key: inst + '|' + midi + '|' + dur.toFixed(3) + '|' + rv,
+                    inst: inst, midi: midi, dur: dur, rv: rv, t: t, g: vel / rv });
+  },
+  noteLen: function (inst, dur) {
+    const I = BGM_INST[inst];
+    if (I.bell) return (I.bell === 2 ? 1.2 : 2.2) + 0.05;
+    return (I.pluck ? I.a + I.d : Math.max(I.a + I.d, dur) + I.r) + 0.05;
+  },
+
+  voice: function (inst, midi, t, dur, vel) {
+    const I = BGM_INST[inst];
+    const ctx = this.ac, f = bgmFreq(midi), v = I.gain * (vel || 1);
     if (I.bell) { this.bell(f, t, v, I.bell === 2); return; }
     const g = ctx.createGain();
     let into;
@@ -366,7 +508,7 @@ const BGM = {
       osc.type = o[0];
       osc.frequency.setValueAtTime(f, t);
       osc.detune.value = o[1];
-      if (I.vib && this.vib && dur > 0.25) this.vib.connect(osc.detune);
+      if (I.vib && this.vib && dur > 0.6) this.vib.connect(osc.detune);
       if (I.mix && I.mix[i] !== 1) {
         const mg = ctx.createGain(); mg.gain.value = I.mix[i]; osc.connect(mg); mg.connect(into);
       } else osc.connect(into);
@@ -386,14 +528,13 @@ const BGM = {
     g.connect(this.bus);
     const stopAt = (I.pluck ? t + a + I.d : Math.max(t + a + I.d, end) + I.r) + 0.05;
     for (const o of oscs) { o.start(t); o.stop(stopAt); }
-    if (I.vib && this.vib) setTimeout(() => { for (const o of oscs) { try { this.vib.disconnect(o.detune); } catch (e) {} } },
-      Math.max(0, (stopAt - ctx.currentTime) * 1000 + 50));
   },
 
   bell: function (f, t, v, soft) {
-    const ctx = SFX.ctx;
+    const ctx = this.ac;
     const parts = soft ? [[1, 1, 1.2], [2, 0.3, 0.6], [4, 0.1, 0.3]] : [[1, 1, 2.2], [2.76, 0.45, 1.2], [5.4, 0.22, 0.6], [8.9, 0.1, 0.3]];
     for (const [m, a, d] of parts) {
+      if (f * m > ctx.sampleRate * 0.45) continue;           // 나이퀴스트 위 배음은 안 들림
       const o = ctx.createOscillator(), g = ctx.createGain();
       o.type = 'sine'; o.frequency.value = f * m;
       g.gain.setValueAtTime(0.0001, t);
@@ -405,20 +546,20 @@ const BGM = {
 
   /* ---------------- 타악기 ---------------- */
   noiseHit: function (t, type, freq, q, vol, dur, off) {
-    if (!SFX.noiseBuf) return;
-    const ctx = SFX.ctx;
+    if (!this.noise) return;
+    const ctx = this.ac;
     const src = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
-    src.buffer = SFX.noiseBuf;
+    src.buffer = this.noise;
     f.type = type; f.frequency.value = freq; if (q) f.Q.value = q;
     g.gain.setValueAtTime(vol, t);
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     src.connect(f); f.connect(g); g.connect(this.bus);
-    const len = Math.min(dur + 0.02, SFX.noiseBuf.duration - 0.01);
-    src.start(t, off !== undefined ? off : Math.random() * Math.max(0, SFX.noiseBuf.duration - len), len);
+    const len = Math.min(dur + 0.02, this.noise.duration - 0.01);
+    src.start(t, off !== undefined ? off : Math.random() * Math.max(0, this.noise.duration - len), len);
     src.stop(t + len);
   },
   thump: function (t, f0, f1, vol, dur) {
-    const ctx = SFX.ctx;
+    const ctx = this.ac;
     const o = ctx.createOscillator(), g = ctx.createGain();
     o.type = 'sine';
     o.frequency.setValueAtTime(f0, t);
@@ -454,7 +595,7 @@ const BGM = {
     this.noiseHit(t, 'bandpass', 9800, 3, 0.04 * (vel || 1), 0.12);
   },
   gong: function (t, vel) {
-    const ctx = SFX.ctx;
+    const ctx = this.ac;
     for (const [f, a, d] of [[92, 0.25, 4.2], [147, 0.12, 3.2], [233, 0.07, 2.4], [361, 0.04, 1.6]]) {
       const o = ctx.createOscillator(), g = ctx.createGain();
       o.type = 'sine'; o.frequency.setValueAtTime(f * 1.03, t); o.frequency.exponentialRampToValueAtTime(f, t + 1.2);
@@ -474,6 +615,41 @@ const BGM = {
     }
   },
   pat: function (str, s) { return str[s % str.length] === 'x'; }
+};
+
+/* 북 소리는 처음 한 번만 합성해 짧은 표본으로 두고, 곡을 녹음할 때는 그 표본을 튼다.
+ * 타악기가 곡 녹음 시간의 절반 가까이를 먹던 것을 줄인다. */
+const BGM_DRUM_KEYS = ['timp', 'taiko', 'frame', 'snare', 'crash', 'hat', 'tamb', 'gong'];
+BGM.synth = {};
+BGM_DRUM_KEYS.forEach(k => {
+  BGM.synth[k] = BGM[k];
+  BGM[k] = function (t, a, b) {
+    const vel = (k === 'timp' ? b : a) || 1;
+    const buf = this.kit && this.kit[k === 'timp' ? 'timp' + Math.round(a) : k];
+    if (this.rec) { this.rec.push(buf ? { buf: buf, t: t, g: vel } : { fn: k, t: t, a: a, b: b }); return; }
+    if (!buf) return this.synth[k].call(this, t, a, b);
+    const src = this.ac.createBufferSource(), g = this.ac.createGain();
+    src.buffer = buf; g.gain.value = vel;
+    src.connect(g); g.connect(this.bus); src.start(t);
+  };
+});
+BGM.makeKit = function () {
+  if (this.kitP) return this.kitP;
+  const AC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+  const jobs = [['taiko', 0.6], ['frame', 0.35], ['snare', 0.2], ['crash', 2.3], ['hat', 0.08], ['tamb', 0.15], ['gong', 4.3]];
+  for (let m = 28; m <= 64; m++) jobs.push(['timp' + m, 1.2, m]);
+  const kit = {};
+  const noiseAc = new AC(1, BGM_RATE, BGM_RATE), noise = noiseAc.createBuffer(1, BGM_RATE, BGM_RATE), nd = noise.getChannelData(0);
+  for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+  this.kitP = jobs.reduce((p, [key, len, midi]) => p.then(() => {
+    const ac = new AC(1, Math.ceil(len * BGM_RATE), BGM_RATE);
+    const saved = { ac: this.ac, bus: this.bus, noise: this.noise };
+    this.ac = ac; this.bus = ac.createGain(); this.bus.connect(ac.destination); this.noise = noise;
+    try { if (midi) this.synth.timp.call(this, 0, midi, 1); else this.synth[key].call(this, 0, 1); }
+    finally { Object.assign(this, saved); }
+    return ac.startRendering().then(buf => { kit[key] = buf; });
+  }), Promise.resolve()).then(() => { this.kit = kit; }, () => { this.kit = null; });
+  return this.kitP;
 };
 
 /* =======================================================================

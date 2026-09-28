@@ -426,6 +426,8 @@ function renderMap() {
 }
 
 function renderStageDetail(i) {
+  // 고른 전장의 곡과 보스곡을 미리 녹음해 둔다 (출진하자마자 바로 나오게)
+  if (STAGES[i]) BGM.prefetch([stageMusic(STAGES[i]), STAGES[i].bossId ? bossTrack(STAGES[i], STAGES[i].bossId) : null]);
   const box = $('#stage-detail');
   box.innerHTML = '';
   const ch = CHAPTERS[mapChapter];
@@ -1004,6 +1006,7 @@ function beginBattle() {
   bossMusic = false;
   bossMusicT = 0;
   BGM.play(stageMusic(battle.stage));
+  BGM.prefetch([battle.stage.bossId ? bossTrack(battle.stage, battle.stage.bossId) : null, 'victory', 'defeat']);
   setPaused(false);
   autoTimer = 0;
   refreshAutoBtn();
@@ -1490,7 +1493,7 @@ function init() {
   BGM.setVolume(Settings.get('bgm'));
   BGM.play('title');
   // 모바일은 사용자 조작이 한 번 있어야 오디오가 열린다
-  const wake = () => { SFX.init(); SFX.resume(); BGM.resume(); };
+  const wake = () => { SFX.init(); SFX.resume(); BGM.resume(); BGM.prefetch(['map']); };
   ['pointerdown', 'touchstart', 'keydown'].forEach(ev =>
     window.addEventListener(ev, wake, { once: true, passive: true }));
   titleAnim.cv = $('#title-bg');

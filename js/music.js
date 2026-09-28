@@ -384,7 +384,7 @@ const BGM_GAIN = {
   blizzard: 0.91, winterthrone: 1.42, volcano: 0.77, warcamp: 0.7, blackriver: 1.77, underworld: 0.7,
   thorngate: 1.02, desert: 1.35, eclipse: 0.7, mythic: 0.7, endless: 0.88, return: 0.82,
   shieldwall: 1.23, gate: 0.79, throne: 0.79, seal: 0.7, siege: 1.2, boss_lich: 0.97,
-  boss_troll: 0.99, boss_frostgiant: 1.31, boss_drake: 0.94, boss_spiderqueen: 1.07, boss_warlord: 0.93, finale: 1.1,
+  boss_troll: 0.99, boss_frostgiant: 1.0, boss_drake: 0.94, boss_spiderqueen: 1.07, boss_warlord: 0.93, finale: 1.1,
   victory: 1.5, defeat: 1.32
 };
 
