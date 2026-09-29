@@ -23,7 +23,10 @@ const SFX = {
   },
 
   resume: function () {
-    if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+    // iOS 는 전화·시리 뒤에 'interrupted' 로 남는다. 멈춰 있기만 하면 다시 깨운다
+    if (this.ctx && this.ctx.state !== 'running' && this.ctx.state !== 'closed') {
+      const p = this.ctx.resume(); if (p && p.catch) p.catch(() => {});   // 옛 webkit 은 약속을 돌려주지 않는다
+    }
   },
 
   /* 짧은 음정 */
@@ -363,7 +366,8 @@ const BGM = {
     if (this.name === name && (this.src || this.waiters[name])) return;
     this.name = name;
     this.onEnd = onEnd || null;
-    if (!this.ensure() || this.vol <= 0) return;           // 오디오가 열리거나 소리를 켜면 그때
+    if (!this.ensure()) return;                            // 오디오가 열리면 그때
+    if (this.vol <= 0) { this.fadeOut(0.1); return; }      // 꺼 둔 동안 옛 곡이 남아 다시 켰을 때 울리지 않게
     this.want(name, true).then(buf => { if (this.name === name) this.startBuffer(buf, name); }).catch(() => {});
   },
 

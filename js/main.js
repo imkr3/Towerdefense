@@ -1550,9 +1550,16 @@ function init() {
   BGM.setVolume(Settings.get('bgm'));
   BGM.play('title');
   // 모바일은 사용자 조작이 한 번 있어야 오디오가 열린다
-  const wake = () => { SFX.init(); SFX.resume(); BGM.resume(); BGM.prefetch(['map']); };
-  ['pointerdown', 'touchstart', 'keydown'].forEach(ev =>
-    window.addEventListener(ev, wake, { once: true, passive: true }));
+  // 전화·앱 전환으로 오디오가 멈췄다가 조작 없이 깨지 못하는 기기가 있어 매번 확인한다(멀쩡하면 바로 끝)
+  let woke = false;
+  const wake = () => {
+    if (woke && SFX.ctx && SFX.ctx.state === 'running') return;
+    SFX.init(); SFX.resume(); BGM.resume();
+    if (!woke) BGM.prefetch(['map']);
+    woke = true;
+  };
+  ['pointerdown', 'pointerup', 'touchend', 'keydown'].forEach(ev =>
+    window.addEventListener(ev, wake, { passive: true }));
   titleAnim.cv = $('#title-bg');
   titleAnim.ctx = titleAnim.cv.getContext('2d');
   resizeTitle();
@@ -1686,7 +1693,7 @@ function init() {
   document.addEventListener('visibilitychange', () => {
     if (document.hidden && battle && battle.state === 'play') setPaused(true);
     // 앱이 뒤로 가면 음악도 멈춘다 (배터리)
-    if (SFX.ctx) { if (document.hidden) SFX.ctx.suspend(); else SFX.ctx.resume(); }
+    if (SFX.ctx) { if (document.hidden) { const p = SFX.ctx.suspend(); if (p && p.catch) p.catch(() => {}); } else SFX.resume(); }
     lastTs = 0;
   });
   window.addEventListener('keydown', e => {

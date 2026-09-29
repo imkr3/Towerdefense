@@ -42,11 +42,13 @@ class Renderer {
                      Math.min(this.h * 0.86, this.h - hudH - 26)));
     // cs: 지면 위 여유 높이에 맞춘 캐릭터 배율
     this.cs = Math.max(0.70, Math.min(1.45, this.groundY / 350));
+    // 숨은 화면에서 만든 뒤 처음 보일 때(첫 전투)나 화면을 돌렸을 때 효과 층도 같이 맞춘다
+    this.syncGlSize();
   }
 
   /* WebGL 레이어를 2D 캔버스와 같은 크기로 맞춘다 */
   syncGlSize() {
-    if (!this.glfx || !this.glfx.ok) return;
+    if (!this.glfx || !this.glfx.ok || !this.w) return;
     this.glfx.resize(this.w, this.h, this.cv.width / this.w);
   }
 
@@ -1579,8 +1581,10 @@ class Renderer {
     this._battle = battle;
     this.clock = (this.clock || 0) + dt;             // 전투가 끝나 시간이 멈춰도 도는 시계
     this.showDmg = typeof Settings === 'undefined' || Settings.get('dmgNums');
-    const camBefore = this.cam;
+    // 지난 프레임의 카메라. 손으로 끈 이동(panBy)은 프레임 사이에 일어나므로 this.cam 을 지금 읽으면 놓친다
+    const camBefore = this.prevCam === undefined ? this.cam : this.prevCam;
     this.follow(battle, dt);
+    this.prevCam = this.cam;
     const ctx = this.ctx;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const shakeOn = typeof Settings === 'undefined' || Settings.get('shake');

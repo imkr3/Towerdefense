@@ -691,4 +691,34 @@ test('Fury: in hardcore and act 2, foes arriving later are tougher', () => {
   assert.equal(a1.spawnEnemy('goblin', 900).maxHp, e1, 'act 1 has no fury');
 });
 
+/* ---------------- 3.1.1 효과 겹침 · 소환 배율 ---------------- */
+test('A weaker buff never keeps a stronger one alive or steals its timer', () => {
+  const applyTimed = vm.runInContext('applyTimed', ctx);
+  const m = { rallyT: 0, rallyMul: 1, hasteT: 0, hasteMul: 1 };
+  applyTimed(m, 'rallyT', 'rallyMul', 1.35, 3, false);
+  for (let i = 0; i < 5; i++) { m.rallyT -= 1; if (m.rallyT <= 0) m.rallyMul = 1; applyTimed(m, 'rallyT', 'rallyMul', 1.12, 3, false); }
+  assert.equal(m.rallyMul, 1.12, 'the strong rally ends even while a weak one keeps pulsing');
+  applyTimed(m, 'hasteT', 'hasteMul', 0.6, 8, true); applyTimed(m, 'hasteT', 'hasteMul', 0.7, 4, true);
+  assert.equal(m.hasteMul, 0.6); assert.equal(m.hasteT, 8);
+});
+test('King\'s Command haste is not weakened by a nearby bugler', () => {
+  const b = battle(); const a = b.makeAlly(U.spear, 500), bug = b.makeAlly(U.herald, 520);
+  b.allies.push(a, bug); b.money = 9999; b.cmdCd = 0; b.useCommand();
+  b.supportTick(bug, b.allies, 99, true);
+  assert.equal(a.hasteMul, 0.6);
+});
+test('Enemy summons inherit the summoner wave multiplier', () => {
+  const b = battle(); const q = b.spawnEnemy('spiderqueen', 900, 5);
+  const base = b.spawnEnemy('spider', 900, 5).maxHp; const n = b.enemies.length;
+  b.supportTick(q, b.enemies, 99, false);
+  const kids = b.enemies.slice(n); assert.ok(kids.length > 0);
+  for (const k of kids) assert.equal(k.maxHp, base);
+});
+test('Boss drain heals only the HP it actually took', () => {
+  const b = battle(); const boss = b.spawnEnemy('lich', 600); boss.hp = 100;
+  const a = b.makeAlly(U.spear, 620); a.giveBarrier(99999); b.allies.push(a);
+  b.bossAct(boss, { t: 'drain', name: 'x', r: 320, dmg: 150, ratio: 0.7 });
+  assert.equal(boss.hp, 100);
+});
+
 console.log(count + ' regression checks passed');

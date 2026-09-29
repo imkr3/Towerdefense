@@ -15,6 +15,14 @@ function setWorld(len) {
   ENEMY_BASE_X = WORLD - 96;
   ENEMY_SPAWN_X = WORLD - 150;
 }
+/* 버프·약화를 겹쳐 건다. 더 약한 효과는 센 효과의 시간을 늘려 주지 않는다 —
+ * 약한 쪽이 계속 갱신해서 센 배율이 끝나지 않거나, 약한 배율이 센 시간을 물려받는 일을 막는다.
+ * lower: 작을수록 센 배율(공격 간격·주는 피해) */
+function applyTimed(o, tKey, mKey, mul, dur, lower) {
+  const stronger = lower ? mul <= o[mKey] : mul >= o[mKey];
+  if (o[tKey] <= 0 || stronger) { o[mKey] = mul; o[tKey] = Math.max(o[tKey], dur); }
+}
+
 const KILL_GOLD_RATE = 0.20; // 처치 보상 배율
 
 /* 효과음 헬퍼: 브라우저에서만 동작하고, 같은 소리가 몰릴 때는 솎아낸다 */
@@ -457,7 +465,7 @@ class Battle {
     if(buff) {
       for(const m of this.allies) if(!m.dead && Math.abs(m.x-f.x)<=a.radius) {
         if(a.barrier){m.giveBarrier(a.barrier*f.abMul);m.poisonT=0;m.poisonDps=0;m.burnT=0;m.burnDps=0;}
-        if(a.haste){m.hasteMul=m.hasteT>0?Math.min(m.hasteMul,a.haste.mul):a.haste.mul;m.hasteT=Math.max(m.hasteT,a.haste.dur);m.stunT=0;}
+        if(a.haste){applyTimed(m,'hasteT','hasteMul',a.haste.mul,a.haste.dur,true);m.stunT=0;}
       }
     } else {
       this._chaining = true;          // 액티브의 광역 타격이 대상마다 연쇄를 다시 일으키지 않게
@@ -499,8 +507,7 @@ class Battle {
     this.cmdUses++;
     for (const a of this.allies) {
       a.heal(a.maxHp * this.cmdHeal);
-      a.hasteT = Math.max(a.hasteT, COMMAND.hasteDur);
-      a.hasteMul = COMMAND.hasteMul;
+      applyTimed(a, 'hasteT', 'hasteMul', COMMAND.hasteMul, COMMAND.hasteDur, true);
       a.stunT = 0;
       a.slowT = 0;
       this.fx.push({ type: 'rally', x: a.x, row: a.row, t: 0.6, life: 0.6 });
@@ -519,7 +526,8 @@ class Battle {
       this.tick(step);
       remaining -= step;
     }
-    this.updateFx(dtRaw);
+    // 연출도 전투 시간으로 흐른다 — 3배속에서 낙하 경고 원이 다 줄기 전에 터지지 않게
+    this.updateFx(Math.max(0, Math.min(0.1, dtRaw)) * this.speed);
   }
 
   tick(dt) {
@@ -965,8 +973,7 @@ class Battle {
       for (const m of mates) {
         if (m.dead || m === f) continue;
         if (Math.abs(m.x - f.x) > ab.rally.radius) continue;
-        m.rallyT = Math.max(m.rallyT, (ab.interval || 3) + 0.6);
-        m.rallyMul = Math.max(m.rallyMul, 1 + ab.rally.atk);
+        applyTimed(m, 'rallyT', 'rallyMul', 1 + ab.rally.atk, (ab.interval || 3) + 0.6, false);
       }
       f.auraPulse = 0.5;
       this.fx.push({ type: 'aura', x: f.x, row: f.row, r: ab.rally.radius,
@@ -984,8 +991,7 @@ class Battle {
     if (ab.pacify) {
       // 삼장법사: 경을 읊으면 주변 적의 살기가 누그러진다
       for (const e of this.foesOf(f.side)) if (!e.dead && Math.abs(e.x - f.x) <= ab.radius) {
-        e.weakT = Math.max(e.weakT, ab.pacify.dur);
-        e.weakMul = Math.min(e.weakMul, ab.pacify.mul);
+        applyTimed(e, 'weakT', 'weakMul', ab.pacify.mul, ab.pacify.dur, true);
       }
       this.fx.push({ type: 'aura', x: f.x, row: f.row, r: ab.radius, t: 0.6, life: 0.6, color: '#f6e6a0' });
     }
@@ -1026,8 +1032,7 @@ class Battle {
       for (const m of mates) {
         if (m.dead || m === f) continue;
         if (Math.abs(m.x - f.x) > ab.radius) continue;
-        m.hasteT = Math.max(m.hasteT, ab.haste.dur);
-        m.hasteMul = ab.haste.mul;
+        applyTimed(m, 'hasteT', 'hasteMul', ab.haste.mul, ab.haste.dur, true);
       }
       f.auraPulse = 0.5;
       this.fx.push({ type: 'aura', x: f.x, row: f.row, r: ab.radius,
@@ -1052,7 +1057,7 @@ class Battle {
             this.allies.push(m);
           }
         } else {
-          const m = this.spawnEnemy(ab.summon.id, sx); m.summoned = true; m.wave = f.wave;
+          const m = this.spawnEnemy(ab.summon.id, sx, f.mul); m.summoned = true; m.wave = f.wave;
         }
       }
       this.fx.push({ type: 'spawn', x: f.x - f.dir * 24, row: f.row, t: 0.4, life: 0.4 });
@@ -1186,7 +1191,7 @@ class Battle {
             const u = UNIT_BY_ID[a.id];
             if (u) { const m = this.makeAlly(u, sx, f); m.summoned = true; this.allies.push(m); }
           } else {
-            const m = this.spawnEnemy(a.id, sx); m.summoned = true; m.wave = f.wave;
+            const m = this.spawnEnemy(a.id, sx, f.mul); m.summoned = true; m.wave = f.wave;
           }
           this.fx.push({ type: 'spawn', x: sx, row: f.row, t: 0.4, life: 0.4 });
         }
@@ -1219,8 +1224,7 @@ class Battle {
         for (const e of foes) {
           if (e.dead || Math.abs(e.x - f.x) > r) continue;
           const d = a.dmg || 120;
-          e.takeDamage(d);
-          sum += d;
+          sum += e.takeDamage(d);            // 보호막·방어에 막힌 몫은 빨지 못한다
         }
         f.heal(sum * (a.ratio || 0.6));
         this.fx.push({ type: 'cast', kind: 'runes', x: f.x, row: f.row,
@@ -1480,8 +1484,7 @@ class Battle {
     // 저팔계: 쓰러뜨린 만큼 배를 채운다
     if (src && src.ab.feast && dealt > 0 && target.dead && !target.isCastle) src.heal(src.maxHp * src.ab.feast);
     if (src && src.ab.sunmark && !target.isCastle && !target.dead) {
-      target.vulnT = Math.max(target.vulnT, src.ab.sunmark.dur);
-      target.vulnMul = Math.max(target.vulnMul, 1 + src.ab.sunmark.vuln);
+      applyTimed(target, 'vulnT', 'vulnMul', 1 + src.ab.sunmark.vuln, src.ab.sunmark.dur, false);
     }
     if (src && src.ab.chain && !target.isCastle && !this._chaining) this.chainFrom(src, target, dmg);
     if (target.isCastle) {
@@ -1524,8 +1527,7 @@ class Battle {
       target.kbTimer = Math.max(target.kbTimer, 0.12);
     }
     if (ab.weaken) {                              // 액막이: 이 적이 주는 피해가 준다
-      target.weakT = Math.max(target.weakT, ab.weaken.dur);
-      target.weakMul = Math.min(target.weakMul, ab.weaken.mul);
+      applyTimed(target, 'weakT', 'weakMul', ab.weaken.mul, ab.weaken.dur, true);
     }
     if (ab.charm && !target.boss && Math.random() < ab.charm.chance) {
       target.charmT = Math.max(target.charmT, ab.charm.dur);

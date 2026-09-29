@@ -1157,3 +1157,5 @@ body{background:var(--bg0);color:var(--tx)}
 .slot-row .sl-sub{flex:1;min-width:160px}
 .slot-row .sl-sub.warn{color:#e2a7a4}
 .slot-row .sl-tag{font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:10px;background:linear-gradient(180deg,#fbe3a6,#c99a52);color:#2a1d08}
+/* 3.1.1 아주 낮은 가로 화면(568x320)에서 소환 배너가 잘려 보이지 않던 것: 넘치면 스크롤 */
+.banner-info{min-height:0; overflow-y:auto;}
