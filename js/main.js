@@ -2,7 +2,6 @@
  *  막대 왕국 전쟁 - 화면 전환 / 저장 / 메인 루프
  * ======================================================================= */
 
-const SAVE_KEY = SaveStore.key;
 
 function defaultSave() {
   const lv = {};
@@ -481,7 +480,7 @@ function renderStageDetail(i) {
     hc.innerHTML = '<div class="sd-hard-txt"><b>' + (save.hard[i] ? '💀 하드코어 돌파 완료' : '💀 하드코어') + '</b>' +
       '<span>' + w('적 체력·공격') + ' ×' + (hardcoreEnemyMul(st) / (st.enemyMul || 1)).toFixed(1) +
       ' · ' + w('요새') + ' ' + fmtNum(hardcoreFortHp(st)) +
-      ' · ' + w('성채') + ' ' + Math.round(HARDCORE.castleMul * 100) + '% · ' + w('왕명 느림') +
+      ' · ' + w('성채') + ' ' + Math.round(HARDCORE.castleMul * 100) + '% · ' + w('왕명 느림') + ' · ' + w('격앙') +
       (extra.length ? ' · ' + w('특성 +') + extra.map(w).join('·') : '') + '</span>' +
       '<small>' + w('보상 골드') + ' ×' + HARDCORE.reward + (save.hard[i] ? '' : ' · ' + w('첫 돌파') + ' 🔮 +' + HARDCORE.stones) + '</small></div>';
     const hb = document.createElement('button');
@@ -1508,6 +1507,7 @@ function refreshTitleBadges() {
   $('#badge-progress').textContent = '돌파 ' + save.cleared + ' / ' + STAGES.length;
   $('#badge-gold').textContent = '💰 ' + fmtNum(save.coins);
   $('#badge-stones').textContent = '🔮 ' + save.stones;
+  $('#badge-slot').textContent = '💾 슬롯 ' + SaveStore.slot;
   // 이어하기: 지금 도전할 전장으로 바로 들어간다 (첫 판은 진군도에서 안내를 보고 시작)
   const cont = $('#btn-continue');
   const next = save.cleared < STAGES.length ? save.cleared : -1;
@@ -1562,7 +1562,7 @@ function init() {
   });
   $('#btn-reset').addEventListener('click', () => {
     askConfirm('기록 초기화',
-      '진행도와 소환한 병종이 모두 삭제됩니다. 정말 초기화하시겠습니까?', () => {
+      '슬롯 ' + SaveStore.slot + '의 진행도와 소환한 병종이 모두 삭제됩니다. 정말 초기화하시겠습니까?', () => {
         const fresh = defaultSave();
         if (!SaveStore.write(fresh, true)) { toast(SaveStore.error); return; }
         save = fresh;
@@ -1793,8 +1793,44 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
 }
 
 
+/* ------------------------------ 저장 슬롯 (3.1) ------------------------------ */
+function fmtPlayTime(sec) {
+  const m = Math.floor((sec || 0) / 60);
+  return m >= 60 ? Math.floor(m / 60) + '시간 ' + (m % 60) + '분' : m + '분';
+}
+function renderSlots() {
+  const box = $('#slot-list');
+  box.innerHTML = '';
+  for (let n = 1; n <= SaveStore.slotCount; n++) {
+    const cur = n === SaveStore.slot;
+    const s = cur ? save : SaveStore.peek(n);
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.className = 'slot-row' + (cur ? ' on' : '') + (!s ? ' empty' : '');
+    let body;
+    if (!s) body = '<span class="sl-sub">비어 있음 · 새로 시작</span>';
+    else if (s.broken) body = '<span class="sl-sub warn">읽지 못한 저장 · 고르면 저장 관리에서 복원할 수 있습니다</span>';
+    else {
+      const crowns = Object.keys(s.hard || {}).length;
+      body = '<span class="sl-sub">돌파 <b>' + (s.cleared || 0) + ' / ' + STAGES.length + '</b> · 💰 ' + fmtNum(s.coins || 0) +
+        ' · 🔮 ' + (s.stones || 0) + (crowns ? ' · 💀 ' + crowns : '') +
+        ' · ' + fmtPlayTime(s.stats && s.stats.playSec) + '</span>';
+    }
+    row.innerHTML = '<span class="sl-name">슬롯 ' + n + '</span>' + body + (cur ? '<span class="sl-tag">사용 중</span>' : '');
+    if (!cur) row.addEventListener('click', () => {
+      askConfirm('슬롯 ' + n + (s ? '' : ' 새로 시작'),
+        '지금 슬롯 ' + SaveStore.slot + '을 저장하고 슬롯 ' + n + '(으)로 바꿉니다.', () => {
+          saveGame(save);
+          SaveStore.useSlot(n);
+          location.reload();
+        });
+    });
+    box.appendChild(row);
+  }
+}
+
 function backupText() {
-  if (SaveStore.blocked) return localStorage.getItem(SAVE_KEY) || localStorage.getItem(SAVE_KEY + '-damaged') || '';
+  if (SaveStore.blocked) return localStorage.getItem(SaveStore.key) || localStorage.getItem(SaveStore.key + '-damaged') || '';
   return SaveStore.export(save);
 }
 function initSaveManager() {
@@ -1802,6 +1838,7 @@ function initSaveManager() {
   notice.textContent = SaveStore.error; notice.hidden = !SaveStore.blocked;
   if (SaveStore.recovered) toast('이전 자동 백업으로 진행도를 복구했습니다.');
   $('#btn-save-manager').addEventListener('click', () => $('#modal-save').classList.add('show'));
+  $('#badge-slot').addEventListener('click', () => { SFX.ui(); renderSlots(); $('#modal-slots').classList.add('show'); });
   $('#btn-export-save').addEventListener('click', () => {
     try {
       const raw = backupText();
@@ -1824,7 +1861,7 @@ function initSaveManager() {
   });
   $('#btn-previous-save').addEventListener('click', () => {
     try {
-      const raw = localStorage.getItem(SAVE_KEY + '-restore-point') || localStorage.getItem(SaveStore.backupKey);
+      const raw = localStorage.getItem(SaveStore.key + '-restore-point') || localStorage.getItem(SaveStore.backupKey);
       if (!raw) { toast('남아 있는 이전 백업이 없습니다.'); return; }
       window.receiveSaveBackup(raw);
     } catch (e) { toast('이전 백업을 읽지 못했습니다.'); }

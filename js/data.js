@@ -1039,9 +1039,9 @@ STAGES.push(
     W(2,'wolf',10,.8),W(24,'dark',5,2),W(48,'frostgiant',1),W(72,'wolf',10,.8),W(96,'orccatapult',2,5),W(120,'orcberserk',7,1.2),W(148,'frostgiant',1),W(180,'golem',2,5),W(208,'wolf',12,.7)]},
   {name:'얼어붙은 공성로',hint:'공성 병기를 막을 보호막 전열 필요',baseHp:41000,money:430,rate:53,reward:1320,enemyMul:2.46,waves:[
     W(2,'orcshield',4,2),W(22,'siegeram',2,5),W(46,'ballista',6,2),W(72,'frostgiant',1),W(100,'orcshield',6,1.8),W(126,'orccatapult',3,5),W(154,'warchief',2,5),W(184,'frostgiant',1),W(214,'dark',7,1.8)]},
-  {name:'★ 영원의 겨울 왕좌',hint:'연속 광역 공격 뒤 왕명으로 회복',baseHp:44000,money:440,rate:54,reward:1600,boss:true,enemyMul:11,waves:[
+  {name:'★ 영원의 겨울 왕좌',hint:'연속 광역 공격 뒤 왕명으로 회복',baseHp:44000,money:440,rate:54,reward:1600,boss:true,enemyMul:11.2,waves:[
     W(2,'wolf',8,1),W(24,'frostgiant',1),W(52,'troll',1),W(78,'orcshield',6,1.8),W(104,'frostgiant',1),W(136,'golem',2,5),W(164,'warchief',2,5),W(192,'frostgiant',1),W(224,'orcberserk',8,1)]},
-  {name:'불타는 태양 회랑',hint:'화상을 정화하며 화룡을 견제',baseHp:45500,money:445,rate:55,reward:1500,enemyMul:5.5,waves:[
+  {name:'불타는 태양 회랑',hint:'화상을 정화하며 화룡을 견제',baseHp:45500,money:445,rate:55,reward:1500,enemyMul:7,waves:[
     W(2,'hellhound',9,.8),W(26,'powder',6,1.8),W(52,'drake',1),W(80,'plaguer',6,2),W(108,'orcshield',6,1.8),W(138,'drake',1),W(170,'hellhound',10,.8),W(200,'siegeram',2,4),W(230,'dark',7,1.5)]},
   {name:'황금 일식의 제단',hint:'치유·가속 토템을 범위 공격으로 압박',baseHp:47500,money:450,rate:56,reward:1650,boss:true,enemyMul:4.2,waves:[
     W(2,'orcshield',5,2),W(26,'totem',2,6),W(50,'shaman',5,3),W(78,'warlord',1),W(108,'golem',2,5),W(140,'drake',1),W(174,'warchief',3,5),W(208,'orcberserk',8,1),W(240,'lich',2,8)]},
@@ -1080,7 +1080,7 @@ STAGES[14].enemyMul = 1.9;              // 3.0.2: 원거리가 전열 뒤에서 
 STAGES[16].enemyMul = 1.65;
 STAGES[17].enemyMul = 2.15;            // 2.7: 비싼 병종 강화·진화에 맞춰 다시 조율 (3.0: 보스를 반드시 쓰러뜨리게 되어 다시)
 STAGES[23].enemyMul = 6;               // 3.0: 보스 배율을 누그러뜨린 만큼 삼중 봉인 자체를 올린다
-STAGES[19].enemyMul = 3.0;             // 3.0: 대군주를 반드시 쓰러뜨려야 하는 대신 영웅 사냥꾼이 붙었다
+STAGES[19].enemyMul = 3.2;             // 3.0: 대군주를 반드시 쓰러뜨려야 하는 대신 영웅 사냥꾼이 붙었다
 
 /* ------------------------------------------------------------------
  *  보스는 전장마다 하나.
@@ -1744,13 +1744,16 @@ function unitFor(save, id) {
 
 /* =======================================================================
  *  하드코어. 돌파한 전장을 한 번 더, 훨씬 모질게.
- *   - 적 체력·공격 ×1.5(최소 ×3), 적 요새 체력 ×2(최소 40000), 전장 특성 하나가 더 붙는다
+ *   - 적 체력·공격 ×3.5(최소 ×5), 적 요새 체력 ×2(최소 40000), 전장 특성 하나가 더 붙는다 (3.1: ×1.5 → ×3.5)
+ *   - 격앙: 싸움이 30초 길어질 때마다 새로 나오는 적이 15% 더 억세진다 (최대 2.5배)
  *   - 아군 성채 체력 60%, 왕의 명령 재사용 대기 1.5배, 모든 적 기절 저항 30%
- *   - 이기면 보상 골드 2배, 처음 이기면 소환석 3개와 왕관 기록
+ *   - 이기면 보상 골드 3배, 처음 이기면 소환석 5개와 왕관 기록
+ *   다 키운 공략 편성으로도 30곳 중 절반 남짓만 넘는다 (`npm run balance` 가 검사).
  * ======================================================================= */
-const HARDCORE = { enemyMul: 1.5, fortMul: 2, castleMul: 0.6, cmdMul: 1.5, reward: 2, stones: 3, stunResist: 0.3,
+const HARDCORE = { enemyMul: 3.5, fortMul: 2, castleMul: 0.6, cmdMul: 1.5, reward: 3, stones: 5, stunResist: 0.3,
+                   fury: { per30: 0.15, max: 1.5 },   // 3.1: 오래 끌수록 새로 나오는 적이 억세진다 (최대 2.5배)
                    // 앞쪽 전장도 모질게: 적 배율과 요새 체력에 바닥을 깐다 (2막 초입 수준)
-                   mulFloor: 3, fortFloor: 40000,
+                   mulFloor: 5, fortFloor: 40000,
                    twists: ['blitz', 'horde', 'ironclad', 'curse'] };
 function hardcoreEnemyMul(st) { return Math.max((st.enemyMul || 1) * HARDCORE.enemyMul, HARDCORE.mulFloor); }
 function hardcoreFortHp(st) { return Math.max(Math.round(st.baseHp * HARDCORE.fortMul), HARDCORE.fortFloor); }

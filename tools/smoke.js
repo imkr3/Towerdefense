@@ -55,7 +55,7 @@ async function runSize(browser, size) {
   await page.evaluate(() => localStorage.setItem('stick-kingdom-save-v1', JSON.stringify({
     cleared: 13, coins: 60000, stones: 30, tutorial: true,
     upgrades: { wallet: 3, income: 3, power: 3, vitality: 3, castle: 3 },
-    levels: {spear:3,shield:3,archer:3,mage:3,venom:3}, loadout: ['spear','shield','archer','venom','mage'], stars: { 0: 3, 1: 2 }, owned: {}
+    levels: {spear:10,shield:3,archer:3,mage:3,venom:3}, evo: {spear:false}, loadout: ['spear','shield','archer','venom','mage'], stars: { 0: 3, 1: 2 }, owned: {}
   })));
   await page.reload();
   await page.waitForTimeout(350);
@@ -74,6 +74,22 @@ async function runSize(browser, size) {
   await page.reload();
   if (!await page.evaluate(() => save.cleared === 13 && save.coins === 60000 && save.stones === 30)) throw Error('Restore did not survive reload');
 
+
+  // 3.1: 저장 슬롯 — 2번은 새로 시작, 1번 진행도는 그대로 남는다
+  await page.click('#badge-slot');
+  await page.waitForTimeout(100);
+  await shot(page, 'slots-' + size.w);
+  if (await page.$$eval('#slot-list .slot-row', e => e.length) !== 3) throw Error('Save slot list broken');
+  await page.click('#slot-list .slot-row:nth-child(2)');
+  await Promise.all([page.waitForNavigation(), page.click('#confirm-yes')]);
+  await page.waitForTimeout(200);
+  if (!await page.evaluate(() => SaveStore.slot === 2 && save.cleared === 0 && $('#badge-slot').textContent.includes('2'))) throw Error('Switching to an empty slot failed');
+  await page.evaluate(() => { save.coins = 77; saveGame(save); });
+  await page.click('#badge-slot');
+  await page.click('#slot-list .slot-row:nth-child(1)');
+  await Promise.all([page.waitForNavigation(), page.click('#confirm-yes')]);
+  await page.waitForTimeout(200);
+  if (!await page.evaluate(() => SaveStore.slot === 1 && save.cleared === 13 && save.coins === 60000 && SaveStore.peek(2).coins === 77)) throw Error('Slots are not independent');
 
   await page.click('#btn-start');
   await page.waitForTimeout(250);
@@ -135,6 +151,13 @@ async function runSize(browser, size) {
   await page.evaluate(()=>{save.loadout=['spear'];saveGame(save);renderFormation();});
   await page.click('.fp-row:nth-child(1) .fp-btn:nth-of-type(1)');
   if(!await page.evaluate(()=>save.loadout.length===5))throw Error('Preset save/load failed');
+  // 3.1: 편성에서 진화 형태를 바꾼다
+  await page.evaluate(()=>{fmFocus='spear';renderFormation();});
+  await page.click('.fs-evo .evo-form[data-form="evo"]');
+  if(!await page.evaluate(()=>save.evo.spear===true&&unitFor(save,'spear').evo))throw Error('Formation evolution toggle failed');
+  await shot(page, 'formation-evo-' + size.w);
+  await page.click('.fs-evo .evo-form[data-form="base"]');
+  if(!await page.evaluate(()=>save.evo.spear===false))throw Error('Formation base-form toggle failed');
   const slotsFit=await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth&&document.querySelector('#formation-slots').getBoundingClientRect().right<=innerWidth);
   if(!slotsFit)failures.push(size.name+': 편성 칸이 화면을 넘친다');
   await page.reload(); await page.click('#btn-start'); await page.click('#btn-units');

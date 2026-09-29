@@ -266,13 +266,13 @@ const EXPECT = [
 /* 제대로 편성하는 플레이어: 특성 전장에는 그 특성을 받아칠 공략 편성을 든다.
  * 이 플레이어는 충분히 키웠을 때 캠페인을 거의 다, 2막을 전부 넘어야 한다. */
 const SMART_ACT1 = { up: 6, lv: 10, min: 19 };
-const SMART_ACT2 = { up: 8, lv: 12 };
+const SMART_ACT2 = { up: 10, lv: 14 };   // 3.1: 2막은 격앙·보스 격노로 한 단계 더 키워야 다 넘는다
 
 /* 진짜 어려운 전장. 전설·신화를 다 가져도 몰아 넣기만 해서는 못 넘고,
  * 특성에 맞춘 공략 편성이라야 넘는다. HARD_SEEDS 판 중 이긴 횟수로 본다. */
 const LEGEND_PROOF = [
   { stage: 18, up: 6, lv: 10 }, { stage: 20, up: 6, lv: 10 },
-  { stage: 27, up: 8, lv: 12 }, { stage: 28, up: 8, lv: 12 }, { stage: 30, up: 8, lv: 12 }
+  { stage: 27, up: 9, lv: 13 }, { stage: 28, up: 9, lv: 13 }, { stage: 30, up: 9, lv: 13 }
 ];
 /* 시즌마다 대표 셋. 어느 시즌을 뽑든 비슷한 값어치여야 한다. */
 const SEASON_TRIOS = [
@@ -285,6 +285,7 @@ const MONO_MAX = 12;
 const MONO_SUSPECTS = ['medusa', 'catapult', 'mage', 'necro', 'rogue', 'engineer', 'colossus', 'paladin',
   'rapriest', 'wukong', 'bajie', 'lancer', 'monk', 'alchemist', 'falconer', 'javelin'];
 const SEASON_SPREAD = 2;
+const HARD_MODE = { up: 10, lv: 15, min: 12, max: 20, bossMax: 6 };   // 하드코어 기대치 (3.1)
 const LEGEND_PROOF_MAX = 1;      // 전설만 편성이 이길 수 있는 최대 판 수
 const COUNTER_MIN = 4;           // 공략 편성이 이겨야 하는 최소 판 수
 
@@ -422,6 +423,20 @@ function check() {
     else if (r.ranged > LEGEND_PROOF_MAX) { console.error(`  ✗ 원거리만 몰아 넣어도 넘어가 버린다 ${tag} · 원거리만 ${r.ranged}`); failed++; }
     else if (r.counter < COUNTER_MIN) { console.error(`  ✗ 공략 편성으로도 못 넘는다 ${tag}`); failed++; }
     else console.log(`  ✓ 조합이 필요한 전장 ${tag}`);
+  }
+  // 3.1: 하드코어는 확실히 어렵다. 다 키운 공략 편성으로도 절반 남짓, 보스 전장은 대부분 막힌다.
+  {
+    SIM_HARD = true;
+    const g = loadEngine(12345), rows = [];
+    for (let i = 0; i < g.STAGES.length; i++) rows.push(runStage(g, i, HARD_MODE.up, HARD_MODE.lv, false, 'smart'));
+    SIM_HARD = false;
+    const wins = rows.filter(r => r.win).length;
+    const bossWins = rows.filter(r => r.win && g.STAGES[r.stage - 1].boss).length;
+    const bosses = rows.filter(r => g.STAGES[r.stage - 1].boss).length;
+    const tag = `하드코어 (강화 ${HARD_MODE.up}/Lv${HARD_MODE.lv} 공략 편성) ${wins}/30 · 보스 전장 ${bossWins}/${bosses}`;
+    if (wins < HARD_MODE.min || wins > HARD_MODE.max) { console.error(`  ✗ ${tag} — 기대 ${HARD_MODE.min}~${HARD_MODE.max}`); failed++; }
+    else if (bossWins > HARD_MODE.bossMax) { console.error(`  ✗ ${tag} — 보스 전장이 너무 쉽다 (최대 ${HARD_MODE.bossMax})`); failed++; }
+    else console.log(`  ✓ ${tag}`);
   }
   if (failed) {
     console.error(`\n밸런스 검사 실패 (${failed}건)\n`);

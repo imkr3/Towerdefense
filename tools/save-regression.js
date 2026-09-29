@@ -48,4 +48,30 @@ test('Completed original campaign and expansion progress survive backup round tr
     const data={...old,cleared,stars:{19:3,20:2}};assert.equal(s.parse(s.export(data)).cleared,cleared);
   }
 });
+test('Slot 1 keeps the legacy key; other slots are separate and remembered',()=>{
+  const {store:s,data}=fixture();data.set('stick-kingdom-save-v1',JSON.stringify(old));
+  assert.equal(s.slot,1);assert.equal(s.key,'stick-kingdom-save-v1');assert.equal(s.read().cleared,13);
+  assert.equal(s.peek(2),null);
+  s.useSlot(2);assert.equal(data.get(s.slotKey),'2');assert.equal(s.read(),null);
+  s.write({...old,cleared:3,coins:5});
+  assert.equal(JSON.parse(data.get('stick-kingdom-save-v1-s2')).cleared,3);
+  assert.equal(JSON.parse(data.get('stick-kingdom-save-v1')).cleared,13,'slot 1 untouched');
+  assert.equal(s.peek(1).cleared,13);assert.equal(s.peek(2).cleared,3);
+  s.write({...old,cleared:4,coins:5});assert.equal(JSON.parse(data.get('stick-kingdom-save-v1-s2-backup')).cleared,3,'backups stay per slot');
+  assert.equal(data.get('stick-kingdom-save-v1-backup'),undefined);
+  assert.equal(s.useSlot(4),false);assert.equal(s.slot,2);
+  data.set('stick-kingdom-save-v1-s3','broken');assert.equal(s.peek(3).broken,true);assert.equal(data.get('stick-kingdom-save-v1-s3'),'broken','peek never repairs');
+});
+test('A corrupted slot blocks only itself',()=>{
+  const {store:s,data}=fixture();s.write(old);s.useSlot(2);data.set(s.key,'broken');
+  assert.equal(s.read(),null);assert.equal(s.blocked,true);
+  s.useSlot(1);assert.equal(s.blocked,false);assert.equal(s.read().cleared,13);
+});
+test('The chosen slot is picked up on the next launch',()=>{
+  const data=new Map([['stick-kingdom-slot','3']]);
+  const localStorage={getItem:k=>data.get(k)??null,setItem(k,v){data.set(k,String(v));}};
+  const ctx=vm.createContext({localStorage,console});
+  for(const f of ['data','save-store'])vm.runInContext(fs.readFileSync('js/'+f+'.js','utf8'),ctx);
+  assert.equal(vm.runInContext('SaveStore.slot',ctx),3);assert.equal(vm.runInContext('SaveStore.key',ctx),'stick-kingdom-save-v1-s3');
+});
 console.log(n+' save protection checks passed');

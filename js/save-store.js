@@ -1,6 +1,27 @@
 /* Preserve the existing storage key and previous valid snapshot across updates. */
+/* 3.1: 저장 슬롯 셋. 1번은 예전 키를 그대로 써서 기존 진행도가 1번 슬롯이 된다.
+ * 어느 슬롯을 쓰는지는 따로 적어 두고, 슬롯마다 자기 백업·복원 지점을 가진다. */
+const SAVE_BASE_KEY = 'stick-kingdom-save-v1';
 const SaveStore = {
-  key: 'stick-kingdom-save-v1', backupKey: 'stick-kingdom-save-v1-backup',
+  slotKey: 'stick-kingdom-slot', slotCount: 3, slot: 1,
+  keyOf(n) { return n === 1 ? SAVE_BASE_KEY : SAVE_BASE_KEY + '-s' + n; },
+  get key() { return this.keyOf(this.slot); },
+  get backupKey() { return this.key + '-backup'; },
+  /* 다른 슬롯으로 옮긴다. 읽기 상태(막힘·복구)는 슬롯마다 새로 */
+  useSlot(n) {
+    if (!(n >= 1 && n <= this.slotCount)) return false;
+    this.slot = n; this.blocked = false; this.recovered = false; this.error = '';
+    try { localStorage.setItem(this.slotKey, String(n)); } catch (e) { /* 저장소를 못 쓰면 이번 실행만 */ }
+    return true;
+  },
+  /* 슬롯 요약을 본다 (아무것도 고치지 않는다). 비었으면 null, 못 읽으면 {broken:true} */
+  peek(n) {
+    try {
+      const raw = localStorage.getItem(this.keyOf(n)) || localStorage.getItem(this.keyOf(n) + '-backup');
+      if (!raw) return null;
+      return this.parse(raw);
+    } catch (e) { return { broken: true }; }
+  },
   blocked: false, recovered: false, error: '',
   validate(s) {
     const obj = v => v && typeof v === 'object' && !Array.isArray(v);
@@ -76,3 +97,7 @@ const SaveStore = {
     return JSON.stringify({format:'stick-kingdom-save', version:1, exportedAt:new Date().toISOString(), data:this.validate(s)}, null, 2);
   }
 };
+try {
+  const n = +localStorage.getItem(SaveStore.slotKey);
+  if (n >= 1 && n <= SaveStore.slotCount) SaveStore.slot = n;
+} catch (e) { /* 1번 슬롯 */ }

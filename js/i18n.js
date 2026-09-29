@@ -440,6 +440,12 @@ const I18N_EN = {
   '✦ 진화 · 💰 ': '✦ Evolve · 💰 ', '기본 형태': 'Base form', '진화 형태': 'Evolved', '형태 선택': 'Choose form',
   ' 진화 가능!': ' can evolve!', ' 진화 완료!': ' evolved!', ' 형태로 출진합니다': ' form will deploy',
   ' 기본 형태로 출진합니다': ' will deploy in base form',
+  '격앙': 'Fury', ' 격노! 공격과 속도가 오릅니다': ' is enraged! Attack and speed up',
+  '훈련소에서 진화할 수 있습니다': 'can evolve at the Training Grounds', '형태': 'Form',
+  '저장 슬롯': 'Save slots', '저장 슬롯 바꾸기': 'Switch save slot', '슬롯': 'Slot', '사용 중': 'In use',
+  '비어 있음 · 새로 시작': 'Empty · start new', ' 새로 시작': ' · start new',
+  '읽지 못한 저장 · 고르면 저장 관리에서 복원할 수 있습니다': 'Unreadable save · pick it and restore from Save management',
+  '슬롯마다 진행도·병종·골드가 따로 저장됩니다. 다른 슬롯을 고르면 그 슬롯으로 다시 시작합니다.': 'Each slot keeps its own progress, units and gold. Picking another slot restarts the game on that slot.',
 
   /* ---------------- 3.0 새 전장 병종 ---------------- */
   '투창병': 'Javelineer', '투창': 'Javelin',
@@ -569,6 +575,9 @@ const I18N_EN_HTML = {
 
 /* 숫자가 붙은 말. 구절 치환보다 먼저 한다. */
 const I18N_EN_PATTERNS = [
+  [/지금 슬롯 (\d)을 저장하고 슬롯 (\d)\(으\)로 바꿉니다\./g, 'Saves slot $1 and switches to slot $2.'],
+  [/슬롯 (\d)의 (진행도와 소환한 병종이 모두 삭제됩니다)/g, 'Slot $1: $2'],
+  [/(\d+)시간 (\d+)분/g, '$1h $2m'],
   [/(\d+)\s*전장 돌파/g, 'Stage $1 cleared'],
   [/전장 (\d+)/g, 'Stage $1'],
   [/(\d+)\s*전장/g, 'Stage $1'],

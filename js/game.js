@@ -62,6 +62,13 @@ const EXPOSED_MUL = 0.35;    // 엄호 없는 원거리 피해 배율
 const FALLOFF_FROM = 0.5;    // 엄호 없는 원거리는 사거리의 이만큼부터 멀수록 더 약해져
 const FALLOFF_MIN = 0.65;    // 사거리 끝에서는 이만큼만 들어간다
 const RUSH_MUL = 2.0;        // 근접 전열이 통째로 비어 있으면 적이 이만큼 빨리 밀고 들어온다
+/* 3.1: 어려운 전장은 확실히 어렵게.
+ * - 보스 격노: 캠페인 보스가 나온 뒤 BOSS_ENRAGE_T 초가 지나도 살아 있으면 공격·속도가 오른다.
+ *   보스를 뒤로 미뤄 두고 잡몹만 쓸어 담던 싸움을 끝낸다.
+ * - 격앙(fury): 하드코어와 2막에서는 싸움이 길어질수록 새로 나오는 적이 더 억세진다. */
+const BOSS_ENRAGE_T = 50;
+const BOSS_ENRAGE = { atk: 1.6, speed: 1.3, rate: 0.8 };
+const ACT2_FURY = { per30: 0.06, max: 0.6 };
 const COVER_GRACE = 8;       // 근접 전열이 모두 쓰러져도 이 시간 동안은 다음 근접을 내보낼 틈으로 봐 준다
 const STUN_GUARD_BOSS = 2.5;
 const WARD_FLOOR = 0.05;     // 보스가 살아 있는 동안 적 요새는 이 아래로 무너지지 않는다
@@ -259,9 +266,10 @@ class Battle {
     this.stage = customStage || STAGES[stageIndex];
     this.endless = !!this.stage.endless;
     this.save = save;
-    // 하드코어: 돌파한 전장을 더 모질게 (적 ×1.5 · 특성 하나 더 · 성채 60% · 왕명 느림)
+    // 하드코어: 돌파한 전장을 더 모질게 (적 ×3.5 · 격앙 · 특성 하나 더 · 성채 60% · 왕명 느림)
     this.hard = !!(opts && opts.hard) && !this.endless;
     this.enemyMulBase = this.hard ? hardcoreEnemyMul(this.stage) : (this.stage.enemyMul || 1);
+    this.fury = this.endless ? null : this.hard ? HARDCORE.fury : (this.stageIndex >= 20 ? ACT2_FURY : null);
 
     const up = save.upgrades;
     this.buff = {
@@ -554,6 +562,7 @@ class Battle {
     }
     if (this.stage.infinite) this.extendEndless();
     this.tickReinforce(dt);
+    this.checkEnrage();
 
     this.updateCover(dt);
     this.step(this.allies, this.enemies, this.enemyCastle, dt, true);
@@ -605,6 +614,23 @@ class Battle {
     if (bare >= 3 && !this.coverWarned) { this.coverWarned = true; this.announce('엄호 없음 · 원거리 병사 앞에 근접 병사를 세우세요', 2.6); }
   }
 
+  /* 보스 격노: 나온 지 오래된 캠페인 보스는 더 세고 빨라진다 (한 번만) */
+  checkEnrage() {
+    if (this.endless || !this.stage.bossId || this.bossDown) return;
+    for (const e of this.enemies) {
+      if (!e.boss || e.dead || e.furious || e.bornT === undefined || this.time - e.bornT < BOSS_ENRAGE_T) continue;
+      e.furious = true;                            // 페이즈 광폭화(enraged)와 따로 센다
+      e.atk = Math.round(e.atk * BOSS_ENRAGE.atk);
+      e.baseAtk = Math.round(e.baseAtk * BOSS_ENRAGE.atk);
+      e.speedMul *= BOSS_ENRAGE.speed;
+      e.rateMul = (e.rateMul || 1) * BOSS_ENRAGE.rate;
+      this.announce(e.s.name + ' 격노! 공격과 속도가 오릅니다', 2.6);
+      this.shake = Math.max(this.shake, 12);
+      this.fx.push({ type: 'cast', kind: 'shockwave', x: e.x, row: e.row, color: '#ff5a3c', r: 110, big: true, dir: -1, t: 0.6, life: 0.6 });
+      sfx('bossIn');
+    }
+  }
+
   /* 보스를 앞당겨 부른다 (호위는 원래 오던 때에 온다) */
   callBoss() {
     const id = this.stage.bossId;
@@ -634,6 +660,8 @@ class Battle {
     // 전장 자체가 거느린 강화 배율(2막처럼 같은 적이 더 억센 곳)과
     // 증원 배율을 함께 얹는다.
     let total = this.enemyMulBase * (mul && mul > 1 ? mul : 1);
+    // 격앙: 오래 끌수록 새로 나오는 적이 억세진다 (보스는 따로 격노한다)
+    if (this.fury && !spec.boss) total *= 1 + Math.min(this.fury.max, this.fury.per30 * this.time / 30);
     // 보스는 이제 반드시 쓰러뜨려야 하니, 전장 배율을 그대로 받으면 뒤쪽 보스가 끝없이 버틴다.
     // 배율을 누그러뜨려 받는다 (보스 자체 배율 BOSS_HP_MUL 은 따로 곱한다).
     if (spec.boss && this.stage.bossId && !this.endless && total > 1) total = Math.pow(total, BOSS_MUL_EXP);
@@ -650,7 +678,7 @@ class Battle {
       f.maxHp = Math.round(f.maxHp * BOSS_HP_MUL); f.hp = f.maxHp;
       f.atk = Math.round(f.atk * BOSS_ATK_MUL);
     }
-    if (f.boss) { this.bossAlert = 2.6; this.bossName = spec.name; this.shake = 10; sfx('bossIn'); }
+    if (f.boss) { this.bossAlert = 2.6; this.bossName = spec.name; this.shake = 10; sfx('bossIn'); f.bornT = this.time; }
     if (f.ab.burrow) { f.burrowed = true; this.burrowers.push(f); return f; }
     this.enemies.push(f);
     return f;

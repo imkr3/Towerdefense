@@ -668,4 +668,27 @@ test('Enemies charge in faster when no melee soldier holds the line', () => {
   assert.ok(held > 0 && open > held * 1.5, 'open ' + open + ' vs held ' + held);
 });
 
+/* ---------------- 3.1 어려운 전장 ---------------- */
+test('A campaign boss left alive too long enrages once', () => {
+  const b = new Battle(0, save(), bossStage()); b.update(1 / 30);
+  const boss = b.spawnEnemy('troll', 900); const atk = boss.atk, spd = boss.speedNow, iv = boss.intervalNow;
+  b.time = boss.bornT + 49; b.checkEnrage(); assert.equal(!!boss.furious, false);
+  b.time = boss.bornT + 51; b.checkEnrage(); assert.equal(boss.furious, true);
+  assert.ok(boss.atk > atk * 1.5 && boss.speedNow > spd * 1.2 && boss.intervalNow < iv);
+  const once = boss.atk; b.checkEnrage(); assert.equal(boss.atk, once, 'only once');
+  const plain = battle(); const t = plain.spawnEnemy('troll', 900); plain.time = 999; plain.checkEnrage();
+  assert.equal(!!t.furious, false, 'no enrage outside campaign boss stages');
+});
+test('Fury: in hardcore and act 2, foes arriving later are tougher', () => {
+  const s = save();
+  const h = new Battle(2, s, null, { hard: true }); const early = h.spawnEnemy('goblin', 900).maxHp;
+  h.time = 120; const late = h.spawnEnemy('goblin', 900).maxHp;
+  assert.ok(late > early * 1.5, 'hardcore ' + early + ' → ' + late);
+  h.time = 9999; assert.ok(h.spawnEnemy('goblin', 900).maxHp <= early * (1 + H.HARDCORE.fury.max) + 1, 'capped');
+  const a2 = new Battle(21, s); const e2 = a2.spawnEnemy('goblin', 900).maxHp; a2.time = 300;
+  assert.ok(a2.spawnEnemy('goblin', 900).maxHp > e2 * 1.3, 'act 2 fury');
+  const a1 = new Battle(5, s); const e1 = a1.spawnEnemy('goblin', 900).maxHp; a1.time = 300;
+  assert.equal(a1.spawnEnemy('goblin', 900).maxHp, e1, 'act 1 has no fury');
+});
+
 console.log(count + ' regression checks passed');

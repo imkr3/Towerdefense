@@ -637,7 +637,7 @@ class Renderer {
       ctx.beginPath(); ctx.ellipse(0, 1, 33 * s * pulse, 9 * s * pulse, 0, 0, 7); ctx.stroke();
       ctx.globalAlpha = 1;
     }
-    if (f.enraged) {                                       // 광폭화한 보스의 붉은 기운
+    if (f.enraged || f.furious) {                          // 광폭화·격노한 보스의 붉은 기운
       const pulse = 0.8 + Math.sin(f.bob * 3.2) * 0.2;
       ctx.globalAlpha = 0.45 * pulse;
       ctx.strokeStyle = '#ff5a3c';

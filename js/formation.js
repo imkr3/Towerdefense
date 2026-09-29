@@ -211,6 +211,32 @@ function renderFormationPool() {
   box.scrollTop = keep;
 }
 
+/* 편성에서도 진화 형태를 바꾼다. 진화를 마친 병종이면 기본 ⇄ 진화, 아직이면 안내만. */
+function formationEvoRow(id) {
+  const def = EVOLUTIONS[id], base = UNIT_BY_ID[id];
+  if (!def || !base) return null;
+  const row = document.createElement('div');
+  row.className = 'fs-evo';
+  if (save.evo[id] === undefined) {
+    const lv = save.levels[id] || 1;
+    row.innerHTML = '<span class="fe-hint">✦ ' + def.name + ' · ' +
+      (lv >= EVO_LEVEL ? '훈련소에서 진화할 수 있습니다' : '레벨 ' + EVO_LEVEL + '에 진화') + '</span>';
+    return row;
+  }
+  const on = save.evo[id] === true;
+  row.innerHTML = '<span class="fe-label">형태</span><div class="evo-seg" role="group" aria-label="형태 선택">' +
+    '<button type="button" class="evo-form' + (on ? '' : ' sel') + '" data-form="base" aria-pressed="' + !on + '">' + (base.short || base.name) + '</button>' +
+    '<button type="button" class="evo-form' + (on ? ' sel' : '') + '" data-form="evo" aria-pressed="' + on + '">✦ ' + (def.short || def.name) + '</button></div>';
+  row.querySelectorAll('.evo-form').forEach(b => b.addEventListener('click', () => {
+    const want = b.dataset.form === 'evo';
+    if (save.evo[id] === want) return;
+    save.evo[id] = want;
+    SFX.ui(); buzz(8);
+    commitLoadout(want ? '✦ ' + def.name + ' 형태로 출진합니다' : base.name + ' 기본 형태로 출진합니다');
+  }));
+  return row;
+}
+
 function renderFormationSide() {
   const side = $('#formation-side');
   side.innerHTML = '';
@@ -229,6 +255,8 @@ function renderFormationSide() {
       (u.active ? '<div class="fi-ab act">액티브 · ' + u.active.name + '</div>' : '');
     drawUnitIcon(info.querySelector('canvas'), u, 40);
     side.appendChild(info);
+    const evoRow = formationEvoRow(fmFocus);
+    if (evoRow) side.appendChild(evoRow);
   } else {
     const tip = document.createElement('p');
     tip.className = 'fs-tip';
