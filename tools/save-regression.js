@@ -74,4 +74,12 @@ test('The chosen slot is picked up on the next launch',()=>{
   for(const f of ['data','save-store'])vm.runInContext(fs.readFileSync('js/'+f+'.js','utf8'),ctx);
   assert.equal(vm.runInContext('SaveStore.slot',ctx),3);assert.equal(vm.runInContext('SaveStore.key',ctx),'stick-kingdom-save-v1-s3');
 });
+test('Blocked storage starts a fresh game instead of locking it',()=>{
+  const localStorage={getItem(){throw Error('SecurityError');},setItem(){throw Error('SecurityError');}};
+  const ctx=vm.createContext({localStorage,console});
+  for(const f of ['data','save-store'])vm.runInContext(fs.readFileSync('js/'+f+'.js','utf8'),ctx);
+  const s=vm.runInContext('SaveStore',ctx);
+  assert.equal(s.read(),null);assert.equal(s.blocked,false);assert.ok(s.error);
+  assert.equal(s.write(old),false);
+});
 console.log(n+' save protection checks passed');

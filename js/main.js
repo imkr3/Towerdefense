@@ -438,13 +438,16 @@ function renderStageDetail(i) {
   box.innerHTML = '';
   const ch = CHAPTERS[mapChapter];
   if (ch.endless || i < 0) {
+    // 잠긴 무한 전장에서 편성으로 들어가 출진하지 못하게, 열렸을 때만 출진 대상으로 넘긴다
+    const endlessOpen = ch.endless && save.cleared >= ENDLESS_UNLOCK_STAGE;
     box.innerHTML = ch.endless
-      ? '<div class="sd-name">무한 전장</div><p class="sd-hint">웨이브가 끝없이 몰려옵니다. 웨이브마다 적이 강해지고, 5웨이브마다 보스가 등장합니다. 성채가 무너지기 전까지 최대한 버텨 보세요!</p>'
+      ? '<div class="sd-name">무한 전장</div><p class="sd-hint">웨이브가 끝없이 몰려옵니다. 웨이브마다 적이 강해지고, 5웨이브마다 보스가 등장합니다. 성채가 무너지기 전까지 최대한 버텨 보세요!</p>' +
+        (endlessOpen ? '' : '<p class="sd-hint">🔒 무한 전장은 20전장을 모두 돌파하면 열립니다</p>')
       : '<div class="sd-name">' + ch.name + ' · ' + ch.sub + '</div><p class="sd-hint">이전 장을 먼저 돌파해야 합니다.</p>';
     const fb = document.createElement('button');
     fb.className = 'btn ghost sd-formation';
     fb.textContent = '편성';
-    fb.addEventListener('click', () => openFormation(ch.endless ? 'endless' : null));
+    fb.addEventListener('click', () => openFormation(endlessOpen ? 'endless' : null));
     box.appendChild(fb);
     return;
   }
@@ -727,6 +730,7 @@ function renderTraining() {
             if (save.loadout.length <= 1) { toast('최소 1개 병종은 편성해야 합니다'); return; }
             save.loadout = save.loadout.filter(id => id !== u.id);
           } else {
+            if (!heroRoom(u.id)) return;           // 전설·신화 칸 상한은 편성 화면과 같게
             save.loadout.push(u.id);
           }
           saveGame(save);
@@ -1009,6 +1013,7 @@ function drawBanner(sn) {
 
 /* ------------------------------ 전투 ------------------------------ */
 function startEndless() {
+  if (save.cleared < ENDLESS_UNLOCK_STAGE) return;
   battle = new Battle(0, save, makeEndlessStage());
   $('#scr-battle').classList.remove('hardcore');
   $('#battle-stage').textContent = '무한 전장 · 최고 ' + (save.endlessBest || 0) + '웨이브';
@@ -1220,20 +1225,28 @@ function flushPlayTime() {
   playAccum = 0;
 }
 
-function showResult() {
-  // 누적 기록과 임무 진행
+/* 끝난 전투의 누적 기록과 임무 진행. 결과창을 기다리지 않고 끝나는 순간 한 번만 적는다
+   (결과창이 뜨기 전에 나가도 승리·처치가 남도록). */
+function tallyBattle(b) {
+  if (!b || b.tallied || b.state === 'play') return;
+  b.tallied = true;
   flushPlayTime();
-  save.stats.bossKills += battle.bossKills || 0;
-  addStat('kills', battle.kills);
-  addStat('bosses', battle.bossKills || 0);
-  if (battle.endless) addStat('endless', battle.wavesCleared || 0);
-  if (battle.state === 'win') {
+  save.stats.bossKills += b.bossKills || 0;
+  addStat('kills', b.kills);
+  addStat('bosses', b.bossKills || 0);
+  if (b.cmdUses) addStat('commands', b.cmdUses);
+  if (b.endless) addStat('endless', b.wavesCleared || 0);
+  if (b.state === 'win') {
     save.stats.wins++;
     addStat('wins', 1);
-    if (battle.stars >= 3) addStat('perfect', 1);
+    if (b.stars >= 3) addStat('perfect', 1);
   }
   saveGame(save);
   checkAchievements();
+}
+
+function showResult() {
+  tallyBattle(battle);
 
   if (battle.endless) { showEndlessResult(); return; }
 
@@ -1315,6 +1328,7 @@ function loop(ts) {
     if (BGM.vol > 0) BGM.sting(battle.state === 'win' || (battle.endless && battle.newRecord) ? 'victory' : 'defeat');
     else BGM.stop(0.6);
     const ended = battle;
+    tallyBattle(ended);
     resultTimer = setTimeout(() => {
       if (battle === ended && $('#scr-battle').classList.contains('active')) showResult();
     }, 700);

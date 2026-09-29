@@ -296,7 +296,9 @@ function renderFormationSide() {
     load.disabled = !p.length;
     load.addEventListener('click', () => {
       const unlocked = new Set(unlockedUnits().map(x => x.id));
-      const next = p.filter(id => unlocked.has(id)).slice(0, LOADOUT_MAX);
+      let heroes = 0;                            // 전설·신화 칸 상한을 넘는 저장은 앞에서부터만
+      const next = p.filter(id => unlocked.has(id))
+        .filter(id => !isHeroUnit(UNIT_BY_ID[id]) || ++heroes <= HERO_SLOT_MAX).slice(0, LOADOUT_MAX);
       if (!next.length) { toast('불러올 편성이 없습니다'); return; }
       save.loadout = next;
       SFX.ui();

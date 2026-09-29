@@ -45,8 +45,13 @@ const SaveStore = {
     return this.validate(value);
   },
   read() {
+    // 저장소 자체를 못 쓰는 기기(사이트 데이터 차단)는 망가진 저장과 다르다. 새로 시작하게 두고 경고만 한다.
+    let raw;
+    try { raw = localStorage.getItem(this.key); } catch (e) {
+      this.error = '이 기기에서는 저장소를 쓸 수 없어 진행도가 저장되지 않습니다.';
+      return null;
+    }
     try {
-      const raw = localStorage.getItem(this.key);
       if (raw === null) {
         const fallback = localStorage.getItem(this.backupKey);
         if (fallback) { const s = this.parse(fallback); this.recovered = true; return s; }

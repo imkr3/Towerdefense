@@ -304,6 +304,13 @@ const I18N_EN = {
   '승 리': 'VICTORY', '패 배': 'DEFEAT', '다시 도전': 'Retry', '다음 전장으로': 'Next stage', '진군도로': 'To map',
   '첫 출진': 'First March', '좋아, 진군!': 'To battle!', '취소': 'Cancel',
   '저장 관리': 'Save manager', '백업 내보내기': 'Export backup', '백업 파일 열기': 'Open backup file', '이전 저장 복원': 'Restore previous save',
+  '게임 저장 데이터가 아닙니다.': 'This is not a game save.', '진화 데이터 오류': 'Bad evolution data',
+  '편성 데이터 오류': 'Bad squad data', '일일 임무 데이터 오류': 'Bad daily mission data',
+  '백업은 1MB 이하의 JSON 파일이어야 합니다.': 'A backup must be a JSON file of 1MB or less.',
+  '지원하지 않는 백업 버전입니다.': 'Unsupported backup version.',
+  '기존 저장을 읽지 못해 덮어쓰기를 막았습니다. 저장 관리에서 원본을 백업하거나 복원해 주세요.': "Couldn't read the existing save, so overwriting is blocked. Back it up or restore it in Save management.",
+  '저장에 실패했습니다. 저장 관리에서 백업을 내보내 주세요.': 'Saving failed. Export a backup from Save management.',
+  '이 기기에서는 저장소를 쓸 수 없어 진행도가 저장되지 않습니다.': "Storage isn't available on this device, so progress won't be saved.",
   '백업 JSON': 'Backup JSON', '백업 내용을 복사하거나 여기에 붙여 넣을 수 있습니다.': 'Copy the backup or paste one here.',
   '붙여 넣은 백업 복원': 'Restore pasted backup', '닫기': 'Close',
   '가로로 돌려주세요': 'Please rotate to landscape',
@@ -575,6 +582,13 @@ const I18N_EN_HTML = {
 
 /* 숫자가 붙은 말. 구절 치환보다 먼저 한다. */
 const I18N_EN_PATTERNS = [
+  [/전장 (\d+)개 돌파 · 골드 (\d+) · 소환석 (\d+)\. 이 데이터로 교체할까요\? 현재 저장은 자동 백업에 남깁니다\./g,
+   '$1 stages cleared · $2 gold · $3 stones. Replace your progress with this? The current save stays in the auto-backup.'],
+  [/(.+) 레벨 (\d+) 완료/g, '$1 Lv $2 done'],
+  [/(\d+)개 칸을 채웠습니다/g, 'Filled $1 slots'],
+  [/저장 항목 형식 오류: (\w+)/g, 'Bad save field: $1'],
+  [/저장 숫자 오류: (\w+)/g, 'Bad save number: $1'],
+  [/저장 능력치 오류: (\w+)/g, 'Bad save stat: $1'],
   [/지금 슬롯 (\d)을 저장하고 슬롯 (\d)\(으\)로 바꿉니다\./g, 'Saves slot $1 and switches to slot $2.'],
   [/슬롯 (\d)의 (진행도와 소환한 병종이 모두 삭제됩니다)/g, 'Slot $1: $2'],
   [/(\d+)시간 (\d+)분/g, '$1h $2m'],
@@ -651,12 +665,13 @@ function i18nNode(node) {
     return;
   }
   if (node.nodeType !== 1) return;
-  if (node.tagName === 'SCRIPT' || node.tagName === 'STYLE' || node.tagName === 'TEXTAREA') return;
+  if (node.tagName === 'SCRIPT' || node.tagName === 'STYLE') return;
   for (const a of I18N_ATTRS) {
     const v = node.getAttribute(a);
     // 같은 값을 다시 쓰면 그것도 변경으로 잡혀 끝없이 돈다
     if (v && I18N.hangul.test(v)) { const n = t(v); if (n !== v) node.setAttribute(a, n); }
   }
+  if (node.tagName === 'TEXTAREA') return;       // 안내 글(placeholder)만 바꾸고 붙여 넣은 내용은 그대로
   if ((node.tagName === 'LI' || node.tagName === 'P') && I18N_EN_HTML[node.innerHTML.trim()]) {
     node.innerHTML = I18N_EN_HTML[node.innerHTML.trim()];
     return;
