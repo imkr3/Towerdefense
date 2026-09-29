@@ -509,7 +509,7 @@ test('A stunned foe gets a short immunity, bosses stun for half as long', () => 
   const b = battle(); const e = b.spawnEnemy('goblin', 900);
   assert.equal(e.stun(1), true); assert.equal(e.stun(1), false, 'no chain stun');
   e.stunT = 0; e.stunImm = 0; const boss = b.spawnEnemy('troll', 900);
-  boss.stun(1); assert.equal(boss.stunT, 0.5);
+  boss.stun(1); assert.ok(Math.abs(boss.stunT - 0.5 * 0.75) < 1e-9, 'half, then the player stun cut');
   const m = b.makeAlly(U.monk, 500); assert.equal(m.stun(2), false, 'the monk is unshakable');
 });
 test('Every card unit has a stacking cap; pricier units stand in fewer copies', () => {
@@ -620,12 +620,12 @@ test('Hardcore wins record a crown, pay double and stones once', () => {
 test('Some foes shrug off stuns: heavy ones are immune, elites resist', () => {
   const b = battle(); const g = b.spawnEnemy('siegeram', 900), o = b.spawnEnemy('orcshield', 900), gob = b.spawnEnemy('goblin', 900);
   assert.equal(g.stun(2), false); assert.equal(g.stunT, 0);
-  assert.equal(o.stun(2), true); assert.ok(Math.abs(o.stunT - 1.4) < 1e-9);
-  assert.equal(gob.stun(2), true); assert.equal(gob.stunT, 2);
+  assert.equal(o.stun(2), true); assert.ok(Math.abs(o.stunT - 2 * 0.7 * 0.75) < 1e-9);
+  assert.equal(gob.stun(2), true); assert.ok(Math.abs(gob.stunT - 2 * 0.75) < 1e-9);
   const m = b.makeAlly(U.medusa, 860), undo = rnd(0); b.hitOne(1, g, m, false); undo();
   assert.ok(b.fx.some(f => f.type === 'miss' && f.text === '기절 면역'), 'shows the shrug-off');
   const h = new Battle(2, save(), null, { hard: true }), hg = h.spawnEnemy('goblin', 900);
-  hg.stun(2); assert.ok(Math.abs(hg.stunT - 1.4) < 1e-9, 'hardcore foes resist 30%');
+  hg.stun(2); assert.ok(Math.abs(hg.stunT - 2 * 0.7 * 0.75) < 1e-9, 'hardcore foes resist 30%');
   assert.ok(/기절 면역/.test(E.siegeram.abText) && /기절 저항/.test(E.orcshield.abText));
 });
 
@@ -637,6 +637,35 @@ test('Enemy healing does not stack, and reinforcements stop sending healers past
   const r = new Battle(0, save(), { baseHp: 99999, money: 0, rate: 0, reward: 0, waves: [{ t: 0, e: 'shaman', n: 1, gap: 1 }] });
   r.update(1 / 30); r.spawnEnemy('shaman', 900); r.reinfPool = ['shaman']; r.reinfT = 0; r.reinfOn = true;
   const before = r.enemies.length; r.tickReinforce(0.01); assert.equal(r.enemies.length, before);
+});
+
+test('Ranged units without a melee front line lose most of their punch', () => {
+  const b = battle(); const ar = b.makeAlly(U.archer, 500); b.allies.push(ar);
+  const e1 = b.spawnEnemy('orcshield', 520), undo = rnd(0.99);
+  b.updateCover(0.1); assert.equal(ar.exposed, false, 'a short grace while the next melee walks up');
+  b.updateCover(10); assert.equal(ar.exposed, true);
+  let hp = e1.hp; b.attack(ar, e1, b.enemies, b.enemyCastle); b.updateShots(5); const bare = hp - e1.hp;
+  const sp = b.makeAlly(U.spear, 510); b.allies.push(sp); b.updateCover(); assert.equal(ar.exposed, false);
+  ar.cd = 0; hp = e1.hp; b.attack(ar, e1, b.enemies, b.enemyCastle); b.updateShots(5); const covered = hp - e1.hp; undo();
+  assert.ok(bare < covered * 0.5, 'exposed ' + bare + ' vs covered ' + covered);
+  const sk = b.makeAlly(U.skeleton, 600); sk.summoned = true; b.allies.push(sk); sp.dead = true; b.updateCover(10);
+  assert.equal(ar.exposed, true, 'summoned skeletons are not cover');
+  assert.equal(sk.exposed, true, 'summons fighting without a living front line are shaky too');
+  assert.ok(b.rush > 1, 'enemies rush an open line');
+  const bar = b.makeAlly(U.barricade, 600); bar.summoned = true; b.allies.push(bar); b.updateCover(0.1);
+  assert.equal(ar.exposed, false, 'barricades are cover');
+  assert.equal(b.rush, 1);
+});
+
+test('Enemies charge in faster when no melee soldier holds the line', () => {
+  const walk = withMelee => {
+    const b = battle(); b.allies.push(b.makeAlly(U.archer, 200));
+    if (withMelee) b.allies.push(b.makeAlly(U.spear, 250));
+    const e = b.spawnEnemy('goblin', 900); b.updateCover(10);
+    const x0 = e.x; b.step(b.enemies, b.allies, b.allyCastle, 0.1, false); return x0 - e.x;
+  };
+  const open = walk(false), held = walk(true);
+  assert.ok(held > 0 && open > held * 1.5, 'open ' + open + ' vs held ' + held);
 });
 
 console.log(count + ' regression checks passed');

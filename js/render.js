@@ -705,6 +705,13 @@ class Renderer {
       ctx.fillStyle = f.side === 'ally' ? '#4fa3e0' : '#c0392b';
       rectPath(ctx, x - bw / 2, y - 72 * s, bw * (f.hp / f.maxHp), 5 * s); ctx.fill();
     }
+    // 엄호 없는 원거리 아군: 머리 위 주황 느낌표 (조준이 흐트러져 약하다)
+    if (f.exposed && f.side === 'ally' && f.s.ranged) {
+      const ey = y - 86 * s + Math.sin((this.clock || 0) * 5 + (f._seed || 0)) * 1.5 * s;
+      ctx.fillStyle = '#ff9f43'; ctx.strokeStyle = 'rgba(12,16,24,.85)'; ctx.lineWidth = 1.2 * s;
+      ctx.beginPath(); ctx.arc(x, ey, 5 * s, 0, 7); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#1c1612'; ctx.fillRect(x - 0.9 * s, ey - 3.2 * s, 1.8 * s, 4 * s); ctx.fillRect(x - 0.9 * s, ey + 1.5 * s, 1.8 * s, 1.6 * s);
+    }
     // 기절 면역(금빛)·저항(은빛) 표식: 체력바 왼쪽 작은 방패
     if (f.side === 'enemy' && (f.ab.stunImmune || f.ab.stunResist > 0)) {
       const bx = x - bw / 2 - 6 * s, by = y - 70 * s;

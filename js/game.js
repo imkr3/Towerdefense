@@ -53,7 +53,16 @@ const SLOW_SPEED_MUL = 0.45; // 둔화 시 이동
 const SLOW_RATE_MUL = 1.7;   // 둔화 시 공격 간격
 /* 3.0: 기절이 풀리면 잠깐은 다시 기절하지 않는다. 기절을 거는 병사를 줄지어 세워
  * 적을 영원히 굳히던 것(메두사 열 명)을 막는다. 보스는 짧게 기절하고 오래 버틴다. */
-const STUN_GUARD = 1.2;
+const STUN_GUARD = 1.8;
+const STUN_DUR_MUL = 0.75;   // 3.0.2: 아군이 적에게 거는 기절은 모두 이만큼 짧다
+/* 3.0.2: 원거리 도배 막기. 앞을 막아 주는 근접 아군이 없으면 원거리 병사는 조준이 흐트러져
+ * 피해가 줄어든다. 근접과 섞은 편성은 그대로, 원거리만 몰아 넣은 편성만 약해진다. */
+const COVER_SLACK = 30;      // 이만큼 뒤에 근접 아군이 서 있어도 엄호로 본다
+const EXPOSED_MUL = 0.35;    // 엄호 없는 원거리 피해 배율
+const FALLOFF_FROM = 0.5;    // 엄호 없는 원거리는 사거리의 이만큼부터 멀수록 더 약해져
+const FALLOFF_MIN = 0.65;    // 사거리 끝에서는 이만큼만 들어간다
+const RUSH_MUL = 2.0;        // 근접 전열이 통째로 비어 있으면 적이 이만큼 빨리 밀고 들어온다
+const COVER_GRACE = 8;       // 근접 전열이 모두 쓰러져도 이 시간 동안은 다음 근접을 내보낼 틈으로 봐 준다
 const STUN_GUARD_BOSS = 2.5;
 const WARD_FLOOR = 0.05;     // 보스가 살아 있는 동안 적 요새는 이 아래로 무너지지 않는다
 const CHRONO_RATE = 0.6;     // 시간 주술사가 살아 있으면 카드 재사용 대기가 이 속도로 준다
@@ -141,6 +150,7 @@ class Fighter {
     // 3.0.1: 몸이 무겁거나 정신이 굳은 적은 기절을 받지 않거나(stunImmune) 짧게 받는다(stunResist)
     if (this.ab.stunImmune) { this.resistFx = true; return false; }
     if (this.ab.stunResist) d *= 1 - this.ab.stunResist;
+    if (this.side === 'enemy') d *= STUN_DUR_MUL;
     if (this.boss) d *= 0.5;
     this.stunT = Math.max(this.stunT, d);
     this.stunImm = d + (this.boss ? STUN_GUARD_BOSS : STUN_GUARD);
@@ -545,6 +555,7 @@ class Battle {
     if (this.stage.infinite) this.extendEndless();
     this.tickReinforce(dt);
 
+    this.updateCover(dt);
     this.step(this.allies, this.enemies, this.enemyCastle, dt, true);
     this.step(this.enemies, this.allies, this.allyCastle, dt, false);
     if (this.burrowers.length) this.stepBurrowers(dt);
@@ -566,6 +577,32 @@ class Battle {
     else if (this.endless && !this.stage.infinite && this.qi >= this.queue.length && this.enemies.length === 0) {
       this.finish('over');
     }
+  }
+
+  /* 원거리 엄호: 가장 앞에 선 근접 아군(방벽 포함, 소환물·싸우지 않는 지원병 제외).
+   * 그보다 앞에 나선 원거리 병사는 엄호가 없다 (exposed). */
+  updateCover(dt = 0) {
+    let front = -Infinity;
+    for (const a of this.allies) {
+      // 불려 나온 해골·미라·분신은 엄호가 못 된다 (방벽은 된다). 직접 내보낸 근접 병사만.
+      if (a.dead || a.s.ranged || (a.ab.noAttack && !a.ab.kbImmune) || (a.summoned && !a.ab.hold)) continue;
+      if (a.x > front) front = a.x;
+    }
+    this.allyFront = front;
+    // 전열이 통째로 비었을 때: 잠깐은 봐 주고(다음 근접이 오는 중), 오래 비어 있으면 엄호 없음
+    this.bareT = front > -Infinity ? 0 : (this.bareT || 0) + dt;
+    const graced = front === -Infinity && this.bareT < COVER_GRACE;
+    // 막아 서는 병사가 없으면 적이 돌격해 들어온다 (원거리만으로 멀찍이 쏘기만 하는 것을 막는다)
+    this.rush = front === -Infinity && !graced ? RUSH_MUL : 1;
+    let bare = 0;
+    for (const a of this.allies) {
+      a.exposed = !graced && !!a.s.ranged && !a.dead && a.x > front + COVER_SLACK;
+      if (a.exposed) bare++;
+      // 불려 나온 해골·미라도 살아 있는 근접 전열 없이 싸우면 흐트러진다 (원거리 소환사만 몰아 넣는 편성)
+      else if (a.summoned && !a.ab.hold && front === -Infinity && !graced) a.exposed = true;
+    }
+    // 처음으로 원거리 셋 이상이 엄호 없이 서면 한 번 알려 준다
+    if (bare >= 3 && !this.coverWarned) { this.coverWarned = true; this.announce('엄호 없음 · 원거리 병사 앞에 근접 병사를 세우세요', 2.6); }
   }
 
   /* 보스를 앞당겨 부른다 (호위는 원래 오던 때에 온다) */
@@ -860,10 +897,12 @@ class Battle {
           this.attack(f, target, foes, foeCastle);
           if (f.ab.spinup) f.spin = Math.min(f.ab.spinup.max, f.spin + f.ab.spinup.per);
         }
-      } else if (!f.ab.hold && this.canAdvance(f, foes)) {
+      } else if (!f.ab.hold && this.canAdvance(f, foes) &&
+                 // 원거리 아군은 근접 전열이 있으면 그 뒤에서 기다린다 (앞질러 나가 엄호를 잃지 않게)
+                 !(isAlly && f.s.ranged && this.allyFront > -Infinity && f.x >= this.allyFront + COVER_SLACK * 0.5)) {
         f.spin = 0;                                 // 걸으면 식는다
         f.moving = f.speedNow > 0;
-        f.x += f.dir * f.speedNow * dt;
+        f.x += f.dir * f.speedNow * dt * (isAlly ? 1 : this.rush || 1);
         f.x = Math.max(60, Math.min(WORLD - 60, f.x));
         if (f.ab.charge) f.chargeDist += f.speedNow * dt;   // 달려온 만큼 창끝이 무거워진다
       }
@@ -1296,6 +1335,12 @@ class Battle {
   attack(f, target, foes, foeCastle) {
     if (f.ab.sapper) { this.sapperBlast(f, foes, foeCastle); return; }
     const r = this.rollDamage(f);
+    if (f.side === 'ally' && f.exposed) {
+      r.dmg *= EXPOSED_MUL;                                      // 엄호 없는 원거리
+      // 엄호 없이 멀리 쏠수록 더 빗나간다: 앞을 비워 두고 사거리 끝에서 두드리기만 하는 것을 누그러뜨린다
+      const dist = Math.abs(target.x - f.x), k = dist / Math.max(1, f.attackRange);
+      if (k > FALLOFF_FROM) r.dmg *= 1 - (1 - FALLOFF_MIN) * Math.min(1, (k - FALLOFF_FROM) / (1 - FALLOFF_FROM));
+    }
     // 창기병 돌격: 달려온 첫 일격이 몇 배로 들어가고 적을 밀쳐 낸다
     let charged = false;
     if (f.ab.charge) {

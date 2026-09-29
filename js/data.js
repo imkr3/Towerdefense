@@ -343,8 +343,8 @@ const SEASON_UNITS = [
     body: '#6b8f5f', accent: '#9de08e', tunic: '#4a6b46',
     hp: 760, atk: 92, range: 240, speed: 28, interval: 1.8,
     cost: 260, cooldown: 10, kb: 2, ranged: true,
-    ab: { stun: { chance: 0.5, dur: 1.6 }, slow: 2 },
-    abText: '50% 석화(기절) · 둔화',
+    ab: { stun: { chance: 0.35, dur: 1.6 }, slow: 2 },
+    abText: '35% 석화(기절) · 둔화',
     desc: '눈을 마주친 자는 돌이 됩니다. 적의 전선을 통째로 굳혀 버립니다.'
   }),
   mk({
@@ -1075,9 +1075,10 @@ STAGES.forEach((st, i) => { if (!st.mods && HARD_STAGE_MODS[i]) st.mods = HARD_S
 // 1막 전장은 적 배율을 따로 올려 둔다.
 STAGES[15].enemyMul = 2.3;              // 끼어 있던 보스 둘이 정예로 바뀐 만큼
 STAGES[11].enemyMul = 1.78;             // 2.7: 쿨타임·비용 등급 조정 뒤 중반이 물러져서
-STAGES[12].enemyMul = 1.72;
+STAGES[12].enemyMul = 1.62;             // 3.0.2: 엄호 없는 원거리가 약해진 만큼 리치의 재림을 조금 누그러뜨린다
+STAGES[14].enemyMul = 1.9;              // 3.0.2: 원거리가 전열 뒤에서 기다리게 되어 거대 트롤의 문을 다시 조인다
 STAGES[16].enemyMul = 1.65;
-STAGES[17].enemyMul = 2.25;            // 2.7: 비싼 병종 강화·진화에 맞춰 다시 조율 (3.0: 보스를 반드시 쓰러뜨리게 되어 다시)
+STAGES[17].enemyMul = 2.15;            // 2.7: 비싼 병종 강화·진화에 맞춰 다시 조율 (3.0: 보스를 반드시 쓰러뜨리게 되어 다시)
 STAGES[23].enemyMul = 6;               // 3.0: 보스 배율을 누그러뜨린 만큼 삼중 봉인 자체를 올린다
 STAGES[19].enemyMul = 3.0;             // 3.0: 대군주를 반드시 쓰러뜨려야 하는 대신 영웅 사냥꾼이 붙었다
 

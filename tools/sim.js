@@ -93,11 +93,11 @@ function comboLoadout(g, index) {
   // 전설·신화 다섯 칸을 역할로 채운다: 지휘(오딘) · 낙인(라) · 파쇄(토르) · 홀림(구미호) · 포탑(대발명가).
   // 몸통은 전장 병종 다섯. 잡몹이 다양해진 2.5 부터는 셋으로는 모자라 다섯을 다 쓴다.
   const roles = ['odin', 'ra', 'thor', 'gumiho', 'inventor'];
-  const core = g.ROSTER_UNITS
-    .filter(u => u.unlockStage <= index + 1)
-    .sort((a, b) => b.cost - a.cost)
-    .slice(0, g.LOADOUT_MAX - roles.length)
-    .map(u => u.id);
+  // 3.0.2: 엄호 없는 원거리는 약해진다. 조합을 아는 플레이어답게 몸통에 근접 전열 둘은 꼭 넣는다.
+  const pool = g.ROSTER_UNITS.filter(u => u.unlockStage <= index + 1).sort((a, b) => b.cost - a.cost);
+  const n = g.LOADOUT_MAX - roles.length;
+  const front = pool.filter(u => !u.ranged && !(u.ab && u.ab.noAttack)).slice(0, 2);
+  const core = front.concat(pool.filter(u => !front.includes(u)).slice(0, n - front.length)).map(u => u.id);
   return core.concat(roles).slice(0, g.LOADOUT_MAX);
 }
 
@@ -130,6 +130,15 @@ function counterLoadout(g, index) {
   return picks.concat(rest).slice(0, g.LOADOUT_MAX);
 }
 
+/* 원거리만 / 근접만 몰아 넣은 편성 (소환 병종 포함, 전설·신화 5명까지). "원거리 도배" 를 잰다. */
+function styleLoadout(g, index, ranged, campaignOnly) {
+  const ok = u => u.cost > 0 && (campaignOnly ? u.unlockStage <= index + 1 : (u.gacha || u.unlockStage <= index + 1)) &&
+    !!u.ranged === ranged && !(u.ab && u.ab.noAttack) && !(campaignOnly && u.ab && u.ab.summon);
+  const list = g.UNITS.filter(ok).sort((a, b) => b.cost - a.cost);
+  let heroes = 0;
+  return list.filter(u => !(u.rarity === 'SSR' || u.rarity === 'UR') || ++heroes <= g.HERO_SLOT_MAX).slice(0, g.LOADOUT_MAX).map(u => u.id);
+}
+
 function runStage(g, index, upLv, unitLv, trace, gacha, basic) {
   const academy = Math.min(5, Math.floor(upLv / 2));
   const cap = g.unitLevelCap(index, academy);
@@ -146,6 +155,8 @@ function runStage(g, index, upLv, unitLv, trace, gacha, basic) {
           .sort((a, b) => ({ UR: 0, SSR: 1, SR: 2 }[a.rarity] - { UR: 0, SSR: 1, SR: 2 }[b.rarity]) || (b.cost - a.cost))
           .slice(0, g.LOADOUT_MAX).map(u => u.id)
     : (typeof gacha === 'string' && gacha.indexOf('mono:') === 0) ? [gacha.slice(5)]
+    : (gacha === 'ranged' || gacha === 'melee') ? styleLoadout(g, index, gacha === 'ranged')
+    : gacha === 'rangedbase' ? styleLoadout(g, index, true, true)
     : gacha === 'combo' ? comboLoadout(g, index)
     : gacha === 'counter' ? counterLoadout(g, index)
     : (typeof gacha === 'string' && gacha.indexOf('with:') === 0)
@@ -202,7 +213,8 @@ function runStage(g, index, upLv, unitLv, trace, gacha, basic) {
     seconds: Math.round(t),
     coins: b.coins,
     kills: b.kills,
-    castle: Math.round(b.allyCastle.hp / b.allyCastle.maxHp * 100)
+    castle: Math.round(b.allyCastle.hp / b.allyCastle.maxHp * 100),
+    foe: Math.round(b.enemyCastle.hp / b.enemyCastle.maxHp * 100)
   };
 }
 
@@ -279,7 +291,7 @@ const COUNTER_MIN = 4;           // 공략 편성이 이겨야 하는 최소 판
 /* 전설·신화는 스탯이 아니라 역할로 값을 한다.
  * - 전설·신화만 몽땅 넣은 "무지성" 편성은 전장 병종 편성보다 LEGEND_GAP 이상 앞서면 안 된다
  * - 전장 병종으로 몸통을 세우고 역할에 맞게 얹은 "조합" 편성은 무지성 편성을 이겨야 한다 */
-const LEGEND_GAP = 2;
+const LEGEND_GAP = 3;   // 3.0.2: 전장 편성(비싼 순)은 원거리가 몰려 엄호 없음에 걸리기 쉬워 한 칸 물러 준다
 
 /* 소환 병종은 특색으로 값을 해야지, 전장 진도를 건너뛰는 열쇠가 되면 안 된다.
  * 최상급만 뽑아 편성했을 때 전장 병종 편성과 이만큼 이상 벌어지면 실패로 본다. */
@@ -405,8 +417,9 @@ function check() {
   // 진짜 어려운 전장은 전설·신화를 몰아 넣는 것만으로는 안 된다
   for (const h of LEGEND_PROOF) {
     const [r] = runHard(h.up, h.lv, 0, h.stage - 1, h.stage);
-    const tag = `S${h.stage} ${r.mods} (강화 ${h.up}/Lv${h.lv}) 전설만 ${r.legend}/${HARD_SEEDS.length} · 공략 ${r.counter}/${HARD_SEEDS.length}`;
+    const tag = `S${h.stage} ${r.mods} (강화 ${h.up}/Lv${h.lv}) 전설만 ${r.legend}/${HARD_SEEDS.length} · 원거리만 ${r.ranged}/${HARD_SEEDS.length} · 공략 ${r.counter}/${HARD_SEEDS.length}`;
     if (r.legend > LEGEND_PROOF_MAX) { console.error(`  ✗ 전설만으로 넘어가 버린다 ${tag}`); failed++; }
+    else if (r.ranged > LEGEND_PROOF_MAX) { console.error(`  ✗ 원거리만 몰아 넣어도 넘어가 버린다 ${tag} · 원거리만 ${r.ranged}`); failed++; }
     else if (r.counter < COUNTER_MIN) { console.error(`  ✗ 공략 편성으로도 못 넘는다 ${tag}`); failed++; }
     else console.log(`  ✓ 조합이 필요한 전장 ${tag}`);
   }
@@ -431,6 +444,7 @@ function runHard(upLv, unitLv, seed, from, to) {
     r.base = count(false);
     r.legend = count('legend');
     r.counter = count('counter');
+    r.ranged = count('ranged');
     rows.push(r);
   }
   return rows;
@@ -477,6 +491,27 @@ if (args[0] === '--check') {
   const g = loadEngine(12345), rows = [];
   for (let i = from; i < to; i++) rows.push(runStage(g, i, upLv, unitLv, false, 'smart'));
   printTable(rows, upLv, unitLv);
+} else if (args[0] === '--style') {
+  // node tools/sim.js --style <강화> <Lv> [시작] [끝]   원거리만 · 근접만 · 공략 편성
+  const upLv = +args[1], unitLv = +args[2], from = +(args[3] || 0), to = +(args[4] || 30);
+  for (const mode of ['ranged', 'rangedbase', 'melee', 'smart']) {
+    const g = loadEngine(12345), wins = [];
+    for (let i = from; i < to; i++) if (runStage(g, i, upLv, unitLv, false, mode).win) wins.push(i + 1);
+    console.log('  ' + mode.padEnd(10) + String(wins.length).padStart(2) + '  ' + wins.join(','));
+  }
+} else if (args[0] === '--modes') {
+  // node tools/sim.js --modes <강화> <Lv> [편성,...] [시작] [끝]   편성별로 이긴 전장 (plain = 전장 편성)
+  const upLv = +args[1], unitLv = +args[2], from = +(args[4] || 0), to = +(args[5] || 20);
+  for (const mode of (args[3] || 'plain,legend,combo').split(',')) {
+    const g = loadEngine(12345), wins = [], margin = [];
+    for (let i = from; i < to; i++) {
+      const r = runStage(g, i, upLv, unitLv, false, mode === 'plain' ? false : mode);
+      if (r.win) wins.push(i + 1);
+      margin.push((i + 1) + (r.win ? '+' + r.castle : '-' + r.foe));  // 이기면 남은 성채, 지면 남은 적 요새
+    }
+    console.log('  ' + mode.padEnd(10) + String(wins.length).padStart(2) + '  ' + wins.join(','));
+    if (process.env.SIM_MARGIN) console.log('            ' + margin.join(' '));
+  }
 } else if (args[0] === '--mono') {
   // node tools/sim.js --mono <강화> <Lv> [id,...]  그 병종 하나만 들고 30전장
   const upLv = +args[1], unitLv = +args[2];
@@ -518,7 +553,7 @@ if (args[0] === '--check') {
   // node tools/sim.js --proof   조합이 필요한 전장만: 전설만 / 공략 편성 이긴 판 수
   for (const h of LEGEND_PROOF) {
     const [r] = runHard(h.up, h.lv, 0, h.stage - 1, h.stage);
-    console.log(`  S${h.stage} (${h.up}/Lv${h.lv}) 전장 ${r.base} · 전설만 ${r.legend} · 공략 ${r.counter}   ${r.mods}`);
+    console.log(`  S${h.stage} (${h.up}/Lv${h.lv}) 전장 ${r.base} · 전설만 ${r.legend} · 원거리만 ${r.ranged} · 공략 ${r.counter}   ${r.mods}`);
   }
 } else if (args[0] === '--legend') {
   // node tools/sim.js --legend [강화Lv] [병종Lv]
