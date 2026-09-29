@@ -524,7 +524,9 @@ const I18N_EN = {
   '보스의 결계 · 보스를 쓰러뜨리세요': 'Boss ward · defeat the boss', '보스의 결계 · 보스를 쓰러뜨려야 요새가 무너집니다': 'Boss ward · the fort cannot fall while the boss lives',
   '보스가 요새에서 뛰쳐나온다!': 'The boss bursts out of the fort!',
   '💀 하드코어': '💀 Hardcore', '하드코어': 'Hardcore', '하드코어 돌파': 'Hardcore Cleared', '첫 돌파': 'First clear',
-  '💀 하드코어 돌파 완료': '💀 Hardcore cleared', '하드코어 도전': 'Challenge Hardcore',
+  '💀 하드코어 돌파 완료': '💀 Hardcore cleared',
+  '기절 저항': 'Stun resist', '기절 대신 둔화와 화력, 파쇄로': 'use slows, raw damage and breakers instead of stuns',
+  '기절 면역 · 기절 대신 둔화와 화력, 파쇄로': 'Stun immune · use slows, raw damage and breakers instead of stuns', '하드코어 도전': 'Challenge Hardcore',
   '하드코어 · ': 'Hardcore · ', '적이 훨씬 모질다': 'Foes are far tougher',
   '적 체력·공격': 'Enemy HP & ATK', '왕명 느림': "slower King's Command", '특성 +': 'Trait +', '요새': 'Fort', '성채': 'Castle',
   /* 적 도감의 대응법 (예전부터 번역이 빠져 있던 것까지) */

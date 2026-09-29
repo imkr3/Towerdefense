@@ -617,4 +617,26 @@ test('Hardcore wins record a crown, pay double and stones once', () => {
   assert.equal(H.hardCount(s), 1);
 });
 
+test('Some foes shrug off stuns: heavy ones are immune, elites resist', () => {
+  const b = battle(); const g = b.spawnEnemy('siegeram', 900), o = b.spawnEnemy('orcshield', 900), gob = b.spawnEnemy('goblin', 900);
+  assert.equal(g.stun(2), false); assert.equal(g.stunT, 0);
+  assert.equal(o.stun(2), true); assert.ok(Math.abs(o.stunT - 1.4) < 1e-9);
+  assert.equal(gob.stun(2), true); assert.equal(gob.stunT, 2);
+  const m = b.makeAlly(U.medusa, 860), undo = rnd(0); b.hitOne(1, g, m, false); undo();
+  assert.ok(b.fx.some(f => f.type === 'miss' && f.text === '기절 면역'), 'shows the shrug-off');
+  const h = new Battle(2, save(), null, { hard: true }), hg = h.spawnEnemy('goblin', 900);
+  hg.stun(2); assert.ok(Math.abs(hg.stunT - 1.4) < 1e-9, 'hardcore foes resist 30%');
+  assert.ok(/기절 면역/.test(E.siegeram.abText) && /기절 저항/.test(E.orcshield.abText));
+});
+
+test('Enemy healing does not stack, and reinforcements stop sending healers past two', () => {
+  const b = battle(); const s1 = b.spawnEnemy('shaman', 900), s2 = b.spawnEnemy('shaman', 905), orc = b.spawnEnemy('orcshield', 910);
+  orc.hp = 1; s1.abCd = 0; s2.abCd = 0; b.supportTick(s1, b.enemies, 0.01, false); const once = orc.hp;
+  b.supportTick(s2, b.enemies, 0.01, false); assert.equal(orc.hp, once, 'second healer in the same moment is ignored');
+  assert.equal(E.mirror.noReinf, true);
+  const r = new Battle(0, save(), { baseHp: 99999, money: 0, rate: 0, reward: 0, waves: [{ t: 0, e: 'shaman', n: 1, gap: 1 }] });
+  r.update(1 / 30); r.spawnEnemy('shaman', 900); r.reinfPool = ['shaman']; r.reinfT = 0; r.reinfOn = true;
+  const before = r.enemies.length; r.tickReinforce(0.01); assert.equal(r.enemies.length, before);
+});
+
 console.log(count + ' regression checks passed');

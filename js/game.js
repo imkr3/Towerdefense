@@ -58,6 +58,7 @@ const STUN_GUARD_BOSS = 2.5;
 const WARD_FLOOR = 0.05;     // 보스가 살아 있는 동안 적 요새는 이 아래로 무너지지 않는다
 const CHRONO_RATE = 0.6;     // 시간 주술사가 살아 있으면 카드 재사용 대기가 이 속도로 준다
 const BOSS_MUL_EXP = 0.5;    // 캠페인 보스가 받는 전장 배율의 지수
+const ENEMY_HEAL_GAP = 1.5;  // 적 하나가 다른 적의 치유를 받는 최소 간격
 const BOSS_HEAL_TAKEN = 0.4; // 보스는 다른 적의 치유를 이만큼만 받는다 (주술사 떼가 보스를 영원히 살리지 못하게)
 
 /* ------------------------------- 병사 ------------------------------- */
@@ -137,6 +138,9 @@ class Fighter {
   /* 기절. 면역 중이거나 부동심이면 걸리지 않는다. 걸렸으면 true */
   stun(d) {
     if (this.dead || !(d > 0) || this.ab.unshakable || this.stunImm > 0) return false;
+    // 3.0.1: 몸이 무겁거나 정신이 굳은 적은 기절을 받지 않거나(stunImmune) 짧게 받는다(stunResist)
+    if (this.ab.stunImmune) { this.resistFx = true; return false; }
+    if (this.ab.stunResist) d *= 1 - this.ab.stunResist;
     if (this.boss) d *= 0.5;
     this.stunT = Math.max(this.stunT, d);
     this.stunImm = d + (this.boss ? STUN_GUARD_BOSS : STUN_GUARD);
@@ -588,6 +592,8 @@ class Battle {
     if (mods.blitz) { st.speed *= 1.45; st.interval *= 0.83; }
     // 중갑: 방어 60%. 보스는 이제 반드시 쓰러뜨려야 하므로 30%까지만 두른다.
     if (mods.ironclad) st.ab = Object.assign({}, st.ab, { armor: Math.max(spec.boss ? 0.3 : 0.6, (st.ab && st.ab.armor) || 0) });
+    // 하드코어: 모든 적이 기절에 30% 버틴다
+    if (this.hard) st.ab = Object.assign({}, st.ab, { stunResist: Math.max(HARDCORE.stunResist, (st.ab && st.ab.stunResist) || 0) });
     // 전장 자체가 거느린 강화 배율(2막처럼 같은 적이 더 억센 곳)과
     // 증원 배율을 함께 얹는다.
     let total = this.enemyMulBase * (mul && mul > 1 ? mul : 1);
@@ -928,6 +934,8 @@ class Battle {
         if (m.dead || m === f) continue;
         if (Math.abs(m.x - f.x) > ab.radius) continue;
         if (m.hp >= m.maxHp) continue;
+        // 적의 치유는 겹치지 않는다: 주술사가 떼로 서도 한 적은 1.5초에 한 번만 낫는다 (끝없는 교착 방지)
+        if (!isAlly) { if (m.healedAt !== undefined && this.time - m.healedAt < ENEMY_HEAL_GAP) continue; m.healedAt = this.time; }
         m.heal(ab.heal * f.abMul * (isAlly ? 1 + .06 * Math.min(5, this.save.upgrades.medicine || 0) : (m.boss ? BOSS_HEAL_TAKEN : 1)));
         healed = true;
       }
@@ -1009,8 +1017,13 @@ class Battle {
     if (this.enemies.length >= REINFORCE_CAP) return;
     const mul = this.reinfMul();
     const n = 1 + Math.min(2, Math.floor(this.reinfWave / 5));
+    let healers = 0;
+    for (const e of this.enemies) if (!e.dead && e.ab.heal) healers++;
     for (let i = 0; i < n; i++) {
       const id = this.reinfPool[(this.reinfWave * 3 + i) % this.reinfPool.length];
+      // 치유사가 이미 둘 서 있으면 더 보내지 않는다 — 치유사만 쌓이면 싸움이 끝나지 않는다
+      if (ENEMIES[id].ab && ENEMIES[id].ab.heal && healers >= 2) continue;
+      if (ENEMIES[id].ab && ENEMIES[id].ab.heal) healers++;
       this.spawnEnemy(id, ENEMY_SPAWN_X - Math.random() * 70, mul);
     }
     // 여섯 번에 한 번은 중장 병력도 딸려 온다. 다만 이미 버티고 선 보스가
@@ -1428,8 +1441,10 @@ class Battle {
       target.burnT = Math.max(target.burnT, ab.burn.dur);
       target.burnDps = Math.max(target.burnDps, ab.burn.dps * src.abMul);
     }
-    if (ab.stun && Math.random() < ab.stun.chance && target.stun(ab.stun.dur)) {
-      this.fx.push({ type: 'stun', x: target.x, row: target.row, t: 0.5, life: 0.5 });
+    if (ab.stun && Math.random() < ab.stun.chance) {
+      if (target.stun(ab.stun.dur)) this.fx.push({ type: 'stun', x: target.x, row: target.row, t: 0.5, life: 0.5 });
+      else if (target.resistFx && this.dmgFxCount < 14) this.fx.push({ type: 'miss', text: '기절 면역', x: target.x, row: target.row, t: 0.5, life: 0.5 });
+      target.resistFx = false;
     }
     if (ab.push && !target.ab.kbImmune) {
       target.x += src.dir * ab.push * 0.01 * 60;

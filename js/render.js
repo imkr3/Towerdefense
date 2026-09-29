@@ -705,6 +705,14 @@ class Renderer {
       ctx.fillStyle = f.side === 'ally' ? '#4fa3e0' : '#c0392b';
       rectPath(ctx, x - bw / 2, y - 72 * s, bw * (f.hp / f.maxHp), 5 * s); ctx.fill();
     }
+    // 기절 면역(금빛)·저항(은빛) 표식: 체력바 왼쪽 작은 방패
+    if (f.side === 'enemy' && (f.ab.stunImmune || f.ab.stunResist > 0)) {
+      const bx = x - bw / 2 - 6 * s, by = y - 70 * s;
+      ctx.fillStyle = f.ab.stunImmune ? '#f0c24a' : '#c8ced6';
+      ctx.strokeStyle = 'rgba(12,16,24,.85)'; ctx.lineWidth = 1 * s;
+      ctx.beginPath(); ctx.moveTo(bx - 3.2 * s, by - 3.5 * s); ctx.lineTo(bx + 3.2 * s, by - 3.5 * s);
+      ctx.lineTo(bx + 3.2 * s, by); ctx.lineTo(bx, by + 3.8 * s); ctx.lineTo(bx - 3.2 * s, by); ctx.closePath(); ctx.fill(); ctx.stroke();
+    }
     // 전설·신화 표식: 머리 위 작은 마름모. 액티브가 준비되면 반짝이며 커진다.
     if (f.s.active && f.side === 'ally' && !f.summoned) {
       const ready = this._battle && this._battle.canHeroActive(f.s.id);
@@ -1028,7 +1036,7 @@ class Renderer {
         ctx.font = 'bold ' + Math.round(12 * cs) + 'px sans-serif';
         ctx.textAlign = 'center';
         ctx.lineWidth = 3 * cs; ctx.strokeStyle = 'rgba(0,0,0,.6)';
-        const my = y - 34 * cs - (1 - p) * 22 * cs, mt = tr('회피');
+        const my = y - 34 * cs - (1 - p) * 22 * cs, mt = tr(e.text || '회피');
         ctx.strokeText(mt, x, my); ctx.fillStyle = '#dff6ff'; ctx.fillText(mt, x, my);
         ctx.strokeStyle = 'rgba(223,246,255,' + (p * 0.7) + ')'; ctx.lineWidth = 2 * cs;
         for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(x - 14 * cs, y - (4 + i * 8) * cs); ctx.lineTo(x - (22 + (1 - p) * 10) * cs, y - (4 + i * 8) * cs); ctx.stroke(); }

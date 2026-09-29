@@ -931,7 +931,7 @@ const ENEMIES = {
   oozelet:  { name: '꼬마 슬라임', body: '#7cc46e', accent: '#d8ffc8', tunic: '#4f8f48', shape: 'oozelet',
               hp: 460, atk: 28, range: 56, speed: 46, interval: 1.0, kb: 2, gold: 6, scale: .7 },
   mirror:   { name: '거울 마녀', body: '#5a4a6b', accent: '#bfe9ff', tunic: '#3a2a4a', shape: 'mirror',
-              hp: 1100, atk: 64, range: 220, speed: 30, interval: 1.7, kb: 2, gold: 50, ranged: true,
+              hp: 1100, atk: 64, range: 220, speed: 30, interval: 1.7, kb: 2, gold: 50, ranged: true, noReinf: true,
               ab: { mirror: { cut: .5, reflect: .35 } }, abText: '거울 방패 · 원거리 피해 50% 감소, 35%를 쏜 자에게 되돌림' },
   jailer:   { name: '사슬 간수', body: '#4a6b46', accent: '#9aa3ab', tunic: '#3a3f48', shape: 'jailer',
               hp: 3400, atk: 150, range: 80, speed: 26, interval: 1.8, kb: 1, gold: 70, scale: 1.25, noReinf: true,
@@ -1077,9 +1077,9 @@ STAGES[15].enemyMul = 2.3;              // 끼어 있던 보스 둘이 정예로
 STAGES[11].enemyMul = 1.78;             // 2.7: 쿨타임·비용 등급 조정 뒤 중반이 물러져서
 STAGES[12].enemyMul = 1.72;
 STAGES[16].enemyMul = 1.65;
-STAGES[17].enemyMul = 2.15;            // 2.7: 비싼 병종 강화·진화에 맞춰 다시 조율 (3.0: 보스를 반드시 쓰러뜨리게 되어 다시)
+STAGES[17].enemyMul = 2.25;            // 2.7: 비싼 병종 강화·진화에 맞춰 다시 조율 (3.0: 보스를 반드시 쓰러뜨리게 되어 다시)
 STAGES[23].enemyMul = 6;               // 3.0: 보스 배율을 누그러뜨린 만큼 삼중 봉인 자체를 올린다
-STAGES[19].enemyMul = 3.4;             // 3.0: 대군주를 반드시 쓰러뜨려야 하는 대신 영웅 사냥꾼이 붙었다
+STAGES[19].enemyMul = 3.0;             // 3.0: 대군주를 반드시 쓰러뜨려야 하는 대신 영웅 사냥꾼이 붙었다
 
 /* ------------------------------------------------------------------
  *  보스는 전장마다 하나.
@@ -1108,6 +1108,22 @@ const NEW_MOB_WAVES = {
   28: [[100, 'drummer', 2, 3], [180, 'hexer', 3, 1.5]],
   29: [[160, 'burrower', 3, 1.4], [200, 'chariot', 2, 4], [230, 'assassin', 4, 1.3]]
 };
+/* 3.0.1 기절 저항. 기절만 쌓아 두면 다 멈추던 것을 비튼다.
+ *  면역: 무게로 밀고 오는 기계·거구·망령 — 둔화나 화력으로 잡아야 한다
+ *  저항: 갑주 두른 정예·광폭한 적 — 기절이 30% 짧게 걸린다 */
+const STUN_IMMUNE = ['siegeram', 'souleater'];
+const STUN_RESIST = { golem: 0.5, orcshield: 0.3, dark: 0.3, warchief: 0.3, orcberserk: 0.3, jailer: 0.3, chariot: 0.3, wraith: 0.3 };
+STUN_IMMUNE.forEach(id => {
+  const e = ENEMIES[id];
+  e.ab = Object.assign({}, e.ab, { stunImmune: true });
+  e.abText = (e.abText ? e.abText + ' · ' : '') + '기절 면역';
+});
+Object.keys(STUN_RESIST).forEach(id => {
+  const e = ENEMIES[id];
+  e.ab = Object.assign({}, e.ab, { stunResist: STUN_RESIST[id] });
+  e.abText = (e.abText ? e.abText + ' · ' : '') + '기절 저항 ' + Math.round(STUN_RESIST[id] * 100) + '%';
+});
+
 /* 3.0 특이한 적. 한 종류씩 전장에 처음 얼굴을 비추고, 뒤로 갈수록 섞여 나온다. */
 const ODD_MOB_WAVES = {
   5: [[30, 'thief', 2, 1.6]], 7: [[46, 'thief', 3, 1.3]], 8: [[56, 'sapper', 1]],
@@ -1728,10 +1744,10 @@ function unitFor(save, id) {
 /* =======================================================================
  *  하드코어. 돌파한 전장을 한 번 더, 훨씬 모질게.
  *   - 적 체력·공격 ×1.5(최소 ×3), 적 요새 체력 ×2(최소 40000), 전장 특성 하나가 더 붙는다
- *   - 아군 성채 체력 60%, 왕의 명령 재사용 대기 1.5배
+ *   - 아군 성채 체력 60%, 왕의 명령 재사용 대기 1.5배, 모든 적 기절 저항 30%
  *   - 이기면 보상 골드 2배, 처음 이기면 소환석 3개와 왕관 기록
  * ======================================================================= */
-const HARDCORE = { enemyMul: 1.5, fortMul: 2, castleMul: 0.6, cmdMul: 1.5, reward: 2, stones: 3,
+const HARDCORE = { enemyMul: 1.5, fortMul: 2, castleMul: 0.6, cmdMul: 1.5, reward: 2, stones: 3, stunResist: 0.3,
                    // 앞쪽 전장도 모질게: 적 배율과 요새 체력에 바닥을 깐다 (2막 초입 수준)
                    mulFloor: 3, fortFloor: 40000,
                    twists: ['blitz', 'horde', 'ironclad', 'curse'] };
@@ -1755,6 +1771,7 @@ function upgradeCost(key, level) {
 /* Tactical descriptions shared by the campaign and enemy codex. */
 function enemyTactic(e) {
   if (e.boss) return '보스 · 왕명을 아껴 폭격 후 회복';
+  if (e.ab && e.ab.stunImmune && !e.ab.souleater && !e.ab.deathBomb) return '기절 면역 · 기절 대신 둔화와 화력, 파쇄로';
   if (e.ab && e.ab.split) return '분열 · 범위 공격과 화상으로 갈라진 것까지 한꺼번에';
   if (e.ab && e.ab.mirror) return '거울 · 원거리는 튕겨 나오니 근접 병종으로 붙으세요';
   if (e.ab && e.ab.hook) return '갈고리 · 원거리만 두면 끌려갑니다, 넉백 면역이나 종지기로';
