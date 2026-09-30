@@ -660,6 +660,27 @@ const I18N_EN_HTML = {
 
 /* 숫자가 붙은 말. 구절 치환보다 먼저 한다. */
 const I18N_EN_PATTERNS = [
+  // 문장 통째 (숫자·이름이 끼는 알림과 저장 오류). 일반 규칙보다 먼저.
+  [/^(.+) 레벨 (\d+) 완료$/g, '$1 upgraded to Lv $2'],
+  [/전설·신화는 최대 (\d+)명까지 편성할 수 있습니다/g, 'Up to $1 Legend/Mythic units per squad'],
+  [/(\d+)개 칸을 채웠습니다/g, 'Filled $1 slots'],
+  [/레벨 (\d+)에 진화/g, 'Evolves at Lv $1'],
+  [/추천 편성 (\d+)개 병종을 넣었습니다/g, 'Added $1 recommended units'],
+  [/전장 (\d+)개 돌파 · 골드 (\d+) · 소환석 (\d+)\./g, '$1 stages cleared · Gold $2 · Stones $3.'],
+  [/^(\d+)분$/g, '$1m'],
+  [/게임 저장 데이터가 아닙니다\./g, 'This is not a game save.'],
+  [/저장 항목 형식 오류: /g, 'Bad save field: '],
+  [/저장 숫자 오류: /g, 'Bad save number: '],
+  [/저장 능력치 오류: /g, 'Bad save stat: '],
+  [/진화 데이터 오류/g, 'Bad evolution data'],
+  [/편성 데이터 오류/g, 'Bad squad data'],
+  [/일일 임무 데이터 오류/g, 'Bad daily mission data'],
+  [/백업은 1MB 이하의 JSON 파일이어야 합니다\./g, 'A backup must be a JSON file under 1MB.'],
+  [/지원하지 않는 백업 버전입니다\./g, 'Unsupported backup version.'],
+  [/기존 저장을 읽지 못해 덮어쓰기를 막았습니다\. 저장 관리에서 원본을 백업하거나 복원해 주세요\./g,
+   "Couldn't read the existing save, so overwriting is blocked. Back it up or restore it in Save management."],
+  [/저장에 실패했습니다\. 저장 관리에서 백업을 내보내 주세요\./g, 'Saving failed. Export a backup in Save management.'],
+  [/이 브라우저는 저장소를 쓸 수 없어 진행도가 저장되지 않습니다\./g, "This browser can't use storage, so progress won't be saved."],
   [/(\d+)전장 돌파 후/g, 'Clear stage $1 first'],
   [/(\d+)전장을 돌파하면 열립니다\./g, 'Clear stage $1 to unlock.'],
   [/이벤트 (\d) \/ (\d) 돌파/g, 'Events $1 / $2 cleared'],

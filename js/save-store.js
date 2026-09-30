@@ -17,12 +17,14 @@ const SaveStore = {
   /* 슬롯 요약을 본다 (아무것도 고치지 않는다). 비었으면 null, 못 읽으면 {broken:true} */
   peek(n) {
     try {
-      const raw = localStorage.getItem(this.keyOf(n)) || localStorage.getItem(this.keyOf(n) + '-backup');
-      if (!raw) return null;
-      return this.parse(raw);
+      const raw = localStorage.getItem(this.keyOf(n)), backup = localStorage.getItem(this.keyOf(n) + '-backup');
+      if (!raw && !backup) return null;
+      // read() 처럼 본 저장이 망가졌으면 자동 백업을 본다
+      try { return this.parse(raw || backup); } catch (e) { if (raw && backup) return this.parse(backup); throw e; }
     } catch (e) { return { broken: true }; }
   },
-  blocked: false, recovered: false, error: '',
+  /* unavailable: 저장소 자체를 못 쓴다 (사생활 보호 모드 등). 막지 않고 이번 실행만 메모리로 한다. */
+  blocked: false, recovered: false, unavailable: false, error: '',
   validate(s) {
     const obj = v => v && typeof v === 'object' && !Array.isArray(v);
     const num = v => Number.isFinite(v) && v >= 0;
@@ -32,7 +34,7 @@ const SaveStore = {
     for (const k of ['levels','upgrades','stars','stats']) for (const v of Object.values(s[k] || {})) if (!num(v)) throw Error('저장 능력치 오류: ' + k);
     if (s.evo !== undefined && (!obj(s.evo) || Object.values(s.evo).some(v => typeof v !== 'boolean'))) throw Error('진화 데이터 오류');
     if (s.loadout !== undefined && (!Array.isArray(s.loadout) || s.loadout.some(v => typeof v !== 'string'))) throw Error('편성 데이터 오류');
-    if (s.daily != null && (!obj(s.daily) || !Array.isArray(s.daily.list) || s.daily.list.some(m => !obj(m) || !missionById(m.id) || !num(m.got)))) throw Error('일일 임무 데이터 오류');
+    if (s.daily != null && (!obj(s.daily) || !Array.isArray(s.daily.list) || s.daily.list.some(m => !obj(m) || typeof m.id !== 'string' || !num(m.got)))) throw Error('일일 임무 데이터 오류');
     return s;
   },
   parse(raw) {
@@ -45,6 +47,11 @@ const SaveStore = {
     return this.validate(value);
   },
   read() {
+    try { localStorage.getItem(this.slotKey); } catch (e) {
+      this.unavailable = true;
+      this.error = '이 브라우저는 저장소를 쓸 수 없어 진행도가 저장되지 않습니다.';
+      return null;
+    }
     try {
       const raw = localStorage.getItem(this.key);
       if (raw === null) {
@@ -68,7 +75,7 @@ const SaveStore = {
     }
   },
   write(s, explicitRestore = false) {
-    if (this.blocked && !explicitRestore) return false;
+    if (this.unavailable || (this.blocked && !explicitRestore)) return false;
     try {
       this.validate(s);
       const raw = JSON.stringify(s), previous = localStorage.getItem(this.key);

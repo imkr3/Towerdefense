@@ -74,4 +74,20 @@ test('The chosen slot is picked up on the next launch',()=>{
   for(const f of ['data','save-store'])vm.runInContext(fs.readFileSync('js/'+f+'.js','utf8'),ctx);
   assert.equal(vm.runInContext('SaveStore.slot',ctx),3);assert.equal(vm.runInContext('SaveStore.key',ctx),'stick-kingdom-save-v1-s3');
 });
+test('Blocked storage does not lock the game; writes are skipped quietly',()=>{
+  const localStorage={getItem(){throw Error('SecurityError');},setItem(){throw Error('SecurityError');}};
+  const ctx=vm.createContext({localStorage,console});
+  for(const f of ['data','save-store'])vm.runInContext(fs.readFileSync('js/'+f+'.js','utf8'),ctx);
+  const s=vm.runInContext('SaveStore',ctx);
+  assert.equal(s.read(),null);assert.equal(s.unavailable,true);assert.equal(s.blocked,false);
+  assert.equal(s.write(old),false);assert.equal(s.blocked,false);assert.ok(s.error);
+});
+test('Slot summary falls back to the backup when the main save is corrupt',()=>{
+  const {store:s,data}=fixture();s.write(old);s.write({...old,cleared:14});data.set(s.key,'broken');
+  assert.equal(s.peek(1).cleared,13);
+});
+test('Daily missions removed by an update do not block the save',()=>{
+  const {store:s}=fixture();
+  assert.equal(s.parse(JSON.stringify({...old,daily:{date:'x',list:[{id:'gone',got:1,claimed:false}]}})).cleared,13);
+});
 console.log(n+' save protection checks passed');

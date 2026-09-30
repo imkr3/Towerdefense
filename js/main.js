@@ -68,6 +68,9 @@ function normalizeSave(raw) {
       s.knownUnits = UNITS.filter(u => u.unlockStage <= s.cleared + 1 || (u.gacha && s.owned && s.owned[u.id])).map(u => u.id);
     }
     if (!s.stars || typeof s.stars !== 'object') s.stars = {};
+    // 업데이트로 없어진 일일 임무는 버린다 (남기면 missionById 가 null 이라 임무 화면이 멈춘다)
+    if (s.daily && Array.isArray(s.daily.list)) s.daily.list = s.daily.list.filter(m => missionById(m.id));
+    else s.daily = null;
     // 하드코어 왕관: 전장 번호 → true
     const hard = {};
     if (s.hard && typeof s.hard === 'object') for (const k in s.hard) if (s.hard[k] === true && +k >= 0 && +k < STAGES.length) hard[k] = true;
@@ -1707,7 +1710,7 @@ function init() {
     askConfirm('기록 초기화',
       '슬롯 ' + SaveStore.slot + '의 진행도와 소환한 병종이 모두 삭제됩니다. 정말 초기화하시겠습니까?', () => {
         const fresh = defaultSave();
-        if (!SaveStore.write(fresh, true)) { toast(SaveStore.error); return; }
+        if (!SaveStore.write(fresh, true) && !SaveStore.unavailable) { toast(SaveStore.error); return; }
         save = fresh;
         refreshTitleBadges();
         toast('기록을 초기화했습니다');
@@ -1816,7 +1819,7 @@ function init() {
   document.addEventListener('visibilitychange', () => {
     if (document.hidden && battle && battle.state === 'play') setPaused(true);
     // 앱이 뒤로 가면 음악도 멈춘다 (배터리)
-    if (SFX.ctx) { if (document.hidden) SFX.ctx.suspend(); else SFX.ctx.resume(); }
+    if (SFX.ctx) { if (document.hidden) { const p = SFX.ctx.suspend(); if (p && p.catch) p.catch(() => {}); } else SFX.resume(); }
     lastTs = 0;
   });
   window.addEventListener('keydown', e => {
@@ -1979,7 +1982,7 @@ function backupText() {
 }
 function initSaveManager() {
   const notice = $('#save-warning');
-  notice.textContent = SaveStore.error; notice.hidden = !SaveStore.blocked;
+  notice.textContent = SaveStore.error; notice.hidden = !SaveStore.blocked && !SaveStore.unavailable;
   if (SaveStore.recovered) toast('이전 자동 백업으로 진행도를 복구했습니다.');
   $('#btn-save-manager').addEventListener('click', () => $('#modal-save').classList.add('show'));
   $('#badge-slot').addEventListener('click', () => { SFX.ui(); renderSlots(); $('#modal-slots').classList.add('show'); });
@@ -2017,7 +2020,7 @@ window.receiveSaveBackup = function(raw) {
     const candidate = normalizeSave(SaveStore.parse(raw));
     askConfirm('진행도 복원', '전장 ' + candidate.cleared + '개 돌파 · 골드 ' + candidate.coins +
       ' · 소환석 ' + candidate.stones + '. 이 데이터로 교체할까요? 현재 저장은 자동 백업에 남깁니다.', () => {
-      if (!SaveStore.write(candidate, true)) { toast(SaveStore.error); return; }
+      if (!SaveStore.write(candidate, true) && !SaveStore.unavailable) { toast(SaveStore.error); return; }
       save=candidate;
       $('#modal-save').classList.remove('show'); $('#save-warning').hidden=true;
       show('scr-title'); toast('진행도를 복원했습니다.');
