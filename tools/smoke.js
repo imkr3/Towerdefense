@@ -113,6 +113,24 @@ async function runSize(browser, size) {
   if(!mapFit.nodes)failures.push(size.name+': 진군로 전장이 칸 밖으로 나갔다');
 
 
+  // 3.2 이벤트 전장: 이벤트 장 → E1 고르기 → 추천 편성 → 도전 → 포기
+  await page.evaluate(()=>{mapChapter=CHAPTERS.findIndex(c=>c.event);eventSel=0;renderMap();});
+  await shot(page, 'events-' + size.w);
+  const evCards=await page.evaluate(()=>({n:document.querySelectorAll('.event-card').length,open:!document.querySelector('.event-card[data-event="0"]').classList.contains('locked'),locked:document.querySelector('.event-card[data-event="2"]').classList.contains('locked')}));
+  if(evCards.n!==5||!evCards.open||!evCards.locked)throw Error('Event chapter broken: '+JSON.stringify(evCards));
+  const keepLoadout=await page.evaluate(()=>save.loadout.slice());
+  await page.click('.sd-btns .btn.ghost');
+  if(!await page.evaluate(()=>save.loadout.length>0&&save.loadout.every(id=>EVENT_STAGES[0].event.deck.includes(id))))throw Error('Recommended event deck not applied');
+  await page.click('#btn-event-go');
+  await page.waitForTimeout(250);
+  if(!await page.evaluate(()=>battle.event&&battle.event.id==='eclipse'&&$('#scr-battle').classList.contains('active')))throw Error('Event battle did not start');
+  await page.evaluate(()=>{for(let i=0;i<60;i++)battle.update(1/30);});
+  await shot(page, 'event-battle-' + size.w);
+  await page.evaluate(()=>{battle.finish('lose');});
+  await page.waitForTimeout(150);
+  await page.evaluate(ids=>{save.loadout=ids;saveGame(save);mapChapter=-1;show('scr-map');},keepLoadout);
+  if(!await page.evaluate(()=>save.cleared===13&&!save.stars[STAGES.length]))throw Error('Event battle touched campaign progress');
+
   // 병영
   await page.click('#btn-shop');
   await page.waitForTimeout(250);

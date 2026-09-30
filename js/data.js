@@ -948,6 +948,95 @@ const ENEMIES = {
   sapper:   { name: '성벽 파괴병', body: '#4d6b3a', accent: '#c0392b', tunic: '#5a4a2f', shape: 'sapper',
               hp: 950, atk: 0, range: 60, speed: 74, interval: 1, kb: 1, gold: 40, noReinf: true,
               ab: { sapper: { dmg: 650, radius: 90 } }, abText: '돌파 · 병사를 무시하고 성채로 달려가 자폭합니다' },
+  /* ---------- 3.2 이벤트 전장의 적: 타이밍을 맞춰야 잡히는 보스 다섯과 그 졸개들 ---------- */
+  bloodthrall:{ name: '혈귀 노예', body: '#6b2a34', accent: '#e04b6a', tunic: '#3a1a22', shape: 'bloodthrall',
+              hp: 2400, atk: 180, range: 64, speed: 46, interval: 1.1, kb: 1, gold: 60, noReinf: true,
+              ab: { lifesteal: 0.35, revive: 0.4 }, abText: '흡혈 35% · 한 번 쓰러져도 피를 모아 다시 일어납니다' },
+  stoneward:{ name: '바위 수호자', body: '#7a7468', accent: '#8fd8ff', tunic: '#5a554c', shape: 'stoneward',
+              hp: 3000, atk: 60, range: 60, speed: 20, interval: 2, kb: 1, gold: 70, scale: 1.2, noReinf: true,
+              ab: { barrier: 420, radius: 230, interval: 5, armor: 0.3, kbImmune: true },
+              abText: '수호 · 5초마다 주변 적에게 보호막 · 갑주 30%' },
+  rockling: { name: '바위 새끼', body: '#8a8578', accent: '#c8b88a', tunic: '#6a6558', shape: 'rockling',
+              hp: 1900, atk: 150, range: 60, speed: 34, interval: 1.2, kb: 1, gold: 36, scale: .9,
+              ab: { armor: 0.4, kbImmune: true }, abText: '돌 껍질 · 갑주 40% · 넉백 면역' },
+  ghostsailor:{ name: '유령 선원', body: '#8fb8c0', accent: '#5de0d0', tunic: '#4a6a78', shape: 'ghostsailor',
+              hp: 1250, atk: 210, range: 64, speed: 88, interval: .9, kb: 2, gold: 40,
+              ab: { dodge: 0.3 }, abText: '흐릿한 몸 · 공격 30%를 흘려보냅니다' },
+  ghostgunner:{ name: '유령 포수', body: '#7aa0aa', accent: '#ffb03c', tunic: '#3a5560', shape: 'ghostgunner',
+              hp: 1500, atk: 330, range: 390, speed: 18, interval: 3.2, kb: 1, gold: 70, ranged: true, noReinf: true,
+              area: true, areaRadius: 110, abText: '함포 · 멀리서 범위 포격' },
+  voidspawn:{ name: '공허 새끼', body: '#2a2440', accent: '#b784e0', tunic: '#1c1830', shape: 'voidspawn',
+              hp: 900, atk: 120, range: 60, speed: 62, interval: 1, kb: 2, gold: 18, scale: .85,
+              ab: { deathBomb: { dmg: 260, radius: 110 } }, abText: '붕괴 · 쓰러지면 터집니다' },
+  riftcaller:{ name: '균열 소환사', body: '#3a2a5a', accent: '#d8a8ff', tunic: '#241a3a', shape: 'riftcaller',
+              hp: 2600, atk: 90, range: 240, speed: 22, interval: 2, kb: 1, gold: 80, ranged: true, noReinf: true,
+              ab: { summon: { id: 'voidspawn', n: 1 }, interval: 6 }, abText: '균열 · 6초마다 공허 새끼를 불러냅니다' },
+  imp:      { name: '화염 임프', body: '#a8382c', accent: '#ffd35a', tunic: '#6a1e18', shape: 'imp',
+              hp: 760, atk: 150, range: 58, speed: 112, interval: .7, kb: 3, gold: 22, scale: .8,
+              ab: { burn: { dps: 60, dur: 3 } }, abText: '불씨 · 화상을 남깁니다' },
+  demonknight:{ name: '마계 기사', body: '#3a1a22', accent: '#ff5a3c', tunic: '#1c0e12', shape: 'demonknight',
+              hp: 6400, atk: 430, range: 92, speed: 30, interval: 1.8, kb: 1, gold: 140, scale: 1.3, noReinf: true,
+              ab: { armor: 0.3, kbImmune: true, weaken: { mul: 0.6, dur: 4 } }, abText: '저주받은 검 · 맞은 아군 공격력 -40% · 갑주 30%' },
+  vampire:  { name: '흡혈 백작', body: '#2a1a2a', accent: '#e04b6a', tunic: '#5a0e1e', shape: 'vampire',
+              hp: 20000, atk: 700, range: 110, speed: 26, interval: 1.8, kb: 1, gold: 700,
+              scale: 1.6, boss: true,
+              ab: { lifesteal: 0.3, summon: { id: 'bloodthrall', n: 1 }, interval: 9 },
+              special: { t: 'veil', name: '안개화 · 출진과 액티브를 멈추세요', first: 10, cd: 14, dur: 4.5, r: 300, dmg: 160, ratio: 0.8, charm: 6 },
+              phases: [
+                { at: 0.70, t: 'summon', name: '밤의 권속', id: 'bat', n: 6 },
+                { at: 0.40, t: 'swap', name: '핏빛 월식', atk: 1.15,
+                            special: { t: 'veil', name: '안개화 · 출진과 액티브를 멈추세요', first: 3, cd: 10, dur: 5, r: 340, dmg: 200, ratio: 0.9, charm: 6 } },
+                { at: 0.15, t: 'enrage', name: '피의 갈증', atk: 1.25, rate: 0.8 }
+              ],
+              abText: '안개화 · 주기적으로 안개가 되어 어떤 공격도 받지 않고 피를 빱니다. 안개 속에 내보낸 병사는 홀리고, 액티브는 삼켜집니다' },
+  titan:    { name: '대지 거신', body: '#6a6458', accent: '#ffb03c', tunic: '#4a453c', shape: 'titan',
+              hp: 30000, atk: 900, range: 170, speed: 14, interval: 2.8, kb: 1, gold: 900,
+              area: true, areaRadius: 160, scale: 2.2, boss: true,
+              ab: { kbImmune: true, core: { armor: 0.85, mul: 2.5 } },
+              special: { t: 'slam', name: '대지 분쇄', first: 9, cd: 15, dmg: 1100, radius: 220, warn: 2.4, stun: 1.2, expose: 6 },
+              phases: [
+                { at: 0.60, t: 'summon', name: '바위 떼', id: 'rockling', n: 3 },
+                { at: 0.30, t: 'swap', name: '거신의 분노',
+                            special: { t: 'slam', name: '대지 분쇄', first: 4, cd: 11, dmg: 1300, radius: 240, warn: 2.2, stun: 1.4, expose: 5 } }
+              ],
+              abText: '용암 핵 · 평소엔 피해 85% 감소, 대지 분쇄 뒤 6초간 핵이 드러나 2.5배 — 그때 액티브와 왕명을' },
+  ghostcaptain:{ name: '유령 선장', body: '#6a8a96', accent: '#5de0d0', tunic: '#2a3a48', shape: 'ghostcaptain',
+              hp: 24000, atk: 760, range: 150, speed: 22, interval: 2.0, kb: 1, gold: 800,
+              area: true, areaRadius: 130, scale: 1.7, boss: true, ab: { dodge: 0.15 },
+              special: { t: 'barrage', name: '일제 포격', first: 8, cd: 13, n: 5, gap: 80, radius: 85, dmg: 900, warn: 2.0, kind: 'firestorm' },
+              phases: [
+                { at: 0.70, t: 'summon', name: '승선하라', id: 'ghostsailor', n: 4 },
+                { at: 0.35, t: 'swap', name: '전 포문 개방',
+                            special: { t: 'barrage', name: '일제 포격', first: 3, cd: 9, n: 6, gap: 75, radius: 85, dmg: 1000, warn: 1.8, kind: 'firestorm' } },
+                { at: 0.15, t: 'enrage', name: '망령의 분노', atk: 1.2, rate: 0.8, speed: 1.3 }
+              ],
+              abText: '일제 포격 · 출진 지점을 예고 뒤 포격합니다 — 포탄이 떨어진 다음에 병사를 내보내세요' },
+  voidlord: { name: '공허의 군주', body: '#241a3a', accent: '#b784e0', tunic: '#140e22', shape: 'voidlord',
+              hp: 28000, atk: 820, range: 200, speed: 18, interval: 2.2, kb: 1, gold: 1000,
+              area: true, areaRadius: 150, scale: 1.9, boss: true, ab: { kbImmune: true },
+              special: { t: 'reflect', name: '공허 반사 · 액티브와 왕명을 참으세요', first: 8, cd: 13, dur: 4.5, ratio: 0.85 },
+              phases: [
+                { at: 0.66, t: 'summon', name: '공허의 틈', id: 'voidspawn', n: 5 },
+                { at: 0.33, t: 'swap', name: '끝없는 공허',
+                            special: { t: 'reflect', name: '공허 반사 · 액티브와 왕명을 참으세요', first: 3, cd: 9, dur: 5, ratio: 0.9 } },
+                { at: 0.12, t: 'summon', name: '균열 확장', id: 'riftcaller', n: 2 }
+              ],
+              abText: '공허 반사 · 결계가 선 동안 받은 피해의 85%를 되돌리고, 곁에 쓴 액티브는 시전자에게, 왕명은 삼켜집니다' },
+  demonking:{ name: '마왕', body: '#2a0e12', accent: '#ff3c3c', tunic: '#1a0608', shape: 'demonking',
+              hp: 34000, atk: 1000, range: 190, speed: 18, interval: 2.4, kb: 1, gold: 1500,
+              area: true, areaRadius: 170, scale: 2.3, boss: true,
+              ab: { kbImmune: true, burn: { dps: 110, dur: 4 } },
+              special: { t: 'barrage', name: '지옥불 포격', first: 8, cd: 12, n: 5, gap: 85, radius: 90, dmg: 1000, warn: 2.0,
+                         burn: { dps: 90, dur: 4 }, kind: 'firestorm' },
+              phases: [
+                { at: 0.75, t: 'swap', name: '마왕의 결계',
+                            special: { t: 'reflect', name: '마계 반사 · 액티브와 왕명을 참으세요', first: 3, cd: 11, dur: 4.5, ratio: 0.85 } },
+                { at: 0.55, t: 'summon', name: '마계 근위대', id: 'demonknight', n: 2 },
+                { at: 0.35, t: 'swap', name: '마왕 강림', core: { armor: 0.8, mul: 2.8 }, atk: 1.15,
+                            special: { t: 'slam', name: '종말의 일격', first: 4, cd: 12, dmg: 1500, radius: 250, warn: 2.3, stun: 1.4, expose: 6 } },
+                { at: 0.12, t: 'enrage', name: '마왕의 광기', atk: 1.25, rate: 0.8, speed: 1.2 }
+              ],
+              abText: '세 얼굴 · 출진 지점 포격 → 반사 결계 → 핵 노출. 페이즈마다 다른 타이밍을 요구합니다' },
 };
 
 /* -------------------- 전장 20개 -------------------- */
@@ -1041,7 +1130,7 @@ STAGES.push(
     W(2,'orcshield',4,2),W(22,'siegeram',2,5),W(46,'ballista',6,2),W(72,'frostgiant',1),W(100,'orcshield',6,1.8),W(126,'orccatapult',3,5),W(154,'warchief',2,5),W(184,'frostgiant',1),W(214,'dark',7,1.8)]},
   {name:'★ 영원의 겨울 왕좌',hint:'연속 광역 공격 뒤 왕명으로 회복',baseHp:44000,money:440,rate:54,reward:1600,boss:true,enemyMul:11.2,waves:[
     W(2,'wolf',8,1),W(24,'frostgiant',1),W(52,'troll',1),W(78,'orcshield',6,1.8),W(104,'frostgiant',1),W(136,'golem',2,5),W(164,'warchief',2,5),W(192,'frostgiant',1),W(224,'orcberserk',8,1)]},
-  {name:'불타는 태양 회랑',hint:'화상을 정화하며 화룡을 견제',baseHp:45500,money:445,rate:55,reward:1500,enemyMul:7,waves:[
+  {name:'불타는 태양 회랑',hint:'화상을 정화하며 화룡을 견제',baseHp:45500,money:445,rate:55,reward:1500,enemyMul:5.5,waves:[
     W(2,'hellhound',9,.8),W(26,'powder',6,1.8),W(52,'drake',1),W(80,'plaguer',6,2),W(108,'orcshield',6,1.8),W(138,'drake',1),W(170,'hellhound',10,.8),W(200,'siegeram',2,4),W(230,'dark',7,1.5)]},
   {name:'황금 일식의 제단',hint:'치유·가속 토템을 범위 공격으로 압박',baseHp:47500,money:450,rate:56,reward:1650,boss:true,enemyMul:4.2,waves:[
     W(2,'orcshield',5,2),W(26,'totem',2,6),W(50,'shaman',5,3),W(78,'warlord',1),W(108,'golem',2,5),W(140,'drake',1),W(174,'warchief',3,5),W(208,'orcberserk',8,1),W(240,'lich',2,8)]},
@@ -1078,9 +1167,18 @@ STAGES[11].enemyMul = 1.78;             // 2.7: 쿨타임·비용 등급 조정 
 STAGES[12].enemyMul = 1.62;             // 3.0.2: 엄호 없는 원거리가 약해진 만큼 리치의 재림을 조금 누그러뜨린다
 STAGES[14].enemyMul = 1.9;              // 3.0.2: 원거리가 전열 뒤에서 기다리게 되어 거대 트롤의 문을 다시 조인다
 STAGES[16].enemyMul = 1.65;
-STAGES[17].enemyMul = 2.15;            // 2.7: 비싼 병종 강화·진화에 맞춰 다시 조율 (3.0: 보스를 반드시 쓰러뜨리게 되어 다시)
+STAGES[17].enemyMul = 2.0;             // 3.2: 보스 ×1.15 가 붙어 2.3 · 2.7: 비싼 병종 강화·진화에 맞춰 다시 조율 (3.0: 보스를 반드시 쓰러뜨리게 되어 다시)
 STAGES[23].enemyMul = 6;               // 3.0: 보스 배율을 누그러뜨린 만큼 삼중 봉인 자체를 올린다
 STAGES[19].enemyMul = 3.2;             // 3.0: 대군주를 반드시 쓰러뜨려야 하는 대신 영웅 사냥꾼이 붙었다
+/* 3.2: 1막은 더 억세게, 잡몹 전장도 쉬어 가는 곳이 되지 않게.
+ *  - 1막 4전장부터: 잡몹 전장 ×1.3, 보스 전장 ×1.15 (1~3전장은 기본 병종으로 넘어가야 하니 그대로)
+ *  - 2막 잡몹 전장 ×1.25 */
+const ACT1_MOB_MUL = 1.3, ACT1_BOSS_MUL = 1.15, ACT2_MOB_MUL = 1.25;
+STAGES.forEach((st, i) => {
+  if (i < 3) return;
+  const mul = i < 20 ? (st.boss ? ACT1_BOSS_MUL : ACT1_MOB_MUL) : (st.boss ? 1 : ACT2_MOB_MUL);
+  st.enemyMul = +(st.enemyMul * mul).toFixed(3);
+});
 
 /* ------------------------------------------------------------------
  *  보스는 전장마다 하나.
@@ -1112,8 +1210,8 @@ const NEW_MOB_WAVES = {
 /* 3.0.1 기절 저항. 기절만 쌓아 두면 다 멈추던 것을 비튼다.
  *  면역: 무게로 밀고 오는 기계·거구·망령 — 둔화나 화력으로 잡아야 한다
  *  저항: 갑주 두른 정예·광폭한 적 — 기절이 30% 짧게 걸린다 */
-const STUN_IMMUNE = ['siegeram', 'souleater'];
-const STUN_RESIST = { golem: 0.5, orcshield: 0.3, dark: 0.3, warchief: 0.3, orcberserk: 0.3, jailer: 0.3, chariot: 0.3, wraith: 0.3 };
+const STUN_IMMUNE = ['siegeram', 'souleater', 'titan', 'stoneward'];
+const STUN_RESIST = { demonknight: 0.5, rockling: 0.3, voidlord: 0.3, demonking: 0.3, golem: 0.5, orcshield: 0.3, dark: 0.3, warchief: 0.3, orcberserk: 0.3, jailer: 0.3, chariot: 0.3, wraith: 0.3 };
 STUN_IMMUNE.forEach(id => {
   const e = ENEMIES[id];
   e.ab = Object.assign({}, e.ab, { stunImmune: true });
@@ -1265,6 +1363,69 @@ STAGES.forEach((st, i) => {
 });
 
 /* =======================================================================
+ *  이벤트 전장 (3.2) — 극악 난이도 도전 다섯.
+ *
+ *  보스마다 "언제 무엇을 하느냐" 를 묻는 기믹이 하나씩 있다. 카드를 나오는 대로 내고
+ *  액티브를 쿨마다 눌러서는 잘 이기지 못한다(시뮬레이터 공략 편성 승률 50% 이하).
+ *   - 흡혈 백작: 안개화 중엔 무적 — 액티브를 안개가 걷힌 뒤로 아낀다
+ *   - 대지 거신: 핵이 85%를 막다가 내려찍은 뒤 6초만 드러난다 — 그때 액티브·왕명을 몰아 쓴다
+ *   - 유령 선장: 출진 지점 포격 — 포탄이 떨어진 다음에 병사를 내보낸다
+ *   - 공허의 군주: 반사 결계 중에 때리면 되돌아온다 — 결계 중엔 액티브를 참는다
+ *   - 마왕: 세 얼굴(포격 → 반사 → 핵)을 차례로
+ *  캠페인 진도와 따로 기록한다(save.events[id] = 별 수). 처음 넘으면 큰 보상.
+ * ======================================================================= */
+const EVENT_STAGES = [
+  { name: '핏빛 월식', bossId: 'vampire', bossRole: 'caster', boss: true, look: 'graveyard', music: 'underworld',
+    bossMusic: 'boss_lich', mods: ['curse'], baseHp: 36000, money: 520, rate: 58, reward: 0, enemyMul: 10, bossMul: { hp: 18, atk: 1.6 },
+    fury: { per30: 0.1, max: 1.2 }, len: 1500,
+    event: { id: 'eclipse', deck: ['thor','zeus','ra','odin','pyro','javelin','knight','spartan','frost','catapult'],
+             unlock: 10, reward: 6000, stones: 12,
+             mech: '안개화 중엔 무적 · 출진과 액티브는 안개가 걷힌 뒤에' },
+    waves: [W(2,'bat',8,.6), W(14,'bloodthrall',3,2), W(30,'hexer',3,1.6), W(40,'vampire',1), W(44,'bloodthrall',3,1.6),
+            W(70,'wraith',5,1.4), W(96,'bat',10,.5), W(120,'bloodthrall',4,1.6), W(150,'hexer',4,1.4), W(180,'wraith',6,1.2),
+            W(210,'bloodthrall',5,1.4)] },
+  { name: '거신의 망치', bossId: 'titan', bossRole: 'bruiser', boss: true, look: 'volcano', music: 'volcano',
+    bossMusic: 'boss_troll', mods: ['ironclad'], baseHp: 42000, money: 540, rate: 60, reward: 0, enemyMul: 10, bossMul: { hp: 2.6, atk: 1.6 },
+    fury: { per30: 0.1, max: 1.2 }, len: 1550,
+    event: { id: 'titan', deck: ['thor','ra','odin','rapriest','venom','pyro','alchemist','javelin','shield','knight'],
+             unlock: 15, reward: 9000, stones: 15,
+             mech: '핵은 내려찍은 뒤 6초만 드러난다 · 그때 액티브와 왕명을' },
+    waves: [W(2,'rockling',4,1.4), W(16,'stoneward',1), W(26,'orcspear',6,1), W(40,'titan',1), W(46,'stoneward',2,4),
+            W(66,'rockling',6,1.2), W(92,'golem',2,5), W(120,'stoneward',2,4), W(146,'siegeram',2,5), W(176,'rockling',8,1),
+            W(206,'golem',2,5)] },
+  { name: '망령 함대', bossId: 'ghostcaptain', bossRole: 'caster', boss: true, look: 'blackriver', music: 'blackriver',
+    bossMusic: 'boss_drake', mods: ['blitz'], baseHp: 44000, money: 560, rate: 62, reward: 0, enemyMul: 6.5, bossMul: { hp: 2, atk: 1.6 },
+    fury: { per30: 0.1, max: 1.3 }, len: 1550,
+    event: { id: 'fleet', deck: ['zeus','odin','thor','shield','spartan','frost','frostlancer','pyro','catapult','knight'],
+             unlock: 20, reward: 12000, stones: 18,
+             mech: '출진 지점에 포격 · 포탄이 떨어진 다음에 내보내기' },
+    waves: [W(2,'ghostsailor',6,.8), W(18,'ghostgunner',2,3), W(34,'wraith',4,1.2), W(40,'ghostcaptain',1),
+            W(46,'ghostsailor',5,.8), W(72,'ghostgunner',3,3), W(100,'ghostsailor',8,.7), W(128,'wraith',6,1),
+            W(156,'ghostgunner',3,3), W(186,'ghostsailor',10,.6), W(216,'wraith',8,.9)] },
+  { name: '혼돈의 균열', bossId: 'voidlord', bossRole: 'caster', boss: true, look: 'eclipse', music: 'eclipse',
+    bossMusic: 'boss_spiderqueen', mods: ['horde'], baseHp: 48000, money: 580, rate: 64, reward: 0, enemyMul: 10, bossMul: { hp: 4.4, atk: 1.6 },
+    fury: { per30: 0.1, max: 1.3 }, len: 1600,
+    event: { id: 'rift', deck: ['zeus','odin','thor','pyro','catapult','frost','knight','shield','spear','mage'],
+             unlock: 25, reward: 15000, stones: 20,
+             mech: '반사 결계 중엔 액티브·왕명 금지 · 되돌아온다' },
+    waves: [W(2,'voidspawn',6,.8), W(16,'riftcaller',1), W(30,'mirror',3,1.6), W(40,'voidlord',1), W(46,'voidspawn',6,.8),
+            W(72,'riftcaller',2,4), W(98,'mirror',4,1.4), W(124,'voidspawn',10,.6), W(152,'souleater',2,4),
+            W(180,'riftcaller',2,4), W(210,'voidspawn',12,.5)] },
+  { name: '마왕 강림', bossId: 'demonking', bossRole: 'bruiser', boss: true, look: 'mythic', music: 'mythic',
+    bossMusic: 'finale', mods: ['giantslayer', 'curse'], baseHp: 56000, money: 600, rate: 66, reward: 0, enemyMul: 10, bossMul: { hp: 2.8, atk: 1.7 },
+    fury: { per30: 0.12, max: 1.5 }, len: 1650,
+    event: { id: 'demonking', deck: ['spear','shield','javelin','venom','catapult','pyro','frost','knight','musketeer','sniper'],
+             unlock: 30, reward: 25000, stones: 30,
+             mech: '포격 → 반사 결계 → 핵 노출 · 페이즈마다 다른 타이밍' },
+    waves: [W(2,'imp',8,.6), W(16,'demonknight',1), W(30,'hellhound',6,.9), W(40,'demonking',1), W(46,'imp',8,.6),
+            W(70,'demonknight',2,4), W(96,'warchief',2,4), W(122,'imp',12,.5), W(150,'demonknight',2,4),
+            W(180,'hellhound',10,.6), W(212,'demonknight',3,3)] }
+];
+EVENT_STAGES.forEach((st, k) => { st.eventIndex = k; st.opening = 'rush'; });
+function eventOpen(s, k) { return !!EVENT_STAGES[k] && (s.cleared || 0) >= EVENT_STAGES[k].event.unlock; }
+function eventCount(s) { let n = 0; for (const st of EVENT_STAGES) if (s.events && s.events[st.event.id]) n++; return n; }
+
+/* =======================================================================
  *  무한 전장 - 끝없이 밀려오는 웨이브
  * ======================================================================= */
 const ENDLESS_POOL = [
@@ -1402,7 +1563,11 @@ const ACHIEVEMENTS = [
   { id: 'hard10',   name: '강철 의지',    desc: '하드코어 전장 10곳 돌파',        gold: 5000, stone: 5,
     test: s => hardCount(s) >= 10 },
   { id: 'hard30',   name: '꺾이지 않는 왕국', desc: '하드코어 전장 30곳 모두 돌파', gold: 15000, stone: 15,
-    test: s => hardCount(s) >= 30 }
+    test: s => hardCount(s) >= 30 },
+  { id: 'event1',   name: '극악의 문턱', desc: '이벤트 전장 1곳 돌파',            gold: 3000, stone: 5,
+    test: s => eventCount(s) >= 1 },
+  { id: 'event5',   name: '마왕을 넘어선 자', desc: '이벤트 전장 5곳 모두 돌파',   gold: 30000, stone: 30,
+    test: s => eventCount(s) >= 5 }
 ];
 function hardCount(s) { let n = 0; for (const k in (s.hard || {})) if (s.hard[k]) n++; return n; }
 

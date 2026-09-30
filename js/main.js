@@ -12,7 +12,7 @@ function defaultSave() {
     levels: lv, loadout: ['spear'], knownUnits: ['spear'],
     stars: {}, totalKills: 0, sound: true,
     owned: {}, stones: 3, pity: 0, mythPity: 0, season: 'olympus', pulls: 0, tutorial: false,
-    endlessBest: 0, achv: {}, daily: null, auto: false, evo: {}, hard: {},
+    endlessBest: 0, achv: {}, daily: null, auto: false, evo: {}, hard: {}, events: {},
     stats: { battles: 0, wins: 0, bossKills: 0, trains: 0, playSec: 0 }
   };
 }
@@ -72,6 +72,10 @@ function normalizeSave(raw) {
     const hard = {};
     if (s.hard && typeof s.hard === 'object') for (const k in s.hard) if (s.hard[k] === true && +k >= 0 && +k < STAGES.length) hard[k] = true;
     s.hard = hard;
+    // 이벤트 전장 기록: id → 별 수 (3.2)
+    const events = {};
+    if (s.events && typeof s.events === 'object') for (const st of EVENT_STAGES) { const v = s.events[st.event.id]; if (v >= 1 && v <= 3) events[st.event.id] = v | 0; }
+    s.events = events;
     if (typeof s.sound !== 'boolean') s.sound = true;
     if (!s.owned || typeof s.owned !== 'object') s.owned = {};
     if (!s.achv || typeof s.achv !== 'object') s.achv = {};
@@ -306,15 +310,17 @@ const CHAPTERS = [
   { name: '1장', sub: '국경 전선', from: 0, to: 10 },
   { name: '2장', sub: '왕도 수호', from: 10, to: 20 },
   { name: '2막', sub: '신화의 끝', from: 20, to: 30 },
-  { name: '무한', sub: '끝없는 웨이브', endless: true }
+  { name: '무한', sub: '끝없는 웨이브', endless: true },
+  { name: '이벤트', sub: '극악 도전', event: true }
 ];
+let eventSel = 0;          // 이벤트 장에서 고른 전장
 let mapChapter = -1;       // -1: 진행 중인 장을 자동으로 고른다
 let mapSel = -1;           // 고른 전장
 
 function chapterOf(i) {
   for (let c = 0; c < CHAPTERS.length; c++) {
     const ch = CHAPTERS[c];
-    if (!ch.endless && i >= ch.from && i < ch.to) return c;
+    if (!ch.endless && !ch.event && i >= ch.from && i < ch.to) return c;
   }
   return 0;
 }
@@ -353,20 +359,21 @@ function renderMap() {
   CHAPTERS.forEach((ch, c) => {
     const b = document.createElement('button');
     b.type = 'button';
-    const open = ch.endless ? save.cleared >= ENDLESS_UNLOCK_STAGE : ch.from <= save.cleared;
+    const open = ch.event ? eventOpen(save, 0) : ch.endless ? save.cleared >= ENDLESS_UNLOCK_STAGE : ch.from <= save.cleared;
     let stars = 0;
-    if (!ch.endless) for (let i = ch.from; i < ch.to; i++) stars += save.stars[i] || 0;
+    if (!ch.endless && !ch.event) for (let i = ch.from; i < ch.to; i++) stars += save.stars[i] || 0;
     b.className = 'chapter-tab' + (c === mapChapter ? ' on' : '') + (open ? '' : ' locked');
     b.setAttribute('aria-pressed', String(c === mapChapter));
     let crowns = 0;
-    if (!ch.endless) for (let i = ch.from; i < ch.to; i++) if (save.hard[i]) crowns++;
+    if (!ch.endless && !ch.event) for (let i = ch.from; i < ch.to; i++) if (save.hard[i]) crowns++;
     b.innerHTML = '<span class="ch-name">' + (open ? '' : '🔒 ') + ch.name + '</span>' +
       '<span class="ch-sub">' + ch.sub + '</span>' +
-      (ch.endless ? '<span class="ch-star">' + (save.endlessBest || 0) + '</span>'
+      (ch.event ? '<span class="ch-star">✦ ' + eventCount(save) + '/' + EVENT_STAGES.length + '</span>'
+      : ch.endless ? '<span class="ch-star">' + (save.endlessBest || 0) + '</span>'
                   : '<span class="ch-star">★ ' + stars + '/' + ((ch.to - ch.from) * 3) + (crowns ? ' · 💀' + crowns : '') + '</span>');
     b.addEventListener('click', () => {
       mapChapter = c;
-      if (!ch.endless && (mapSel < ch.from || mapSel >= ch.to)) mapSel = Math.min(save.cleared, ch.to - 1);
+      if (!ch.endless && !ch.event && (mapSel < ch.from || mapSel >= ch.to)) mapSel = Math.min(save.cleared, ch.to - 1);
       SFX.ui();
       renderMap();
     });
@@ -379,7 +386,13 @@ function renderMap() {
   const endless = $('#endless-slot');
   list.innerHTML = '';
   path.innerHTML = '';
-  $('#trail').classList.toggle('endless-mode', !!ch.endless);
+  $('#trail').classList.toggle('endless-mode', !!(ch.endless || ch.event));
+  $('#trail').classList.toggle('event-mode', !!ch.event);
+  if (ch.event) {
+    renderEventSlot();
+    renderEventDetail(eventSel);
+    return;
+  }
   if (ch.endless) {
     renderEndlessSlot();
     renderStageDetail(-1);
@@ -538,6 +551,106 @@ function renderEndlessSlot() {
     '<button class="btn primary e-btn">도전</button>';
   el.querySelector('.e-btn').addEventListener('click', () => startEndless());
   slot.appendChild(el);
+}
+
+/* ------------------------------ 이벤트 전장 (3.2) ------------------------------ */
+function renderEventSlot() {
+  const slot = $('#endless-slot');
+  slot.innerHTML = '';
+  const grid = document.createElement('div');
+  grid.className = 'event-grid';
+  EVENT_STAGES.forEach((st, k) => {
+    const open = eventOpen(save, k), done = save.events[st.event.id] || 0, boss = ENEMIES[st.bossId];
+    const el = document.createElement('button');
+    el.type = 'button';
+    el.className = 'event-card' + (open ? '' : ' locked') + (done ? ' done' : '') + (k === eventSel ? ' sel' : '');
+    el.dataset.event = String(k);
+    el.style.setProperty('--field', lookOf(st).ridge);
+    el.innerHTML = '<canvas></canvas><span class="ev-no">E' + (k + 1) + '</span>' +
+      '<span class="ev-name">' + (open ? st.name : '🔒 ' + st.name) + '</span>' +
+      '<span class="ev-boss">' + boss.name + '</span>' +
+      '<span class="ev-mark">' + (done ? starMarks(done) : (open ? '극악' : st.event.unlock + '전장 돌파 후')) + '</span>';
+    drawUnitIcon(el.querySelector('canvas'), boss, 40);
+    el.addEventListener('click', () => { eventSel = k; SFX.ui(); renderMap(); });
+    grid.appendChild(el);
+  });
+  slot.appendChild(grid);
+}
+
+/* 추천 편성 가운데 지금 가진 병종만 */
+function eventDeck(k) {
+  const have = new Set(unlockedUnits().map(u => u.id));
+  const out = [];
+  for (const id of EVENT_STAGES[k].event.deck) {
+    if (!have.has(id) || out.length >= LOADOUT_MAX) continue;
+    if (isHeroUnit(UNIT_BY_ID[id]) && out.filter(x => isHeroUnit(UNIT_BY_ID[x])).length >= HERO_SLOT_MAX) continue;
+    out.push(id);
+  }
+  return out;
+}
+
+function renderEventDetail(k) {
+  const st = EVENT_STAGES[k], ev = st.event, boss = ENEMIES[st.bossId];
+  const box = $('#stage-detail');
+  box.innerHTML = '';
+  const open = eventOpen(save, k), done = save.events[ev.id] || 0;
+  const head = document.createElement('div');
+  head.innerHTML =
+    '<div class="sd-no">이벤트 E' + (k + 1) + ' · 극악</div>' +
+    '<div class="sd-name">' + st.name + '</div>' +
+    '<div class="sd-stars">' + starMarks(done) + '</div>' +
+    '<div class="sd-event"><b>' + boss.name + '</b><span>' + boss.abText + '</span><small>공략 · ' + ev.mech + '</small></div>' +
+    (st.mods ? '<div class="sd-mods">' + st.mods.map(m => {
+      const d = STAGE_MODS[m];
+      return '<div class="sd-mod" style="--mc:' + d.color + '"><b>' + d.name + '</b><span>' + d.desc + '</span></div>';
+    }).join('') + '</div>' : '') +
+    '<div class="sd-deck"><b>권장 전력</b> 병영 강화 최대 · 병종 Lv15 · 진화</div>' +
+    '<div class="sd-deck"><b>추천 편성</b> ' + ev.deck.map(id => UNIT_BY_ID[id].short || UNIT_BY_ID[id].name).join(' · ') + '</div>' +
+    '<div class="sd-meta">' +
+      '<span>적 요새 ' + st.baseHp.toLocaleString() + '</span>' +
+      '<span>첫 돌파 💰' + fmtNum(ev.reward) + ' · 🔮' + ev.stones + '</span>' +
+      '<span>다시 돌파 💰' + fmtNum(ev.reward) + '</span>' +
+    '</div>' +
+    (open ? '' : '<p class="sd-hint">🔒 ' + ev.unlock + '전장을 돌파하면 열립니다.</p>');
+  box.appendChild(head);
+  const foes = document.createElement('div');
+  foes.className = 'sd-foes';
+  [...new Set(st.waves.map(w => w.e))].slice(0, 8).forEach(id => {
+    const e = ENEMIES[id];
+    const f = document.createElement('span');
+    f.className = 'sd-foe' + (e.boss ? ' boss' : '');
+    f.title = e.name;
+    f.innerHTML = '<canvas></canvas><small>' + e.name + '</small>';
+    drawUnitIcon(f.querySelector('canvas'), e, 30);
+    foes.appendChild(f);
+  });
+  box.appendChild(foes);
+  if (!open) return;
+  const btns = document.createElement('div');
+  btns.className = 'sd-btns ev-btns';
+  const rec = document.createElement('button');
+  rec.className = 'btn ghost sd-formation';
+  rec.textContent = '추천 편성 쓰기';
+  rec.addEventListener('click', () => {
+    const d = eventDeck(k);
+    if (!d.length) { toast('추천 병종을 아직 하나도 갖고 있지 않습니다'); return; }
+    save.loadout = d; saveGame(save); SFX.ui();
+    toast('추천 편성 ' + d.length + '개 병종을 넣었습니다' + (d.length < ev.deck.length ? ' (없는 병종은 뺐습니다)' : ''));
+    renderMap();
+  });
+  const fb = document.createElement('button');
+  fb.className = 'btn ghost sd-formation';
+  fb.textContent = '편성 (' + save.loadout.length + '/' + LOADOUT_MAX + ')';
+  fb.addEventListener('click', () => openFormation('event:' + k));
+  const go = document.createElement('button');
+  go.className = 'btn primary sd-go';
+  go.id = 'btn-event-go';
+  go.textContent = '도전 ▶';
+  go.addEventListener('click', () => startEvent(k));
+  btns.appendChild(rec);
+  btns.appendChild(fb);
+  btns.appendChild(go);
+  box.appendChild(btns);
 }
 
 function starMarks(n) {
@@ -1015,6 +1128,17 @@ function startEndless() {
   beginBattle();
 }
 
+function startEvent(k) {
+  if (!eventOpen(save, k)) return;
+  const st = EVENT_STAGES[k];
+  battle = new Battle(STAGES.length + k, save, st);
+  battle.eventIndex = k;
+  $('#scr-battle').classList.add('hardcore');
+  $('#battle-stage').textContent = '✦ E' + (k + 1) + '. ' + st.name;
+  beginBattle();
+  battle.announce('이벤트 · ' + st.event.mech, 4);
+}
+
 function startBattle(index, hard) {
   battle = new Battle(index, save, null, { hard: !!hard });
   $('#battle-stage').textContent = (hard ? '💀 ' : '') + (index + 1) + '. ' + battle.stage.name;
@@ -1236,6 +1360,7 @@ function showResult() {
   checkAchievements();
 
   if (battle.endless) { showEndlessResult(); return; }
+  if (battle.event) { showEventResult(); return; }
 
   const win = battle.state === 'win';
   $('#result-title').textContent = win ? (battle.hard ? '하드코어 돌파' : '승 리') : '패 배';
@@ -1265,6 +1390,24 @@ function showResult() {
   // 하드코어의 다음 전장은 이미 돌파한 곳일 때만
   const hasNext = win && battle.stageIndex + 1 < STAGES.length && (!battle.hard || battle.stageIndex + 1 < save.cleared);
   $('#btn-next').style.display = hasNext ? '' : 'none';
+  $('#result').classList.add('show');
+}
+
+function showEventResult() {
+  const win = battle.state === 'win', ev = battle.event;
+  $('#result-title').textContent = win ? '이벤트 돌파' : '패 배';
+  $('#result-stars').innerHTML = win ? starMarks(battle.stars) + (battle.firstEvent ? '<span class="new-star">첫 돌파</span>' : '') : '';
+  const lines = [];
+  lines.push('획득 골드 💰 ' + battle.coins);
+  lines.push('처치 ' + battle.kills + '  ·  남은 성채 ' + Math.round(battle.allyCastle.hp / battle.allyCastle.maxHp * 100) + '%');
+  if (win) {
+    if (battle.stoneGain) lines.push('소환석 🔮 +' + battle.stoneGain);
+    lines.push('이벤트 ' + eventCount(save) + ' / ' + EVENT_STAGES.length + ' 돌파');
+  } else {
+    lines.push('공략 · ' + ev.mech);
+  }
+  $('#result-desc').textContent = lines.join('\n');
+  $('#btn-next').style.display = 'none';
   $('#result').classList.add('show');
 }
 
@@ -1646,6 +1789,7 @@ function init() {
   initFormation();
   $('#btn-retry').addEventListener('click', () => {
     if (battle && battle.endless) startEndless();
+    else if (battle && battle.event) startEvent(battle.eventIndex);
     else startBattle(battle.stageIndex, battle.hard);
   });
   $('#btn-next').addEventListener('click', () => {

@@ -691,4 +691,90 @@ test('Fury: in hardcore and act 2, foes arriving later are tougher', () => {
   assert.equal(a1.spawnEnemy('goblin', 900).maxHp, e1, 'act 1 has no fury');
 });
 
+/* ---------------- 3.2 이벤트 전장 ---------------- */
+const EV = vm.runInContext('({EVENT_STAGES, eventOpen, eventCount})', ctx);
+function evBattle(k, s) { return new Battle(STAGES.length + k, s || save(), EV.EVENT_STAGES[k]); }
+test('Five event stages, each with its own new boss, locked behind campaign progress', () => {
+  assert.equal(EV.EVENT_STAGES.length, 5);
+  const bosses = new Set();
+  EV.EVENT_STAGES.forEach((st, k) => {
+    assert.ok(E[st.bossId] && E[st.bossId].boss, st.name); bosses.add(st.bossId);
+    assert.ok(st.waves.some(w => w.e === st.bossId), 'boss appears');
+    st.waves.forEach(w => assert.ok(E[w.e], st.name + ' ' + w.e));
+    assert.ok(st.event.deck.length === 10 && st.event.deck.every(id => U[id]), 'recommended deck');
+    assert.equal(EV.eventOpen({ cleared: st.event.unlock - 1 }, k), false); assert.equal(EV.eventOpen({ cleared: st.event.unlock }, k), true);
+  });
+  assert.equal(bosses.size, 5);
+});
+test('Event battles are not campaign progress: they record stars and pay stones once', () => {
+  const s = save(); s.stones = 0; s.cleared = 30; const b = evBattle(0, s);
+  assert.ok(b.event && b.bossWard); b.finish('win');
+  assert.equal(s.events.eclipse, 3); assert.equal(b.stoneGain, EV.EVENT_STAGES[0].event.stones); assert.equal(s.cleared, 30);
+  assert.equal(s.stars[STAGES.length], undefined, 'no campaign stars');
+  const b2 = evBattle(0, s); b2.finish('win'); assert.equal(b2.stoneGain, 0); assert.equal(EV.eventCount(s), 1);
+});
+test('Mistform: the vampire takes nothing, charms troops sent in, and swallows actives', () => {
+  const s = save(); s.owned.thor = true; s.loadout = ['thor', 'spear']; s.cleared = 30;
+  const b = evBattle(0, s); b.update(1 / 30);
+  const v = b.spawnEnemy('vampire', 700); b.bossAct(v, E.vampire.special);
+  assert.ok(v.veilT > 0); const hp = v.hp; assert.equal(v.takeDamage(99999), 0); assert.equal(v.hp, hp);
+  b.money = 9999; b.cooldowns.spear = 0; b.deploy('spear'); assert.ok(b.allies[b.allies.length - 1].charmT > 0, 'charmed in the mist');
+  b.cooldowns.thor = 0; b.deploy('thor'); const thor = b.allies.find(a => a.s.id === 'thor'); thor.x = 650; thor.charmT = 0;
+  const mob = b.spawnEnemy('goblin', 690); const mhp = mob.hp; v.hp = v.maxHp * 0.5;
+  b.heroCooldowns.thor = 0; b.heroGlobalCd = 0; assert.equal(b.useHeroActive('thor'), true);
+  assert.equal(mob.hp, mhp, 'active swallowed'); assert.ok(v.hp > v.maxHp * 0.5, 'mist feeds on it');
+  v.veilT = 0; b.money = 9999; b.cooldowns.spear = 0; b.deploy('spear'); assert.equal(b.allies[b.allies.length - 1].charmT, 0);
+});
+test('Magma core: the titan shrugs off hits until its slam lands, then takes 2.5x', () => {
+  const b = evBattle(1); b.update(1 / 30);
+  const t = b.spawnEnemy('titan', 900); t.stunImm = 99;
+  const arm = 1 - Math.min(0.75, t.ab.armor || 0);          // 중갑 특성도 함께 걸린다
+  const h0 = t.hp; t.takeDamage(1000); const guarded = h0 - t.hp;
+  assert.ok(Math.abs(guarded - 150 * arm) < 1, 'guarded ' + guarded);
+  b.allies.push(b.makeAlly(U.spear, 700));
+  b.bossAct(t, E.titan.special); assert.equal(b.pending.length, 1);
+  b.updatePending(5); assert.ok(t.exposedT > 5);
+  const h1 = t.hp; t.takeDamage(1000); assert.ok(Math.abs(h1 - t.hp - 2500 * arm) < 1);
+});
+test('Broadside shells the deploy zone, not the front line', () => {
+  const b = evBattle(2); b.update(1 / 30);
+  const c = b.spawnEnemy('ghostcaptain', 1200); b.bossAct(c, E.ghostcaptain.special);
+  const X = vm.runInContext('ALLY_SPAWN_X', ctx);
+  assert.equal(b.pending.length, E.ghostcaptain.special.n);
+  assert.ok(b.pending.every(p => Math.abs(p.x - X) < 600 && p.t >= 2), 'near the spawn, with a warning');
+});
+test('Void mirror reflects hits, turns actives on their caster and swallows the Command', () => {
+  const s = save(); s.owned.thor = true; s.loadout = ['thor']; s.cleared = 30;
+  const b = evBattle(3, s); b.update(1 / 30);
+  const v = b.spawnEnemy('voidlord', 700); b.bossAct(v, E.voidlord.special); assert.ok(v.reflectT > 0);
+  const sp = b.makeAlly(U.spear, 650); b.allies.push(sp);
+  const vh = v.hp, sh = sp.hp; b.hitOne(1000, v, sp, false);
+  assert.ok(sp.dead || sh - sp.hp > 500, 'attacker hurt'); assert.ok(vh - v.hp < 200, 'boss barely scratched');
+  b.money = 9999; b.cooldowns.thor = 0; b.deploy('thor'); const thor = b.allies.find(a => a.s.id === 'thor'); thor.x = 640;
+  b.heroCooldowns.thor = 0; b.heroGlobalCd = 0; const th = thor.hp; const v2 = v.hp;
+  assert.equal(b.useHeroActive('thor'), true); assert.ok(thor.hp < th, 'active bounced'); assert.equal(v.hp, v2);
+  b.cmdCd = 0; const hurt = b.allies[0]; hurt.hp = 1; assert.equal(b.useCommand(), true); assert.equal(hurt.hp, 1, 'command swallowed');
+});
+test('The Demon King changes faces: shelling, then a mirror, then an exposed core', () => {
+  const b = evBattle(4); b.update(1 / 30);
+  const d = b.spawnEnemy('demonking', 1200); d.stunImm = 99;
+  assert.equal((d.curSpecial || d.s.special).t, 'barrage');
+  d.hp = d.maxHp * 0.7; b.bossTick(d, 0.01); assert.equal(d.curSpecial.t, 'reflect');
+  d.hp = d.maxHp * 0.3; b.bossTick(d, 0.01); assert.equal(d.curSpecial.t, 'slam'); assert.ok(d.ab.core);
+});
+test('Event enemies are drawn and translated', () => {
+  const render = fs.readFileSync(path.join(__dirname, '../js/render.js'), 'utf8');
+  const i18n = fs.readFileSync(path.join(__dirname, '../js/i18n.js'), 'utf8');
+  for (const id of ['bloodthrall', 'stoneward', 'rockling', 'ghostsailor', 'ghostgunner', 'voidspawn', 'riftcaller', 'imp', 'demonknight',
+                    'vampire', 'titan', 'ghostcaptain', 'voidlord', 'demonking']) {
+    assert.ok(render.indexOf("case '" + E[id].shape + "'") >= 0, id); assert.ok(i18n.indexOf("'" + E[id].name + "'") >= 0, id);
+    if (E[id].abText) assert.ok(i18n.indexOf("'" + E[id].abText + "'") >= 0, id + ' abText');
+  }
+  EV.EVENT_STAGES.forEach(st => { assert.ok(i18n.indexOf("'" + st.name + "'") >= 0, st.name); assert.ok(i18n.indexOf("'" + st.event.mech + "'") >= 0, st.event.mech); });
+});
+test('Act 1 and plain stages got tougher (3.2)', () => {
+  assert.ok(STAGES[5].enemyMul > 1.25, 'mob stage ' + STAGES[5].enemyMul);
+  assert.ok(STAGES[1].enemyMul < 1.1, 'first stages stay gentle');
+});
+
 console.log(count + ' regression checks passed');

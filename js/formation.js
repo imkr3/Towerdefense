@@ -13,7 +13,7 @@ const PRESET_COUNT = 3;
 const HOLD_MS = 170;          // 터치: 이만큼 누르고 있으면 끌기 시작
 const DRAG_START_PX = 8;
 
-let fmTarget = null;          // 전장 번호 | 'endless' | null(그냥 편성)
+let fmTarget = null;          // 전장 번호 | 'endless' | 'event:k' | null(그냥 편성)
 let fmBack = 'scr-map';
 let fmFilter = 'all';
 let fmFocus = null;           // 오른쪽에 정보를 띄울 병종
@@ -320,10 +320,12 @@ function renderFormationSide() {
     const go = document.createElement('button');
     go.className = 'btn primary fs-go';
     go.id = 'btn-formation-go';
-    const name = fmTarget === 'endless' ? '무한 전장' : (fmTarget + 1) + '. ' + STAGES[fmTarget].name;
+    const evk = typeof fmTarget === 'string' && fmTarget.indexOf('event:') === 0 ? +fmTarget.slice(6) : -1;
+    const name = fmTarget === 'endless' ? '무한 전장' : evk >= 0 ? '✦ E' + (evk + 1) + '. ' + EVENT_STAGES[evk].name : (fmTarget + 1) + '. ' + STAGES[fmTarget].name;
     go.innerHTML = '출진 ▶<small>' + name + '</small>';
     go.addEventListener('click', () => {
       if (fmTarget === 'endless') startEndless();
+      else if (evk >= 0) startEvent(evk);
       else startBattle(fmTarget);
     });
     side.appendChild(go);

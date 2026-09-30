@@ -27,7 +27,7 @@ const SaveStore = {
     const obj = v => v && typeof v === 'object' && !Array.isArray(v);
     const num = v => Number.isFinite(v) && v >= 0;
     if (!obj(s) || !Number.isInteger(s.cleared) || s.cleared < 0 || s.cleared > STAGES.length || !num(s.coins)) throw Error('게임 저장 데이터가 아닙니다.');
-    for (const k of ['levels','upgrades','owned','stars','achv','stats']) if (s[k] !== undefined && !obj(s[k])) throw Error('저장 항목 형식 오류: ' + k);
+    for (const k of ['levels','upgrades','owned','stars','achv','stats','events']) if (s[k] !== undefined && !obj(s[k])) throw Error('저장 항목 형식 오류: ' + k);
     for (const k of ['stones','pity','mythPity','pulls','totalKills','endlessBest']) if (s[k] !== undefined && !num(s[k])) throw Error('저장 숫자 오류: ' + k);
     for (const k of ['levels','upgrades','stars','stats']) for (const v of Object.values(s[k] || {})) if (!num(v)) throw Error('저장 능력치 오류: ' + k);
     if (s.evo !== undefined && (!obj(s.evo) || Object.values(s.evo).some(v => typeof v !== 'boolean'))) throw Error('진화 데이터 오류');

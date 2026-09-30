@@ -395,5 +395,6 @@ function stageMusic(stage) {
 }
 function bossTrack(stage, bossId) {
   if (stage && stage.finale) return 'finale';
+  if (stage && stage.bossMusic && BGM_TRACKS[stage.bossMusic]) return stage.bossMusic;   // 이벤트 보스
   return BGM_TRACKS['boss_' + bossId] ? 'boss_' + bossId : 'boss_warlord';
 }

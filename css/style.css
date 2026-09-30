@@ -1157,3 +1157,27 @@ body{background:var(--bg0);color:var(--tx)}
 .slot-row .sl-sub{flex:1;min-width:160px}
 .slot-row .sl-sub.warn{color:#e2a7a4}
 .slot-row .sl-tag{font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:10px;background:linear-gradient(180deg,#fbe3a6,#c99a52);color:#2a1d08}
+
+/* 3.2: 이벤트 전장 */
+.trail.event-mode .endless-slot{align-items:stretch;justify-content:stretch;padding:10px}
+.event-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:8px;width:100%;align-content:center}
+.event-card{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:118px;padding:8px 6px 7px;
+  border:1px solid #e0736a55;border-top:3px solid var(--field,#7a2f35);border-radius:10px;cursor:pointer;font-family:inherit;color:var(--tx,#dce6e9);
+  background:linear-gradient(180deg,#2a1422,#1a0e18);box-shadow:0 6px 18px #0006}
+.event-card canvas{width:46px;height:46px;border-radius:50%;background:radial-gradient(circle at 50% 35%,#7a2f35,#2a0f14);border:1px solid #e0736a88}
+.event-card .ev-no{position:absolute;left:7px;top:5px;font-size:10px;font-weight:900;color:#ff9f8a;letter-spacing:.06em}
+.event-card .ev-name{font-size:12.5px;font-weight:800;text-align:center}
+.event-card .ev-boss{font-size:10.5px;color:var(--tx2,#a9b8c0)}
+.event-card .ev-mark{font-size:10.5px;color:#ffb45a;font-weight:700}
+.event-card.sel{border-color:#ffb45a;box-shadow:0 0 0 2px #ffb45a88,0 6px 18px #0006}
+.event-card.done{background:linear-gradient(180deg,#2a2413,#1a170e)}
+.event-card.locked{filter:grayscale(.8) brightness(.7);cursor:pointer}
+.sd-event{border-left:3px solid #e0503c;background:#2a0f1499;border-radius:6px;padding:6px 8px;font-size:10.5px;line-height:1.4;display:flex;flex-direction:column;gap:2px}
+.sd-event b{color:#ff8a70;font-size:12px}
+.sd-event small{color:#ffb45a;font-weight:700}
+.sd-deck{font-size:10.5px;line-height:1.45;color:var(--tx2,#a9b8c0)}
+.sd-deck b{color:#ffd166;margin-right:4px}
+@media(max-width:780px){.event-grid{grid-template-columns:repeat(3,1fr);gap:6px}.event-card{min-height:96px;padding:6px 4px}.event-card canvas{width:36px;height:36px}}
+.sd-btns.ev-btns{flex-wrap:wrap}
+.sd-btns.ev-btns .btn.ghost{flex:1 1 40%}
+.sd-btns.ev-btns .sd-go{flex:1 1 100%}

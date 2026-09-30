@@ -149,6 +149,12 @@ class Fighter {
     this.souls = 0;         // 흡혼귀가 삼킨 영혼
     this.stolen = 0;        // 금화 도둑이 훔친 군자금
     this.hookCd = 2.5;      // 사슬 간수 첫 갈고리
+
+    // 3.2 이벤트 보스: 타이밍을 맞춰야 잡힌다
+    this.veilT = 0;         // 안개화: 어떤 피해도 받지 않는다
+    this.reflectT = 0;      // 반사 결계: 받은 피해를 때린 자에게 되돌린다
+    this.exposedT = 0;      // 약점 노출: 핵(core)이 드러나 피해가 몇 배로 들어간다
+    this.curSpecial = null; // 페이즈에 따라 바뀐 고유 기술
   }
 
   /* 기절. 면역 중이거나 부동심이면 걸리지 않는다. 걸렸으면 true */
@@ -195,6 +201,9 @@ class Fighter {
   takeDamage(dmg, pierceArmor) {
     if (this.dead) return 0;
     dmg = Math.max(0, dmg);
+    if (this.veilT > 0) { this.veilHit = 0.3; return 0; }            // 안개화: 아무것도 닿지 않는다
+    // 핵: 평소엔 거의 막고, 약점이 드러난 동안에만 몇 배로 들어간다
+    if (this.ab.core) dmg *= this.exposedT > 0 ? this.ab.core.mul : (1 - this.ab.core.armor);
     if (this.vulnT > 0) dmg *= this.vulnMul;                          // 낙인
     if (this.ab.armor && !pierceArmor) dmg *= (1 - Math.min(0.75, this.ab.armor));   // 두꺼운 갑주
     if (this.barrier > 0) {
@@ -269,7 +278,9 @@ class Battle {
     // 하드코어: 돌파한 전장을 더 모질게 (적 ×3.5 · 격앙 · 특성 하나 더 · 성채 60% · 왕명 느림)
     this.hard = !!(opts && opts.hard) && !this.endless;
     this.enemyMulBase = this.hard ? hardcoreEnemyMul(this.stage) : (this.stage.enemyMul || 1);
-    this.fury = this.endless ? null : this.hard ? HARDCORE.fury : (this.stageIndex >= 20 ? ACT2_FURY : null);
+    this.fury = this.endless ? null : this.hard ? HARDCORE.fury
+      : (this.stage.fury || (this.stageIndex >= 20 && this.stageIndex < STAGES.length ? ACT2_FURY : null));
+    this.event = this.stage.event || null;      // 3.2 이벤트 전장
 
     const up = save.upgrades;
     this.buff = {
@@ -430,6 +441,12 @@ class Battle {
     this.cooldowns[id] = u.cooldown * this.cdMul;
     const f = this.makeAlly(u, ALLY_SPAWN_X + Math.random() * 40);
     f.giveBarrier(25 * Math.min(5, this.save.upgrades.deployment || 0));
+    // 안개 속으로 들어온 병사는 백작에게 홀린다 (안개가 걷힌 뒤에 내보내야 한다)
+    const vb = this.veiledBoss();
+    if (vb && vb.s.special && vb.s.special.charm !== undefined) {
+      f.charmT = vb.s.special.charm;
+      this.fx.push({ type: 'charm', x: f.x, row: f.row, t: 0.7, life: 0.7 });
+    }
     this.allies.push(f);
     this.fx.push({ type: 'spawn', x: f.x, row: f.row, t: 0.4, life: 0.4 });
     sfx('deploy');
@@ -459,6 +476,18 @@ class Battle {
         if(a.barrier){m.giveBarrier(a.barrier*f.abMul);m.poisonT=0;m.poisonDps=0;m.burnT=0;m.burnDps=0;}
         if(a.haste){m.hasteMul=m.hasteT>0?Math.min(m.hasteMul,a.haste.mul):a.haste.mul;m.hasteT=Math.max(m.hasteT,a.haste.dur);m.stunT=0;}
       }
+    } else if (this.veiledBoss()) {
+      // 안개가 액티브를 삼킨다: 피해는 없고 백작이 피를 채운다
+      const vb = this.veiledBoss();
+      vb.heal(vb.maxHp * 0.03);
+      this.announce('안개가 기술을 삼켰다', 1.6);
+      this.fx.push({ type: 'aura', x: vb.x, row: vb.row, r: 110, t: 0.6, life: 0.6, color: '#e04b6a' });
+    } else if (this.reflectingBoss() && Math.abs(this.reflectingBoss().x - target.x) <= 450) {
+      // 공허 반사: 결계 곁에 쓴 액티브는 시전자에게 돌아온다
+      const rb = this.reflectingBoss();
+      f.takeDamage(f.atk * a.mul * (rb.reflectRatio || 0.85));
+      this.announce('공허가 기술을 되돌렸다', 1.6);
+      this.fx.push({ type: 'mirror', x: rb.x, x2: f.x, row: rb.row, row2: f.row, t: 0.4, life: 0.4 });
     } else {
       this._chaining = true;          // 액티브의 광역 타격이 대상마다 연쇄를 다시 일으키지 않게
       for(const e of this.enemies) if(!e.dead && Math.abs(e.x-target.x)<=a.radius) {
@@ -497,6 +526,12 @@ class Battle {
     if (!this.canCommand()) return false;
     this.cmdCd = this.cmdMax;
     this.cmdUses++;
+    // 공허 반사 중에는 왕명마저 삼켜진다
+    if (this.reflectingBoss()) {
+      this.announce('공허가 왕명을 삼켰다', 1.8);
+      sfx('command');
+      return true;
+    }
     for (const a of this.allies) {
       a.heal(a.maxHp * this.cmdHeal);
       a.hasteT = Math.max(a.hasteT, COMMAND.hasteDur);
@@ -614,6 +649,10 @@ class Battle {
     if (bare >= 3 && !this.coverWarned) { this.coverWarned = true; this.announce('엄호 없음 · 원거리 병사 앞에 근접 병사를 세우세요', 2.6); }
   }
 
+  /* 3.2: 안개화·반사 결계 중인 보스 (없으면 null) */
+  veiledBoss() { for (const e of this.enemies) if (e.boss && !e.dead && e.veilT > 0) return e; return null; }
+  reflectingBoss() { for (const e of this.enemies) if (e.boss && !e.dead && e.reflectT > 0) return e; return null; }
+
   /* 보스 격노: 나온 지 오래된 캠페인 보스는 더 세고 빨라진다 (한 번만) */
   checkEnrage() {
     if (this.endless || !this.stage.bossId || this.bossDown) return;
@@ -677,6 +716,10 @@ class Battle {
     if (f.boss && this.stage.bossId && !this.endless) {
       f.maxHp = Math.round(f.maxHp * BOSS_HP_MUL); f.hp = f.maxHp;
       f.atk = Math.round(f.atk * BOSS_ATK_MUL);
+      // 이벤트 보스는 따로 더 억세다 (전장마다 bossMul)
+      const bm = this.stage.bossMul;
+      if (bm) { f.maxHp = Math.round(f.maxHp * (bm.hp || 1)); f.hp = f.maxHp; f.atk = Math.round(f.atk * (bm.atk || 1)); }
+      f.baseAtk = f.atk;
     }
     if (f.boss) { this.bossAlert = 2.6; this.bossName = spec.name; this.shake = 10; sfx('bossIn'); f.bornT = this.time; }
     if (f.ab.burrow) { f.burrowed = true; this.burrowers.push(f); return f; }
@@ -792,6 +835,22 @@ class Battle {
       // 웨이브 수에 따른 보상
       this.coins += this.wavesCleared * 120;
       this.stoneGain = Math.floor(this.wavesCleared / 5);
+      this.save.stones = (this.save.stones || 0) + this.stoneGain;
+      this.save.coins += this.coins;
+      this.save.totalKills = (this.save.totalKills || 0) + this.kills;
+      saveGame(this.save);
+      return;
+    }
+    if (result === 'win' && this.event) {
+      // 이벤트 전장: 별 대신 돌파 기록(별 수), 처음 넘으면 큰 보상
+      const ev = this.event, ratio = this.allyCastle.hp / this.allyCastle.maxHp;
+      this.stars = ratio >= 0.9 ? 3 : (ratio >= 0.5 ? 2 : 1);
+      if (!this.save.events || typeof this.save.events !== 'object') this.save.events = {};
+      const prev = this.save.events[ev.id] || 0;
+      this.firstEvent = !prev;
+      this.coins += ev.reward;
+      this.stoneGain = this.firstEvent ? ev.stones : 0;
+      if (this.stars > prev) this.save.events[ev.id] = this.stars;
       this.save.stones = (this.save.stones || 0) + this.stoneGain;
       this.save.coins += this.coins;
       this.save.totalKills = (this.save.totalKills || 0) + this.kills;
@@ -1118,6 +1177,9 @@ class Battle {
    * special: 일정 주기로 반복하는 고유 기술.
    * 두 가지 모두 bossAct 하나로 처리한다. */
   bossTick(f, dt) {
+    if (f.veilT > 0) f.veilT -= dt;
+    if (f.reflectT > 0) f.reflectT -= dt;
+    if (f.exposedT > 0) f.exposedT -= dt;
     const ph = f.s.phases;
     if (ph) {
       const ratio = f.hp / f.maxHp;
@@ -1126,7 +1188,7 @@ class Battle {
         f.phaseIdx++;
       }
     }
-    const sp = f.s.special;
+    const sp = f.curSpecial || f.s.special;
     if (sp && f.stunT <= 0) {
       f.specialCd -= dt;
       if (f.specialCd <= 0) {
@@ -1227,6 +1289,53 @@ class Battle {
                        color: '#a06be0', r: r * 0.5, big: true, dir: f.dir, t: 0.6, life: 0.6 });
         break;
       }
+      /* ---- 3.2 이벤트 보스 ---- */
+      case 'veil': {                       // 안개화: 잠깐 무적, 그 사이 주변의 피를 빤다
+        f.veilT = a.dur || 4;
+        if (a.dmg) {
+          let sum = 0;
+          for (const e of foes) {
+            if (e.dead || Math.abs(e.x - f.x) > r) continue;
+            e.takeDamage(a.dmg); sum += a.dmg;
+          }
+          f.heal(Math.min(sum * (a.ratio || 0.5), f.maxHp * 0.05));   // 머릿수만큼 끝없이 차오르지 않게
+        }
+        this.fx.push({ type: 'cast', kind: 'runes', x: f.x, row: f.row, color: '#c0392b', r: r * 0.5, big: true, dir: f.dir, t: 0.7, life: 0.7 });
+        break;
+      }
+      case 'reflect': {                    // 반사 결계: 이 동안 때리면 그대로 돌아온다
+        f.reflectT = a.dur || 4;
+        f.reflectRatio = a.ratio || 0.8;
+        this.fx.push({ type: 'aura', x: f.x, row: f.row, r: 120, t: 0.7, life: 0.7, color: '#b784e0' });
+        break;
+      }
+      case 'slam': {                       // 거대한 내려찍기: 예고 뒤 전열을 쓸고, 그 뒤 핵이 드러난다
+        const front = this.frontline();
+        const tx = Math.max(120, Math.min(WORLD - 120, Math.min(front, f.x - 40)));
+        this.queueStrike(f, { x: tx, r: a.radius || 200, dmg: a.dmg || 800, warn: a.warn || 2.2,
+                              stun: a.stun, kind: a.kind || 'shockwave', expose: a.expose });
+        break;
+      }
+      case 'barrage': {                    // 출진 지점 포격: 막 나온 병사를 노린다
+        const n = a.n || 4;
+        for (let i = 0; i < n; i++) {
+          const tx = (f.side === 'enemy' ? ALLY_SPAWN_X : ENEMY_SPAWN_X) + (f.side === 'enemy' ? 1 : -1) * (40 + i * (a.gap || 90));
+          this.queueStrike(f, { x: Math.max(80, Math.min(WORLD - 80, tx)), r: a.radius || 90, dmg: a.dmg || 600,
+                                warn: (a.warn || 2) + i * 0.1, burn: a.burn, stun: a.stun, kind: a.kind || 'firestorm' });
+        }
+        break;
+      }
+      case 'swap': {                       // 페이즈가 바뀌면 고유 기술도 바뀐다
+        f.curSpecial = a.special;
+        f.specialCd = (a.special && a.special.first) || 4;
+        if (a.atk) f.atk = Math.round(f.atk * a.atk);
+        if (a.speed) f.speedMul *= a.speed;
+        if (a.core) f.ab = Object.assign({}, f.ab, { core: a.core });     // 마왕: 마지막 얼굴은 핵
+        this.fx.push({ type: 'cast', kind: 'firestorm', x: f.x, row: f.row, color: '#ff3c3c', r: 140, big: true, dir: f.dir, t: 0.8, life: 0.8 });
+        this.shake = Math.max(this.shake, 14);
+        sfx('bossIn');
+        break;
+      }
       case 'meteor': {                     // 예고 후 떨어지는 폭격
         const n = a.n || 3;
         const front = this.frontline();
@@ -1249,7 +1358,8 @@ class Battle {
   queueStrike(f, o) {
     this.pending.push({
       t: o.warn, side: f.side, x: o.x, r: o.r, dmg: o.dmg,
-      burn: o.burn, stun: o.stun, kind: o.kind, color: f.s.accent, row: f.row
+      burn: o.burn, stun: o.stun, kind: o.kind, color: f.s.accent, row: f.row,
+      expose: o.expose, src: o.expose ? f : null
     });
     this.fx.push({ type: 'warn', x: o.x, r: o.r, t: o.warn, life: o.warn,
                    color: f.side === 'ally' ? '#6fc0ff' : '#e0503c' });
@@ -1280,6 +1390,11 @@ class Battle {
       this.fx.push({ type: 'cast', kind: s.kind, x: s.x, row: s.row,
                      color: s.color, r: s.r, big: true, dir: 1, t: 0.6, life: 0.6 });
       this.fx.push({ type: 'boom', x: s.x, r: s.r, t: 0.32, life: 0.32 });
+      // 내려찍은 뒤 잠깐 핵이 드러난다 — 액티브와 왕명을 아껴 둘 순간
+      if (s.expose && s.src && !s.src.dead) {
+        s.src.exposedT = s.expose;
+        this.announce('약점 노출! 지금 집중 공격', 2.2);
+      }
     }
     if (landed) {
       this.pending = this.pending.filter(s => !s.done);
@@ -1464,6 +1579,16 @@ class Battle {
     // 영웅 사냥꾼: 적이 비싼(비용 350 이상) 아군 — 영웅·전설·신화 — 을 골라 두 배로 친다
     if (this.mods && this.mods.giantslayer && src && src.side === 'enemy' &&
         !target.isCastle && target.side === 'ally' && (target.s.cost || 0) >= HUNT_COST) dmg *= HUNT_MUL;
+    // 반사 결계: 결계가 선 동안 때린 만큼 때린 자에게 돌아간다 (보스는 조금만 받는다)
+    if (target.reflectT > 0 && src && src.side !== target.side && !src.dead && !target.isCastle) {
+      const ab = target.reflectRatio || 0.8;
+      src.takeDamage(dmg * ab);
+      dmg *= 1 - ab;
+      if (!this._reflFx || this._reflFx < this.time) {
+        this._reflFx = this.time + 0.12;
+        this.fx.push({ type: 'mirror', x: target.x, x2: src.x, row: target.row, row2: src.row, t: 0.3, life: 0.3 });
+      }
+    }
     const dealt = target.takeDamage(dmg, pierce) || 0;
     if (mirror && dealt > 0 && !src.dead) {
       src.takeDamage(Math.min(120, dealt * mirror.reflect));

@@ -47,7 +47,7 @@ function loadEngine(seed) {
     vm.runInContext(src, ctx, { filename: f });
   }
   return vm.runInContext(
-    '({Battle, STAGES, UNITS, UNIT_BY_ID, ROSTER_UNITS, LOADOUT_MAX, HERO_SLOT_MAX, unitLevelCap, unitTrainCost, UPGRADES, EVO_LEVEL, EVOLUTIONS})',
+    '({Battle, STAGES, EVENT_STAGES, UNITS, UNIT_BY_ID, ROSTER_UNITS, LOADOUT_MAX, HERO_SLOT_MAX, unitLevelCap, unitTrainCost, UPGRADES, EVO_LEVEL, EVOLUTIONS})',
     ctx);
 }
 
@@ -103,6 +103,7 @@ function comboLoadout(g, index) {
 
 /* 공략 편성: 전장 특성을 받아칠 병종을 먼저 챙기고 나머지는 전장 병종으로 채운다.
  * "특정 조합이면 풀린다" 를 재는 쪽이다. 소환 병종은 전부 가졌다고 본다. */
+const COUNTER_FRONT = 4;   // 공략 편성에 넣는 근접 전열 수 (3.2)
 const COUNTERS = {
   ironclad: ['thor', 'javelin', 'venom', 'shield', 'alchemist', 'pyro', 'rapriest', 'knight', 'ra'],
   horde:    ['zeus', 'frost', 'pyro', 'catapult', 'knight', 'shield', 'spear'],
@@ -110,8 +111,8 @@ const COUNTERS = {
   giantslayer: ['spear', 'shield', 'javelin', 'venom', 'catapult', 'sniper', 'pyro', 'musketeer', 'frost'],
   curse: ['knight', 'shield', 'spear', 'javelin', 'venom', 'pyro', 'frost']
 };
-function counterLoadout(g, index) {
-  const st = g.STAGES[index];
+function counterLoadout(g, index, stage) {
+  const st = stage || g.STAGES[index];
   const hunted = (st.mods || []).includes('giantslayer');
   // 영웅 사냥꾼이 있으면 비싼 병종은 과녁일 뿐이다
   const ok = id => { const u = g.UNIT_BY_ID[id];
@@ -127,7 +128,15 @@ function counterLoadout(g, index) {
   }
   const rest = g.ROSTER_UNITS.filter(u => u.unlockStage <= index + 1 && !picks.includes(u.id) && !(hunted && u.cost >= 350))
     .sort((a, b) => b.cost - a.cost).map(u => u.id);
-  return picks.concat(rest).slice(0, g.LOADOUT_MAX);
+  const deck = picks.concat(rest).slice(0, g.LOADOUT_MAX);
+  // 3.0.2 엄호 규칙: 공략 편성도 근접 전열을 챙긴다 (원거리만 몰리면 엄호 없음)
+  const melee = id => { const u = g.UNIT_BY_ID[id]; return u && !u.ranged && !(u.ab && u.ab.noAttack) && !(u.ab && u.ab.summon); };
+  const front = rest.filter(melee);
+  for (let k = deck.length - 1; deck.filter(melee).length < COUNTER_FRONT && front.length && k >= 0; k--) {
+    if (melee(deck[k])) continue;
+    deck[k] = front.shift();
+  }
+  return deck;
 }
 
 /* 원거리만 / 근접만 몰아 넣은 편성 (소환 병종 포함, 전설·신화 5명까지). "원거리 도배" 를 잰다. */
@@ -139,7 +148,14 @@ function styleLoadout(g, index, ranged, campaignOnly) {
   return list.filter(u => !(u.rarity === 'SSR' || u.rarity === 'UR') || ++heroes <= g.HERO_SLOT_MAX).slice(0, g.LOADOUT_MAX).map(u => u.id);
 }
 
-function runStage(g, index, upLv, unitLv, trace, gacha, basic) {
+/* opt.event: 이벤트 전장 번호 (EVENT_STAGES). opt.timed: 타이밍을 맞추는 플레이어
+ *  - 출진 지점에 포격이 곧 떨어지면 기다렸다가 내보낸다
+ *  - 보스가 안개화·반사 결계 중이거나, 핵이 가려져 있으면 액티브를 아낀다
+ *  - 핵 보스에겐 약점이 드러났을 때 왕명을 쓴다 */
+function runStage(g, index, upLv, unitLv, trace, gacha, basic, opt) {
+  opt = opt || {};
+  const evStage = opt.event !== undefined ? g.EVENT_STAGES[opt.event] : null;
+  if (evStage) index = g.STAGES.length - 1;             // 이벤트: 캠페인을 다 연 상태로 본다
   const academy = Math.min(5, Math.floor(upLv / 2));
   const cap = g.unitLevelCap(index, academy);
   const levels = {};
@@ -158,7 +174,7 @@ function runStage(g, index, upLv, unitLv, trace, gacha, basic) {
     : (gacha === 'ranged' || gacha === 'melee') ? styleLoadout(g, index, gacha === 'ranged')
     : gacha === 'rangedbase' ? styleLoadout(g, index, true, true)
     : gacha === 'combo' ? comboLoadout(g, index)
-    : gacha === 'counter' ? counterLoadout(g, index)
+    : gacha === 'counter' ? (evStage ? evStage.event.deck.slice() : counterLoadout(g, index))
     : (typeof gacha === 'string' && gacha.indexOf('with:') === 0)
       ? unlocked.slice().sort((a, b) => b.cost - a.cost).slice(0, g.LOADOUT_MAX - 1).map(u => u.id).concat([gacha.slice(5)])
     : gacha === 'smart' ? (g.STAGES[index].mods ? counterLoadout(g, index) : unlocked.slice()
@@ -184,13 +200,20 @@ function runStage(g, index, upLv, unitLv, trace, gacha, basic) {
     }
   };
 
-  const b = new g.Battle(index, save, null, { hard: !!SIM_HARD });
+  const b = evStage ? new g.Battle(g.STAGES.length + opt.event, save, evStage)
+                    : new g.Battle(index, save, null, { hard: !!SIM_HARD });
   const dt = 1 / 30;
   let t = 0, nextLog = 20;
+  const timed = !!opt.timed;
   while (b.state === 'play' && t < 420) {
-    for (const u of b.roster) if (b.canDeploy(u.id)) b.deploy(u.id);
-    if (b.canCommand() && b.allies.length > 4) b.useCommand();
-    for(const u of b.roster) if(u.active && b.canHeroActive(u.id)) b.useHeroActive(u.id);
+    let boss = null;
+    if (timed) for (const e of b.enemies) if (e.boss && !e.dead) { boss = e; break; }
+    const shelling = timed && b.pending.some(p => p.side === 'enemy' && p.t < 2.6 && Math.abs(p.x - b.allyCastle.x) < 520);
+    const guarded = !!boss && (boss.veilT > 0 || boss.reflectT > 0 || (boss.ab.core && boss.exposedT <= 0));
+    if (!shelling && !(boss && boss.veilT > 0)) for (const u of b.roster) if (b.canDeploy(u.id)) b.deploy(u.id);
+    const cmdOk = !timed || !boss || (!(boss.reflectT > 0) && (!boss.ab.core || boss.exposedT > 0 || b.allyCastle.hp < b.allyCastle.maxHp * 0.4));
+    if (b.canCommand() && b.allies.length > 4 && cmdOk && !shelling) b.useCommand();
+    if (!guarded) for(const u of b.roster) if(u.active && b.canHeroActive(u.id)) b.useHeroActive(u.id);
     b.update(dt);
     t += dt;
     if (trace && t >= nextLog) {                 // --trace: 20초마다 전황을 찍는다
@@ -207,8 +230,8 @@ function runStage(g, index, upLv, unitLv, trace, gacha, basic) {
     }
   }
   return {
-    stage: index + 1,
-    name: g.STAGES[index].name,
+    stage: evStage ? 'E' + (opt.event + 1) : index + 1,
+    name: (evStage || g.STAGES[index]).name,
     win: b.state === 'win',
     seconds: Math.round(t),
     coins: b.coins,
@@ -256,22 +279,23 @@ function printTable(rows, upLv, unitLv) {
  * 기본 병종만으로 초반 전장은 밀 수 있어야 하고, 보스 전장부터는
  * 병영 강화 없이 넘지 못해야 한다. */
 const EXPECT = [
-  { up: 0, lv: 1, min: 3,  max: 8,  label: '무강화' },
-  { up: 2, lv: 3, min: 7,  max: 12, label: '중반 강화' },
-  { up: 3, lv: 5, min: 10, max: 15, label: '후반 강화' },
+  // 3.2: 1막이 억세진 만큼 같은 강화로 넘는 전장이 한둘 줄었다
+  { up: 0, lv: 1, min: 2,  max: 7,  label: '무강화' },
+  { up: 2, lv: 3, min: 6,  max: 11, label: '중반 강화' },
+  { up: 3, lv: 5, min: 8,  max: 13, label: '후반 강화' },
   // 편성을 생각하지 않고 비싼 병종만 채우면, 다 키워도 특성 전장에서 막힌다
-  { up: 5, lv: 8, min: 13, max: 18, label: '완전 강화 (아무 편성)' }
+  { up: 5, lv: 8, min: 12, max: 17, label: '완전 강화 (아무 편성)' }
 ];
 
 /* 제대로 편성하는 플레이어: 특성 전장에는 그 특성을 받아칠 공략 편성을 든다.
  * 이 플레이어는 충분히 키웠을 때 캠페인을 거의 다, 2막을 전부 넘어야 한다. */
-const SMART_ACT1 = { up: 6, lv: 10, min: 19 };
+const SMART_ACT1 = { up: 7, lv: 11, min: 19 };   // 3.2: 6/Lv10 → 7/Lv11
 const SMART_ACT2 = { up: 10, lv: 14 };   // 3.1: 2막은 격앙·보스 격노로 한 단계 더 키워야 다 넘는다
 
 /* 진짜 어려운 전장. 전설·신화를 다 가져도 몰아 넣기만 해서는 못 넘고,
  * 특성에 맞춘 공략 편성이라야 넘는다. HARD_SEEDS 판 중 이긴 횟수로 본다. */
 const LEGEND_PROOF = [
-  { stage: 18, up: 6, lv: 10 }, { stage: 20, up: 6, lv: 10 },
+  { stage: 18, up: 7, lv: 11 }, { stage: 20, up: 7, lv: 11 },
   { stage: 27, up: 9, lv: 13 }, { stage: 28, up: 9, lv: 13 }, { stage: 30, up: 9, lv: 13 }
 ];
 /* 시즌마다 대표 셋. 어느 시즌을 뽑든 비슷한 값어치여야 한다. */
@@ -285,6 +309,7 @@ const MONO_MAX = 12;
 const MONO_SUSPECTS = ['medusa', 'catapult', 'mage', 'necro', 'rogue', 'engineer', 'colossus', 'paladin',
   'rapriest', 'wukong', 'bajie', 'lancer', 'monk', 'alchemist', 'falconer', 'javelin'];
 const SEASON_SPREAD = 2;
+const EVENT_EXPECT = { up: 10, lv: 15, naiveMax: 2, timedMin: 3 };   // 이벤트 전장 기대치 (3.2)
 const HARD_MODE = { up: 10, lv: 15, min: 12, max: 20, bossMax: 6 };   // 하드코어 기대치 (3.1)
 const LEGEND_PROOF_MAX = 1;      // 전설만 편성이 이길 수 있는 최대 판 수
 const COUNTER_MIN = 4;           // 공략 편성이 이겨야 하는 최소 판 수
@@ -332,7 +357,7 @@ function check() {
 
   // 무지성 전설 편성 vs 조합 편성
   // 3/Lv5 는 1막 뒤쪽 벽에 세 편성이 모두 막혀 똑같이 13 이 나온다. 갈라지는 4/Lv6 에서 본다.
-  [{ up: 2, lv: 3 }, { up: 4, lv: 6 }].forEach(e => {
+  [{ up: 5, lv: 7 }, { up: 7, lv: 10 }].forEach(e => {        // 3.2: 1막이 억세져 전설 쪽이 앞서는 낮은 구간은 빼고 본다
     const base = runAll(e.up, e.lv, 12345, false, 20).filter(r => r.win).length;
     const legend = runAll(e.up, e.lv, 12345, 'legend', 20).filter(r => r.win).length;
     const combo = runAll(e.up, e.lv, 12345, 'combo', 20).filter(r => r.win).length;
@@ -438,6 +463,14 @@ function check() {
     else if (bossWins > HARD_MODE.bossMax) { console.error(`  ✗ ${tag} — 보스 전장이 너무 쉽다 (최대 ${HARD_MODE.bossMax})`); failed++; }
     else console.log(`  ✓ ${tag}`);
   }
+  // 3.2 이벤트 전장: 공략 편성을 나오는 대로 내면 절반도 못 이기고, 타이밍을 맞춰야 넘는다
+  for (let k = 0; k < 5; k++) {
+    const r = runEvent(k, EVENT_EXPECT.up, EVENT_EXPECT.lv);
+    const tag = `이벤트 E${k + 1} (강화 ${EVENT_EXPECT.up}/Lv${EVENT_EXPECT.lv}) 공략 ${r.naive}/5 · 타이밍 ${r.timed}/5 · 전설만 ${r.legend}/5`;
+    if (r.naive > EVENT_EXPECT.naiveMax) { console.error(`  ✗ ${tag} — 공략 편성을 막 내도 넘는다 (최대 ${EVENT_EXPECT.naiveMax})`); failed++; }
+    else if (r.timed < EVENT_EXPECT.timedMin) { console.error(`  ✗ ${tag} — 타이밍을 맞춰도 못 넘는다 (최소 ${EVENT_EXPECT.timedMin})`); failed++; }
+    else console.log(`  ✓ ${tag}`);
+  }
   if (failed) {
     console.error(`\n밸런스 검사 실패 (${failed}건)\n`);
     process.exit(1);
@@ -471,8 +504,42 @@ function printHard(rows, upLv, unitLv) {
     r.base + ' · ' + r.legend + ' · ' + r.counter + '   ' + r.mods.padEnd(26) + r.name));
 }
 
+/* 이벤트 전장: 판마다 세 방식 — 공략 편성을 나오는 대로 / 공략 편성을 타이밍 맞춰 */
+function runEvent(k, upLv, unitLv, seeds, tweak) {
+  const r = { naive: 0, timed: 0, legend: 0 };
+  const eng = sd => { const g = loadEngine(sd); if (tweak) tweak(g.EVENT_STAGES[k]); return g; };
+  for (const sd of seeds || HARD_SEEDS) {
+    r.naive += runStage(eng(sd), 0, upLv, unitLv, false, 'counter', false, { event: k }).win ? 1 : 0;
+    r.timed += runStage(eng(sd), 0, upLv, unitLv, false, 'counter', false, { event: k, timed: true }).win ? 1 : 0;
+    if (!tweak) r.legend += runStage(eng(sd), 0, upLv, unitLv, false, 'legend', false, { event: k, timed: true }).win ? 1 : 0;
+  }
+  return r;
+}
+
 const args = process.argv.slice(2);
-if (args[0] === '--check') {
+if (args[0] === '--event') {
+  // node tools/sim.js --event [강화] [Lv] [번호,...]   이벤트 전장 승수 (공략·타이밍·전설만)
+  const upLv = +(args[1] || 10), unitLv = +(args[2] || 15);
+  const ks = args[3] ? args[3].split(',').map(Number) : [0, 1, 2, 3, 4];
+  const g = loadEngine(12345);
+  for (const k of ks) {
+    const r = runEvent(k, upLv, unitLv);
+    console.log('  E' + (k + 1) + ' ' + g.EVENT_STAGES[k].name.padEnd(8) + '  공략 ' + r.naive + '/5 · 타이밍 ' + r.timed + '/5 · 전설만(타이밍) ' + r.legend + '/5');
+  }
+} else if (args[0] === '--etune') {
+  // node tools/sim.js --etune <번호> <강화> <Lv> <배율,...> [보스체력배,...]
+  const k = +args[1] - 1, upLv = +args[2], unitLv = +args[3];
+  const hs = args[5] ? args[5].split(',').map(Number) : [null];
+  for (const m of args[4].split(',').map(Number)) for (const h of hs) {
+    const r = runEvent(k, upLv, unitLv, null, st => { st.enemyMul = m; if (h) st.bossMul = Object.assign({}, st.bossMul, { hp: h }); });
+    console.log('  E' + (k + 1) + ' ×' + m + (h ? ' 보스×' + h : '') + '   공략 ' + r.naive + '/5 · 타이밍 ' + r.timed + '/5');
+  }
+} else if (args[0] === '--etrace') {
+  // node tools/sim.js --etrace <번호> [강화] [Lv] [편성] [timed]
+  const k = +args[1] - 1, upLv = +(args[2] || 10), unitLv = +(args[3] || 15);
+  const g = loadEngine(12345);
+  printTable([runStage(g, 0, upLv, unitLv, true, args[4] || 'counter', false, { event: k, timed: args[5] === 'timed' })], upLv, unitLv);
+} else if (args[0] === '--check') {
   check();
 } else if (args[0] === '--tune') {
   // node tools/sim.js --tune <전장번호> <강화Lv> <병종Lv> <배율,배율,...>

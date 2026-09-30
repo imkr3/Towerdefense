@@ -47,7 +47,7 @@ ctx.globalThis = ctx;
 vm.createContext(ctx);
 vm.runInContext(fs.readFileSync(path.join(ROOT, 'js/data.js'), 'utf8'), ctx);
 const D = vm.runInContext(
-  '({UNITS, UNIT_BY_ID, ROSTER_UNITS, SEASON_UNITS, SEASONS, ENEMIES, STAGES, UPGRADES, RARITY, LOADOUT_MAX})',
+  '({UNITS, UNIT_BY_ID, ROSTER_UNITS, SEASON_UNITS, SEASONS, ENEMIES, STAGES, EVENT_STAGES, UPGRADES, RARITY, LOADOUT_MAX})',
   ctx);
 
 const ids = {};
@@ -86,6 +86,16 @@ D.STAGES.forEach((st, i) => {
   if (!(st.baseHp > 0)) bad('전장 ' + (i + 1) + ': 요새 체력이 이상하다');
 });
 ok('전장 ' + D.STAGES.length + '개, 파도 참조와 등장 순서 정상');
+D.EVENT_STAGES.forEach((st, k) => {
+  const tag = '이벤트 E' + (k + 1);
+  st.waves.forEach((w, n) => {
+    if (!D.ENEMIES[w.e]) bad(tag + ': 없는 적 ' + w.e);
+    if (n > 0 && w.t < st.waves[n - 1].t) bad(tag + ': 파도 시각이 거꾸로다 (' + w.e + ')');
+  });
+  if (!D.ENEMIES[st.bossId] || !D.ENEMIES[st.bossId].boss) bad(tag + ': 보스가 없다 ' + st.bossId);
+  (st.event.deck || []).forEach(id => { if (!D.UNIT_BY_ID[id]) bad(tag + ': 추천 편성에 없는 병종 ' + id); });
+});
+ok('이벤트 전장 ' + D.EVENT_STAGES.length + '개 정상');
 
 D.SEASONS.forEach(sn => {
   sn.units.forEach(id => {
