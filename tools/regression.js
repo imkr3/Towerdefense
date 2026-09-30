@@ -776,5 +776,25 @@ test('Act 1 and plain stages got tougher (3.2)', () => {
   assert.ok(STAGES[5].enemyMul > 1.25, 'mob stage ' + STAGES[5].enemyMul);
   assert.ok(STAGES[1].enemyMul < 1.1, 'first stages stay gentle');
 });
+test('Poison and burn respect the fog veil and the armoured core', () => {
+  const b=battle(), e=new Fighter(E.goblin,'enemy',1800);
+  e.veilT=5; e.poisonT=1; e.poisonDps=100; b.step([e],[],b.allyCastle,.03,false); assert.equal(e.hp,e.maxHp);
+  const c=new Fighter({...E.goblin,ab:{core:{armor:0.85,mul:2}}},'enemy',1800);
+  c.burnT=1; c.burnDps=100; b.step([c],[],b.allyCastle,.03,false); assert.ok(Math.abs(c.maxHp-c.hp-0.45)<1e-6, String(c.maxHp-c.hp));
+});
+test('Strike warnings follow the strike clock and survive the effect cap', () => {
+  const b=battle(), f=b.spawnEnemy('goblin',1000);
+  b.queueStrike(f,{x:500,r:60,warn:2,dmg:1});
+  const w=b.fx.find(e=>e.type==='warn');
+  for (let i=0;i<300;i++) b.fx.push({type:'hit',t:5,life:5});
+  b.updateFx(1); assert.ok(b.fx.indexOf(w)>=0); assert.equal(w.t,2);
+  b.updatePending(1.5); b.updateFx(0); assert.equal(w.t,0.5);
+  b.updatePending(1); b.updateFx(0); assert.ok(b.fx.indexOf(w)<0);
+});
+test('A weaker haste cannot overwrite or extend a stronger one', () => {
+  const b=battle(), a=b.makeAlly(U.spear,500);
+  a.addHaste(0.6,8); a.addHaste(0.7,20); assert.equal(a.hasteMul,0.6); assert.equal(a.hasteT,8);
+  a.addHaste(0.5,2); assert.equal(a.hasteMul,0.5); assert.equal(a.hasteT,8);
+});
 
 console.log(count + ' regression checks passed');

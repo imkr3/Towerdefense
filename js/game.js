@@ -198,6 +198,13 @@ class Fighter {
     }
   }
 
+  /* 가속: 더 센 가속이 걸려 있으면 약한 것은 덮어쓰지도, 늘이지도 않는다 */
+  addHaste(mul, dur) {
+    if (this.hasteT > 0 && this.hasteMul < mul) return;
+    this.hasteMul = mul;
+    this.hasteT = Math.max(this.hasteT, dur);
+  }
+
   takeDamage(dmg, pierceArmor) {
     if (this.dead) return 0;
     dmg = Math.max(0, dmg);
@@ -220,6 +227,7 @@ class Fighter {
       if (this.ab.revive && !this.usedRevive) {     // 1회 부활
         this.usedRevive = true;
         this.hp = Math.round(this.maxHp * this.ab.revive);
+        // kbLeft 는 그대로 둔다: 되살아난 것은 남은 넉백 없이 밀고 들어온다 (밸런스가 이것에 맞춰져 있다)
         this.kbTimer = 0.5;
         this.reviveFx = true;
         return dealt;
@@ -443,8 +451,9 @@ class Battle {
     f.giveBarrier(25 * Math.min(5, this.save.upgrades.deployment || 0));
     // 안개 속으로 들어온 병사는 백작에게 홀린다 (안개가 걷힌 뒤에 내보내야 한다)
     const vb = this.veiledBoss();
-    if (vb && vb.s.special && vb.s.special.charm !== undefined) {
-      f.charmT = vb.s.special.charm;
+    const vsp = vb && (vb.curSpecial || vb.s.special);
+    if (vsp && vsp.charm !== undefined) {
+      f.charmT = vsp.charm;
       this.fx.push({ type: 'charm', x: f.x, row: f.row, t: 0.7, life: 0.7 });
     }
     this.allies.push(f);
@@ -474,7 +483,7 @@ class Battle {
     if(buff) {
       for(const m of this.allies) if(!m.dead && Math.abs(m.x-f.x)<=a.radius) {
         if(a.barrier){m.giveBarrier(a.barrier*f.abMul);m.poisonT=0;m.poisonDps=0;m.burnT=0;m.burnDps=0;}
-        if(a.haste){m.hasteMul=m.hasteT>0?Math.min(m.hasteMul,a.haste.mul):a.haste.mul;m.hasteT=Math.max(m.hasteT,a.haste.dur);m.stunT=0;}
+        if(a.haste){m.addHaste(a.haste.mul,a.haste.dur);m.stunT=0;}
       }
     } else if (this.veiledBoss()) {
       // 안개가 액티브를 삼킨다: 피해는 없고 백작이 피를 채운다
@@ -534,8 +543,7 @@ class Battle {
     }
     for (const a of this.allies) {
       a.heal(a.maxHp * this.cmdHeal);
-      a.hasteT = Math.max(a.hasteT, COMMAND.hasteDur);
-      a.hasteMul = COMMAND.hasteMul;
+      a.addHaste(COMMAND.hasteMul, COMMAND.hasteDur);
       a.stunT = 0;
       a.slowT = 0;
       this.fx.push({ type: 'rally', x: a.x, row: a.row, t: 0.6, life: 0.6 });
@@ -612,13 +620,14 @@ class Battle {
       this.reap(this.enemies, this.allies, this.allyCastle, true);
       this.reap(this.allies, this.enemies, this.enemyCastle, false);
     }
-    this.enemies = this.enemies.filter(e => !e.dead);
-    this.allies = this.allies.filter(a => !a.dead);
+    // 아무도 쓰러지지 않은 틱에는 배열을 새로 만들지 않는다
+    if (this.enemies.some(e => e.dead)) this.enemies = this.enemies.filter(e => !e.dead);
+    if (this.allies.some(a => a.dead)) this.allies = this.allies.filter(a => !a.dead);
 
     if (!this.endless && this.enemyCastle.dead) { this.shake = 16; this.finish('win'); }
     else if (this.allyCastle.dead) { this.shake = 16; this.finish(this.endless ? 'over' : 'lose'); }
     // 웨이브 수가 정해진 무한 전장(검사용)만 다 버티면 끝. 진짜 무한 전장은 성채가 무너질 때까지.
-    else if (this.endless && !this.stage.infinite && this.qi >= this.queue.length && this.enemies.length === 0) {
+    else if (this.endless && !this.stage.infinite && this.qi >= this.queue.length && this.enemies.length === 0 && !this.burrowers.length) {
       this.finish('over');
     }
   }
@@ -803,7 +812,7 @@ class Battle {
           this.fx.push({ type: 'poof', x: f.x, row: f.row, t: 0.45, life: 0.45, color: f.s.accent, big: true });
         }
       }
-      if (f.boss && isEnemySide) { this.bossDown = true; this.enemyCastle.floor = 0; }   // 결계가 걷힌다
+      if (f.boss && isEnemySide && (!this.stage.bossId || f.kind === this.stage.bossId)) { this.bossDown = true; this.enemyCastle.floor = 0; }   // 결계가 걷힌다
       // 흡혼귀: 근처에서 쓰러진 아군의 넋을 삼킨다 (불려 나온 것은 넋이 없다)
       if (!isEnemySide && !f.summoned) this.feedSouls(f);
       // 쓰러지는 연출 + 먼지
@@ -931,6 +940,9 @@ class Battle {
       if (f.poisonT > 0) { dot += f.poisonDps * Math.min(dt, f.poisonT); f.poisonT = Math.max(0, f.poisonT - dt); }
       if (f.burnT > 0) { dot += f.burnDps * Math.min(dt, f.burnT); f.burnT = Math.max(0, f.burnT - dt); }
       if (isAlly) dot *= 1 - 0.05 * Math.min(5, this.save.upgrades.resistance || 0);
+      // 안개화와 핵은 지속 피해도 막는다 (평범한 갑주는 중독·화상이 뚫는다)
+      if (f.veilT > 0) dot = 0;
+      else if (f.ab.core) dot *= f.exposedT > 0 ? f.ab.core.mul : (1 - f.ab.core.armor);
       if (dot > 0) {
         f.hp -= dot;
         if (f.hp <= 0) {
@@ -1085,8 +1097,7 @@ class Battle {
       for (const m of mates) {
         if (m.dead || m === f) continue;
         if (Math.abs(m.x - f.x) > ab.radius) continue;
-        m.hasteT = Math.max(m.hasteT, ab.haste.dur);
-        m.hasteMul = ab.haste.mul;
+        m.addHaste(ab.haste.mul, ab.haste.dur);
       }
       f.auraPulse = 0.5;
       this.fx.push({ type: 'aura', x: f.x, row: f.row, r: ab.radius,
@@ -1280,9 +1291,7 @@ class Battle {
         let sum = 0;
         for (const e of foes) {
           if (e.dead || Math.abs(e.x - f.x) > r) continue;
-          const d = a.dmg || 120;
-          e.takeDamage(d);
-          sum += d;
+          sum += e.takeDamage(a.dmg || 120);          // 보호막에 막힌 만큼은 빨지 못한다
         }
         f.heal(sum * (a.ratio || 0.6));
         this.fx.push({ type: 'cast', kind: 'runes', x: f.x, row: f.row,
@@ -1356,12 +1365,14 @@ class Battle {
   /* 예고 표시를 띄우고, 시간이 되면 그 자리에 내리꽂는다.
    * 무작정 터지지 않으니 피할 틈이 있다. */
   queueStrike(f, o) {
-    this.pending.push({
+    const strike = {
       t: o.warn, side: f.side, x: o.x, r: o.r, dmg: o.dmg,
       burn: o.burn, stun: o.stun, kind: o.kind, color: f.s.accent, row: f.row,
       expose: o.expose, src: o.expose ? f : null
-    });
-    this.fx.push({ type: 'warn', x: o.x, r: o.r, t: o.warn, life: o.warn,
+    };
+    this.pending.push(strike);
+    // 예고 원은 실제 낙하와 같은 시계로 줄어든다 (배속·일시정지에도 맞는다)
+    this.fx.push({ type: 'warn', strike: strike, x: o.x, r: o.r, t: o.warn, life: o.warn,
                    color: f.side === 'ally' ? '#6fc0ff' : '#e0503c' });
   }
 
@@ -1771,13 +1782,15 @@ class Battle {
       if (hit) this.hitOne(s.dmg, hit, s.src, s.crit);
       this.fx.push({ type: s.crit ? 'crit' : 'hit', x: hit ? hit.x : s.tx, row: hit ? (hit.row ?? s.y0) : s.y0, dir: s.dir, t: 0.22, life: 0.22 });
     }
-    this.shots = this.shots.filter(s => !s.done);
+    if (this.shots.some(s => s.done)) this.shots = this.shots.filter(s => !s.done);
   }
 
   updateFx(dt) {
-    for (const e of this.fx) e.t -= dt;
+    for (const e of this.fx) e.t = e.strike ? (e.strike.done ? 0 : e.strike.t) : e.t - dt;
     this.fx = this.fx.filter(e => e.t > 0);
-    if (this.fx.length > FX_LIMIT) this.fx.splice(0, this.fx.length - FX_LIMIT);
+    // 넘치면 오래된 연출부터 버리되, 피해야 할 낙하 예고는 남긴다
+    let drop = this.fx.length - FX_LIMIT;
+    if (drop > 0) this.fx = this.fx.filter(e => e.type === 'warn' || drop <= 0 || (drop--, false));
     this.dmgFxCount = 0;
     for (const e of this.fx) if (e.type === 'dmg') this.dmgFxCount++;
     if (this.state !== 'play') this.resultTime = (this.resultTime || 0) + dt;
