@@ -457,7 +457,8 @@ function renderStageDetail(i) {
     const fb = document.createElement('button');
     fb.className = 'btn ghost sd-formation';
     fb.textContent = '편성';
-    fb.addEventListener('click', () => openFormation(ch.endless ? 'endless' : null));
+    const endlessOpen = ch.endless && save.cleared >= ENDLESS_UNLOCK_STAGE;
+    fb.addEventListener('click', () => openFormation(endlessOpen ? 'endless' : null));
     box.appendChild(fb);
     return;
   }
@@ -840,6 +841,7 @@ function renderTraining() {
             if (save.loadout.length <= 1) { toast('최소 1개 병종은 편성해야 합니다'); return; }
             save.loadout = save.loadout.filter(id => id !== u.id);
           } else {
+            if (isHeroUnit(u) && !heroRoom(u.id)) return;   // 전설·신화 칸 상한
             save.loadout.push(u.id);
           }
           saveGame(save);
@@ -1122,6 +1124,8 @@ function drawBanner(sn) {
 
 /* ------------------------------ 전투 ------------------------------ */
 function startEndless() {
+  // 잠긴 무한 탭에서도 편성 화면을 거쳐 들어올 수 있으므로 여기서 막는다
+  if (save.cleared < ENDLESS_UNLOCK_STAGE) { toast('무한 전장은 20전장을 모두 돌파하면 열립니다'); return; }
   battle = new Battle(0, save, makeEndlessStage());
   $('#scr-battle').classList.remove('hardcore');
   $('#battle-stage').textContent = '무한 전장 · 최고 ' + (save.endlessBest || 0) + '웨이브';
@@ -1345,21 +1349,27 @@ function flushPlayTime() {
   playAccum = 0;
 }
 
-function showResult() {
-  // 누적 기록과 임무 진행
+/* 누적 기록과 임무 진행. 전투가 끝나는 순간 한 번만 적는다 —
+   결과창이 뜨기 전(0.7초)에 나가도 승리·처치가 빠지지 않게. */
+function recordBattleEnd(b) {
+  if (b.recorded) return;
+  b.recorded = true;
   flushPlayTime();
-  save.stats.bossKills += battle.bossKills || 0;
-  addStat('kills', battle.kills);
-  addStat('bosses', battle.bossKills || 0);
-  if (battle.endless) addStat('endless', battle.wavesCleared || 0);
-  if (battle.state === 'win') {
+  save.stats.bossKills += b.bossKills || 0;
+  addStat('kills', b.kills);
+  addStat('bosses', b.bossKills || 0);
+  if (b.endless) addStat('endless', b.wavesCleared || 0);
+  if (b.state === 'win') {
     save.stats.wins++;
     addStat('wins', 1);
-    if (battle.stars >= 3) addStat('perfect', 1);
+    if (b.stars >= 3) addStat('perfect', 1);
   }
   saveGame(save);
   checkAchievements();
+}
 
+function showResult() {
+  recordBattleEnd(battle);
   if (battle.endless) { showEndlessResult(); return; }
   if (battle.event) { showEventResult(); return; }
 
@@ -1460,6 +1470,7 @@ function loop(ts) {
     if (BGM.vol > 0) BGM.sting(battle.state === 'win' || (battle.endless && battle.newRecord) ? 'victory' : 'defeat');
     else BGM.stop(0.6);
     const ended = battle;
+    recordBattleEnd(ended);
     resultTimer = setTimeout(() => {
       if (battle === ended && $('#scr-battle').classList.contains('active')) showResult();
     }, 700);
@@ -1684,6 +1695,10 @@ function init() {
   const wake = () => { SFX.init(); SFX.resume(); BGM.resume(); BGM.prefetch(['map']); };
   ['pointerdown', 'touchstart', 'keydown'].forEach(ev =>
     window.addEventListener(ev, wake, { once: true, passive: true }));
+  // 앱 전환·전화로 오디오가 멈춘 뒤에는 다음 터치에서 다시 연다 (브라우저는 조작 없이는 못 연다)
+  ['pointerdown', 'touchend'].forEach(ev => window.addEventListener(ev, () => {
+    if (SFX.ctx && SFX.ctx.state !== 'running' && !document.hidden) SFX.resume();
+  }, { passive: true }));
   titleAnim.cv = $('#title-bg');
   titleAnim.ctx = titleAnim.cv.getContext('2d');
   resizeTitle();

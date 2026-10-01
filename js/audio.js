@@ -23,7 +23,11 @@ const SFX = {
   },
 
   resume: function () {
-    if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+    // iOS 는 전화·시리 뒤에 'interrupted' 로 남는다. 닫힌 것만 아니면 다시 연다.
+    if (this.ctx && this.ctx.state !== 'running' && this.ctx.state !== 'closed') {
+      const p = this.ctx.resume();
+      if (p && p.catch) p.catch(() => {});
+    }
   },
 
   /* 짧은 음정 */

@@ -42,11 +42,13 @@ class Renderer {
                      Math.min(this.h * 0.86, this.h - hudH - 26)));
     // cs: 지면 위 여유 높이에 맞춘 캐릭터 배율
     this.cs = Math.max(0.70, Math.min(1.45, this.groundY / 350));
+    // 전투 화면이 숨겨진 채 처음 만들어지면 GL 층이 320x240 으로 남는다. 크기가 바뀔 때마다 같이 맞춘다.
+    this.syncGlSize();
   }
 
   /* WebGL 레이어를 2D 캔버스와 같은 크기로 맞춘다 */
   syncGlSize() {
-    if (!this.glfx || !this.glfx.ok) return;
+    if (!this.glfx) return;
     this.glfx.resize(this.w, this.h, this.cv.width / this.w);
   }
 
@@ -604,6 +606,7 @@ class Renderer {
       ctx.globalAlpha = Math.min(1, spawnK * 2.5);
       ctx.scale(pop, pop);
     }
+    const baseA = ctx.globalAlpha;                       // 막 출진한 병사는 흐리게 떠오른다
     ctx.strokeStyle = f.side === 'ally' ? '#9cdef0' : '#efab91';
     ctx.lineWidth = 1.2 * s;
     ctx.beginPath(); ctx.ellipse(0, 2, 20 * s, 5 * s, 0, 0, 7); ctx.stroke();
@@ -614,67 +617,67 @@ class Renderer {
         const glow = f.s.rarity === 'UR' ? 0.62
                    : (f.s.rarity === 'SSR' ? 0.5 : 0.28);
         const pulse = 0.85 + Math.sin(f.bob * 1.4) * 0.15;
-        ctx.globalAlpha = glow * pulse;
+        ctx.globalAlpha = baseA * glow * pulse;
         ctx.fillStyle = f.s.accent;
         ctx.beginPath();
         ctx.ellipse(0, 1, 24 * s * pulse, 6.5 * s * pulse, 0, 0, 7);
         ctx.fill();
-        ctx.globalAlpha = glow * 0.55;
+        ctx.globalAlpha = baseA * glow * 0.55;
         ctx.strokeStyle = f.s.accent;
         ctx.lineWidth = 1.6 * s;
         ctx.beginPath();
         ctx.ellipse(0, 1, 30 * s * pulse, 8 * s * pulse, 0, 0, 7);
         ctx.stroke();
-        ctx.globalAlpha = 1;
+        ctx.globalAlpha = baseA;
     }
     if (f.s.evo) {                                         // 진화한 병사: 발밑 금빛 문양
       const pulse = 0.85 + Math.sin(f.bob * 1.8) * 0.15;
-      ctx.globalAlpha = 0.55 * pulse;
+      ctx.globalAlpha = baseA * 0.55 * pulse;
       ctx.strokeStyle = '#f6d365';
       ctx.lineWidth = 1.8 * s;
       ctx.beginPath(); ctx.ellipse(0, 1, 26 * s, 7 * s, 0, 0, 7); ctx.stroke();
-      ctx.globalAlpha = 0.3 * pulse;
+      ctx.globalAlpha = baseA * 0.3 * pulse;
       ctx.beginPath(); ctx.ellipse(0, 1, 33 * s * pulse, 9 * s * pulse, 0, 0, 7); ctx.stroke();
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = baseA;
     }
     if (f.veilT > 0) {                                     // 안개화: 붉은 안개가 소용돌이친다
       ctx.fillStyle = '#e04b6a';
       for (let i = 0; i < 7; i++) {
         const a = clk * 1.3 + i * 0.9, rr = (26 + (i % 3) * 10) * s;
-        ctx.globalAlpha = 0.16 + (i % 2) * 0.08;
+        ctx.globalAlpha = baseA * (0.16 + (i % 2) * 0.08);
         ctx.beginPath(); ctx.ellipse(Math.cos(a) * rr, -38 * s + Math.sin(a * 1.4) * 22 * s, 18 * s, 10 * s, a, 0, 7); ctx.fill();
       }
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = baseA;
     }
     if (f.reflectT > 0) {                                  // 반사 결계: 보랏빛 육각 막
       const pulse = 0.85 + Math.sin(clk * 8) * 0.15;
-      ctx.globalAlpha = 0.28 * pulse;
+      ctx.globalAlpha = baseA * 0.28 * pulse;
       ctx.fillStyle = '#b784e0';
       ctx.beginPath(); ctx.ellipse(0, -40 * s, 44 * s, 56 * s, 0, 0, 7); ctx.fill();
-      ctx.globalAlpha = 0.85;
+      ctx.globalAlpha = baseA * 0.85;
       ctx.strokeStyle = '#e8d0ff'; ctx.lineWidth = 2 * s;
       ctx.beginPath();
       for (let i = 0; i <= 6; i++) { const a = i / 6 * Math.PI * 2 + clk * 0.8; const px = Math.cos(a) * 46 * s, py = -40 * s + Math.sin(a) * 58 * s; i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }
       ctx.stroke();
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = baseA;
     }
     if (f.exposedT > 0) {                                  // 약점 노출: 핵 자리에 금빛 과녁
       const pulse = 0.75 + Math.sin(clk * 10) * 0.25;
       ctx.strokeStyle = '#ffd35a'; ctx.lineWidth = 3 * s;
-      ctx.globalAlpha = pulse;
+      ctx.globalAlpha = baseA * pulse;
       ctx.beginPath(); ctx.arc(0, -40 * s, 22 * s * (1.1 - pulse * 0.2), 0, 7); ctx.stroke();
       ctx.beginPath(); ctx.arc(0, -40 * s, 10 * s, 0, 7); ctx.stroke();
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = baseA;
     }
     if (f.enraged || f.furious) {                          // 광폭화·격노한 보스의 붉은 기운
       const pulse = 0.8 + Math.sin(f.bob * 3.2) * 0.2;
-      ctx.globalAlpha = 0.45 * pulse;
+      ctx.globalAlpha = baseA * 0.45 * pulse;
       ctx.strokeStyle = '#ff5a3c';
       ctx.lineWidth = 2.4 * s;
       ctx.beginPath();
       ctx.ellipse(0, 1, 34 * s * pulse, 9 * s * pulse, 0, 0, 7);
       ctx.stroke();
-      ctx.globalAlpha = 0.3 * pulse;
+      ctx.globalAlpha = baseA * 0.3 * pulse;
       for (let i = 0; i < 3; i++) {
         const a = f.bob * 1.6 + i * 2.1;
         ctx.beginPath();
@@ -682,7 +685,7 @@ class Renderer {
         ctx.fillStyle = '#ff7a4c';
         ctx.fill();
       }
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = baseA;
     }
     if (moving) {                                          // 발자국 먼지: 발이 닿을 때마다 뒤로 퍼진다
       const ph = ((f.bob / Math.PI) % 1 + 1) % 1;
@@ -719,14 +722,14 @@ class Renderer {
     const veiled = f.veilT > 0;
     if (veiled) ctx.globalAlpha *= 0.32 + Math.sin(clk * 6) * 0.06;
     drawBody(ctx, f.s, s, false, f.kbTimer > 0, f.bob, moving, atk, wind, won);
-    if (veiled) ctx.globalAlpha = 1;
     MODEL.blink = false; MODEL.angry = false;
-    if (f.hitFlash > 0) {
+    if (f.hitFlash > 0) {                                  // 안개화 중이면 번쩍임도 흐리게
       const a0 = ctx.globalAlpha;
       ctx.globalAlpha = a0 * Math.min(0.5, f.hitFlash * 3.2);
       drawBody(ctx, f.s, s, true, f.kbTimer > 0, f.bob, moving, atk, wind, won);
       ctx.globalAlpha = a0;
     }
+    if (veiled) ctx.globalAlpha = baseA;
     ctx.restore();
 
     ctx.restore();
@@ -1615,7 +1618,7 @@ class Renderer {
     const camBefore = this.cam;
     this.follow(battle, dt);
     const ctx = this.ctx;
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduced = (this._rmq || (this._rmq = window.matchMedia('(prefers-reduced-motion: reduce)'))).matches;
     const shakeOn = typeof Settings === 'undefined' || Settings.get('shake');
     const sh = (reduced || !shakeOn) ? 0 : (battle.shake || 0);
     this.sceneTime = battle.time;

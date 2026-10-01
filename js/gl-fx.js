@@ -19,6 +19,8 @@
 
 const GLFX_STRIDE = 17;          // 파티클 한 개가 쓰는 float 수
 const GLFX_INST = 9;             // GPU 로 올리는 인스턴스 속성 수
+// 전용 파티클이 없는 연출 이름 -> 빌려 쓸 연출
+const GLFX_ALIAS = { thunderseal: 'lightning', sunfall: 'holy', underworld: 'runes', runeveil: 'runes' };
 
 /* 파티클 배열 안에서의 자리 */
 const P_X = 0, P_Y = 1, P_VX = 2, P_VY = 3, P_LIFE = 4, P_MAX = 5,
@@ -97,6 +99,20 @@ class GLFx {
     // 합성식이 포화형이어서 1 을 넘겨도 흰 덩어리로 터지지는 않는다.
     this.gain = 1.15;
     this.ok = this._init();
+    // 휴대폰은 앱을 내리거나 GPU 가 초기화되면 컨텍스트를 잃는다. 그동안은 ok=false 로
+    // 렌더러가 캔버스 2D 연출로 돌아가고, 되살아나면 자원을 다시 만든다.
+    if (this.ok) {
+      this.cv.addEventListener('webglcontextlost', e => {
+        e.preventDefault();
+        this.ok = false;
+        this.count = 0;
+      });
+      this.cv.addEventListener('webglcontextrestored', () => {
+        this.ok = this._init();
+        this.count = 0;
+        if (this.ok) this.resize(this.w, this.h, this.dpr);
+      });
+    }
   }
 
   _init() {
@@ -324,6 +340,8 @@ class GLFx {
     const N = n => Math.max(1, Math.round(n * q));
     const TAU = Math.PI * 2;
 
+    // 신화 필살기 가운데 따로 만든 파티클이 없는 것은 가까운 연출을 빌려 쓴다
+    kind = GLFX_ALIAS[kind] || kind;
     switch (kind) {
       /* 하늘에서 내리꽂는 번개 */
       case 'lightning': {

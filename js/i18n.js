@@ -513,6 +513,9 @@ const I18N_EN = {
   '공략 · ': 'Strategy · ',
   '이벤트 돌파': 'Event cleared',
   '이벤트 · ': 'Event · ',
+  '무한 전장은 20전장을 모두 돌파하면 열립니다': 'Endless opens after clearing all 20 stages',
+  '기존 저장을 읽지 못해 덮어쓰기를 막았습니다. 저장 관리에서 원본을 백업하거나 복원해 주세요.': 'Couldn\'t read the existing save, so overwriting is blocked. Back up or restore the original in Save manager.',
+  '저장에 실패했습니다. 저장 관리에서 백업을 내보내 주세요.': 'Saving failed. Export a backup from Save manager.',
   '추천 병종을 아직 하나도 갖고 있지 않습니다': 'You don\'t own any recommended units yet',
   '추천 편성 ': 'Recommended ',
   '개 병종을 넣었습니다': ' units added',
@@ -662,6 +665,10 @@ const I18N_EN_HTML = {
 
 /* 숫자가 붙은 말. 구절 치환보다 먼저 한다. */
 const I18N_EN_PATTERNS = [
+  [/추천 편성 (\d+)개 병종을 넣었습니다/g, 'Added $1 recommended units'],
+  [/(\d+)개 칸을 채웠습니다/g, 'Filled $1 slots'],
+  [/ 레벨 (\d+) 완료/g, ' Lv $1 done'],
+  [/전장 (\d+)개 돌파 · 골드 (\d+) · 소환석 (\d+)\. /g, 'Stages cleared $1 · Gold $2 · Summon stones $3. '],
   [/ · 요새 결계 \((\d+)웨이브부터 함락 가능\)/g, ' · fort ward (can fall from wave $1)'],
   [/(\d+)웨이브를 넘기면 적 요새를 무너뜨려 끝낼 수 있습니다!/g, 'Past wave $1 you can topple the enemy fort to finish!'],
   [/(\d+)전장 돌파 후/g, 'Clear stage $1 first'],
@@ -670,6 +677,7 @@ const I18N_EN_PATTERNS = [
   [/지금 슬롯 (\d)을 저장하고 슬롯 (\d)\(으\)로 바꿉니다\./g, 'Saves slot $1 and switches to slot $2.'],
   [/슬롯 (\d)의 (진행도와 소환한 병종이 모두 삭제됩니다)/g, 'Slot $1: $2'],
   [/(\d+)시간 (\d+)분/g, '$1h $2m'],
+  [/(\d+)분/g, '$1m'],
   [/(\d+)\s*전장 돌파/g, 'Stage $1 cleared'],
   [/전장 (\d+)/g, 'Stage $1'],
   [/(\d+)\s*전장/g, 'Stage $1'],

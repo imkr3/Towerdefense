@@ -826,4 +826,26 @@ test('Overtime: a stalled battle without fury slowly toughens new foes so it alw
   en.time = 600; assert.equal(en.spawnEnemy('goblin', 900).maxHp, w, 'endless has its own scaling');
 });
 
+test('Strike warnings close in game time: at 3x the circle shuts as the hit lands, pause keeps it', () => {
+  const b = battle(); b.update(1 / 30); const f = b.spawnEnemy('goblin', 900);
+  b.queueStrike(f, { warn: 2, x: 300, r: 40, dmg: 1 });
+  const w = b.fx.find(e => e.type === 'warn');
+  b.updateFx(5); assert.ok(b.fx.includes(w), 'paused fx tick keeps the warning'); assert.equal(w.t, 2);
+  b.speed = 3; for (let i = 0; i < 6; i++) b.update(0.1);
+  assert.equal(b.pending.length, 1); assert.ok(Math.abs(w.t - 0.2) < 1e-6, 'warning tracks the strike timer');
+  b.update(0.1); assert.equal(b.pending.length, 0); assert.ok(!b.fx.includes(w), 'warning gone when it lands');
+});
+test('Poison and burn respect the mist veil and boss core armour', () => {
+  const b = battle(), t = new Fighter(E.titan, 'enemy', 1800); t.poisonT = 1; t.poisonDps = 100;
+  b.step([t], [], b.allyCastle, .1, false); assert.ok(Math.abs(t.maxHp - t.hp - 1.5) < 1e-6, 'core blocks 85%');
+  const v = new Fighter(E.goblin, 'enemy', 1800); v.veilT = 3; v.burnT = 1; v.burnDps = 100;
+  b.step([v], [], b.allyCastle, .1, false); assert.equal(v.hp, v.maxHp);
+});
+test('A weaker haste never overwrites a stronger one', () => {
+  const b = battle(), h = b.makeAlly(U.herald, 500), a = b.makeAlly(U.spear, 520); b.allies.push(h, a);
+  a.hasteT = 6; a.hasteMul = 0.55; h.abCd = 0; b.supportTick(h, b.allies, 10, true);
+  assert.equal(a.hasteMul, 0.55); assert.equal(a.hasteT, 6);
+  const c = b.makeAlly(U.spear, 520); b.allies.push(c); b.supportTick(h, b.allies, 10, true); assert.equal(c.hasteMul, 0.7);
+});
+
 console.log(count + ' regression checks passed');
