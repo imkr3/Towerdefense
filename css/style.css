@@ -624,6 +624,7 @@ button:focus-visible{outline:3px solid #48b9ee;outline-offset:3px;}
 @media(max-height:420px){.hero-ability{width:58px;font-size:10px}.hero-ability .ha-state{font-size:9px}}
 /* Keep summon actions visible even when guarantees add more rate information. */
 .gacha-side{min-height:0}.gacha-side .rate-box{flex:1;min-height:45px;overflow-y:auto}.gacha-side>.btn,.gacha-side>.pity-box{flex-shrink:0}
+@media(max-height:380px){.gacha-side .rate-box{padding:4px 9px}.rate-title{margin-bottom:1px}.rate-row{font-size:10px;line-height:1.3}}
 
 /* ================= 진군도: 장(章)별 진군로 + 전장 정보 ================= */
 #scr-map .bar .progress-wrap{flex:0 1 220px;padding:0;color:#e9efe6;font-size:11px}
@@ -1180,4 +1181,4 @@ body{background:var(--bg0);color:var(--tx)}
 @media(max-width:780px){.event-grid{grid-template-columns:repeat(3,1fr);gap:6px}.event-card{min-height:96px;padding:6px 4px}.event-card canvas{width:36px;height:36px}}
 .sd-btns.ev-btns{flex-wrap:wrap}
 .sd-btns.ev-btns .btn.ghost{flex:1 1 40%}
-.sd-btns.ev-btns .sd-go{flex:1 1 100%}
+.sd-btns.ev-btns .sd-go{flex:1 1 100%!important}
