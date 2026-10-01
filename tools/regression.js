@@ -687,7 +687,7 @@ test('Fury: in hardcore and act 2, foes arriving later are tougher', () => {
   h.time = 9999; assert.ok(h.spawnEnemy('goblin', 900).maxHp <= early * (1 + H.HARDCORE.fury.max) + 1, 'capped');
   const a2 = new Battle(21, s); const e2 = a2.spawnEnemy('goblin', 900).maxHp; a2.time = 300;
   assert.ok(a2.spawnEnemy('goblin', 900).maxHp > e2 * 1.3, 'act 2 fury');
-  const a1 = new Battle(5, s); const e1 = a1.spawnEnemy('goblin', 900).maxHp; a1.time = 300;
+  const a1 = new Battle(5, s); const e1 = a1.spawnEnemy('goblin', 900).maxHp; a1.time = 200;
   assert.equal(a1.spawnEnemy('goblin', 900).maxHp, e1, 'act 1 has no fury');
 });
 
@@ -775,6 +775,55 @@ test('Event enemies are drawn and translated', () => {
 test('Act 1 and plain stages got tougher (3.2)', () => {
   assert.ok(STAGES[5].enemyMul > 1.25, 'mob stage ' + STAGES[5].enemyMul);
   assert.ok(STAGES[1].enemyMul < 1.1, 'first stages stay gentle');
+});
+
+/* ---------------- 3.2.1 버그 수정 ---------------- */
+test('Support troops wait behind the melee line and never walk into the enemy fort', () => {
+  const s = save(); s.loadout = ['priest']; const b = new Battle(0, s, { baseHp: 10000, money: 900, rate: 0, waves: [], reward: 0 });
+  const pr = b.makeAlly(U.priest, 300); b.allies.push(pr);
+  for (let i = 0; i < 30 * 120; i++) b.update(1 / 30);
+  assert.ok(pr.x < b.enemyCastle.x - b.enemyCastle.radius - 150, 'stopped short of the fort ' + Math.round(pr.x));
+  const sp = b.makeAlly(U.spear, 500); sp.speedMul = 0; b.allies.push(sp);
+  pr.x = 300; for (let i = 0; i < 30 * 30; i++) b.update(1 / 30);
+  assert.ok(pr.x <= sp.x - 15, 'behind the spear ' + Math.round(pr.x) + ' vs ' + Math.round(sp.x));
+});
+test('Turrets are set up near the front and roll forward when left idle', () => {
+  const s = save(); s.owned.inventor = true; s.loadout = ['inventor'];
+  const b = new Battle(0, s, { baseHp: 10000, money: 900, rate: 0, waves: [], reward: 0 });
+  const inv = b.makeAlly(U.inventor, 200); b.allies.push(inv);
+  const sp = b.makeAlly(U.spear, 700); sp.speedMul = 0; b.allies.push(sp);
+  b.updateCover(0.1); inv.abCd = 0; b.supportTick(inv, b.allies, 0.01, true);
+  const t = b.allies.find(a => a.s.id === 'turret'); assert.ok(t && t.x > 300, 'placed toward the front ' + (t && Math.round(t.x)));
+  t.x = 250; for (let i = 0; i < 30 * 20; i++) b.update(1 / 30);
+  assert.ok(t.x > 500 && t.x <= sp.x - 30, 'rolled up behind the line ' + Math.round(t.x));
+});
+test('Enemy splash aimed at troops does not chip the castle; shots at the castle still do', () => {
+  const b = battle(); b.update(1 / 30);
+  const cat = b.spawnEnemy('orccatapult', 500); const near = b.makeAlly(U.spear, 160); b.allies.push(near);
+  const hp = b.allyCastle.hp; b.attack(cat, near, b.allies, b.allyCastle); b.updateShots(5);
+  assert.equal(b.allyCastle.hp, hp, 'castle untouched');
+  near.dead = true; b.attack(cat, b.allyCastle, b.allies, b.allyCastle); b.updateShots(5);
+  assert.ok(b.allyCastle.hp < hp, 'direct castle shot lands');
+});
+test('Deploy-zone shelling never hits the castle itself', () => {
+  const b = new Battle(STAGES.length + 2, save(), EV.EVENT_STAGES[2]); b.update(1 / 30);
+  const c = b.spawnEnemy('ghostcaptain', 1200); b.bossAct(c, E.ghostcaptain.special);
+  const hp = b.allyCastle.hp; b.updatePending(5); assert.equal(b.allyCastle.hp, hp);
+});
+test('Endless: the fort holds until wave 25, then falling it ends the run as a win', () => {
+  const s = save(); s.stats = {}; const b = new Battle(0, s, makeEndlessStage());
+  b.update(1 / 30); b.enemyCastle.takeDamage(1e12); b.update(1 / 30);
+  assert.equal(b.state, 'play'); assert.ok(b.wardUp(), 'warded early');
+  b.currentWave = () => 25; b.update(1 / 30); b.enemyCastle.takeDamage(1e12); b.update(1 / 30);
+  assert.equal(b.state, 'win'); assert.equal(b.fortFell, true); assert.ok(b.stoneGain >= 2);
+});
+
+test('Overtime: a stalled battle without fury slowly toughens new foes so it always ends', () => {
+  const b = battle(); b.update(1 / 30); const e0 = b.spawnEnemy('goblin', 900).maxHp;
+  b.time = 239; assert.equal(b.spawnEnemy('goblin', 900).maxHp, e0);
+  b.time = 480; assert.ok(b.spawnEnemy('goblin', 900).maxHp > e0 * 1.9);
+  const en = new Battle(0, save(), makeEndlessStage()); en.update(1 / 30); const w = en.spawnEnemy('goblin', 900).maxHp;
+  en.time = 600; assert.equal(en.spawnEnemy('goblin', 900).maxHp, w, 'endless has its own scaling');
 });
 
 console.log(count + ' regression checks passed');

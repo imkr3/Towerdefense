@@ -66,6 +66,11 @@ const RUSH_MUL = 2.0;        // 근접 전열이 통째로 비어 있으면 적�
  * - 보스 격노: 캠페인 보스가 나온 뒤 BOSS_ENRAGE_T 초가 지나도 살아 있으면 공격·속도가 오른다.
  *   보스를 뒤로 미뤄 두고 잡몹만 쓸어 담던 싸움을 끝낸다.
  * - 격앙(fury): 하드코어와 2막에서는 싸움이 길어질수록 새로 나오는 적이 더 억세진다. */
+const ENDLESS_FORT_WAVE = 25;
+const OVERTIME_T = 240;          // 3.2.1 장기전: 이 시간이 지나면 (격앙이 없는 전장도) 새 적이 억세진다
+const OVERTIME_RATE = 0.12;      // 30초마다 +12%, 상한 없음 — 버티기만 하는 싸움도 결국 끝난다
+const TURRET_IDLE = 2.5;         // 포탑: 이만큼 놀면 앞으로 옮긴다
+const TURRET_SPEED = 34;    // 3.2.1: 무한 전장 요새는 이 웨이브부터 무너뜨릴 수 있다
 const BOSS_ENRAGE_T = 50;
 const BOSS_ENRAGE = { atk: 1.6, speed: 1.3, rate: 0.8 };
 const ACT2_FURY = { per30: 0.06, max: 0.6 };
@@ -596,8 +601,14 @@ class Battle {
       this.qi++;
     }
     if (this.stage.infinite) this.extendEndless();
+    // 무한 전장의 요새: ENDLESS_FORT_WAVE 웨이브까지는 결계로 버틴다. 그 뒤로는 무너뜨리면 '요새 함락'
+    if (this.endless) this.enemyCastle.floor = this.currentWave() < ENDLESS_FORT_WAVE ? this.enemyCastle.maxHp * WARD_FLOOR : 0;
     this.tickReinforce(dt);
     this.checkEnrage();
+    if (!this.endless && !this.fury && !this.overtimeSaid && this.time > OVERTIME_T) {
+      this.overtimeSaid = true;
+      this.announce('장기전 · 적이 점점 억세집니다', 2.6);
+    }
 
     this.updateCover(dt);
     this.step(this.allies, this.enemies, this.enemyCastle, dt, true);
@@ -615,7 +626,8 @@ class Battle {
     this.enemies = this.enemies.filter(e => !e.dead);
     this.allies = this.allies.filter(a => !a.dead);
 
-    if (!this.endless && this.enemyCastle.dead) { this.shake = 16; this.finish('win'); }
+    // 무한 전장도 적 요새를 무너뜨리면 끝난다 (요새 함락 · 웨이브 보상에 덤)
+    if (this.enemyCastle.dead) { this.shake = 16; this.finish('win'); }
     else if (this.allyCastle.dead) { this.shake = 16; this.finish(this.endless ? 'over' : 'lose'); }
     // 웨이브 수가 정해진 무한 전장(검사용)만 다 버티면 끝. 진짜 무한 전장은 성채가 무너질 때까지.
     else if (this.endless && !this.stage.infinite && this.qi >= this.queue.length && this.enemies.length === 0) {
@@ -685,7 +697,7 @@ class Battle {
   }
 
   /* 보스가 버티고 있어 요새가 무너지지 않는 중인가 (화면 표시용) */
-  wardUp() { return this.bossWard && !this.bossDown && this.enemyCastle.hp <= this.enemyCastle.maxHp * (WARD_FLOOR + 0.001); }
+  wardUp() { return (this.bossWard && !this.bossDown || (this.endless && this.enemyCastle.floor > 0)) && this.enemyCastle.hp <= this.enemyCastle.maxHp * (WARD_FLOOR + 0.001); }
 
   spawnEnemy(id, atX, mul) {
     const spec = ENEMIES[id];
@@ -701,6 +713,7 @@ class Battle {
     let total = this.enemyMulBase * (mul && mul > 1 ? mul : 1);
     // 격앙: 오래 끌수록 새로 나오는 적이 억세진다 (보스는 따로 격노한다)
     if (this.fury && !spec.boss) total *= 1 + Math.min(this.fury.max, this.fury.per30 * this.time / 30);
+    else if (!this.endless && !spec.boss && this.time > OVERTIME_T) total *= 1 + OVERTIME_RATE * (this.time - OVERTIME_T) / 30;
     // 보스는 이제 반드시 쓰러뜨려야 하니, 전장 배율을 그대로 받으면 뒤쪽 보스가 끝없이 버틴다.
     // 배율을 누그러뜨려 받는다 (보스 자체 배율 BOSS_HP_MUL 은 따로 곱한다).
     if (spec.boss && this.stage.bossId && !this.endless && total > 1) total = Math.pow(total, BOSS_MUL_EXP);
@@ -835,6 +848,11 @@ class Battle {
       // 웨이브 수에 따른 보상
       this.coins += this.wavesCleared * 120;
       this.stoneGain = Math.floor(this.wavesCleared / 5);
+      if (result === 'win') {                    // 요새 함락: 웨이브 보상 1.5배 + 소환석 2
+        this.fortFell = true;
+        this.coins = Math.round(this.coins * 1.5);
+        this.stoneGain += 2;
+      }
       this.save.stones = (this.save.stones || 0) + this.stoneGain;
       this.save.coins += this.coins;
       this.save.totalKills = (this.save.totalKills || 0) + this.kills;
@@ -977,12 +995,20 @@ class Battle {
       const target = this.findTarget(f, foes, foeCastle);
       if (target) {
         f.engaged = true;
+        f.idleT = 0;
         f.cd -= dt;
         if (f.cd <= 0) {
           f.cd = f.intervalNow;
           f.swing = 0.22;
           this.attack(f, target, foes, foeCastle);
           if (f.ab.spinup) f.spin = Math.min(f.ab.spinup.max, f.spin + f.ab.spinup.per);
+        }
+      } else if (isAlly && f.ab.hold && f.summoned && f.s.ranged) {
+        // 포탑: 쏠 적이 없는 채로 전열이 앞으로 나가 버리면 바퀴를 굴려 따라간다
+        f.idleT = (f.idleT || 0) + dt;
+        if (f.idleT > TURRET_IDLE && !(this.allyFront > -Infinity && f.x >= this.allyFront - 40)) {
+          f.moving = true;
+          f.x = Math.min(WORLD - 60, f.x + f.dir * TURRET_SPEED * dt);
         }
       } else if (!f.ab.hold && this.canAdvance(f, foes) &&
                  // 원거리 아군은 근접 전열이 있으면 그 뒤에서 기다린다 (앞질러 나가 엄호를 잃지 않게)
@@ -1005,6 +1031,11 @@ class Battle {
       if (e.dead) continue;
       if ((e.x - f.x) * f.dir < keep) return false;
     }
+    // 3.2.1: 적이 다 쓰러져도 적 성채까지 걸어 들어가 겹쳐 서지 않는다
+    const fort = f.side === 'ally' ? this.enemyCastle : this.allyCastle;
+    if (!fort.dead && (fort.x - f.x) * f.dir < keep + fort.radius) return false;
+    // 아군 지원병은 근접 전열 뒤에 선다 (전열이 있으면)
+    if (f.side === 'ally' && this.allyFront > -Infinity && f.x >= this.allyFront - 20) return false;
     return true;
   }
 
@@ -1104,7 +1135,10 @@ class Battle {
               for (const a of this.allies) if (!a.dead && a.summonedBy === f) mine++;
               if (mine >= ab.summon.max) break;
             }
-            const m = this.makeAlly(u, sx, f);
+            // 포탑처럼 서서 쏘는 소환물은 발명가 발밑이 아니라 근접 전열 바로 뒤에 세운다
+            let px = sx;
+            if (u.ab && u.ab.hold && u.ranged && this.allyFront > -Infinity) px = Math.max(sx, Math.min(f.x + 160, this.allyFront - 40 - i * 22));
+            const m = this.makeAlly(u, px, f);
             m.summoned = true;
             m.summonedBy = f;
             if (ab.summon.life) m.lifeT = ab.summon.life;       // 분신은 잠깐만 머문다
@@ -1319,9 +1353,10 @@ class Battle {
       case 'barrage': {                    // 출진 지점 포격: 막 나온 병사를 노린다
         const n = a.n || 4;
         for (let i = 0; i < n; i++) {
-          const tx = (f.side === 'enemy' ? ALLY_SPAWN_X : ENEMY_SPAWN_X) + (f.side === 'enemy' ? 1 : -1) * (40 + i * (a.gap || 90));
+          // 성채(반경 60) 바로 앞부터 — 성채 자체는 맞히지 않는다. 노리는 건 갓 나온 병사다.
+          const tx = (f.side === 'enemy' ? ALLY_SPAWN_X : ENEMY_SPAWN_X) + (f.side === 'enemy' ? 1 : -1) * (90 + i * (a.gap || 90));
           this.queueStrike(f, { x: Math.max(80, Math.min(WORLD - 80, tx)), r: a.radius || 90, dmg: a.dmg || 600,
-                                warn: (a.warn || 2) + i * 0.1, burn: a.burn, stun: a.stun, kind: a.kind || 'firestorm' });
+                                warn: (a.warn || 2) + i * 0.1, burn: a.burn, stun: a.stun, kind: a.kind || 'firestorm', noCastle: true });
         }
         break;
       }
@@ -1359,7 +1394,7 @@ class Battle {
     this.pending.push({
       t: o.warn, side: f.side, x: o.x, r: o.r, dmg: o.dmg,
       burn: o.burn, stun: o.stun, kind: o.kind, color: f.s.accent, row: f.row,
-      expose: o.expose, src: o.expose ? f : null
+      expose: o.expose, src: o.expose ? f : null, noCastle: !!o.noCastle
     });
     this.fx.push({ type: 'warn', x: o.x, r: o.r, t: o.warn, life: o.warn,
                    color: f.side === 'ally' ? '#6fc0ff' : '#e0503c' });
@@ -1384,7 +1419,7 @@ class Battle {
         }
         if (s.stun) e.stun(s.stun);
       }
-      if (!castle.dead && Math.abs(castle.x - s.x) <= s.r + castle.radius) {
+      if (!s.noCastle && !castle.dead && Math.abs(castle.x - s.x) <= s.r + castle.radius) {
         castle.takeDamage(s.dmg);
       }
       this.fx.push({ type: 'cast', kind: s.kind, x: s.x, row: s.row,
@@ -1504,12 +1539,12 @@ class Battle {
       this.shots.push({
         x: f.x, y0: f.row, tx: target.x, side: f.side, t: 0,
         dur: Math.max(0.18, Math.abs(target.x - f.x) / 900),
-        color: f.s.accent, dmg: r.dmg, crit: r.crit, src: f,
+        color: f.s.accent, dmg: r.dmg, crit: r.crit, src: f, toCastle: !!target.isCastle,
         area: f.s.area, areaRadius: f.s.areaRadius, dir: f.dir
       });
     } else {
       const cx = f.x + f.dir * f.attackRange * 0.6;
-      if (f.s.area) this.areaHit(r.dmg, cx, f.s.areaRadius, foes, foeCastle, f, r.crit);
+      if (f.s.area) this.areaHit(r.dmg, cx, f.s.areaRadius, foes, foeCastle, f, r.crit, f.side === 'ally' || !!target.isCastle);
       else this.hitOne(r.dmg, target, f, r.crit);
       this.castFx(f, target.x !== undefined ? target.x : cx, target.row, r.crit);
       this.fx.push({ type: r.crit ? 'crit' : 'hit', x: target.x, row: target.row ?? 1,
@@ -1716,12 +1751,14 @@ class Battle {
     this._chaining = false;
   }
 
-  areaHit(dmg, cx, radius, foes, foeCastle, src, crit) {
+  /* castleOk: 성채까지 튀김 피해를 줄지. 적이 아군 병사를 노린 범위 공격은 바로 뒤 성채까지
+   * 번지지 않는다 (3.2.1: 갓 나온 병사를 노린 투석이 성채를 갉아 별 3개를 못 받던 것) */
+  areaHit(dmg, cx, radius, foes, foeCastle, src, crit, castleOk = true) {
     for (const e of foes) {
       if (e.dead) continue;
       if (Math.abs(e.x - cx) <= radius + e.radius) this.hitOne(dmg, e, src, crit);
     }
-    if (foeCastle && !foeCastle.dead && Math.abs(foeCastle.x - cx) <= radius + foeCastle.radius) {
+    if (castleOk && foeCastle && !foeCastle.dead && Math.abs(foeCastle.x - cx) <= radius + foeCastle.radius) {
       foeCastle.takeDamage(dmg);
     }
     this.fx.push({ type: 'boom', x: cx, r: radius, t: 0.32, life: 0.32 });
@@ -1758,7 +1795,7 @@ class Battle {
       if (s.src) this.castFx(s.src, s.tx, s.y0, s.crit);
       if (ab.pierce) { this.pierceHit(s); continue; }
       if (s.area) {
-        this.areaHit(s.dmg, s.tx, s.areaRadius, foes, castle, s.src, s.crit);
+        this.areaHit(s.dmg, s.tx, s.areaRadius, foes, castle, s.src, s.crit, s.side === 'ally' || s.toCastle);
         continue;
       }
       let hit = null, bd = Infinity;
@@ -1767,7 +1804,8 @@ class Battle {
         const d = Math.abs(e.x - s.tx);
         if (d < bd && d < 90) { bd = d; hit = e; }
       }
-      if (!hit && !castle.dead && Math.abs(castle.x - s.tx) < 110) hit = castle;
+      // 노린 병사가 날아가는 사이 쓰러졌을 때: 적의 화살은 성채로 새지 않는다
+      if (!hit && !castle.dead && Math.abs(castle.x - s.tx) < 110 && (s.side === 'ally' || s.toCastle)) hit = castle;
       if (hit) this.hitOne(s.dmg, hit, s.src, s.crit);
       this.fx.push({ type: s.crit ? 'crit' : 'hit', x: hit ? hit.x : s.tx, row: hit ? (hit.row ?? s.y0) : s.y0, dir: s.dir, t: 0.22, life: 0.22 });
     }

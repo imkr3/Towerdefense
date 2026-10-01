@@ -452,7 +452,7 @@ function renderStageDetail(i) {
   const ch = CHAPTERS[mapChapter];
   if (ch.endless || i < 0) {
     box.innerHTML = ch.endless
-      ? '<div class="sd-name">무한 전장</div><p class="sd-hint">웨이브가 끝없이 몰려옵니다. 웨이브마다 적이 강해지고, 5웨이브마다 보스가 등장합니다. 성채가 무너지기 전까지 최대한 버텨 보세요!</p>'
+      ? '<div class="sd-name">무한 전장</div><p class="sd-hint">웨이브가 끝없이 몰려옵니다. 웨이브마다 적이 강해지고, 5웨이브마다 보스가 등장합니다. 25웨이브를 넘기면 적 요새를 무너뜨려 끝낼 수 있습니다!</p>'
       : '<div class="sd-name">' + ch.name + ' · ' + ch.sub + '</div><p class="sd-hint">이전 장을 먼저 돌파해야 합니다.</p>';
     const fb = document.createElement('button');
     fb.className = 'btn ghost sd-formation';
@@ -546,7 +546,7 @@ function renderEndlessSlot() {
   el.className = 'endless-card';
   el.innerHTML =
     '<div class="e-title">무한 전장</div>' +
-    '<div class="e-sub">끝없는 웨이브. 웨이브마다 적이 강해집니다. 성채가 무너질 때까지 버텨 내세요!</div>' +
+    '<div class="e-sub">끝없는 웨이브. 웨이브마다 적이 강해집니다. ' + ENDLESS_FORT_WAVE + '웨이브를 넘기면 적 요새를 무너뜨려 끝낼 수 있습니다!</div>' +
     '<div class="e-best">최고 기록 <b>' + (save.endlessBest || 0) + '</b> 웨이브</div>' +
     '<button class="btn primary e-btn">도전</button>';
   el.querySelector('.e-btn').addEventListener('click', () => startEndless());
@@ -1285,7 +1285,8 @@ function updateHud() {
   $('#castle-status').classList.toggle('critical', allyPct < 30);
   // 적이 언제 나오는지는 알려 주지 않는다. 무한 전장만 몇 웨이브째인지 보여 준다.
   const preview = battle.endless
-    ? '웨이브 ' + battle.currentWave() + ' · 적 ×' + endlessMul(battle.currentWave() - 1).toFixed(1)
+    ? '웨이브 ' + battle.currentWave() + ' · 적 ×' + endlessMul(battle.currentWave() - 1).toFixed(1) +
+      (battle.wardUp() ? ' · 요새 결계 (' + ENDLESS_FORT_WAVE + '웨이브부터 함락 가능)' : '')
     : (battle.wardUp() ? '보스의 결계 · 보스를 쓰러뜨려야 요새가 무너집니다'
       : (battle.reinforcing() ? '적 증원 중' : ''));
   const wp = $('#wave-preview');
@@ -1412,10 +1413,11 @@ function showEventResult() {
 }
 
 function showEndlessResult() {
-  $('#result-title').textContent = battle.newRecord ? '신기록!' : '전투 종료';
+  $('#result-title').textContent = battle.fortFell ? '요새 함락!' : (battle.newRecord ? '신기록!' : '전투 종료');
   $('#result-stars').innerHTML =
     '<span class="wave-count">' + (battle.wavesCleared || 0) + '</span> 웨이브';
   const lines = [];
+  if (battle.fortFell) lines.push('적 요새를 무너뜨렸습니다 · 보상 1.5배 + 소환석 2');
   lines.push('최고 기록 ' + (save.endlessBest || 0) + ' 웨이브');
   lines.push('획득 골드 💰 ' + battle.coins +
              (battle.stoneGain ? '  ·  소환석 🔮 ' + battle.stoneGain : ''));

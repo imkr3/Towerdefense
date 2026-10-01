@@ -1412,7 +1412,7 @@ const EVENT_STAGES = [
             W(72,'riftcaller',2,4), W(98,'mirror',4,1.4), W(124,'voidspawn',10,.6), W(152,'souleater',2,4),
             W(180,'riftcaller',2,4), W(210,'voidspawn',12,.5)] },
   { name: '마왕 강림', bossId: 'demonking', bossRole: 'bruiser', boss: true, look: 'mythic', music: 'mythic',
-    bossMusic: 'finale', mods: ['giantslayer', 'curse'], baseHp: 56000, money: 600, rate: 66, reward: 0, enemyMul: 10, bossMul: { hp: 2.8, atk: 1.7 },
+    bossMusic: 'finale', mods: ['giantslayer', 'curse'], baseHp: 56000, money: 600, rate: 66, reward: 0, enemyMul: 10, bossMul: { hp: 2.5, atk: 1.7 },
     fury: { per30: 0.12, max: 1.5 }, len: 1650,
     event: { id: 'demonking', deck: ['spear','shield','javelin','venom','catapult','pyro','frost','knight','musketeer','sniper'],
              unlock: 30, reward: 25000, stones: 30,
@@ -1483,7 +1483,7 @@ function makeEndlessStage(waveCount) {
   }
   return {
     name: '무한 전장', endless: true, infinite: !waveCount, len: 1250, look: 'endless',
-    baseHp: 99999999,          // 적 요새는 부술 수 없다. 버티는 것이 전부다
+    baseHp: 2000000,           // 3.2.1: 부술 수 있다 — 무너뜨리면 '요새 함락' 으로 끝나고 보상이 1.5배
     money: 320, rate: 40, reward: 0,
     waves: waves
   };

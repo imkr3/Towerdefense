@@ -525,7 +525,9 @@ const I18N_EN = {
   '이벤트 전장 1곳 돌파': 'Clear 1 event stage',
   '마왕을 넘어선 자': 'Beyond the Demon King',
   '이벤트 전장 5곳 모두 돌파': 'Clear all 5 event stages',
-  '격앙': 'Fury', ' 격노! 공격과 속도가 오릅니다': ' is enraged! Attack and speed up',
+  '격앙': 'Fury', '끝없는 웨이브. 웨이브마다 적이 강해집니다.': 'Endless waves, each stronger than the last.',
+  '웨이브가 끝없이 몰려옵니다. 웨이브마다 적이 강해지고, 5웨이브마다 보스가 등장합니다. 25웨이브를 넘기면 적 요새를 무너뜨려 끝낼 수 있습니다!': 'Waves never stop. Each wave is stronger and a boss arrives every 5 waves. Past wave 25 you can topple the enemy fort to finish!', '장기전 · 적이 점점 억세집니다': 'Overtime · foes grow tougher', '요새 함락!': 'Fort fallen!',
+  '적 요새를 무너뜨렸습니다 · 보상 1.5배 + 소환석 2': 'You toppled the enemy fort · rewards ×1.5 + 2 stones', ' 격노! 공격과 속도가 오릅니다': ' is enraged! Attack and speed up',
   '훈련소에서 진화할 수 있습니다': 'can evolve at the Training Grounds', '형태': 'Form',
   '저장 슬롯': 'Save slots', '저장 슬롯 바꾸기': 'Switch save slot', '슬롯': 'Slot', '사용 중': 'In use',
   '비어 있음 · 새로 시작': 'Empty · start new', ' 새로 시작': ' · start new',
@@ -660,6 +662,8 @@ const I18N_EN_HTML = {
 
 /* 숫자가 붙은 말. 구절 치환보다 먼저 한다. */
 const I18N_EN_PATTERNS = [
+  [/ · 요새 결계 \((\d+)웨이브부터 함락 가능\)/g, ' · fort ward (can fall from wave $1)'],
+  [/(\d+)웨이브를 넘기면 적 요새를 무너뜨려 끝낼 수 있습니다!/g, 'Past wave $1 you can topple the enemy fort to finish!'],
   [/(\d+)전장 돌파 후/g, 'Clear stage $1 first'],
   [/(\d+)전장을 돌파하면 열립니다\./g, 'Clear stage $1 to unlock.'],
   [/이벤트 (\d) \/ (\d) 돌파/g, 'Events $1 / $2 cleared'],
