@@ -826,4 +826,29 @@ test('Overtime: a stalled battle without fury slowly toughens new foes so it alw
   en.time = 600; assert.equal(en.spawnEnemy('goblin', 900).maxHp, w, 'endless has its own scaling');
 });
 
+test('Poison and burn obey mist form and the titan core', () => {
+  const b = battle();
+  const v = new Fighter({ ...E.goblin, hp: 5000 }, 'enemy', 1800); v.veilT = 2; v.poisonT = 1; v.poisonDps = 500;
+  b.step([v], [], b.allyCastle, 0.5, false); assert.equal(v.hp, v.maxHp);
+  const c = new Fighter({ ...E.goblin, hp: 5000, ab: { core: { armor: 0.85, mul: 2.5 } } }, 'enemy', 1800);
+  c.burnT = 1; c.burnDps = 1000; b.step([c], [], b.allyCastle, 0.1, false);
+  assert.ok(Math.abs(c.maxHp - c.hp - 100 * 0.15) < 1e-6);
+});
+test('A weaker haste never overwrites the King\'s Command', () => {
+  const b = battle(); b.deploy('spear'); b.cmdCd = 0; assert.equal(b.useCommand(), true);
+  const a = b.allies[0], strong = a.hasteMul;
+  const h = b.makeAlly(U.herald, a.x); b.allies.push(h); h.auraPulse = 0;
+  b.supportTick(h, b.allies, 0.01, true); assert.equal(a.hasteMul, strong);
+});
+test('Enemy summoners keep a limited number of summons alive', () => {
+  const b = battle(), f = b.spawnEnemy('riftcaller', 1200);
+  for (let k = 0; k < 40; k++) { f.abCd = 0; b.supportTick(f, b.enemies, 0.01, false); }
+  assert.ok(b.enemies.filter(e => e.summoned && !e.dead).length <= 6);
+});
+test('Strike warnings vanish when the strike lands, at any speed', () => {
+  const b = battle(), f = b.spawnEnemy('goblin', 1200); b.speed = 3;
+  b.queueStrike(f, { x: 600, r: 100, dmg: 10, warn: 1, kind: 'firestorm' });
+  b.update(0.1); b.update(0.1); b.update(0.1); b.update(0.1);
+  assert.equal(b.fx.filter(e => e.type === 'warn').length, 0);
+});
 console.log(count + ' regression checks passed');

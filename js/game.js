@@ -36,6 +36,7 @@ const REINFORCE_MIN = 3.0;   // 증원 간격 하한
 const REINFORCE_STEP = 0.06; // 증원 한 번마다 적이 세지는 폭
 const REINFORCE_MAX = 1.9;   // 증원 강화 상한 (끝없이 세지면 이길 수가 없다)
 const REINFORCE_CAP = 16;    // 증원으로 전장에 동시에 설 수 있는 적 수
+const ENEMY_SUMMON_CAP = 6; // 적 소환사 한 명이 세워 둘 수 있는 소환물 수 (max 가 없을 때)
 /* 동시에 터지는 필살 연출 수. Canvas2D 로 그릴 때는 연출 수에 정비례해
  * 비용이 늘어나 4개에서 막아야 했다. WebGL 레이어가 살아 있으면 비용이
  * 거의 늘지 않으므로 화면 쪽에서 이 값을 올려 준다. */
@@ -201,6 +202,16 @@ class Fighter {
       this.barrier = amount;
       this.barrierMax = Math.max(this.barrierMax, amount);
     }
+  }
+
+  /* 중독·화상: 안개화(무적)와 핵 갑주는 직격과 똑같이 따른다. 그래야 이벤트 보스의
+     '안개화 중엔 무적', '핵이 드러났을 때만' 공략이 독·불로 뚫리지 않는다.
+     갑주·보호막·낙인은 예전처럼 무시한다(밸런스가 그 위에 맞춰져 있다).
+     넉백 단계와 피격 번쩍임은 건드리지 않는다. 체력에서 깎을 양을 돌려준다. */
+  dotDamage(dmg) {
+    if (this.veilT > 0) return 0;
+    if (this.ab.core) dmg *= this.exposedT > 0 ? this.ab.core.mul : (1 - this.ab.core.armor);
+    return Math.max(0, dmg);
   }
 
   takeDamage(dmg, pierceArmor) {
@@ -539,8 +550,9 @@ class Battle {
     }
     for (const a of this.allies) {
       a.heal(a.maxHp * this.cmdHeal);
+      // 더 강한 가속이 걸려 있으면 그대로 둔다 (낮을수록 빠르다)
+      a.hasteMul = a.hasteT > 0 ? Math.min(a.hasteMul, COMMAND.hasteMul) : COMMAND.hasteMul;
       a.hasteT = Math.max(a.hasteT, COMMAND.hasteDur);
-      a.hasteMul = COMMAND.hasteMul;
       a.stunT = 0;
       a.slowT = 0;
       this.fx.push({ type: 'rally', x: a.x, row: a.row, t: 0.6, life: 0.6 });
@@ -630,7 +642,7 @@ class Battle {
     if (this.enemyCastle.dead) { this.shake = 16; this.finish('win'); }
     else if (this.allyCastle.dead) { this.shake = 16; this.finish(this.endless ? 'over' : 'lose'); }
     // 웨이브 수가 정해진 무한 전장(검사용)만 다 버티면 끝. 진짜 무한 전장은 성채가 무너질 때까지.
-    else if (this.endless && !this.stage.infinite && this.qi >= this.queue.length && this.enemies.length === 0) {
+    else if (this.endless && !this.stage.infinite && this.qi >= this.queue.length && this.enemies.length + this.burrowers.length === 0) {
       this.finish('over');
     }
   }
@@ -949,6 +961,7 @@ class Battle {
       if (f.poisonT > 0) { dot += f.poisonDps * Math.min(dt, f.poisonT); f.poisonT = Math.max(0, f.poisonT - dt); }
       if (f.burnT > 0) { dot += f.burnDps * Math.min(dt, f.burnT); f.burnT = Math.max(0, f.burnT - dt); }
       if (isAlly) dot *= 1 - 0.05 * Math.min(5, this.save.upgrades.resistance || 0);
+      if (dot > 0) dot = f.dotDamage(dot);
       if (dot > 0) {
         f.hp -= dot;
         if (f.hp <= 0) {
@@ -1116,8 +1129,8 @@ class Battle {
       for (const m of mates) {
         if (m.dead || m === f) continue;
         if (Math.abs(m.x - f.x) > ab.radius) continue;
+        m.hasteMul = m.hasteT > 0 ? Math.min(m.hasteMul, ab.haste.mul) : ab.haste.mul;
         m.hasteT = Math.max(m.hasteT, ab.haste.dur);
-        m.hasteMul = ab.haste.mul;
       }
       f.auraPulse = 0.5;
       this.fx.push({ type: 'aura', x: f.x, row: f.row, r: ab.radius,
@@ -1145,7 +1158,11 @@ class Battle {
             this.allies.push(m);
           }
         } else {
-          const m = this.spawnEnemy(ab.summon.id, sx); m.summoned = true; m.wave = f.wave;
+          // 적 소환사도 살아 있는 소환물 수를 묶는다. 안 묶으면 균열술사 둘이 2분에 40기를 쌓는다.
+          let mine = 0;
+          for (const e of this.enemies) if (!e.dead && e.summonedBy === f) mine++;
+          if (mine >= (ab.summon.max || ENEMY_SUMMON_CAP)) break;
+          const m = this.spawnEnemy(ab.summon.id, sx); m.summoned = true; m.summonedBy = f; m.wave = f.wave;
         }
       }
       this.fx.push({ type: 'spawn', x: f.x - f.dir * 24, row: f.row, t: 0.4, life: 0.4 });
@@ -1174,7 +1191,7 @@ class Battle {
 
     // 숫자로 밀어붙이면 화면도 프레임도 무너진다. 머릿수는 묶어 두고
     // 대신 한 마리 한 마리를 계속 세게 만든다.
-    if (this.enemies.length >= REINFORCE_CAP) return;
+    if (this.enemies.length + this.burrowers.length >= REINFORCE_CAP) return;
     const mul = this.reinfMul();
     const n = 1 + Math.min(2, Math.floor(this.reinfWave / 5));
     let healers = 0;
@@ -1391,13 +1408,14 @@ class Battle {
   /* 예고 표시를 띄우고, 시간이 되면 그 자리에 내리꽂는다.
    * 무작정 터지지 않으니 피할 틈이 있다. */
   queueStrike(f, o) {
+    const warn = { type: 'warn', x: o.x, r: o.r, t: o.warn, life: o.warn,
+                   color: f.side === 'ally' ? '#6fc0ff' : '#e0503c' };
     this.pending.push({
       t: o.warn, side: f.side, x: o.x, r: o.r, dmg: o.dmg,
       burn: o.burn, stun: o.stun, kind: o.kind, color: f.s.accent, row: f.row,
-      expose: o.expose, src: o.expose ? f : null, noCastle: !!o.noCastle
+      expose: o.expose, src: o.expose ? f : null, noCastle: !!o.noCastle, warnFx: warn
     });
-    this.fx.push({ type: 'warn', x: o.x, r: o.r, t: o.warn, life: o.warn,
-                   color: f.side === 'ally' ? '#6fc0ff' : '#e0503c' });
+    this.fx.push(warn);
   }
 
   updatePending(dt) {
@@ -1405,6 +1423,8 @@ class Battle {
     let landed = false;
     for (const s of this.pending) {
       s.t -= dt;
+      // 예고 표시는 게임 시간을 따른다. 2·3배속에서 포탄이 떨어진 뒤에도 남아 있지 않게.
+      if (s.warnFx) s.warnFx.t = Math.max(0, s.t);
       if (s.t > 0) continue;
       s.done = landed = true;
       const foes = this.foesOf(s.side);
