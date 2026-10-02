@@ -2,6 +2,11 @@
  *  막대 왕국 전쟁 - 캔버스 렌더러 (졸라맨 스타일)
  * ======================================================================= */
 
+/* 신화 필살 연출 중 GLFx 에 따로 없는 것은 비슷한 파티클로 대신한다 */
+/* 매 프레임 matchMedia 를 새로 만들지 않는다. matches 는 설정이 바뀌면 저절로 갱신된다. */
+const REDUCED_MOTION = typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+const GL_MYTHIC_KIND = { sunfall: 'pillar', thunderseal: 'lightning', underworld: 'runes', runeveil: 'runes' };
+
 class Renderer {
   constructor(canvas) {
     this.cv = canvas;
@@ -53,6 +58,7 @@ class Renderer {
   /* 전투가 새로 시작되면 남아 있던 연출을 비운다 */
   resetFx() {
     this.prevCam = undefined;
+    this._glCam = undefined;
     if (this.glfx && this.glfx.ok) this.glfx.clear();
   }
 
@@ -930,7 +936,7 @@ class Renderer {
         // WebGL 이 살아 있으면 같은 자리에 파티클 폭발을 한 번 얹는다
         if (this.glfx && this.glfx.ok && !e._emitted) {
           e._emitted = true;
-          this.glfx.emit(e.kind, x, ground, { color: this.rgbOf(e.color), radius: e.r * this.zoom, scale: cs, big: true });
+          this.glfx.emit(GL_MYTHIC_KIND[e.kind] || e.kind, x, ground, { color: this.rgbOf(e.color), radius: e.r * this.zoom, scale: cs, big: true });
         }
         ctx.save();ctx.translate(x,ground);ctx.strokeStyle=e.color;ctx.fillStyle=e.color;ctx.globalAlpha=Math.min(1,p*2);
         // Ground seals and rising sparks are bounded, with no full-screen flash.
@@ -1615,7 +1621,7 @@ class Renderer {
     const camBefore = this.cam;
     this.follow(battle, dt);
     const ctx = this.ctx;
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduced = REDUCED_MOTION ? REDUCED_MOTION.matches : false;
     const shakeOn = typeof Settings === 'undefined' || Settings.get('shake');
     const sh = (reduced || !shakeOn) ? 0 : (battle.shake || 0);
     this.sceneTime = battle.time;
@@ -1661,10 +1667,13 @@ class Renderer {
     // 병사 그림자(부품마다 드리우는 짧은 그림자)는 절전·느린 기기에서 끈다. 잉크 테두리는 늘 켠다.
     MODEL.depth = this.fxq >= 0.5;
     const g = this.glfx;
+    // 끌어서 옮긴 카메라는 프레임 사이에 바뀌므로 지난 GL 갱신 때의 위치와 비교한다
+    const prevCam = this._glCam === undefined ? camBefore : this._glCam;
+    this._glCam = this.cam;
     if (!g || !g.ok) return;
     g.quality = this.fxq < 0.5 ? 0.45 : (this.fxq < 1 ? 0.7 : 1);
     g.setOffset(shakeX, shakeY);
-    g.update(dt, (camBefore - this.cam) * this.zoom);
+    g.update(dt, (prevCam - this.cam) * this.zoom);
     g.draw();
   }
 
@@ -1785,7 +1794,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
   S.ink = flash ? '#ffffff' : INK;
   // 병종마다 직접 칠하는 부위(짐승·기계·보스 몸통)에도 같은 잉크 테두리를 두른다
   const autoInk = MODEL.ink && !flash;
-  if (autoInk) { ctx.fill = inkedFill; ctx.stroke = inkedStroke; ctx._inkW = 0.95 * s; }
+  if (autoInk) { installInk(ctx); ctx._inkOn = true; ctx._inkW = 0.95 * s; }
   if (HUMANOID[st.shape]) armSwing(S);
   if (st.evo) (NO_CAPE[st.shape] ? evoBanner : evoCape)(S);   // 진화: 등 뒤로 망토, 기계·짐승은 군기
 
@@ -4041,7 +4050,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
 
   if (st.evo) evoCrest(S);                        // 진화: 머리 위 금빛 문장
 
-  if (autoInk) { delete ctx.fill; delete ctx.stroke; }
+  if (autoInk) ctx._inkOn = false;
 
   if (hurt) {
     ctx.strokeStyle = 'rgba(255,255,255,.8)';
@@ -4145,6 +4154,17 @@ function inkedStroke(a) {
     this.strokeStyle = ss; this.lineWidth = lw;
   }
   return _stroke0.apply(this, arguments);
+}
+/* 잉크 감싸개는 컨텍스트마다 한 번만 단다. 몸을 그릴 때마다 fill/stroke 를 바꿔 끼우고
+   delete 하면 컨텍스트 객체가 느린 사전 모드로 떨어져 모든 그리기 호출이 느려진다. */
+function installInk(ctx) {
+  if (ctx._inkInstalled) return;
+  ctx._inkInstalled = true;
+  ctx._inkOn = false;
+  ctx._skipInk = false;
+  ctx._inkW = 1;
+  ctx.fill = function () { return this._inkOn ? inkedFill.apply(this, arguments) : _fill0.apply(this, arguments); };
+  ctx.stroke = function () { return this._inkOn ? inkedStroke.apply(this, arguments) : _stroke0.apply(this, arguments); };
 }
 function inkedFill(a) {
   _fill0.apply(this, arguments);

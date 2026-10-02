@@ -76,6 +76,11 @@ function normalizeSave(raw) {
     const events = {};
     if (s.events && typeof s.events === 'object') for (const st of EVENT_STAGES) { const v = s.events[st.event.id]; if (v >= 1 && v <= 3) events[st.event.id] = v | 0; }
     s.events = events;
+    // 업데이트로 사라진 일일 임무는 버린다. 남은 게 없으면 오늘 임무를 새로 뽑는다.
+    if (s.daily && Array.isArray(s.daily.list)) {
+      s.daily.list = s.daily.list.filter(m => m && missionById(m.id));
+      if (!s.daily.list.length) s.daily = null;
+    } else s.daily = null;
     if (typeof s.sound !== 'boolean') s.sound = true;
     if (!s.owned || typeof s.owned !== 'object') s.owned = {};
     if (!s.achv || typeof s.achv !== 'object') s.achv = {};
@@ -141,9 +146,28 @@ function askConfirm(title, text, onYes) {
 function fmtNum(n) { return Math.floor(n || 0).toLocaleString('en-US'); }
 
 let toastTimer = null;
+/* 매 프레임 갱신하는 HUD 글자. 영어 모드에서는 번역된 글자가 원문과 달라
+   textContent 비교가 늘 어긋나므로, 마지막으로 넣은 원문을 따로 기억한다. */
+function setText(el, v) {
+  v = String(v);
+  if (el._src === v) return;
+  el._src = v;
+  el.textContent = v;
+}
+function setAttr(el, k, v) {
+  const key = '_attr_' + k;
+  if (el[key] === v) return;
+  el[key] = v;
+  el.setAttribute(k, v);
+}
+
 function toast(msg) {
   let t = $('.toast');
-  if (!t) { t = document.createElement('div'); t.className = 'toast'; document.body.appendChild(t); }
+  if (!t) {
+    t = document.createElement('div'); t.className = 'toast';
+    t.setAttribute('role', 'status'); t.setAttribute('aria-live', 'polite');
+    document.body.appendChild(t);
+  }
   t.textContent = msg;
   t.classList.add('show');
   clearTimeout(toastTimer);
@@ -1122,6 +1146,7 @@ function drawBanner(sn) {
 
 /* ------------------------------ 전투 ------------------------------ */
 function startEndless() {
+  if (save.cleared < ENDLESS_UNLOCK_STAGE) return;
   battle = new Battle(0, save, makeEndlessStage());
   $('#scr-battle').classList.remove('hardcore');
   $('#battle-stage').textContent = '무한 전장 · 최고 ' + (save.endlessBest || 0) + '웨이브';
@@ -1290,16 +1315,16 @@ function updateHud() {
     : (battle.wardUp() ? '보스의 결계 · 보스를 쓰러뜨려야 요새가 무너집니다'
       : (battle.reinforcing() ? '적 증원 중' : ''));
   const wp = $('#wave-preview');
-  if (wp.textContent !== preview) wp.textContent = preview;
+  setText(wp, preview);
   wp.hidden = !preview;
-  $('#battle-clock').textContent = Math.floor(battle.time / 60) + ':' + String(Math.floor(battle.time % 60)).padStart(2, '0');
+  setText($('#battle-clock'), Math.floor(battle.time / 60) + ':' + String(Math.floor(battle.time % 60)).padStart(2, '0'));
   cmdBtn.classList.toggle('ready', ready);
-  $('#cmd-cd').textContent = ready ? '준비'
-    : (battle.cmdCd > 0 ? Math.ceil(battle.cmdCd) : '대기');
+  setText($('#cmd-cd'), ready ? '준비'
+    : (battle.cmdCd > 0 ? Math.ceil(battle.cmdCd) : '대기'));
   // 시간 주술사가 살아 있으면 카드가 느리게 찬다는 걸 보여 준다
   $('#cards').classList.toggle('chrono', !!battle.chronoOn);
-  $('#money-txt').textContent = money;
-  $('#wallet-txt').textContent = battle.walletMax;
+  setText($('#money-txt'), money);
+  setText($('#wallet-txt'), battle.walletMax);
   $('#wallet-fill').style.width = (battle.money / battle.walletMax * 100) + '%';
   cardEls.forEach(el => {
     const id = el.dataset.id;
@@ -1319,13 +1344,13 @@ function updateHud() {
         const k = acd > 0 && !ready ? '충전' : '필살';
         const v = ready ? '발동!' : (acd > 0 ? Math.ceil(acd) + '초' : '대상 없음');
         const kEl = act.querySelector('.c-act-k'), vEl = act.querySelector('.c-act-v');
-        if (kEl.textContent !== k) kEl.textContent = k;
-        if (vEl.textContent !== v) vEl.textContent = v;
+        setText(kEl, k);
+        setText(vEl, v);
         el.style.setProperty('--act', (u.active.cd ? Math.min(1, acd / u.active.cd) : 0) * 100 + '%');
-        el.setAttribute('aria-label', u.name + ' ' + u.active.name + ' ' + v);
+        setAttr(el, 'aria-label', u.name + ' ' + u.active.name + ' ' + v);
       } else {
         el.classList.remove('act-ready');
-        el.setAttribute('aria-label', u.name + ' 출진, 비용 ' + u.cost);
+        setAttr(el, 'aria-label', u.name + ' 출진, 비용 ' + u.cost);
       }
     }
     if (cd > 0 && !alive) { cool.classList.remove('hide'); cool.textContent = cd.toFixed(1); }
@@ -1345,21 +1370,27 @@ function flushPlayTime() {
   playAccum = 0;
 }
 
-function showResult() {
-  // 누적 기록과 임무 진행
+/* 누적 기록과 임무 진행. 전투가 끝나는 순간 한 번만 남긴다.
+   결과창이 뜨기 전에 나가도 승리·임무가 사라지지 않는다. */
+function recordBattleOutcome(b) {
+  if (!b || b.outcomeRecorded) return;
+  b.outcomeRecorded = true;
   flushPlayTime();
-  save.stats.bossKills += battle.bossKills || 0;
-  addStat('kills', battle.kills);
-  addStat('bosses', battle.bossKills || 0);
-  if (battle.endless) addStat('endless', battle.wavesCleared || 0);
-  if (battle.state === 'win') {
+  save.stats.bossKills += b.bossKills || 0;
+  addStat('kills', b.kills);
+  addStat('bosses', b.bossKills || 0);
+  if (b.endless) addStat('endless', b.wavesCleared || 0);
+  if (b.state === 'win') {
     save.stats.wins++;
     addStat('wins', 1);
-    if (battle.stars >= 3) addStat('perfect', 1);
+    if (b.stars >= 3) addStat('perfect', 1);
   }
   saveGame(save);
   checkAchievements();
+}
 
+function showResult() {
+  recordBattleOutcome(battle);
   if (battle.endless) { showEndlessResult(); return; }
   if (battle.event) { showEventResult(); return; }
 
@@ -1460,6 +1491,7 @@ function loop(ts) {
     if (BGM.vol > 0) BGM.sting(battle.state === 'win' || (battle.endless && battle.newRecord) ? 'victory' : 'defeat');
     else BGM.stop(0.6);
     const ended = battle;
+    recordBattleOutcome(ended);
     resultTimer = setTimeout(() => {
       if (battle === ended && $('#scr-battle').classList.contains('active')) showResult();
     }, 700);
@@ -1482,6 +1514,7 @@ function bindCanvasDrag(cv) {
   cv.addEventListener('touchstart', e => down(e.touches[0].clientX), { passive: true });
   cv.addEventListener('touchmove', e => { move(e.touches[0].clientX); e.preventDefault(); }, { passive: false });
   cv.addEventListener('touchend', up);
+  cv.addEventListener('touchcancel', up);
   cv.addEventListener('mousedown', e => down(e.clientX));
   window.addEventListener('mousemove', e => move(e.clientX));
   window.addEventListener('mouseup', up);
@@ -1681,9 +1714,14 @@ function init() {
   BGM.setVolume(Settings.get('bgm'));
   BGM.play('title');
   // 모바일은 사용자 조작이 한 번 있어야 오디오가 열린다
-  const wake = () => { SFX.init(); SFX.resume(); BGM.resume(); BGM.prefetch(['map']); };
-  ['pointerdown', 'touchstart', 'keydown'].forEach(ev =>
-    window.addEventListener(ev, wake, { once: true, passive: true }));
+  // 터치는 touchend·click 에서만 사용자 조작으로 치는 브라우저가 있어(iOS) 열릴 때까지 계속 시도한다.
+  const wakeEvents = ['pointerdown', 'touchstart', 'touchend', 'click', 'keydown'];
+  const wake = () => {
+    SFX.init(); SFX.resume(); BGM.resume(); BGM.prefetch(['map']);
+    if (!SFX.ready || (SFX.ctx && SFX.ctx.state === 'running'))
+      wakeEvents.forEach(ev => window.removeEventListener(ev, wake, { passive: true }));
+  };
+  wakeEvents.forEach(ev => window.addEventListener(ev, wake, { passive: true }));
   titleAnim.cv = $('#title-bg');
   titleAnim.ctx = titleAnim.cv.getContext('2d');
   resizeTitle();
@@ -1711,6 +1749,7 @@ function init() {
         const fresh = defaultSave();
         if (!SaveStore.write(fresh, true)) { toast(SaveStore.error); return; }
         save = fresh;
+        $('#save-warning').hidden = true;
         refreshTitleBadges();
         toast('기록을 초기화했습니다');
       });
@@ -1809,7 +1848,7 @@ function init() {
     resizeTitle();
   });
   window.addEventListener('orientationchange', () => {
-    setTimeout(() => { if (renderer) renderer.resize(); resizeTitle(); }, 250);
+    setTimeout(() => { if (renderer) { renderer.resize(); renderer.syncGlSize(); } resizeTitle(); }, 250);
   });
   $$('#training-filters button').forEach(el => el.addEventListener('click', () => {
     trainingFilter = el.dataset.filter;
@@ -1822,6 +1861,14 @@ function init() {
     lastTs = 0;
   });
   window.addEventListener('keydown', e => {
+    // Esc 는 안드로이드 뒤로 가기처럼 맨 위 창을 닫는다 (전투 화면은 정지 확인)
+    if (e.key === 'Escape' && !e.repeat) {
+      if (document.querySelector('.modal.show') || $('#pull-result').classList.contains('show') ||
+          (battle && $('#scr-battle').classList.contains('active'))) {
+        e.preventDefault(); window.__androidBack();
+      }
+      return;
+    }
     if (e.repeat || e.ctrlKey || e.metaKey || e.altKey || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
     if (!battle || battle.state !== 'play' || !$('#scr-battle').classList.contains('active') || $('.modal.show')) return;
     if (e.code === 'Space') { e.preventDefault(); $('#btn-pause').click(); return; }

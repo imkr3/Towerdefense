@@ -23,7 +23,10 @@ const SFX = {
   },
 
   resume: function () {
-    if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+    // iOS 는 전화·알림 뒤에 'interrupted' 로 멈춘다
+    if (this.ctx && this.ctx.state !== 'running' && this.ctx.state !== 'closed') {
+      try { const p = this.ctx.resume(); if (p && p.catch) p.catch(() => {}); } catch (e) { /* 다음 입력에 다시 */ }
+    }
   },
 
   /* 짧은 음정 */
@@ -199,6 +202,8 @@ const BGM = {
     this.vol = v;
     if (!this.out) return;
     this.out.gain.setTargetAtTime(v * 0.6, SFX.ctx.currentTime, 0.08);
+    // 소리를 끄면 곡도 멈춘다. 꺼 둔 사이 화면이 바뀌면 다시 켤 때 새 곡이 나와야 한다.
+    if (v <= 0) { this.fadeOut(0.3); return; }
     if (was <= 0 && v > 0 && this.name && !this.src) this.resume();
   },
 
