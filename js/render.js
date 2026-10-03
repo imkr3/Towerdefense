@@ -2,6 +2,9 @@
  *  막대 왕국 전쟁 - 캔버스 렌더러 (졸라맨 스타일)
  * ======================================================================= */
 
+/* 신화 필살 이름 → WebGL 폭발 종류 (gl-fx 의 emit 에 같은 이름이 없는 것만) */
+const MYTHIC_GL_KIND = { thunderseal: 'lightning', sunfall: 'holy', runeveil: 'runes', underworld: 'pillar' };
+
 class Renderer {
   constructor(canvas) {
     this.cv = canvas;
@@ -42,6 +45,9 @@ class Renderer {
                      Math.min(this.h * 0.86, this.h - hudH - 26)));
     // cs: 지면 위 여유 높이에 맞춘 캐릭터 배율
     this.cs = Math.max(0.70, Math.min(1.45, this.groundY / 350));
+    // WebGL 층도 같이 맞춘다. 숨은 화면에서 만들어져 320×240 으로 남거나,
+    // 전투 밖에서 화면을 돌린 뒤 크기가 어긋난 채 전투에 들어가던 것을 막는다.
+    this.syncGlSize();
   }
 
   /* WebGL 레이어를 2D 캔버스와 같은 크기로 맞춘다 */
@@ -52,7 +58,7 @@ class Renderer {
 
   /* 전투가 새로 시작되면 남아 있던 연출을 비운다 */
   resetFx() {
-    this.prevCam = undefined;
+    this._glCam = undefined;
     if (this.glfx && this.glfx.ok) this.glfx.clear();
   }
 
@@ -110,7 +116,10 @@ class Renderer {
    * 예전엔 카메라가 움직일 때마다(전투 중엔 거의 매 프레임) 화면 전체를 처음부터 다시 칠했다. */
   drawBackground(look) {
     const far = Math.round(this.cam * BG_FAR_PAR);          // 먼 겹에서 가장 빠른 시차가 움직인 픽셀
-    const key = look + '|' + this.w + 'x' + this.h + '|' + this.groundY + '|' + far;
+    // 파도·해초·등대 불빛처럼 시간으로 움직이는 겹이 있는 전장은 초당 BG_ANIM_FPS 번 다시 그린다.
+    // 카메라만 보고 캐시하면 카메라가 멈춘 동안 바다가 얼어붙었다가 움직일 때 튀었다.
+    const anim = lookAnimates(look) ? '|' + Math.floor((this.clock || 0) * BG_ANIM_FPS) : '';
+    const key = look + '|' + this.w + 'x' + this.h + '|' + this.groundY + '|' + far + anim;
     if (this._bgKey !== key) {
       if (!this._bg) {
         this._bg = document.createElement('canvas');
@@ -961,7 +970,9 @@ class Renderer {
         // WebGL 이 살아 있으면 같은 자리에 파티클 폭발을 한 번 얹는다
         if (this.glfx && this.glfx.ok && !e._emitted) {
           e._emitted = true;
-          this.glfx.emit(e.kind, x, ground, { color: this.rgbOf(e.color), radius: e.r * this.zoom, scale: cs, big: true });
+          // 필살 고유 이름 중 WebGL 쪽에 따로 없는 것은 가장 가까운 폭발로 바꿔 부른다 (전엔 아무것도 안 터졌다)
+          const kind = MYTHIC_GL_KIND[e.kind] || e.kind;
+          this.glfx.emit(kind, x, ground, { color: this.rgbOf(e.color), radius: e.r * this.zoom, scale: cs, big: true });
         }
         ctx.save();ctx.translate(x,ground);ctx.strokeStyle=e.color;ctx.fillStyle=e.color;ctx.globalAlpha=Math.min(1,p*2);
         // Ground seals and rising sparks are bounded, with no full-screen flash.
@@ -1197,6 +1208,7 @@ class Renderer {
         ctx.moveTo(x, y - 6 * cs); ctx.lineTo(x2, y - 6 * cs); ctx.stroke();
         ctx.globalAlpha = 1;
       } else if (e.type === 'corpse') {
+        if (x < -140 || x > this.w + 140) continue;   // 화면 밖 시체는 그리지 않는다 (병사와 같은 기준)
         // 쓰러지는 연출
         const k = 1 - p;                              // 0 -> 1 로 진행
         // 뒤로 밀리며 넘어가고(가속), 바닥에 닿으면 한 번 튄 뒤 가라앉는다
@@ -1729,7 +1741,6 @@ class Renderer {
     this._battle = battle;
     this.clock = (this.clock || 0) + dt;             // 전투가 끝나 시간이 멈춰도 도는 시계
     this.showDmg = typeof Settings === 'undefined' || Settings.get('dmgNums');
-    const camBefore = this.cam;
     this.follow(battle, dt);
     const ctx = this.ctx;
     if (!this._rmq) this._rmq = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -1769,12 +1780,12 @@ class Renderer {
     ctx.restore();
     this.drawMiniMap(battle);
     this.drawBossBar(battle);
-    this.drawGlFx(battle, fxDt === undefined ? dt : fxDt, camBefore, shakeX, shakeY);
+    this.drawGlFx(battle, fxDt === undefined ? dt : fxDt, shakeX, shakeY);
   }
 
   /* WebGL 연출 레이어. 파티클은 화면 좌표로 살기 때문에 카메라가 흐른 만큼
    * 같이 밀어 주고, 화면 흔들림도 같은 값으로 따라가게 한다. */
-  drawGlFx(battle, dt, camBefore, shakeX, shakeY) {
+  drawGlFx(battle, dt, shakeX, shakeY) {
     if (this.glfx && this.glfx.ok) this.glfx.floorY = this.rowY(2) + 14 * this.cs;
     // 병사 그림자(부품마다 드리우는 짧은 그림자)는 절전·느린 기기에서 끈다. 잉크 테두리는 늘 켠다.
     MODEL.depth = this.fxq >= 0.5;
@@ -1782,7 +1793,11 @@ class Renderer {
     if (!g || !g.ok) return;
     g.quality = this.fxq < 0.5 ? 0.45 : (this.fxq < 1 ? 0.7 : 1);
     g.setOffset(shakeX, shakeY);
-    g.update(dt, (camBefore - this.cam) * this.zoom);
+    // 지난 프레임에 그린 카메라 기준으로 민다. 손가락으로 끄는 카메라(panBy)는 render 밖에서
+    // 바뀌므로, render 안에서 잰 '이번 프레임 전' 값으로는 끄는 동안 파티클이 화면에 붙어 있었다.
+    const prev = this._glCam === undefined ? this.cam : this._glCam;
+    this._glCam = this.cam;
+    g.update(dt, (prev - this.cam) * this.zoom);
     g.draw();
   }
 
@@ -5856,6 +5871,16 @@ const FIELD_LOOKS = {
 const FIELD_PALETTES = Object.keys(FIELD_LOOKS).map(k => FIELD_LOOKS[k]);
 /* 시차를 두고 같은 모양을 반복해 그린다 */
 const BG_FAR_PAR = 0.6, BG_FAR_DPR = 1.25;   // 먼 배경 겹: 가장 빠른 시차, 해상도 상한
+const BG_ANIM_FPS = 15;                         // 시간으로 움직이는 먼 겹을 다시 그리는 빈도
+const _lookAnim = {};
+function lookAnimates(look) {
+  if (_lookAnim[look] === undefined) {
+    const pal = FIELD_LOOKS[look] || FIELD_LOOKS.meadow;
+    _lookAnim[look] = (pal.layers || []).some(n => LOOK_LAYERS[n] && LOOK_LAYERS[n].anim &&
+                                                   (LOOK_LAYERS[n].z === 'far' || LOOK_LAYERS[n].z === 'back'));
+  }
+  return _lookAnim[look];
+}
 function repL(R, cam, par, period, fn) {
   const o = cam * par;
   const k0 = Math.floor((o - 240) / period), k1 = Math.ceil((o + R.w + 240) / period);
@@ -6057,7 +6082,7 @@ const LOOK_LAYERS = {
     });
   } },
   /* ---------------- 3.3 바다 ---------------- */
-  sea: { z: 'back', fn: (R, ctx, pal, cam) => {
+  sea: { z: 'back', anim: true, fn: (R, ctx, pal, cam) => {
     const gy = R.groundY, t = R.clock || 0, top = gy - 46;
     const g = ctx.createLinearGradient(0, top, 0, gy);
     g.addColorStop(0, shade(pal.ridgeFar, -0.05)); g.addColorStop(1, shade(pal.ridge, 0.15));
@@ -6086,7 +6111,7 @@ const LOOK_LAYERS = {
       ctx.fillStyle = c; ctx.beginPath(); ctx.arc(x + 20, gy - 8, 10, Math.PI, 0); ctx.fill();
     });
   } },
-  lighthouseTower: { z: 'far', fn: (R, ctx, pal, cam) => {
+  lighthouseTower: { z: 'far', anim: true, fn: (R, ctx, pal, cam) => {
     const gy = R.groundY, t = R.clock || 0;
     repL(R, cam, 0.1, 1500, (x) => {
       const X = x + 600;
@@ -6103,14 +6128,14 @@ const LOOK_LAYERS = {
       ctx.fillStyle = '#fff4c0'; ctx.beginPath(); ctx.arc(X, gy - 198, 6, 0, 7); ctx.fill();
     });
   } },
-  stormClouds: { z: 'far', fn: (R, ctx, pal, cam) => {
+  stormClouds: { z: 'far', anim: true, fn: (R, ctx, pal, cam) => {
     const t = R.clock || 0, gy = R.groundY;
     ctx.fillStyle = 'rgba(40,48,60,.55)';
     repL(R, cam, 0.05, 300, (x, k) => { for (let j = 0; j < 3; j++) { ctx.beginPath(); ctx.ellipse(x + j * 60, gy * 0.18 + _h(k + j) * 30, 70, 26, 0, 0, 7); ctx.fill(); } });
     const f = (t * 0.37) % 4;
     if (f < 0.12) { ctx.fillStyle = 'rgba(220,235,255,' + (0.25 * (1 - f / 0.12)) + ')'; ctx.fillRect(0, 0, R.w, gy); }
   } },
-  kelp: { z: 'back', fn: (R, ctx, pal, cam) => {
+  kelp: { z: 'back', anim: true, fn: (R, ctx, pal, cam) => {
     const gy = R.groundY, t = R.clock || 0;
     ctx.strokeStyle = shade(pal.ridge, 0.25); ctx.lineWidth = 4;
     repL(R, cam, 0.4, 70, (x, k) => {
@@ -6119,7 +6144,7 @@ const LOOK_LAYERS = {
       ctx.quadraticCurveTo(x + Math.sin(t + k) * 14, gy - hh * 0.5, x + Math.sin(t * 0.8 + k) * 10, gy - hh); ctx.stroke();
     });
   } },
-  abyssVents: { z: 'back', fn: (R, ctx, pal, cam) => {
+  abyssVents: { z: 'back', anim: true, fn: (R, ctx, pal, cam) => {
     const gy = R.groundY, t = R.clock || 0;
     repL(R, cam, 0.35, 380, (x, k) => {
       ctx.fillStyle = '#0a141a'; ctx.beginPath(); ctx.moveTo(x - 30, gy); ctx.lineTo(x - 8, gy - 46); ctx.lineTo(x + 8, gy - 46); ctx.lineTo(x + 30, gy); ctx.fill();
@@ -6334,21 +6359,22 @@ const PROP_DRAW = {
 function wx(i, t, speed, W) { return ((_h(i) * W * 1.4 + t * speed) % W + W) % W; }
 const WEATHER = {
   /* 3.3 바다 날씨 */
-  rain: (c, W, H, gy, t, cam, q) => { c.strokeStyle = 'rgba(200,215,235,.55)'; c.lineWidth = 1.2; for (let i = 0; i < 120 * q; i++) {
+  /* 같은 색 알갱이는 한 경로에 모아 한 번에 그린다 (알갱이마다 stroke 하면 호출이 백 번 넘었다) */
+  rain: (c, W, H, gy, t, cam, q) => { c.strokeStyle = 'rgba(200,215,235,.55)'; c.lineWidth = 1.2; c.beginPath(); for (let i = 0; i < 120 * q; i++) {
       const x = ((_h(i) * W * 1.3 - t * 140 - cam * 0.3) % (W + 40) + W + 40) % (W + 40) - 20, y = ((_h(i + 9) * H + t * (520 + _h(i + 4) * 160)) % H);
-      c.beginPath(); c.moveTo(x, y); c.lineTo(x - 4, y + 14); c.stroke(); } },
-  bubbles: (c, W, H, gy, t, cam, q) => { c.strokeStyle = 'rgba(200,245,255,.55)'; c.lineWidth = 1.1; for (let i = 0; i < 30 * q; i++) {
+      c.moveTo(x, y); c.lineTo(x - 4, y + 14); } c.stroke(); },
+  bubbles: (c, W, H, gy, t, cam, q) => { c.strokeStyle = 'rgba(200,245,255,.55)'; c.lineWidth = 1.1; c.beginPath(); for (let i = 0; i < 30 * q; i++) {
       const x = (_h(i) * W + Math.sin(t * 1.4 + i) * 10 - cam * 0.2 % W + W) % W, y = gy - ((t * (24 + _h(i + 3) * 30) + _h(i + 9) * gy) % gy);
-      c.beginPath(); c.arc(x, y, 1.5 + _h(i + 1) * 2.5, 0, 7); c.stroke(); } },
+      const r = 1.5 + _h(i + 1) * 2.5; c.moveTo(x + r, y); c.arc(x, y, r, 0, 7); } c.stroke(); },
   spray: (c, W, H, gy, t, cam, q) => { c.fillStyle = 'rgba(235,248,255,.6)'; for (let i = 0; i < 26 * q; i++) {
       const x = wx(i, t, 40 + _h(i + 2) * 40, W + 40) - 20, y = gy - 20 - ((_h(i + 9) * 80 + t * 30 + Math.sin(t * 2 + i) * 10) % 80);
       c.fillRect(x, y, 2, 1.4); } },
-  snow: (c, W, H, gy, t, cam, q) => { c.fillStyle = 'rgba(255,255,255,.85)'; for (let i = 0; i < 80 * q; i++) {
+  snow: (c, W, H, gy, t, cam, q) => { c.fillStyle = 'rgba(255,255,255,.85)'; c.beginPath(); for (let i = 0; i < 80 * q; i++) {
       const x = (wx(i, t, -8 - _h(i + 3) * 10, W + 40) + Math.sin(t * 1.3 + i) * 8 - cam * 0.2 % (W + 40) + W + 40) % (W + 40) - 20, y = ((_h(i + 9) * H + t * (28 + _h(i + 5) * 30)) % H);
-      c.beginPath(); c.arc(x, y, 1 + _h(i + 1) * 1.8, 0, 7); c.fill(); } },
-  blizzard: (c, W, H, gy, t, cam, q) => { c.strokeStyle = 'rgba(255,255,255,.7)'; c.lineWidth = 1.4; for (let i = 0; i < 150 * q; i++) {
+      const r = 1 + _h(i + 1) * 1.8; c.moveTo(x + r, y); c.arc(x, y, r, 0, 7); } c.fill(); },
+  blizzard: (c, W, H, gy, t, cam, q) => { c.strokeStyle = 'rgba(255,255,255,.7)'; c.lineWidth = 1.4; c.beginPath(); for (let i = 0; i < 150 * q; i++) {
       const x = ((_h(i) * W * 1.5 - t * (260 + _h(i + 2) * 160)) % (W + 60) + W + 60) % (W + 60) - 30, y = ((_h(i + 9) * H + t * (90 + _h(i + 4) * 40)) % H);
-      c.beginPath(); c.moveTo(x, y); c.lineTo(x + 9, y - 3); c.stroke(); }
+      c.moveTo(x, y); c.lineTo(x + 9, y - 3); } c.stroke();
     c.fillStyle = 'rgba(230,236,242,.12)'; c.fillRect(0, 0, W, H); },
   embers: (c, W, H, gy, t, cam, q) => { for (let i = 0; i < 44 * q; i++) {
       const x = (wx(i, t, 6 + _h(i + 2) * 10, W) + Math.sin(t * 2 + i) * 6), y = H - ((_h(i + 9) * H + t * (30 + _h(i + 4) * 40)) % H);

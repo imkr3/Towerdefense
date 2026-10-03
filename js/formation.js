@@ -296,7 +296,9 @@ function renderFormationSide() {
     load.disabled = !p.length;
     load.addEventListener('click', () => {
       const unlocked = new Set(unlockedUnits().map(x => x.id));
-      const next = p.filter(id => unlocked.has(id)).slice(0, LOADOUT_MAX);
+      let heroes = 0;
+      const next = p.filter(id => unlocked.has(id) && (!isHeroUnit(UNIT_BY_ID[id]) || ++heroes <= HERO_SLOT_MAX))
+        .slice(0, LOADOUT_MAX);
       if (!next.length) { toast('불러올 편성이 없습니다'); return; }
       save.loadout = next;
       SFX.ui();
@@ -407,7 +409,9 @@ function dragMove(e) {
 function dragUp(e) {
   const d = fmDrag;
   if (!d || e.pointerId !== d.id) return;
-  if (!d.active) {
+  // 꾹 눌러 끌기가 시작됐어도 손가락이 거의 안 움직였으면 누르기로 본다 (조금 길게 누른 탭)
+  const still = Math.hypot(d.x - d.x0, d.y - d.y0) < DRAG_START_PX;
+  if (!d.active || (d.held && still)) {
     dragEnd();
     // 끌지 않고 뗐으면 누르기
     fmFocus = d.src.id;

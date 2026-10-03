@@ -604,6 +604,8 @@ button:focus-visible{outline:3px solid #48b9ee;outline-offset:3px;}
 #modal-confirm{z-index:120;}
 #modal-save .modal-card,#modal-slots .modal-card{max-height:90vh;overflow:auto;}
 @media(max-height:450px){.title-btns{gap:4px}.title-btns .btn{padding:6px}}
+/* 작은 폰 가로(높이 360 이하): 영어 버튼이 두세 줄로 접혀 아래 버튼이 화면 밖으로 밀려났다 */
+@media(max-height:360px){.title-btns{width:min(330px,42vw);max-height:calc(100vh - 12px);overflow-y:auto;overscroll-behavior:contain}.title-btns .btn{font-size:12px;line-height:1.2}}
 
 .r-UR{--rarity:#68f5e5;border-color:#68f5e5!important}.rare-tag.r-UR,.pull-head.r-UR{color:#68f5e5;background:linear-gradient(120deg,#263d69,#56306a,#245851)}
 .active-desc{color:#97e4ec;font-size:11px;line-height:1.5;margin:3px 0}

@@ -905,7 +905,7 @@ test('Field cap: at most 50 deployed soldiers, summons stop at 80 in total', () 
 test('Renderer and HUD stay light: frame cap, HUD diffing, cached background layers', () => {
   const main = fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8');
   const render = fs.readFileSync(path.join(__dirname, '../js/render.js'), 'utf8');
-  assert.ok(/FRAME_MIN_MS/.test(main) && /ts - lastTs < /.test(main), 'frame cap');
+  assert.ok(/FRAME_MIN_MS/.test(main) && /ts < nextFrameTs/.test(main), 'frame cap');
   const hud = main.slice(main.indexOf('function updateHud()'), main.indexOf('function updateHud()') + 4000);
   assert.ok(!/\$\('#/.test(hud), 'updateHud must not query the DOM every frame');
   assert.ok(!/\.textContent = /.test(hud.replace('el.textContent = v', '')), 'updateHud writes text only through hudText');
@@ -921,6 +921,28 @@ test('Undying heroes show their second wind once', () => {
   b.update(1 / 30); assert.equal(b.fx.filter(e => e.type === 'revive').length, 1, 'one revive effect');
   b.update(1 / 30); assert.equal(b.fx.filter(e => e.type === 'revive').length, 1, 'not repeated');
   th.takeDamage(th.maxHp * 5); assert.ok(th.dead, 'only once');
+});
+
+/* ---------------- 3.5.1 버그 손질 ---------------- */
+test('A weaker haste neither overwrites nor stretches a stronger one', () => {
+  const b = battle(); const a = b.makeAlly(U.spear, 400); b.allies.push(a);
+  b.money = 1e6; b.cmdCd = 0; b.useCommand();
+  assert.equal(a.hasteMul, 0.6);
+  a.giveHaste(0.7, 30); assert.equal(a.hasteMul, 0.6, 'herald pulse keeps the command haste'); assert.ok(a.hasteT <= 8, 'and does not stretch it');
+  a.hasteT = 0; a.giveHaste(0.7, 3); assert.equal(a.hasteMul, 0.7, 'weaker haste lands once the strong one ends');
+});
+test('Executions take only the first life of a twice-killed foe', () => {
+  const b = battle(); const e = b.spawnEnemy('deepone', 900); e.hp = e.maxHp * 0.05;
+  assert.ok(b.tryExecute(e, 0.3)); assert.ok(!e.dead && e.usedRevive, 'revived');
+  e.hp = e.maxHp * 0.05; assert.ok(b.tryExecute(e, 0.3)); assert.ok(e.dead, 'second time it stays down');
+});
+test('Enemy summoners stop at the summon cap; blocked reinforcements are not counted', () => {
+  const b = battle({ baseHp: 1e9, money: 0, rate: 0, waves: [], reward: 0 });
+  for (let i = 0; i < 60; i++) b.spawnEnemy('goblin', 1500);
+  const lich = b.spawnEnemy('lich', 1700); const n = b.enemies.length;
+  for (let i = 0; i < 400; i++) b.supportTick(lich, b.enemies, 0.1, false);
+  assert.equal(b.enemies.length, n, 'no summons past the cap');
+  b.reinfT = 0; const w = b.reinfWave; b.tickReinforce(0.1); assert.equal(b.reinfWave, w, 'capped wave not counted');
 });
 
 console.log(count + ' regression checks passed');

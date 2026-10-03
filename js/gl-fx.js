@@ -97,6 +97,18 @@ class GLFx {
     // 합성식이 포화형이어서 1 을 넘겨도 흰 덩어리로 터지지는 않는다.
     this.gain = 1.15;
     this.ok = this._init();
+    // 앱을 내렸다 올리면(특히 안드로이드) GPU 컨텍스트를 잃을 수 있다. 잃은 동안은 ok=false 로
+    // 렌더러가 Canvas2D 연출로 돌아가게 하고, 되살아나면 다시 만든다.
+    // preventDefault 를 해야 브라우저가 컨텍스트를 되살려 준다.
+    canvas.addEventListener('webglcontextlost', e => {
+      e.preventDefault();
+      this.ok = false;
+      this.count = 0;
+    });
+    canvas.addEventListener('webglcontextrestored', () => {
+      this.ok = this._init();
+      if (this.ok) this.resize(this.w, this.h, this.dpr);
+    });
   }
 
   _init() {
@@ -781,6 +793,9 @@ class GLFx {
         }
         break;
       }
+      // 모르는 이름은 조용히 사라지지 않고 기본 폭발로 터진다
+      default:
+        if (kind !== 'burst') this.emit('burst', x, y, opt);
     }
   }
 }

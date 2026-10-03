@@ -32,7 +32,7 @@ const SaveStore = {
     for (const k of ['levels','upgrades','stars','stats']) for (const v of Object.values(s[k] || {})) if (!num(v)) throw Error('저장 능력치 오류: ' + k);
     if (s.evo !== undefined && (!obj(s.evo) || Object.values(s.evo).some(v => typeof v !== 'boolean'))) throw Error('진화 데이터 오류');
     if (s.loadout !== undefined && (!Array.isArray(s.loadout) || s.loadout.some(v => typeof v !== 'string'))) throw Error('편성 데이터 오류');
-    if (s.daily != null && (!obj(s.daily) || !Array.isArray(s.daily.list) || s.daily.list.some(m => !obj(m) || !missionById(m.id) || !num(m.got)))) throw Error('일일 임무 데이터 오류');
+    if (s.daily != null && (!obj(s.daily) || !Array.isArray(s.daily.list) || s.daily.list.some(m => !obj(m) || typeof m.id !== 'string' || !num(m.got)))) throw Error('일일 임무 데이터 오류');
     return s;
   },
   parse(raw) {
@@ -77,7 +77,10 @@ const SaveStore = {
         let valid = true;
         try { this.parse(previous); } catch (e) { valid = false; }
         if (valid) {
-          if (explicitRestore) localStorage.setItem(this.key + '-restore-point', previous);
+          if (explicitRestore) {
+            localStorage.setItem(this.key + '-restore-point', previous);
+            localStorage.setItem(this.key + '-restore-point-at', String(Date.now()));
+          }
           localStorage.setItem(this.backupKey, previous);
         }
         else {

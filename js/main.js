@@ -159,7 +159,8 @@ function todayKey() {
 /* 날짜가 바뀌면 임무를 새로 뽑는다 */
 function refreshDaily() {
   const key = todayKey();
-  if (save.daily && save.daily.date === key) return;
+  // 임무 목록이 바뀌어 모르는 임무가 섞인 날은 새로 뽑는다 (예전엔 저장 전체를 거부해 슬롯이 잠겼다)
+  if (save.daily && save.daily.date === key && save.daily.list.every(m => missionById(m.id))) return;
   save.daily = {
     date: key,
     list: dailyMissionIds(key).map(id => ({ id: id, got: 0, claimed: false }))
@@ -341,6 +342,7 @@ function trailPoint(k, n) {
 
 function renderMap() {
   $('#map-coins').textContent = fmtNum(save.coins);
+  $('#tab-stones').textContent = save.stones;     // 제단을 열기 전엔 갱신되지 않아 0 으로 보였다
   updateQuestBadge();
   const pct = (save.cleared / STAGES.length) * 100;
   $('#map-progress').style.width = pct + '%';
@@ -458,7 +460,7 @@ function renderStageDetail(i) {
     const fb = document.createElement('button');
     fb.className = 'btn ghost sd-formation';
     fb.textContent = '편성';
-    fb.addEventListener('click', () => openFormation(ch.endless ? 'endless' : null));
+    fb.addEventListener('click', () => openFormation(ch.endless && save.cleared >= ENDLESS_UNLOCK_STAGE ? 'endless' : null));
     box.appendChild(fb);
     return;
   }
@@ -841,6 +843,7 @@ function renderTraining() {
             if (save.loadout.length <= 1) { toast('최소 1개 병종은 편성해야 합니다'); return; }
             save.loadout = save.loadout.filter(id => id !== u.id);
           } else {
+            if (!heroRoom(u.id)) return;          // 편성 화면과 같이 전설·신화는 HERO_SLOT_MAX 까지
             save.loadout.push(u.id);
           }
           saveGame(save);
@@ -1123,6 +1126,8 @@ function drawBanner(sn) {
 
 /* ------------------------------ 전투 ------------------------------ */
 function startEndless() {
+  if (save.cleared < ENDLESS_UNLOCK_STAGE) return;     // 편성 화면의 출진 버튼으로 잠긴 무한 전장에 들어가던 길을 막는다
+  syncLoadout();                 // 방금 해금된 병종도 이번 전투에 데려간다
   battle = new Battle(0, save, makeEndlessStage());
   $('#scr-battle').classList.remove('hardcore');
   $('#battle-stage').textContent = '무한 전장 · 최고 ' + (save.endlessBest || 0) + '웨이브';
@@ -1132,6 +1137,7 @@ function startEndless() {
 function startEvent(k) {
   if (!eventOpen(save, k)) return;
   const st = EVENT_STAGES[k];
+  syncLoadout();
   battle = new Battle(STAGES.length + k, save, st);
   battle.eventIndex = k;
   $('#scr-battle').classList.add('hardcore');
@@ -1141,6 +1147,8 @@ function startEvent(k) {
 }
 
 function startBattle(index, hard) {
+  // 결과창의 '다음 전장' 은 화면 전환 없이 바로 온다. 방금 해금된 병종이 편성에서 빠지지 않게 먼저 맞춘다.
+  syncLoadout();
   battle = new Battle(index, save, null, { hard: !!hard });
   $('#battle-stage').textContent = (hard ? '💀 ' : '') + (index + 1) + '. ' + battle.stage.name;
   $('#scr-battle').classList.toggle('hardcore', !!hard);
@@ -1358,20 +1366,28 @@ function flushPlayTime() {
   playAccum = 0;
 }
 
-function showResult() {
-  // 누적 기록과 임무 진행
+/* 누적 기록과 임무 진행. 전투가 끝난 그 프레임에 바로 적는다 —
+ * 결과창(0.7초 뒤)에서 적으면 그 사이 ✕·뒤로 가기로 나갈 때 기록이 사라졌다. */
+function recordBattle(b) {
+  if (b.recorded) return;
+  b.recorded = true;
   flushPlayTime();
-  save.stats.bossKills += battle.bossKills || 0;
-  addStat('kills', battle.kills);
-  addStat('bosses', battle.bossKills || 0);
-  if (battle.endless) addStat('endless', battle.wavesCleared || 0);
-  if (battle.state === 'win') {
+  save.stats.bossKills += b.bossKills || 0;
+  addStat('kills', b.kills);
+  addStat('bosses', b.bossKills || 0);
+  if (b.cmdUses) addStat('commands', b.cmdUses);
+  if (b.endless) addStat('endless', b.wavesCleared || 0);
+  if (b.state === 'win') {
     save.stats.wins++;
     addStat('wins', 1);
-    if (battle.stars >= 3) addStat('perfect', 1);
+    if (b.stars >= 3) addStat('perfect', 1);
   }
   saveGame(save);
   checkAchievements();
+}
+
+function showResult() {
+  recordBattle(battle);
 
   if (battle.endless) { showEndlessResult(); return; }
   if (battle.event) { showEventResult(); return; }
@@ -1445,10 +1461,13 @@ function showEndlessResult() {
 let bossMusic = false, bossMusicT = 0;
 /* 3.5: 화면 주사율이 90·120Hz 인 폰은 requestAnimationFrame 이 그만큼 자주 와서
  * 같은 장면을 두 배로 그리느라 뜨거워졌다. 60fps(절전은 30fps)로 묶는다. */
-const FRAME_MIN_MS = { auto: 14, high: 14, low: 30 };
+/* 3.5.1: '지난 프레임에서 14ms 지났나' 로 거르면 90Hz(11.1ms 간격)는 한 장 걸러 45fps,
+ * 144Hz 는 48fps 로 떨어졌다. 다음 프레임 시각을 정해 두고 그 시각을 넘긴 첫 프레임을 그린다
+ * — 고르지 않아도 평균은 상한에 맞는다. */
+const FRAME_MIN_MS = { auto: 1000 / 60, high: 1000 / 60, low: 1000 / 30 };
 const IDLE_FRAME_MS = 48;      // 멈춤·결과 화면처럼 거의 움직이지 않을 때 (약 20fps)
-const TITLE_FRAME_MS = 30;     // 타이틀 배경 행진 (약 30fps)
-let battleScr = null;
+const TITLE_FRAME_MS = 1000 / 30;   // 타이틀 배경 행진 (약 30fps)
+let battleScr = null, nextFrameTs = 0;
 function loop(ts) {
   requestAnimationFrame(loop);
   if (!lastTs) lastTs = ts;
@@ -1456,9 +1475,11 @@ function loop(ts) {
   const inBattle = !titleAnim.on && battle && battleScr.classList.contains('active');
   const modal = inBattle && !!document.querySelector('.modal.show');
   const idle = inBattle && (paused || modal || battle.state !== 'play');
-  const minMs = Math.max(FRAME_MIN_MS[Settings.get('quality')] || 14,
+  const minMs = Math.max(FRAME_MIN_MS[Settings.get('quality')] || FRAME_MIN_MS.auto,
                          titleAnim.on ? TITLE_FRAME_MS : (idle ? IDLE_FRAME_MS : 0));
-  if (ts - lastTs < minMs) return;
+  if (ts < nextFrameTs - 1.5) return;
+  // 한참 밀렸으면(탭 전환·느린 프레임) 지금부터 다시 센다
+  nextFrameTs = ts - nextFrameTs > minMs ? ts + minMs : nextFrameTs + minMs;
   let dt = (ts - lastTs) / 1000;
   lastTs = ts;
   if (dt > 0.1) dt = 0.1;
@@ -1487,6 +1508,7 @@ function loop(ts) {
     if (BGM.vol > 0) BGM.sting(battle.state === 'win' || (battle.endless && battle.newRecord) ? 'victory' : 'defeat');
     else BGM.stop(0.6);
     const ended = battle;
+    recordBattle(ended);
     resultTimer = setTimeout(() => {
       if (battle === ended && $('#scr-battle').classList.contains('active')) showResult();
     }, 700);
@@ -1711,6 +1733,10 @@ function init() {
   const wake = () => { SFX.init(); SFX.resume(); BGM.resume(); BGM.prefetch(['map']); };
   ['pointerdown', 'touchstart', 'keydown'].forEach(ev =>
     window.addEventListener(ev, wake, { once: true, passive: true }));
+  // 앱 전환·전화 뒤에 오디오가 다시 잠기면(iOS 'interrupted', 제스처 밖 resume 거부) 다음 터치에서 깨운다
+  window.addEventListener('pointerdown', () => {
+    if (SFX.ctx && SFX.ctx.state !== 'running') { SFX.resume(); BGM.resume(); }
+  }, { passive: true });
   titleAnim.cv = $('#title-bg');
   titleAnim.ctx = titleAnim.cv.getContext('2d');
   resizeTitle();
@@ -2034,7 +2060,11 @@ function initSaveManager() {
   });
   $('#btn-previous-save').addEventListener('click', () => {
     try {
-      const raw = localStorage.getItem(SaveStore.key + '-restore-point') || localStorage.getItem(SaveStore.backupKey);
+      // 초기화·복원 직전 지점은 하루 안에만 우선한다. 그 뒤엔 최근 자동 백업이 '이전 저장' 이다
+      // (예전엔 몇 주 전 초기화 직전 상태가 계속 먼저 나왔다).
+      const at = Number(localStorage.getItem(SaveStore.key + '-restore-point-at')) || 0;
+      const point = Date.now() - at < 86400000 ? localStorage.getItem(SaveStore.key + '-restore-point') : null;
+      const raw = point || localStorage.getItem(SaveStore.backupKey);
       if (!raw) { toast('남아 있는 이전 백업이 없습니다.'); return; }
       window.receiveSaveBackup(raw);
     } catch (e) { toast('이전 백업을 읽지 못했습니다.'); }

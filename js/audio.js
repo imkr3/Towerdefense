@@ -23,7 +23,11 @@ const SFX = {
   },
 
   resume: function () {
-    if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+    // iOS 는 전화·시리 뒤에 'interrupted' 로 남는다. 멈춰 있는 상태면 모두 다시 깨운다.
+    if (this.ctx && this.ctx.state !== 'running' && this.ctx.state !== 'closed') {
+      const p = this.ctx.resume();
+      if (p && p.catch) p.catch(() => {});
+    }
   },
 
   /* 짧은 음정 */
@@ -203,6 +207,7 @@ const BGM = {
     if (!this.out) return;
     this.out.gain.setTargetAtTime(v * 0.6, SFX.ctx.currentTime, 0.08);
     if (was <= 0 && v > 0 && this.name && !this.src) this.resume();
+    else if (v <= 0 && this.src) this.fadeOut(0.3);         // 소리 없이 계속 돌리지 않는다
   },
 
   parse: function (name) {
@@ -366,7 +371,9 @@ const BGM = {
     if (this.name === name && (this.src || this.waiters[name])) return;
     this.name = name;
     this.onEnd = onEnd || null;
-    if (!this.ensure() || this.vol <= 0) return;           // 오디오가 열리거나 소리를 켜면 그때
+    if (!this.ensure()) return;                            // 오디오가 열리면 그때
+    // 꺼 둔 동안엔 이전 곡도 멈춘다. 안 그러면 소리 없이 계속 돌다가 다시 켰을 때 옛 곡이 들렸다.
+    if (this.vol <= 0) { this.fadeOut(0.3); return; }
     this.want(name, true).then(buf => { if (this.name === name) this.startBuffer(buf, name); }).catch(() => {});
   },
 
