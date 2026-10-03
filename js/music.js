@@ -373,7 +373,297 @@ const BGM_TRACKS = {
       'C5*2 E5*2 G5*4 C6*8', 'B5*2 A5*2 G5*2 F5*2 D5*8', 'C6*16'] }] },
   defeat: { bpm: 66, style: 'lament', once: true, sections: [
     { chords: 'Dm Bb A Dm', lead: 'strings', int: 1, mel: [
-      'D5*8 C5*4 Bb4*4', 'A4*8 F4*8', 'E4*8 C#4*8', 'D4*16'] }] }
+      'D5*8 C5*4 Bb4*4', 'A4*8 F4*8', 'E4*8 C#4*8', 'D4*16'] }] },
+
+  /* ---------------- 3.3 3막 '심연의 바다': 전장 열 곡 · 보스 둘 · 마지막 곡 ---------------- */
+  shore: { bpm: 118, style: 'folk', sections: [
+    { chords: 'D G A D Bm G A D', lead: 'flute', int: 1, mel: [
+      'F#5*2 G5*2 A5*4 F#5*4 D5*4',
+      'B4*6 A4*2 G4*8',
+      'A4*3 D5 E5*4 C#5*4 E5*4',
+      'F#5*4 A5*4 F#5*8',
+      'D5*6 E5*2 F#5*4 D5*4',
+      'B4*2 A4*2 G4*2 B4*2 D5*4 G5*4',
+      'A5*2 G5*2 E5*4 C#5*4 A4*4',
+      'D5*12 .*4'] },
+    { chords: 'G D Em A G D A D', lead: 'oboe', dbl: 'strings', int: 2, mel: [
+      'G5*2 A5*2 G5*4 D5*8',
+      'A4*6 D5*2 F#5*8',
+      'G5*4 E5*4 G5*8',
+      'E5*2 D5*2 A4*4 C#5*4 A4*4',
+      'B4*2 E5*2 B4*2 C#5*2 D5*4 G5*4',
+      'A5*2 E5*2 D5*4 A4*4 D5*4',
+      'E5*4 C#5*4 E5*8',
+      'D5*12 .*4'] }] },
+
+  coral: { bpm: 126, style: 'light', sections: [
+    { chords: 'F C Dm Bb F C Bb C', lead: 'celesta', int: 1, mel: [
+      'F5*2 E5*2 F5*4 A5*4 C6*4',
+      'G5*4 E5*4 G5*4 E5*4',
+      'D5*2 C5*2 A4*4 D5*8',
+      'F5*4 E5*2 C5*2 D5*8',
+      'F5*3 C5 A4*4 C5*4 F5*4',
+      'G5*4 Bb5*2 C6*2 G5*8',
+      'F5*6 E5*2 F5*8',
+      'C5*12 .*4'] },
+    { chords: 'Bb F Gm C Bb F C F', lead: 'flute', dbl: 'harp', int: 2, mel: [
+      'F5*6 G5*2 F5*8',
+      'C5*4 F5*4 A5*4 F5*4',
+      'D5*2 Bb4*2 G4*2 A4*2 D5*4 G5*4',
+      'E5*4 A5*2 G5*2 E5*8',
+      'F5*6 G5*2 D5*8',
+      'A4*2 G4*2 C5*4 F5*8',
+      'E5*4 D5*2 Bb4*2 G4*8',
+      'F5*12 .*4'] }] },
+
+  krakenbay: { bpm: 112, style: 'dark', sections: [
+    { chords: 'Dm Bb C A Dm Gm A A', lead: 'lowbrass', int: 1, mel: [
+      'F4*8 A4*4 F4*4',
+      'D4*6 C4*2 Bb3*8',
+      'C4*4 Bb3*2 A3*2 G3*8',
+      'A3*3 C4 E4*4 A4*4 E4*4',
+      'D4*6 C4*2 A3*4 D4*4',
+      'Bb3*6 G3*2 Bb3*4 D4*4',
+      'E4*4 A4*4 E4*4 A4*4',
+      'A4*12 .*4'] },
+    { chords: 'Gm Dm Bb A Gm Dm Bb A', lead: 'horn', dbl: 'strings', int: 2, mel: [
+      'Bb4*8 D5*4 Bb4*4',
+      'D5*2 E5*2 D5*4 A4*4 D5*4',
+      'Bb4*4 F4*2 E4*2 D4*8',
+      'E4*2 G4*2 A4*2 C5*2 C#5*4 E5*4',
+      'D5*2 C5*2 Bb4*4 G4*8',
+      'A4*4 D5*4 A4*8',
+      'F4*6 A4*2 Bb4*8',
+      'A4*12 .*4'] }] },
+
+  lighthouse: { bpm: 84, style: 'mystic', sections: [
+    { chords: 'Em C G D Em C B7 B7', lead: 'oboe', int: 1, mel: [
+      'E5*4 G5*4 E5*4 G5*4',
+      'E5*8 C5*4 E5*4',
+      'D5*6 F#5*2 G5*8',
+      'D5*4 A4*4 D5*8',
+      'B4*4 G4*4 B4*4 G4*4',
+      'C5*4 E5*4 G5*4 E5*4',
+      'Eb5*8 B4*4 A4*4',
+      'B4*12 .*4'] },
+    { chords: 'C G Am Em C D B7 Em', lead: 'strings', dbl: 'choir', int: 2, mel: [
+      'G5*8 E5*4 G5*4',
+      'D5*6 B4*2 D5*8',
+      'E5*8 A5*4 E5*4',
+      'G5*6 F#5*2 G5*8',
+      'E5*4 C5*4 G4*8',
+      'A4*4 D5*4 F#5*8',
+      'Eb5*4 B4*4 A4*8',
+      'E5*12 .*4'] }] },
+
+  sirensong: { bpm: 92, style: 'eerie', sections: [
+    { chords: 'Am F C G Am F E E', lead: 'choir', int: 1, mel: [
+      'E5*8 A5*4 E5*4',
+      'C5*6 G4*2 C5*8',
+      'E5*6 C5*2 G4*8',
+      'B4*4 D5*4 G5*8',
+      'E5*4 C5*4 E5*8',
+      'A5*4 F5*4 C5*8',
+      'Ab4*6 C5*2 E5*8',
+      'E5*12 .*4'] },
+    { chords: 'F G Am Am Dm F E E', lead: 'flute', dbl: 'harp', int: 2, mel: [
+      'F5*2 G5*2 F5*4 C5*4 A4*4',
+      'G4*4 B4*2 D5*2 G5*8',
+      'A5*6 F5*2 C5*8',
+      'A4*4 C5*2 D5*2 E5*8',
+      'F5*6 A5*2 F5*4 A5*4',
+      'F5*4 G5*2 A5*2 F5*8',
+      'E5*6 C5*2 Ab4*8',
+      'E5*12 .*4'] }] },
+
+  tidetemple: { bpm: 100, style: 'mystic', sections: [
+    { chords: 'Gm Eb Bb F Gm Eb D D', lead: 'harp', int: 1, mel: [
+      'G5*4 D5*4 Bb4*4 G4*4',
+      'Bb4*4 Eb5*4 G5*8',
+      'D5*8 F5*4 D5*4',
+      'C5*2 G4*2 A4*4 C5*4 A4*4',
+      'G4*2 Bb4*2 G4*4 Bb4*8',
+      'Eb5*6 G5*2 Eb5*8',
+      'D5*2 Bb4*2 A4*4 D5*8',
+      'D5*12 .*4'] },
+    { chords: 'Cm Gm Eb D Cm Gm D D', lead: 'choir', dbl: 'strings', int: 2, mel: [
+      'G5*8 Eb5*4 C5*4',
+      'D5*4 G5*4 D5*8',
+      'G5*6 A5*2 G5*8',
+      'A5*4 F#5*4 D5*8',
+      'C5*6 G4*2 C5*8',
+      'Bb4*6 Eb5*2 Bb4*8',
+      'D5*8 F#5*4 A5*4',
+      'D5*12 .*4'] }] },
+
+  sunken: { bpm: 88, style: 'lament', sections: [
+    { chords: 'Cm Ab Eb Bb Cm Fm G G', lead: 'oboe', int: 1, mel: [
+      'Eb5*6 G5*2 Eb5*4 C5*4',
+      'Ab4*6 Bb4*2 Ab4*8',
+      'Bb4*4 G4*4 Bb4*4 Eb5*4',
+      'F5*8 D5*4 F5*4',
+      'G5*6 Ab5*2 G5*4 Eb5*4',
+      'C5*4 F5*4 Ab5*8',
+      'G5*6 Eb5*2 G5*8',
+      'G5*12 .*4'] },
+    { chords: 'Ab Eb Fm Cm Ab Bb G G', lead: 'strings', dbl: 'horn', int: 2, mel: [
+      'Eb5*8 Ab5*4 Eb5*4',
+      'G5*4 Eb5*4 Bb4*8',
+      'C5*6 Eb5*2 F5*8',
+      'G5*8 Eb5*4 C5*4',
+      'Eb5*4 Ab5*4 Eb5*8',
+      'Bb4*8 F5*4 D5*4',
+      'B4*8 G4*4 B4*4',
+      'G4*12 .*4'] }] },
+
+  strait: { bpm: 140, style: 'action', sections: [
+    { chords: 'Em C D B7 Em C D B7', lead: 'trumpet', int: 2, mel: [
+      'G5*2 A5*2 E5*4 B4*4 G4*4',
+      'C5*2 D5*2 G5*4 E5*8',
+      'F#5*3 A5 F#5*4 A5*4 F#5*4',
+      'Eb5*2 D5*2 A4*2 G4*2 A4*4 B4*4',
+      'E5*3 G5 E5*4 B4*4 E5*4',
+      'C5*3 D5 C5*4 E5*4 G5*4',
+      'A5*2 F#5*2 G5*2 D5*2 A4*4 D5*4',
+      'B4*12 .*4'] },
+    { chords: 'C D Em Em Am B7 Em Em', lead: 'horn', dbl: 'strings', int: 3, mel: [
+      'G5*2 A5*2 E5*4 C5*4 G4*4',
+      'A4*4 D5*4 F#5*4 A5*4',
+      'E5*2 C5*2 E5*4 G5*4 E5*4',
+      'G5*2 E5*2 G5*4 E5*4 G5*4',
+      'A5*2 F#5*2 E5*2 D5*2 A4*4 C5*4',
+      'B4*2 E5*2 B4*4 A4*4 B4*4',
+      'E5*3 A5 E5*4 B4*4 G4*4',
+      'E5*12 .*4'] }] },
+
+  abyssgate: { bpm: 104, style: 'dark', sections: [
+    { chords: 'Cm Cm Ab G Cm Fm G G', lead: 'lowbrass', int: 1, mel: [
+      'Eb4*8 G4*4 Eb4*4',
+      'C4*4 G3*4 C4*8',
+      'Ab3*8 C4*4 Eb4*4',
+      'G4*8 D4*4 G4*4',
+      'Eb4*8 C4*4 G3*4',
+      'Ab3*4 C4*4 F4*8',
+      'G4*6 Ab4*2 G4*8',
+      'G4*12 .*4'] },
+    { chords: 'Ab Bb Cm Cm Fm G Cm Cm', lead: 'choir', dbl: 'lowstr', int: 2, mel: [
+      'Eb5*2 C5*2 Eb5*4 Ab5*4 Eb5*4',
+      'F5*3 G5 D5*4 Bb4*4 D5*4',
+      'C5*2 Ab4*2 C5*4 Eb5*8',
+      'G5*4 Ab5*2 F5*2 C5*8',
+      'Ab4*2 Bb4*2 C5*4 F5*8',
+      'D5*2 C5*2 G4*4 B4*4 D5*4',
+      'Eb5*4 Bb4*2 Ab4*2 C5*8',
+      'C5*12 .*4'] }] },
+
+  leviathan: { bpm: 120, style: 'epic', sections: [
+    { chords: 'Dm F C Gm Dm Bb A A', lead: 'horn', int: 2, mel: [
+      'F5*2 G5*2 A5*2 E5*2 D5*4 A4*4',
+      'C5*2 F5*2 A5*4 F5*4 C5*4',
+      'G4*6 C5*2 E5*8',
+      'G5*2 A5*2 G5*2 E5*2 G5*4 D5*4',
+      'A4*2 G4*2 A4*4 D5*8',
+      'F5*2 G5*2 F5*4 D5*8',
+      'C#5*2 Bb4*2 A4*4 C#5*4 E5*4',
+      'A5*12 .*4'] },
+    { chords: 'Bb C Dm Dm Gm A Dm Dm', lead: 'trumpet', dbl: 'strings', int: 3, mel: [
+      'F5*4 D5*4 Bb4*8',
+      'G4*4 A4*2 C5*2 E5*8',
+      'A5*2 F5*2 C5*2 Bb4*2 A4*4 D5*4',
+      'A4*4 D5*4 A4*8',
+      'G4*2 A4*2 Bb4*2 D5*2 G5*4 D5*4',
+      'E5*2 C5*2 A4*4 C#5*8',
+      'D5*4 F5*2 A5*2 F5*8',
+      'D5*12 .*4'] }] },
+
+  boss_kraken: { bpm: 128, style: 'epic', sections: [
+    { chords: 'Em Em C B', lead: 'lowbrass', int: 1, mel: [
+      'E4*4 G4*2 D4*2 G4*8',
+      'E4*3 F#4 E4*4 B3*4 G3*4',
+      'E3*6 A3*2 E3*4 G3*4',
+      'B3*12 .*4'] },
+    { chords: 'Em C D B Em C Am B', lead: 'horn', dbl: 'lowbrass', int: 2, mel: [
+      'E5*2 G5*2 D5*2 E5*2 G5*4 E5*4',
+      'G5*3 A5 E5*4 C5*4 G4*4',
+      'A4*8 D5*4 A4*4',
+      'B4*4 A4*2 G4*2 B4*8',
+      'E5*4 G5*2 A5*2 E5*8',
+      'C5*4 G4*4 C5*8',
+      'E5*2 G5*2 E5*4 C5*4 A4*4',
+      'B4*12 .*4'] },
+    { chords: 'C D Em Em C D B B', lead: 'trumpet', dbl: 'strings', int: 3, mel: [
+      'E5*3 F#5 G5*4 E5*4 C5*4',
+      'A4*2 G4*2 A4*2 G4*2 A4*4 D5*4',
+      'E5*2 G5*2 A5*2 E5*2 G5*4 E5*4',
+      'B4*2 C5*2 E5*4 G5*4 E5*4',
+      'C5*2 B4*2 G4*4 C5*4 G4*4',
+      'A4*2 D5*2 F#5*4 A5*4 F#5*4',
+      'Eb5*4 B4*4 Eb5*4 F#5*4',
+      'B4*12 .*4'] }] },
+
+  boss_tidequeen: { bpm: 116, style: 'epic', sections: [
+    { chords: 'Gm Gm Eb D', lead: 'choir', int: 1, mel: [
+      'G5*4 D5*4 G5*8',
+      'D5*2 F5*2 G5*2 A5*2 G5*4 D5*4',
+      'Eb5*4 Bb4*4 G4*4 Bb4*4',
+      'D5*12 .*4'] },
+    { chords: 'Gm Eb F D Gm Eb Cm D', lead: 'horn', dbl: 'strings', int: 2, mel: [
+      'G5*3 A5 G5*4 D5*4 Bb4*4',
+      'G4*4 Bb4*4 Eb5*4 G5*4',
+      'A5*6 G5*2 A5*4 F5*4',
+      'D5*4 A4*4 D5*4 A4*4',
+      'D5*2 F5*2 Eb5*2 D5*2 Bb4*4 G4*4',
+      'Bb4*2 Eb5*2 G5*4 Eb5*4 G5*4',
+      'Eb5*2 C5*2 G4*4 C5*4 G4*4',
+      'D5*12 .*4'] },
+    { chords: 'Eb F Gm Gm Eb F D D', lead: 'trumpet', dbl: 'choir', int: 3, mel: [
+      'Eb5*6 F5*2 Eb5*4 G5*4',
+      'F5*3 A5 F5*4 C5*4 A4*4',
+      'G4*4 Bb4*4 D5*4 Bb4*4',
+      'G4*4 A4*2 Bb4*2 D5*8',
+      'G5*2 A5*2 G5*4 Eb5*4 G5*4',
+      'A5*2 G5*2 F5*4 A5*8',
+      'F#5*6 G5*2 A5*8',
+      'D5*12 .*4'] }] },
+
+  finale2: { bpm: 116, style: 'epic', sections: [
+    { chords: 'Cm Ab Eb Bb Fm Cm G G', lead: 'choir', int: 1, mel: [
+      'Eb5*4 G5*4 Eb5*8',
+      'C5*4 Eb5*4 Ab5*8',
+      'Eb5*6 Bb4*2 Eb5*8',
+      'F5*4 D5*4 F5*8',
+      'Ab5*8 F5*4 C5*4',
+      'G4*8 C5*4 G4*4',
+      'B4*8 D5*4 G5*4',
+      'G5*12 .*4'] },
+    { chords: 'Cm Ab Fm G Cm Ab Bb G', lead: 'horn', dbl: 'lowbrass', int: 2, mel: [
+      'Eb5*6 Ab5*2 G5*8',
+      'Ab5*2 G5*2 D5*2 G5*2 Ab5*4 Eb5*4',
+      'C5*3 F5 Ab5*4 F5*4 C5*4',
+      'G4*2 C5*2 F5*2 Ab5*2 G5*4 D5*4',
+      'Eb5*2 Bb4*2 C5*4 Eb5*8',
+      'Ab5*4 G5*2 D5*2 C5*8',
+      'Bb4*2 C5*2 F5*2 G5*2 F5*4 D5*4',
+      'G5*12 .*4'] },
+    { chords: 'Fm Cm Ab Eb Fm Cm G G', lead: 'trumpet', dbl: 'strings', int: 3, mel: [
+      'F5*4 Ab5*4 F5*4 C5*4',
+      'G4*2 C5*2 G4*4 C5*8',
+      'Eb5*6 D5*2 Eb5*8',
+      'G5*6 Ab5*2 Eb5*4 G5*4',
+      'F5*6 Eb5*2 C5*4 Ab4*4',
+      'G4*6 Ab4*2 C5*8',
+      'D5*2 Bb4*2 D5*4 B4*4 D5*4',
+      'G5*12 .*4'] },
+    { chords: 'C F G C Am F G C', lead: 'trumpet', dbl: 'horn', int: 3, mel: [
+      'E5*4 G5*4 E5*4 G5*4',
+      'A5*4 F5*4 C5*4 A4*4',
+      'G4*2 C5*2 D5*4 B4*4 G4*4',
+      'C5*2 Bb4*2 C5*4 E5*4 C5*4',
+      'A4*8 C5*4 A4*4',
+      'C5*8 A4*4 C5*4',
+      'D5*4 G5*4 D5*8',
+      'C5*12 .*4'] }] }
+
 };
 
 /* 곡마다 들리는 크기를 맞춘다 (오프라인 렌더로 잰 RMS 기준: 일반 0.026, 보스 0.042) */
@@ -385,7 +675,10 @@ const BGM_GAIN = {
   thorngate: 1.02, desert: 1.35, eclipse: 0.7, mythic: 0.7, endless: 0.88, return: 0.82,
   shieldwall: 1.23, gate: 0.79, throne: 0.79, seal: 0.7, siege: 1.2, boss_lich: 0.97,
   boss_troll: 0.99, boss_frostgiant: 1.0, boss_drake: 0.94, boss_spiderqueen: 1.07, boss_warlord: 0.93, finale: 1.1,
-  victory: 1.5, defeat: 1.32
+  victory: 1.5, defeat: 1.32,
+  // 3.3
+  shore: 1.1, coral: 1.2, krakenbay: 0.9, lighthouse: 1.3, sirensong: 1.2, tidetemple: 1.1, sunken: 1.3,
+  strait: 0.85, abyssgate: 0.95, leviathan: 0.85, boss_kraken: 0.95, boss_tidequeen: 1.0, finale2: 1.05
 };
 
 /* 전장 컨셉 → 전장 곡. 보스가 나오면 보스곡, 마지막 전장은 finale. */

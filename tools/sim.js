@@ -296,7 +296,9 @@ const SMART_ACT2 = { up: 10, lv: 14 };   // 3.1: 2막은 격앙·보스 격노�
  * 특성에 맞춘 공략 편성이라야 넘는다. HARD_SEEDS 판 중 이긴 횟수로 본다. */
 const LEGEND_PROOF = [
   { stage: 18, up: 7, lv: 11 }, { stage: 20, up: 7, lv: 11 },
-  { stage: 27, up: 9, lv: 13 }, { stage: 28, up: 9, lv: 13 }, { stage: 30, up: 9, lv: 13 }
+  { stage: 27, up: 9, lv: 13 }, { stage: 28, up: 9, lv: 13 }, { stage: 30, up: 9, lv: 13 },
+  // 3.3 3막의 조합 전장
+  { stage: 38, up: 10, lv: 18 }, { stage: 39, up: 10, lv: 18 }
 ];
 /* 시즌마다 대표 셋. 어느 시즌을 뽑든 비슷한 값어치여야 한다. */
 const SEASON_TRIOS = [
@@ -310,6 +312,8 @@ const MONO_SUSPECTS = ['medusa', 'catapult', 'mage', 'necro', 'rogue', 'engineer
   'rapriest', 'wukong', 'bajie', 'lancer', 'monk', 'alchemist', 'falconer', 'javelin'];
 const SEASON_SPREAD = 2;
 const EVENT_EXPECT = { up: 10, lv: 15, naiveMax: 2, timedMin: 3 };   // 이벤트 전장 기대치 (3.2)
+const ACT3_ENTRY = { up: 10, lv: 14, min: 2, max: 5 };   // 3.3
+const SMART_ACT3 = { up: 10, lv: 18 };
 const HARD_MODE = { up: 10, lv: 15, min: 12, max: 20, bossMax: 6 };   // 하드코어 기대치 (3.1)
 const LEGEND_PROOF_MAX = 1;      // 전설만 편성이 이길 수 있는 최대 판 수
 const COUNTER_MIN = 4;           // 공략 편성이 이겨야 하는 최소 판 수
@@ -389,7 +393,7 @@ function check() {
 
   // 2막은 캠페인을 막 끝낸 수준으로 "들어갈 수는" 있되 쓸어담지는 못해야 한다.
   const entryEngine=loadEngine(12345), entryRows=[];
-  for(let i=20;i<entryEngine.STAGES.length;i++)entryRows.push(runStage(entryEngine,i,5,8,false,false));
+  for(let i=20;i<30;i++)entryRows.push(runStage(entryEngine,i,5,8,false,false));
   printTable(entryRows,5,8);
   if(!entryRows[0].win){console.error('  ✗ 21전장은 기존 캠페인 완주 강화 수준으로 진입 가능해야 함');failed++;}
   const entryWins=entryRows.filter(r=>r.win).length;
@@ -412,6 +416,7 @@ function check() {
     else console.log(`  ✓ 시즌 균형 (강화 3/Lv5) ${tag}`);
   }
   // 병종 하나만으로 쓸어 담지 못한다
+  const g0n = loadEngine(1).STAGES.length;
   {
     const worst = MONO_SUSPECTS.map(id => {
       const g = loadEngine(12345), u = g.UNIT_BY_ID[id]; let w = 0;
@@ -422,8 +427,8 @@ function check() {
       return [id, w];
     }).sort((a, b) => b[1] - a[1]);
     const tag = worst.slice(0, 4).map(([id, w]) => id + ' ' + w).join(' · ');
-    if (worst[0][1] > MONO_MAX) { console.error(`  ✗ 병종 하나로 너무 많이 넘는다 (강화 5/Lv10): ${tag} (최대 ${MONO_MAX}/30)`); failed++; }
-    else console.log(`  ✓ 병종 하나로는 못 쓸어 담는다 (강화 5/Lv10): ${tag} (최대 ${MONO_MAX}/30)`);
+    if (worst[0][1] > MONO_MAX) { console.error(`  ✗ 병종 하나로 너무 많이 넘는다 (강화 5/Lv10): ${tag} (최대 ${MONO_MAX}/${g0n})`); failed++; }
+    else console.log(`  ✓ 병종 하나로는 못 쓸어 담는다 (강화 5/Lv10): ${tag} (최대 ${MONO_MAX}/${g0n})`);
   }
   // 제대로 편성하는 플레이어는 충분히 키우면 넘는다
   {
@@ -435,7 +440,7 @@ function check() {
   }
   for (const seed of [12345, 98765]) {
     const g = loadEngine(seed), rows = [];
-    for (let i = 20; i < g.STAGES.length; i++) rows.push(runStage(g, i, SMART_ACT2.up, SMART_ACT2.lv, false, 'smart'));
+    for (let i = 20; i < 30; i++) rows.push(runStage(g, i, SMART_ACT2.up, SMART_ACT2.lv, false, 'smart'));
     printTable(rows, SMART_ACT2.up, SMART_ACT2.lv);
     if (rows.some(r => !r.win || r.seconds > 400)) { console.error('  ✗ 2막: 공략 편성으로 충분히 키우면 400초 안에 전부 넘어야 한다 (seed ' + seed + ')'); failed++; }
     else console.log('  ✓ 2막 공략 편성 완주 (seed ' + seed + ')');
@@ -449,6 +454,20 @@ function check() {
     else if (r.counter < COUNTER_MIN) { console.error(`  ✗ 공략 편성으로도 못 넘는다 ${tag}`); failed++; }
     else console.log(`  ✓ 조합이 필요한 전장 ${tag}`);
   }
+  // 3.3 3막: 2막을 막 끝낸 수준(10/Lv14)으론 앞 몇 곳만, 끝까지 키우면(10/Lv18) 전부
+  {
+    const g = loadEngine(12345); let w = 0;
+    for (let i = 30; i < 40; i++) w += runStage(g, i, ACT3_ENTRY.up, ACT3_ENTRY.lv, false, 'smart').win ? 1 : 0;
+    const tag = `3막 진입 (강화 ${ACT3_ENTRY.up}/Lv${ACT3_ENTRY.lv} 공략 편성) ${w}/10 (기대 ${ACT3_ENTRY.min}~${ACT3_ENTRY.max})`;
+    if (w < ACT3_ENTRY.min || w > ACT3_ENTRY.max) { console.error('  ✗ ' + tag); failed++; } else console.log('  ✓ ' + tag);
+  }
+  for (const seed of [12345, 98765]) {
+    const g = loadEngine(seed), rows = [];
+    for (let i = 30; i < 40; i++) rows.push(runStage(g, i, SMART_ACT3.up, SMART_ACT3.lv, false, 'smart'));
+    printTable(rows, SMART_ACT3.up, SMART_ACT3.lv);
+    if (rows.some(r => !r.win || r.seconds > 400)) { console.error('  ✗ 3막: 끝까지 키운 공략 편성은 400초 안에 전부 넘어야 한다 (seed ' + seed + ')'); failed++; }
+    else console.log('  ✓ 3막 공략 편성 완주 (seed ' + seed + ')');
+  }
   // 3.1: 하드코어는 확실히 어렵다. 다 키운 공략 편성으로도 절반 남짓, 보스 전장은 대부분 막힌다.
   {
     SIM_HARD = true;
@@ -458,7 +477,7 @@ function check() {
     const wins = rows.filter(r => r.win).length;
     const bossWins = rows.filter(r => r.win && g.STAGES[r.stage - 1].boss).length;
     const bosses = rows.filter(r => g.STAGES[r.stage - 1].boss).length;
-    const tag = `하드코어 (강화 ${HARD_MODE.up}/Lv${HARD_MODE.lv} 공략 편성) ${wins}/30 · 보스 전장 ${bossWins}/${bosses}`;
+    const tag = `하드코어 (강화 ${HARD_MODE.up}/Lv${HARD_MODE.lv} 공략 편성) ${wins}/${g.STAGES.length} · 보스 전장 ${bossWins}/${bosses}`;
     if (wins < HARD_MODE.min || wins > HARD_MODE.max) { console.error(`  ✗ ${tag} — 기대 ${HARD_MODE.min}~${HARD_MODE.max}`); failed++; }
     else if (bossWins > HARD_MODE.bossMax) { console.error(`  ✗ ${tag} — 보스 전장이 너무 쉽다 (최대 ${HARD_MODE.bossMax})`); failed++; }
     else console.log(`  ✓ ${tag}`);

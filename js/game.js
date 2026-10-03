@@ -1067,6 +1067,7 @@ class Battle {
       // 종지기: 종소리가 닿은 아군은 기절·둔화가 풀리고 잠깐 기절하지 않는다
       for (const m of mates) if (!m.dead && Math.abs(m.x - f.x) <= ab.radius) {
         m.stunT = 0; m.slowT = 0; m.stunImm = Math.max(m.stunImm, ab.ward.dur);
+        m.charmT = 0; m.charmGuard = this.time + ab.ward.dur;      // 3.3: 세이렌의 노래도 풀린다
       }
       f.auraPulse = 0.5;
       this.fx.push({ type: 'bell', x: f.x, row: f.row, r: ab.radius, t: 0.7, life: 0.7, color: '#f6d365' });
@@ -1242,7 +1243,7 @@ class Battle {
   bossAct(f, a) {
     const foes = this.foesOf(f.side);
     const r = a.r || 300;
-    this.announce(a.name);
+    if (f.boss || f.side === 'ally') this.announce(a.name);      // 잡몹의 기술(조수 술사의 밀물)은 큰 글씨를 띄우지 않는다
 
     switch (a.t) {
       case 'roar': {                       // 포효: 밀어내고 기절
@@ -1255,11 +1256,11 @@ class Battle {
           }
           if (a.dmg) e.takeDamage(a.dmg);
         }
-        this.fx.push({ type: 'cast', kind: 'shockwave', x: f.x, row: f.row,
-                       color: f.s.accent, r: r * 0.6, big: true, dir: f.dir,
+        this.fx.push({ type: 'cast', kind: f.boss ? 'shockwave' : 'tidal', x: f.x, row: f.row,
+                       color: f.s.accent, r: r * 0.6, big: !!f.boss, dir: f.dir,
                        t: 0.7, life: 0.7 });
-        this.shake = Math.max(this.shake, 14);
-        sfx('bossIn');
+        this.shake = Math.max(this.shake, f.boss ? 14 : 5);
+        if (f.boss) sfx('bossIn');
         break;
       }
       case 'enrage': {                     // 광폭화: 영구 강화
@@ -1687,7 +1688,7 @@ class Battle {
       target.weakT = Math.max(target.weakT, ab.weaken.dur);
       target.weakMul = Math.min(target.weakMul, ab.weaken.mul);
     }
-    if (ab.charm && !target.boss && Math.random() < ab.charm.chance) {
+    if (ab.charm && !target.boss && !(target.charmGuard > this.time) && Math.random() < ab.charm.chance) {
       target.charmT = Math.max(target.charmT, ab.charm.dur);
       this.fx.push({ type: 'charm', x: target.x, row: target.row, t: 0.7, life: 0.7 });
     }

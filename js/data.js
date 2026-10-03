@@ -259,6 +259,33 @@ const UNITS = [
     cost:300,kb:2,unlockStage:27,
     ab:{unshakable:true,kbImmune:true,lifesteal:.12},abText:'부동심 · 기절·둔화·넉백 무시 · 흡혈 12%',
     desc:'산사에서 수련한 권법가입니다. 어떤 충격에도 흔들리지 않고 주먹을 쉬지 않습니다.'}),
+  /* ---------- 3.3 3막 '심연의 바다' 병종: 바다 군단을 받아칠 손 ---------- */
+  mk({id:'harpoon',name:'작살병',role:'작살',shape:'harpoon',castFx:'harpoon',
+    body:'#2b3038',accent:'#9fd8e8',tunic:'#2f5a6b',hp:600,atk:95,range:210,speed:40,interval:1.6,
+    cost:180,kb:2,ranged:true,unlockStage:31,
+    ab:{breaker:1.35,slow:1.0},abText:'작살 · 갑주 무시 · 단단한 적 1.35배 · 1초 둔화',
+    desc:'밧줄 달린 작살로 등딱지째 꿰고 끌어당깁니다. 집게 게와 어인을 상대하는 바닷가의 기본 병종입니다.'}),
+  mk({id:'corsair',name:'해적 검사',short:'해적검사',role:'칼춤',shape:'corsair',castFx:'slash',
+    body:'#2b3038',accent:'#e8c65a',tunic:'#8e2f3a',hp:1300,atk:120,range:70,speed:70,interval:.75,
+    cost:260,kb:2,unlockStage:33,
+    ab:{dodge:.2,lifesteal:.15},abText:'칼춤 · 공격 20% 회피 · 흡혈 15%',
+    desc:'갑판 위에서 단련한 쌍검잡이입니다. 창끝을 흘려 넘기며 나가 창병의 품으로 파고듭니다.'}),
+  mk({id:'beacon',name:'등대지기',role:'등불',shape:'beacon',
+    body:'#2b3038',accent:'#ffe9a0',tunic:'#3f6bb5',hp:900,atk:0,range:0,speed:30,interval:3,
+    cost:250,kb:1,unlockStage:34,maxActive:2,
+    ab:{ward:{dur:3},barrier:120,radius:230,interval:5,noAttack:true},
+    abText:'5초마다 등불 · 홀림·기절·둔화 해제와 3초 면역 · 보호막 120 · 최대 2명',
+    desc:'바다 건너까지 비추는 등불을 듭니다. 세이렌의 노래에 홀린 병사도 등불 아래에선 정신을 차립니다.'}),
+  mk({id:'stormcaller',name:'폭풍술사',role:'뇌우',shape:'stormcaller',castFx:'storm',
+    body:'#2b3038',accent:'#9ad8ff',tunic:'#2a3a6b',hp:620,atk:110,range:280,speed:28,interval:2.2,
+    cost:420,kb:2,ranged:true,area:true,areaRadius:80,unlockStage:36,
+    ab:{chain:{n:3,fall:.6,range:130}},abText:'뇌우 · 범위 벼락이 세 번 튕김',
+    desc:'바다 위 먹구름을 불러 벼락을 내립니다. 떼로 몰려오는 해파리와 장어에게 특히 강합니다.'}),
+  mk({id:'anchorguard',name:'닻 수호병',short:'닻수호병',role:'닻',shape:'anchorguard',castFx:'tidal',
+    body:'#2b3038',accent:'#8fa3b5',tunic:'#3a4a5a',hp:4200,atk:140,range:80,speed:26,interval:1.6,
+    cost:460,kb:1,scale:1.25,unlockStage:38,
+    ab:{kbImmune:true,armor:.3,slow:1.2,push:30},abText:'닻 · 넉백 면역 · 갑주 30% · 맞은 적 둔화',
+    desc:'거대한 닻을 휘둘러 전열을 붙듭니다. 해일도 밀어내지 못하는 마지막 둑입니다.'}),
   // 소환 전용
   mk({
     id: 'barricade', name: '나무 방벽', role: '구조물', shape: 'barricade',
@@ -715,7 +742,9 @@ const UNIT_COOLDOWN = {
   ra: 62.0, gumiho: 62.6, odin: 66.5, inventor: 69.4, hades: 74.5,
   // 3.0
   javelin: 5.4, celestial: 6.1, monkey: 12.8, falconer: 13.0, wujing: 13.8, bellringer: 14.2,
-  alchemist: 18.0, monk: 18.8, lancer: 20.0, sanzang: 26.0, bajie: 27.5, nezha: 44.0, wukong: 68.0
+  alchemist: 18.0, monk: 18.8, lancer: 20.0, sanzang: 26.0, bajie: 27.5, nezha: 44.0, wukong: 68.0,
+  // 3.3
+  harpoon: 7.5, corsair: 13.7, beacon: 15.0, stormcaller: 33.0, anchorguard: 40.0
 };
 const TIER_FROM = 200, TIER_TO = 560, TIER_MAX = 0.35;
 function costTierMul(cost) {
@@ -948,6 +977,65 @@ const ENEMIES = {
   sapper:   { name: '성벽 파괴병', body: '#4d6b3a', accent: '#c0392b', tunic: '#5a4a2f', shape: 'sapper',
               hp: 950, atk: 0, range: 60, speed: 74, interval: 1, kb: 1, gold: 40, noReinf: true,
               ab: { sapper: { dmg: 650, radius: 90 } }, abText: '돌파 · 병사를 무시하고 성채로 달려가 자폭합니다' },
+  /* ---------- 3.3 3막 '심연의 바다': 바다 군단 ---------- */
+  clawcrab: { name: '집게 게', body: '#b5503a', accent: '#f0c0a0', tunic: '#7a2e20', shape: 'clawcrab',
+              hp: 2600, atk: 140, range: 62, speed: 26, interval: 1.5, kb: 1, gold: 45, scale: 1.1,
+              ab: { armor: 0.4, kbImmune: true }, abText: '단단한 등딱지 · 갑주 40% · 파쇄와 독으로' },
+  nagaspear:{ name: '나가 창병', body: '#3a7a6a', accent: '#c8f0e0', tunic: '#245048', shape: 'nagaspear',
+              hp: 1300, atk: 170, range: 125, speed: 48, interval: 1.3, kb: 2, gold: 40,
+              ab: { dodge: 0.15 }, abText: '물결 몸놀림 · 공격 15% 회피 · 긴 창' },
+  siren:    { name: '세이렌', body: '#6a8ab0', accent: '#ffd0f0', tunic: '#3a4a7a', shape: 'siren',
+              hp: 1000, atk: 70, range: 260, speed: 28, interval: 2.0, kb: 2, gold: 55, ranged: true, noReinf: true,
+              ab: { charm: { chance: 0.22, dur: 2.5 } }, abText: '노래 · 맞은 아군이 2.5초 홀려 제 편을 칩니다 · 등대지기의 등불로 막기' },
+  deepone:  { name: '심연 어인', body: '#4a6a5a', accent: '#a0ffd0', tunic: '#2a3a32', shape: 'deepone',
+              hp: 2000, atk: 160, range: 64, speed: 40, interval: 1.1, kb: 1, gold: 48,
+              ab: { regen: 40, revive: 0.3 }, abText: '재생 · 초당 40 회복, 한 번 다시 일어남 · 화상이면 재생 멈춤' },
+  jelly:    { name: '독 해파리', body: '#9a7ad0', accent: '#ffd0ff', tunic: '#6a4aa0', shape: 'jelly',
+              hp: 700, atk: 40, range: 56, speed: 50, interval: 1.0, kb: 2, gold: 20, scale: .85,
+              ab: { deathBomb: { dmg: 180, radius: 110 }, poison: { dps: 30, dur: 3 } }, abText: '촉수 · 중독, 터지며 쏘임' },
+  tidecaller:{ name: '조수 술사', body: '#3a6a8a', accent: '#9fe8ff', tunic: '#1f3a5a', shape: 'tidecaller',
+              hp: 1800, atk: 60, range: 230, speed: 26, interval: 2.0, kb: 1, gold: 70, ranged: true, noReinf: true,
+              special: { t: 'roar', name: '밀물', first: 5, cd: 9, r: 260, push: 90 },
+              abText: '밀물 · 9초마다 앞의 아군을 밀어냅니다' },
+  seahook:  { name: '작살 어부', body: '#4a6a5a', accent: '#c8ced6', tunic: '#3a4a3a', shape: 'seahook',
+              hp: 1400, atk: 120, range: 200, speed: 30, interval: 1.8, kb: 2, gold: 55, ranged: true, noReinf: true,
+              ab: { hook: { cd: 9, range: 420, stun: 1.0 } }, abText: '작살 · 뒤쪽 원거리 아군을 끌어와 기절시킵니다' },
+  eel:      { name: '전기 장어', body: '#3a5a7a', accent: '#ffe86a', tunic: '#22384e', shape: 'eel',
+              hp: 900, atk: 110, range: 60, speed: 105, interval: .8, kb: 3, gold: 30,
+              ab: { chain: { n: 2, fall: 0.6, range: 110 } }, abText: '전류 · 맞은 아군 옆으로 튕깁니다' },
+  kraken:   { name: '크라켄', body: '#7a3a5a', accent: '#ffb0d0', tunic: '#4a1a3a', shape: 'kraken',
+              hp: 26000, atk: 760, range: 190, speed: 16, interval: 2.4, kb: 1, gold: 1100,
+              area: true, areaRadius: 150, scale: 2.0, boss: true,
+              ab: { kbImmune: true, summon: { id: 'jelly', n: 2 }, interval: 10 },
+              special: { t: 'meteor', name: '촉수 강타', cd: 10, n: 3, dmg: 380, radius: 120, warn: 1.1, stun: 0.5, kind: 'tidal' },
+              phases: [
+                { at: 0.65, t: 'roar',   name: '심해의 포효', r: 380, stun: 1.0, push: 90 },
+                { at: 0.35, t: 'summon', name: '먹물 떼', id: 'eel', n: 4 },
+                { at: 0.15, t: 'enrage', name: '크라켄의 분노', atk: 1.25, rate: 0.8 }
+              ] },
+  tidequeen:{ name: '해일 여왕', body: '#2a7a7a', accent: '#ffe9a0', tunic: '#1a4a5a', shape: 'tidequeen',
+              hp: 28000, atk: 820, range: 200, speed: 20, interval: 2.2, kb: 1, gold: 1300,
+              area: true, areaRadius: 160, scale: 1.9, boss: true,
+              ab: { dodge: 0.1, summon: { id: 'nagaspear', n: 1 }, interval: 9 },
+              special: { t: 'roar', name: '해일', cd: 11, r: 420, push: 120, stun: 0.6 },
+              phases: [
+                { at: 0.70, t: 'frost',  name: '소용돌이', r: 420, dur: 4 },
+                { at: 0.45, t: 'summon', name: '근위 나가', id: 'nagaspear', n: 4 },
+                { at: 0.30, t: 'heal',   name: '조수의 축복', ratio: 0.18 },
+                { at: 0.12, t: 'enrage', name: '여왕의 노여움', atk: 1.25, rate: 0.8, speed: 1.2 }
+              ] },
+  leviathan:{ name: '리바이어던', body: '#1f3a5a', accent: '#6affd0', tunic: '#0e2238', shape: 'leviathan',
+              hp: 34000, atk: 950, range: 220, speed: 14, interval: 2.6, kb: 1, gold: 2000,
+              area: true, areaRadius: 180, scale: 2.4, boss: true,
+              ab: { kbImmune: true, armor: 0.2 },
+              special: { t: 'meteor', name: '해일 낙하', cd: 10, n: 4, dmg: 440, radius: 125, warn: 1.2, kind: 'tidal' },
+              phases: [
+                { at: 0.75, t: 'summon', name: '심연의 아이들', id: 'deepone', n: 3 },
+                { at: 0.50, t: 'roar',   name: '심연의 울음', r: 440, stun: 1.2, push: 110 },
+                { at: 0.30, t: 'swap',   name: '심연 개방',
+                            special: { t: 'meteor', name: '해일 낙하', first: 3, cd: 7, n: 5, dmg: 480, radius: 125, warn: 1.1, kind: 'tidal' } },
+                { at: 0.12, t: 'enrage', name: '바다의 종말', atk: 1.25, rate: 0.8, speed: 1.2 }
+              ] },
   /* ---------- 3.2 이벤트 전장의 적: 타이밍을 맞춰야 잡히는 보스 다섯과 그 졸개들 ---------- */
   bloodthrall:{ name: '혈귀 노예', body: '#6b2a34', accent: '#e04b6a', tunic: '#3a1a22', shape: 'bloodthrall',
               hp: 2400, atk: 180, range: 64, speed: 46, interval: 1.1, kb: 1, gold: 60, noReinf: true,
@@ -1138,6 +1226,31 @@ STAGES.push(
     W(2,'orcshield',5,2),W(26,'lich',1),W(52,'frostgiant',1),W(82,'drake',1),W(114,'warlord',1),W(148,'warchief',2,5),W(182,'spiderqueen',1),W(216,'golem',3,5),W(248,'warlord',1),W(276,'hellhound',10,.8)]}
 );
 
+/* 3막 '심연의 바다' (3.3): 신화의 끝 너머, 바다 밑에서 올라온 군단. 31~40전장. */
+const ACT3_FROM = 30;
+STAGES.push(
+  {name:'난파선 해안',hint:'집게 게의 등딱지는 작살과 독으로',baseHp:53000,money:470,rate:60,reward:2300,enemyMul:18.0,waves:[
+    W(2,'clawcrab',3,2),W(18,'nagaspear',5,1.2),W(38,'jelly',8,.7),W(60,'clawcrab',4,2),W(84,'nagaspear',6,1),W(110,'eel',6,.8),W(136,'clawcrab',5,1.8),W(162,'deepone',3,2.5),W(190,'nagaspear',8,.9)]},
+  {name:'산호초 여울',hint:'빠른 장어 떼는 범위 공격과 둔화로',baseHp:55000,money:475,rate:61,reward:2400,enemyMul:15.0,waves:[
+    W(2,'eel',8,.6),W(20,'jelly',8,.6),W(40,'nagaspear',6,1),W(64,'tidecaller',1),W(84,'eel',10,.5),W(110,'clawcrab',5,1.8),W(138,'deepone',4,2),W(166,'jelly',12,.5),W(196,'eel',12,.5)]},
+  {name:'★ 크라켄의 만',hint:'촉수 예고를 피하고, 크라켄이 부르는 해파리를 범위로 걷어 내세요',baseHp:58000,money:480,rate:62,reward:2900,boss:true,enemyMul:20.0,waves:[
+    W(2,'nagaspear',6,1),W(24,'kraken',1),W(46,'jelly',8,.6),W(70,'clawcrab',5,1.8),W(96,'eel',8,.6),W(124,'deepone',4,2),W(152,'nagaspear',8,.9),W(184,'clawcrab',6,1.6)]},
+  {name:'안개 등대',hint:'세이렌의 노래 · 등대지기의 등불이 홀림을 풉니다',baseHp:60000,money:485,rate:62,reward:2700,enemyMul:27.0,waves:[
+    W(2,'nagaspear',6,1),W(20,'siren',2,3),W(40,'deepone',4,2),W(62,'siren',3,2.5),W(86,'clawcrab',5,1.8),W(112,'seahook',2,4),W(138,'nagaspear',8,.9),W(166,'siren',3,2.5),W(194,'deepone',5,1.8)]},
+  {name:'세이렌의 암초',hint:'노래하는 세이렌을 매 조련사와 원거리로 먼저',baseHp:62000,money:490,rate:63,reward:2800,enemyMul:27.0,waves:[
+    W(2,'siren',3,2),W(22,'nagaspear',8,.9),W(44,'seahook',2,4),W(66,'siren',4,2),W(90,'eel',10,.5),W(116,'tidecaller',2,5),W(142,'deepone',5,1.8),W(170,'siren',4,2),W(200,'clawcrab',6,1.6)]},
+  {name:'★ 해일 여왕의 신전',hint:'해일에 밀려도 닻 수호병은 버팁니다 · 여왕이 부르는 나가를 걷어 내세요',baseHp:65000,money:500,rate:64,reward:3200,boss:true,enemyMul:14.0,waves:[
+    W(2,'nagaspear',8,.9),W(26,'tidequeen',1),W(50,'siren',3,2.5),W(76,'clawcrab',6,1.6),W(104,'tidecaller',2,5),W(132,'deepone',5,1.8),W(162,'nagaspear',10,.8),W(194,'eel',12,.5)]},
+  {name:'침몰한 도시',hint:'단단한 무리 · 파쇄와 범위로',baseHp:66000,money:505,rate:64,reward:3000,enemyMul:36.0,waves:[
+    W(2,'clawcrab',6,1.6),W(24,'deepone',5,1.8),W(48,'jelly',12,.5),W(72,'seahook',3,3),W(98,'clawcrab',8,1.4),W(126,'golem',2,5),W(154,'deepone',6,1.6),W(184,'nagaspear',10,.8),W(214,'clawcrab',8,1.4)]},
+  {name:'폭풍 해협',hint:'질주하는 장어와 영웅 사냥꾼 · 값싼 벽과 범위로',baseHp:68000,money:510,rate:65,reward:3100,enemyMul:16.0,waves:[
+    W(2,'eel',12,.5),W(22,'nagaspear',8,.9),W(46,'tidecaller',2,4),W(70,'eel',14,.4),W(96,'siren',4,2),W(122,'hellhound',8,.7),W(150,'nagaspear',10,.8),W(180,'eel',16,.4),W(210,'deepone',6,1.6)]},
+  {name:'심연의 문',hint:'모든 바다 군단 · 등불과 파쇄를 함께',baseHp:70000,money:515,rate:66,reward:3300,enemyMul:20.0,waves:[
+    W(2,'clawcrab',6,1.6),W(24,'siren',4,2),W(48,'deepone',6,1.6),W(74,'seahook',3,3),W(100,'tidecaller',2,4),W(126,'eel',14,.4),W(154,'clawcrab',8,1.4),W(184,'siren',5,1.8),W(214,'deepone',8,1.4),W(244,'nagaspear',12,.7)]},
+  {name:'★ 리바이어던의 심연',hint:'해일 낙하 예고를 피하고, 심연이 열리면 왕명으로 버티세요',baseHp:76000,money:530,rate:68,reward:4200,boss:true,enemyMul:20.0,waves:[
+    W(2,'nagaspear',8,.9),W(26,'leviathan',1),W(52,'siren',4,2),W(80,'clawcrab',8,1.4),W(110,'deepone',6,1.6),W(140,'tidecaller',3,4),W(170,'eel',16,.4),W(200,'seahook',3,3),W(230,'nagaspear',12,.7),W(262,'clawcrab',10,1.2)]}
+);
+
 
 /* 전장 특성. 어려운 전장에는 특성이 붙어서, 스탯 높은 병종을 몰아 넣는 것만으로는
  * 풀리지 않고 그 특성을 받아칠 병종을 챙겨야 한다. */
@@ -1157,7 +1270,9 @@ const HARD_STAGE_MODS = {
   9: ['ironclad'], 14: ['blitz'], 16: ['horde'], 17: ['ironclad', 'giantslayer'],
   19: ['horde', 'ironclad', 'giantslayer'],
   21: ['horde'], 23: ['horde', 'giantslayer', 'curse'], 24: ['blitz'], 26: ['blitz', 'giantslayer', 'curse'],
-  27: ['horde', 'ironclad'], 29: ['giantslayer', 'curse', 'horde', 'blitz']
+  27: ['horde', 'ironclad'], 29: ['giantslayer', 'curse', 'horde', 'blitz'],
+  // 3막
+  33: ['curse'], 36: ['ironclad', 'horde'], 37: ['blitz', 'giantslayer'], 38: ['ironclad', 'curse', 'blitz']
 };
 STAGES.forEach((st, i) => { if (!st.mods && HARD_STAGE_MODS[i]) st.mods = HARD_STAGE_MODS[i]; });
 // 전설·신화 풀이 넓어질수록 몰아 넣기만 한 편성도 두루 갖춘다. 조합이 필요한
@@ -1176,7 +1291,8 @@ STAGES[19].enemyMul = 3.2;             // 3.0: 대군주를 반드시 쓰러뜨�
 const ACT1_MOB_MUL = 1.3, ACT1_BOSS_MUL = 1.15, ACT2_MOB_MUL = 1.25;
 STAGES.forEach((st, i) => {
   if (i < 3) return;
-  const mul = i < 20 ? (st.boss ? ACT1_BOSS_MUL : ACT1_MOB_MUL) : (st.boss ? 1 : ACT2_MOB_MUL);
+  // 3막(3.3)은 배율을 처음부터 그 값으로 적어 두었다
+  const mul = i < 20 ? (st.boss ? ACT1_BOSS_MUL : ACT1_MOB_MUL) : i >= ACT3_FROM ? 1 : (st.boss ? 1 : ACT2_MOB_MUL);
   st.enemyMul = +(st.enemyMul * mul).toFixed(3);
 });
 
@@ -1211,7 +1327,7 @@ const NEW_MOB_WAVES = {
  *  면역: 무게로 밀고 오는 기계·거구·망령 — 둔화나 화력으로 잡아야 한다
  *  저항: 갑주 두른 정예·광폭한 적 — 기절이 30% 짧게 걸린다 */
 const STUN_IMMUNE = ['siegeram', 'souleater', 'titan', 'stoneward'];
-const STUN_RESIST = { demonknight: 0.5, rockling: 0.3, voidlord: 0.3, demonking: 0.3, golem: 0.5, orcshield: 0.3, dark: 0.3, warchief: 0.3, orcberserk: 0.3, jailer: 0.3, chariot: 0.3, wraith: 0.3 };
+const STUN_RESIST = { clawcrab: 0.3, deepone: 0.3, demonknight: 0.5, rockling: 0.3, voidlord: 0.3, demonking: 0.3, golem: 0.5, orcshield: 0.3, dark: 0.3, warchief: 0.3, orcberserk: 0.3, jailer: 0.3, chariot: 0.3, wraith: 0.3 };
 STUN_IMMUNE.forEach(id => {
   const e = ENEMIES[id];
   e.ab = Object.assign({}, e.ab, { stunImmune: true });
@@ -1244,17 +1360,20 @@ STAGES.forEach((st, i) => {
   st.waves.sort((a, b) => a.t - b.t);
 });
 
-const BOSS_ROLE = { troll: 'bruiser', frostgiant: 'bruiser', warlord: 'bruiser',
+const BOSS_ROLE = { kraken: 'bruiser', tidequeen: 'caster', leviathan: 'bruiser',
+                    troll: 'bruiser', frostgiant: 'bruiser', warlord: 'bruiser',
                     lich: 'caster', spiderqueen: 'caster', drake: 'flyer' };
 const BOSS_ESCORT = {
-  bruiser: { back: ['ballista', 'slinger', 'shaman', 'hexer', 'plaguer', 'orccatapult'], front: ['wolf', 'assassin', 'hellhound', 'orcspear'], nb: 4, nf: 2 },
-  caster:  { back: ['ballista', 'skelarcher', 'plaguer'], front: ['orcshield', 'boneguard', 'orcspear', 'orcberserk', 'chariot', 'dark'], nb: 2, nf: 4 },
+  bruiser: { back: ['ballista', 'slinger', 'shaman', 'hexer', 'plaguer', 'orccatapult'], front: ['wolf', 'assassin', 'hellhound', 'orcspear'], nb: 4, nf: 2,
+             sea: { back: ['siren', 'seahook'], front: ['nagaspear', 'eel'] } },
+  caster:  { back: ['ballista', 'skelarcher', 'plaguer'], front: ['orcshield', 'boneguard', 'orcspear', 'orcberserk', 'chariot', 'dark'], nb: 2, nf: 4,
+             sea: { back: ['siren', 'tidecaller'], front: ['clawcrab', 'deepone', 'nagaspear'] } },
   flyer:   { back: ['shaman', 'hexer', 'ballista'], front: ['orcshield', 'burrower', 'hellhound', 'boneguard', 'orcberserk', 'golem'], nb: 2, nf: 3 }
 };
 /* 전장 번호(0부터) → 그 전장의 보스 */
 const STAGE_BOSS = { 4: 'lich', 9: 'troll', 12: 'lich', 14: 'troll', 16: 'frostgiant', 17: 'drake',
                      18: 'spiderqueen', 19: 'warlord', 21: 'lich', 23: 'lich', 26: 'frostgiant',
-                     28: 'drake', 29: 'warlord' };
+                     28: 'drake', 29: 'warlord', 32: 'kraken', 35: 'tidequeen', 39: 'leviathan' };
 const ELITE_FOR = { troll: ['ogre', 1], lich: ['shaman', 2], frostgiant: ['golem', 1],
                     drake: ['hellhound', 3], spiderqueen: ['spider', 4], warlord: ['warchief', 1] };
 const BOSS_HP_MUL = 2.0;       // 하나뿐인 보스는 그만큼 단단하다
@@ -1272,7 +1391,9 @@ const BOSS_ATK_MUL = 1.2;
     const ok = id => first[id] !== undefined && first[id] <= i + 1;
     const pick = (list, k) => { const c = list.filter(ok); return c.length ? c[k % c.length] : 'orcspear'; };
     if (sig) {
-      const esc = BOSS_ESCORT[BOSS_ROLE[sig]];
+      const esc0 = BOSS_ESCORT[BOSS_ROLE[sig]];
+      // 3막 보스는 바다 군단이 호위한다
+      const esc = i >= ACT3_FROM && esc0.sea ? Object.assign({}, esc0, esc0.sea) : esc0;
       // 호위 규모: 앞 전장은 절반, 뒤로 갈수록 제 크기
       const grow = 0.5 + 0.5 * Math.min(1, i / 29);
       const nb = Math.max(2, Math.round(esc.nb * grow)), nf = Math.max(1, Math.round(esc.nf * grow));
@@ -1342,15 +1463,18 @@ STAGES.forEach((st, i) => {
  * ------------------------------------------------------------------ */
 const STAGE_LOOKS = ['meadow', 'wheat', 'river', 'forest', 'graveyard', 'cave', 'hills', 'camp', 'canyon', 'fortress',
   'darkforest', 'ruins', 'graveyard', 'fortress', 'fortress', 'swamp', 'snow', 'volcano', 'warcamp', 'warcamp',
-  'blackriver', 'underworld', 'thorns', 'underworld', 'blizzard', 'snow', 'snow', 'desert', 'eclipse', 'mythic'];
+  'blackriver', 'underworld', 'thorns', 'underworld', 'blizzard', 'snow', 'snow', 'desert', 'eclipse', 'mythic',
+  'shore', 'reef', 'stormsea', 'lighthouse', 'reef', 'sunken', 'sunken', 'stormsea', 'abyss', 'abyss'];
 const STAGE_MUSIC = ['meadow', 'wheat', 'river', 'wolfwood', 'graveyard', 'cave', 'hills', 'camp', 'canyon', 'fortress',
   'darkwood', 'ruins', 'return', 'shieldwall', 'gate', 'swamp', 'snowpass', 'volcano', 'warcamp', 'throne',
-  'blackriver', 'underworld', 'thorngate', 'seal', 'blizzard', 'siege', 'winterthrone', 'desert', 'eclipse', 'mythic'];
+  'blackriver', 'underworld', 'thorngate', 'seal', 'blizzard', 'siege', 'winterthrone', 'desert', 'eclipse', 'mythic',
+  'shore', 'coral', 'krakenbay', 'lighthouse', 'sirensong', 'tidetemple', 'sunken', 'strait', 'abyssgate', 'leviathan'];
 STAGES.forEach((st, i) => {
   st.look = st.look || STAGE_LOOKS[i] || 'meadow';
   st.music = st.music || STAGE_MUSIC[i] || 'meadow';
 });
-STAGES[STAGES.length - 1].finale = true;
+STAGES[29].finale = true;                      // 2막의 끝: 세 신화의 종착지
+STAGES[STAGES.length - 1].bossMusic = 'finale2';   // 3막의 끝은 따로 한 곡 (3.3)
 
 /* 전장 길이. 예전엔 모두 2000 이라 병사가 적과 부딪히기까지 40초 넘게 걸어야 했다.
  * 초반은 짧게 붙고, 뒤로 갈수록·보스 전장일수록 조금씩 길어진다. */
@@ -1358,7 +1482,7 @@ STAGES.forEach((st, i) => {
   if (st.len) return;
   // 레벨마다 조금씩 다르게: 뒤로 갈수록 길어지되, 사이사이 짧은 전장이 섞인다
   const wiggle = [0, -70, 50, -40, 80][i % 5];
-  const base = i < 20 ? 900 + 20 * i : 1180 + 18 * (i - 20);
+  const base = i < 20 ? 900 + 20 * i : i < 30 ? 1180 + 18 * (i - 20) : 1300 + 12 * (i - 30);   // 3막은 조금 짧게 다시 시작
   st.len = base + wiggle + (st.boss ? 120 : 0);
 });
 
@@ -1554,6 +1678,7 @@ const ACHIEVEMENTS = [
   { id: 'maxlv',    name: '정예 조련',    desc: '병종 하나를 15레벨로',        gold: 2500, stone: 3,
     test: s => Object.keys(s.levels || {}).some(k => s.levels[k] >= 15) },
   { id:'campaign30',name:'세 신화의 정복자',desc:'30전장 모두 돌파',gold:5000,stone:5,test:s=>s.cleared>=30 },
+  { id:'campaign40',name:'심연을 건넌 자',desc:'40전장 모두 돌파',gold:12000,stone:10,test:s=>s.cleared>=40 },
   { id: 'endless10',name: '끝없는 전장',  desc: '무한 전장 10웨이브 돌파',       gold: 2000, stone: 3,
     test: s => (s.endlessBest || 0) >= 10 },
   { id: 'endless25',name: '불굴의 성채',  desc: '무한 전장 25웨이브 돌파',       gold: 7000, stone: 8,
@@ -1562,8 +1687,10 @@ const ACHIEVEMENTS = [
     test: s => hardCount(s) >= 1 },
   { id: 'hard10',   name: '강철 의지',    desc: '하드코어 전장 10곳 돌파',        gold: 5000, stone: 5,
     test: s => hardCount(s) >= 10 },
-  { id: 'hard30',   name: '꺾이지 않는 왕국', desc: '하드코어 전장 30곳 모두 돌파', gold: 15000, stone: 15,
+  { id: 'hard30',   name: '꺾이지 않는 왕국', desc: '하드코어 전장 30곳 돌파', gold: 15000, stone: 15,
     test: s => hardCount(s) >= 30 },
+  { id: 'hard40',   name: '심연도 꺾지 못한 왕국', desc: '하드코어 전장 40곳 모두 돌파', gold: 40000, stone: 30,
+    test: s => hardCount(s) >= 40 },
   { id: 'event1',   name: '극악의 문턱', desc: '이벤트 전장 1곳 돌파',            gold: 3000, stone: 5,
     test: s => eventCount(s) >= 1 },
   { id: 'event5',   name: '마왕을 넘어선 자', desc: '이벤트 전장 5곳 모두 돌파',   gold: 30000, stone: 30,
@@ -1650,6 +1777,12 @@ function evoCost(u) { return Math.round(1200 + (u.cost || 0) * 6); }
  *  add: 스탯에 더함 · set: 스탯을 바꿈 · ab: 능력에 덧붙임 · mul: 'poison.dps' 처럼 능력 수치를 곱함
  *  cost: 대가. 'interval' 은 스탯, 'ab.heal' 은 능력 수치에 곱한다. 글은 자동으로 붙는다. */
 const EVOLUTIONS = {
+  // 3.3 3막 병종
+  harpoon: { name: '고래잡이', plus: '갈고리 작살 · 둔화 1.8초', ab: { slow: 1.8 }, cost: { interval: 1.12 } },
+  corsair: { name: '해적 선장', short: '해적선장', plus: '회피 30% · 쓰러뜨리면 금화', ab: { dodge: 0.3, bounty: { chance: 0.3, gold: 12 } }, cost: { hp: 0.9 } },
+  beacon: { name: '대등대지기', short: '대등대', plus: '보호막 180 · 등불이 더 멀리', ab: { barrier: 180, radius: 280 }, cost: { 'ab.interval': 1.15 } },
+  stormcaller: { name: '뇌우의 군주', short: '뇌우군주', plus: '벼락이 네 번 튕김', ab: { chain: { n: 4, fall: 0.66, range: 140 } }, cost: { interval: 1.12 } },
+  anchorguard: { name: '심해 수호자', short: '심해수호', plus: '근접 피해 15% 반사', ab: { thorns: 0.15 }, cost: { speed: 0.85 } },
   spear:   { name: '근위 창병', plus: '사거리 +20 · 찌를 때 적을 밀쳐 냄', add: { range: 20 }, ab: { push: 22 }, cost: { interval: 1.1 } },
   shield:  { name: '철벽 방패병', short: '철벽병', plus: '넉백 면역 · 근접 피해 15% 반사', ab: { kbImmune: true, thorns: 0.15 }, cost: { speed: 0.85 } },
   archer:  { name: '명궁', plus: '치명타 25% (2.2배)', ab: { crit: { chance: 0.25, mul: 2.2 } }, cost: { interval: 1.12 } },

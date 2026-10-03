@@ -139,9 +139,9 @@ test('Shared active cooldown and stun block skill spam',()=>{
   const b=heroBattle('odin');b.heroCooldowns.odin=0;b.heroGlobalCd=1;assert.equal(b.canHeroActive('odin'),false);
   b.heroGlobalCd=0;b.allies[0].stunT=1;assert.equal(b.canHeroActive('odin'),false);
 });
-test('Thirty stages retain the existing endless unlock threshold',()=>{
+test('Forty stages retain the existing endless unlock threshold',()=>{
   const {STAGES,ENDLESS_UNLOCK_STAGE}=vm.runInContext('({STAGES,ENDLESS_UNLOCK_STAGE})',ctx);
-  assert.equal(STAGES.length,30);assert.equal(ENDLESS_UNLOCK_STAGE,20);
+  assert.equal(STAGES.length,40);assert.equal(ENDLESS_UNLOCK_STAGE,20);
   assert.ok(STAGES.slice(20).every(s=>s.waves.length>=8&&s.reward>900));
 });
 test('First expansion victory advances from 20 to 21 and retains old stars',()=>{
@@ -824,6 +824,50 @@ test('Overtime: a stalled battle without fury slowly toughens new foes so it alw
   b.time = 480; assert.ok(b.spawnEnemy('goblin', 900).maxHp > e0 * 1.9);
   const en = new Battle(0, save(), makeEndlessStage()); en.update(1 / 30); const w = en.spawnEnemy('goblin', 900).maxHp;
   en.time = 600; assert.equal(en.spawnEnemy('goblin', 900).maxHp, w, 'endless has its own scaling');
+});
+
+/* ---------------- 3.3 3막 '심연의 바다' ---------------- */
+test('Act 3: ten sea stages with their own bosses, looks and music', () => {
+  const A = STAGES.slice(30);
+  assert.equal(A.length, 10);
+  assert.equal(A.filter(s => s.bossId).map(s => s.bossId).join(','), 'kraken,tidequeen,leviathan');
+  const seen = new Set(STAGES.map(s => s.music)); assert.equal(seen.size, 40, 'every stage has its own track');
+  const mus = fs.readFileSync(path.join(__dirname, '../js/music.js'), 'utf8');
+  for (const st of A) assert.ok(mus.indexOf('  ' + st.music + ': {') >= 0, st.music);
+  for (const t of ['boss_kraken', 'boss_tidequeen', 'finale2']) assert.ok(mus.indexOf('  ' + t + ': {') >= 0, t);
+  const render = fs.readFileSync(path.join(__dirname, '../js/render.js'), 'utf8');
+  for (const look of new Set(A.map(s => s.look))) assert.ok(render.indexOf('  ' + look + ':') >= 0, look);
+  assert.equal(STAGES[29].finale, true); assert.equal(STAGES[39].bossMusic, 'finale2');
+  assert.ok(A[9].enemyMul > A[0].enemyMul, 'the act ramps up');
+});
+test('New sea units and foes are drawn, translated and evolve', () => {
+  const render = fs.readFileSync(path.join(__dirname, '../js/render.js'), 'utf8');
+  const i18n = fs.readFileSync(path.join(__dirname, '../js/i18n.js'), 'utf8');
+  for (const id of ['harpoon', 'corsair', 'beacon', 'stormcaller', 'anchorguard']) {
+    assert.ok(render.indexOf("case '" + U[id].shape + "'") >= 0, id); assert.ok(G.EVOLUTIONS[id], id);
+    assert.ok(i18n.indexOf("'" + U[id].name + "'") >= 0, id + ' name'); assert.ok(U[id].unlockStage > 30 && U[id].unlockStage <= 40);
+  }
+  for (const id of ['clawcrab', 'nagaspear', 'siren', 'deepone', 'jelly', 'tidecaller', 'seahook', 'eel', 'kraken', 'tidequeen', 'leviathan']) {
+    assert.ok(render.indexOf("case '" + E[id].shape + "'") >= 0, id); assert.ok(i18n.indexOf("'" + E[id].name + "'") >= 0, id);
+  }
+  for (const k of ['tidal', 'harpoon', 'storm']) {
+    assert.ok(render.indexOf("case '" + k + "':") >= 0, 'canvas fx ' + k);
+    assert.ok(fs.readFileSync(path.join(__dirname, '../js/gl-fx.js'), 'utf8').indexOf("case '" + k + "':") >= 0, 'gl fx ' + k);
+  }
+});
+test('Siren song charms allies; the Lightkeeper lantern breaks it and wards it off', () => {
+  const s = save(); s.loadout = ['beacon']; const b = new Battle(0, s, { baseHp: 10000, money: 900, rate: 0, waves: [], reward: 0 });
+  const sp = b.makeAlly(U.spear, 500); b.allies.push(sp);
+  const sir = b.spawnEnemy('siren', 700); const undo = rnd(0);
+  b.hitOne(10, sp, sir, false); assert.ok(sp.charmT > 0, 'charmed');
+  const bc = b.makeAlly(U.beacon, 480); b.allies.push(bc); bc.abCd = 0; b.supportTick(bc, b.allies, 0.01, true);
+  assert.equal(sp.charmT, 0, 'lantern clears it'); b.hitOne(10, sp, sir, false); assert.equal(sp.charmT, 0, 'and wards it off'); undo();
+});
+test('Tidecallers push the front back without a boss banner', () => {
+  const b = battle(); b.update(1 / 30);
+  const tc = b.spawnEnemy('tidecaller', 700); const sp = b.makeAlly(U.spear, 600); b.allies.push(sp);
+  b.patternName = ''; b.bossAct(tc, E.tidecaller.special);
+  assert.ok(sp.x < 600, 'pushed'); assert.equal(b.patternName, '', 'no big banner for a mob');
 });
 
 console.log(count + ' regression checks passed');

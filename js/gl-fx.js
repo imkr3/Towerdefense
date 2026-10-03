@@ -711,6 +711,48 @@ class GLFx {
         break;
       }
 
+      /* 3.3 물보라: 솟구쳤다 쏟아지는 물기둥 */
+      case 'tidal': {
+        const foam = [0.9, 0.98, 1];
+        for (let i = 0, n = N(90); i < n; i++) {
+          const a = rnd(-Math.PI * 0.95, -Math.PI * 0.05), sp = rnd(160, 520) * sc;
+          this.add(x + rnd(-R * 0.3, R * 0.3), y, Math.cos(a) * sp * 0.6, Math.sin(a) * sp,
+                   rnd(0.45, 0.9), rnd(8, 18) * sc * big, 3 * sc, i % 3 ? col : foam, 0.85, 1.5, a, 0, 1300, 1.1);
+        }
+        for (let i = 0, n = N(48); i < n; i++) {
+          const a = i / n * TAU;
+          this.add(x, y, Math.cos(a) * R * 1.6, Math.sin(a) * R * 0.35, rnd(0.35, 0.6), 16 * sc, 4 * sc, foam, 0.8, 2, a, 0, 0, 1.2);
+        }
+        break;
+      }
+      /* 3.3 작살: 꽂히며 튀는 물방울 */
+      case 'harpoon': {
+        for (let i = 0, n = N(36); i < n; i++) {
+          const a = rnd(-Math.PI * 0.9, -Math.PI * 0.1), sp = rnd(120, 360) * sc;
+          this.add(x, y - 20 * sc, Math.cos(a) * sp, Math.sin(a) * sp, rnd(0.25, 0.5), rnd(5, 10) * sc, 1, i % 2 ? col : white, 1, 2, a, 0, 900);
+        }
+        break;
+      }
+      /* 3.3 뇌우: 먹구름에서 내리꽂는 벼락 */
+      case 'storm': {
+        const cloud = [0.35, 0.4, 0.52];
+        for (let i = 0, n = N(26); i < n; i++)
+          this.add(x + rnd(-60, 60) * sc, y - 260 * sc + rnd(-14, 14) * sc, rnd(-20, 20), 0, rnd(0.5, 0.8), rnd(30, 50) * sc, 50 * sc, cloud, 0.35, 1, 0, 0, 0, 1);
+        let px = x, py = y - 250 * sc;
+        const segs = N(30);
+        for (let i = 0; i < segs; i++) {
+          const ny = py + (250 * sc) / segs, nx = px + rnd(-12, 12) * sc, ang = Math.atan2(ny - py, nx - px);
+          this.add(px, py, 0, 0, rnd(0.3, 0.45), 22 * sc * big, 10 * sc, col, 0.6, 2.2, ang, 0, 0, 0.8);
+          this.add(px, py, 0, 0, rnd(0.3, 0.45), 8 * sc * big, 4 * sc, white, 1, 2.6, ang, 0, 0, 0.7);
+          px = nx; py = ny;
+        }
+        for (let i = 0, n = N(40); i < n; i++) {
+          const a = rnd(0, TAU), sp = rnd(80, 380) * sc;
+          this.add(x, y, Math.cos(a) * sp, -Math.abs(Math.sin(a)) * sp, rnd(0.25, 0.6), rnd(6, 14) * sc, 1, col, 1, 2, a, 0, 700);
+        }
+        break;
+      }
+
       /* 교차 참격 */
       case 'slash': {
         const cy = y - 34 * sc;

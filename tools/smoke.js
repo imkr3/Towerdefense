@@ -99,10 +99,13 @@ async function runSize(browser, size) {
   const expansionMap=await page.evaluate(()=>{
     save.cleared=20;mapChapter=2;mapSel=-1;renderMap();const cards=[...document.querySelectorAll('#stage-list .stage')];
     const res={count:cards.length,open:!cards[0].disabled&&cards[0].dataset.stage==='20',locked:cards[1].disabled};
-    mapChapter=3;renderMap();res.endless=!!document.querySelector('#endless-slot .e-btn');
+    mapChapter=CHAPTERS.findIndex(c=>c.endless);renderMap();res.endless=!!document.querySelector('#endless-slot .e-btn');
+    // 3.3 3막: 30전장을 넘기면 31전장이 열린다
+    save.cleared=30;mapChapter=CHAPTERS.findIndex(c=>c.name==='3막');mapSel=-1;renderMap();
+    const a3=[...document.querySelectorAll('#stage-list .stage')];res.act3=a3.length===10&&!a3[0].disabled&&a3[0].dataset.stage==='30'&&a3[1].disabled;
     return res;
   });
-  if(expansionMap.count!==10||!expansionMap.open||!expansionMap.locked||!expansionMap.endless)throw Error('Expansion progression or endless unlock broken: '+JSON.stringify(expansionMap));
+  if(expansionMap.count!==10||!expansionMap.open||!expansionMap.locked||!expansionMap.endless||!expansionMap.act3)throw Error('Expansion progression or endless unlock broken: '+JSON.stringify(expansionMap));
   await page.evaluate(n=>{save.cleared=n;mapChapter=-1;mapSel=-1;renderMap();},originalProgress);
   const mapFit=await page.evaluate(()=>{
     const r=document.querySelector('#btn-sortie').getBoundingClientRect(), d=document.querySelector('#stage-detail').getBoundingClientRect();
