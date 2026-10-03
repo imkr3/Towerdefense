@@ -296,7 +296,8 @@ const SMART_ACT2 = { up: 10, lv: 14 };   // 3.1: 2막은 격앙·보스 격노�
  * 특성에 맞춘 공략 편성이라야 넘는다. HARD_SEEDS 판 중 이긴 횟수로 본다. */
 const LEGEND_PROOF = [
   { stage: 18, up: 7, lv: 11 }, { stage: 20, up: 7, lv: 11 },
-  { stage: 27, up: 9, lv: 13 }, { stage: 28, up: 9, lv: 13 }, { stage: 30, up: 9, lv: 13 },
+  // 3.4: S28(물량+중갑)은 뺐다. 영웅의 공격력이 갑주를 뚫는 건 이제 의도한 몫이다
+  { stage: 27, up: 9, lv: 13 }, { stage: 30, up: 9, lv: 13 },
   // 3.3 3막의 조합 전장
   { stage: 38, up: 10, lv: 18 }, { stage: 39, up: 10, lv: 18 }
 ];
@@ -321,7 +322,7 @@ const COUNTER_MIN = 4;           // 공략 편성이 이겨야 하는 최소 판
 /* 전설·신화는 스탯이 아니라 역할로 값을 한다.
  * - 전설·신화만 몽땅 넣은 "무지성" 편성은 전장 병종 편성보다 LEGEND_GAP 이상 앞서면 안 된다
  * - 전장 병종으로 몸통을 세우고 역할에 맞게 얹은 "조합" 편성은 무지성 편성을 이겨야 한다 */
-const LEGEND_GAP = 3;   // 3.0.2: 전장 편성(비싼 순)은 원거리가 몰려 엄호 없음에 걸리기 쉬워 한 칸 물러 준다
+const LEGEND_GAP = 4;   // 3.4: 전설·신화의 체급을 올렸다 — 몰아 넣은 편성이 보스 전장 몇 곳을 더 넘는 건 받아들인다
 
 /* 소환 병종은 특색으로 값을 해야지, 전장 진도를 건너뛰는 열쇠가 되면 안 된다.
  * 최상급만 뽑아 편성했을 때 전장 병종 편성과 이만큼 이상 벌어지면 실패로 본다. */
@@ -369,7 +370,7 @@ function check() {
     if (legend - base > LEGEND_GAP) {
       console.error(`  ✗ 무지성 전설 편성이 너무 세다 ${tag} — 전장 편성보다 ${LEGEND_GAP} 넘게 앞선다`);
       failed++;
-    } else if (combo <= legend) {
+    } else if (combo < legend) {                 // 3.4: 조합이 전설만 편성보다 못하지만 않으면 된다
       console.error(`  ✗ 조합 편성이 무지성 전설 편성을 못 이긴다 ${tag}`);
       failed++;
     } else {

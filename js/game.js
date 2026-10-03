@@ -46,7 +46,7 @@ function setCastLimits(n, big) {
   CAST_BIG_LIMIT = big;
 }
 const HUNT_COST = 350;        // 영웅 사냥꾼 특성이 노리는 비용
-const HUNT_MUL = 3;
+const HUNT_MUL = 4;
 const CURSE_HEAL = 0.5;       // 저주: 아군 회복·흡혈 배율
 const CURSE_WITHER = 0.1;     // 저주: 소환물이 초당 잃는 최대 체력 비율
 const SLOW_SPEED_MUL = 0.45; // 둔화 시 이동

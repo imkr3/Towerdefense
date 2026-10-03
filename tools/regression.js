@@ -260,7 +260,9 @@ test('Stage traits: armored, horde, hero hunters and curse', () => {
   const hunt = mk(['giantslayer']), orc = hunt.spawnEnemy('goblin', 520);
   const cheap = hunt.makeAlly(U.spear, 500), pricey = hunt.makeAlly(U.thor, 500);
   let a = cheap.hp; hunt.hitOne(10, cheap, orc, false); assert.equal(a - cheap.hp, 10);
-  a = pricey.hp; hunt.hitOne(10, pricey, orc, false); assert.equal(a - pricey.hp, 30);
+  a = pricey.hp; hunt.hitOne(10, pricey, orc, false); const hurt = a - pricey.hp;
+  const calm = mk([]), thor = calm.makeAlly(U.thor, 500); a = thor.hp; calm.hitOne(10, thor, calm.spawnEnemy('goblin', 520), false);
+  assert.ok(Math.abs(hurt - (a - thor.hp) * 4) <= 1, 'hero hunters hit heroes 4x: ' + hurt + ' vs ' + (a - thor.hp));
   const cu = mk(['curse']), sk = cu.makeAlly(U.skeleton, 500); sk.summoned = true; cu.allies.push(sk);
   const kn = cu.makeAlly(U.knight, 480); cu.allies.push(kn);
   kn.hp = 100; kn.heal(100); assert.equal(kn.hp, 150);
@@ -725,16 +727,16 @@ test('Mistform: the vampire takes nothing, charms troops sent in, and swallows a
   assert.equal(mob.hp, mhp, 'active swallowed'); assert.ok(v.hp > v.maxHp * 0.5, 'mist feeds on it');
   v.veilT = 0; b.money = 9999; b.cooldowns.spear = 0; b.deploy('spear'); assert.equal(b.allies[b.allies.length - 1].charmT, 0);
 });
-test('Magma core: the titan shrugs off hits until its slam lands, then takes 2.5x', () => {
+test('Magma core: the titan shrugs off hits until its slam lands, then takes 3.6x', () => {
   const b = evBattle(1); b.update(1 / 30);
   const t = b.spawnEnemy('titan', 900); t.stunImm = 99;
   const arm = 1 - Math.min(0.75, t.ab.armor || 0);          // 중갑 특성도 함께 걸린다
   const h0 = t.hp; t.takeDamage(1000); const guarded = h0 - t.hp;
-  assert.ok(Math.abs(guarded - 150 * arm) < 1, 'guarded ' + guarded);
+  assert.ok(Math.abs(guarded - 50 * arm) < 1, 'guarded ' + guarded);
   b.allies.push(b.makeAlly(U.spear, 700));
   b.bossAct(t, E.titan.special); assert.equal(b.pending.length, 1);
   b.updatePending(5); assert.ok(t.exposedT > 5);
-  const h1 = t.hp; t.takeDamage(1000); assert.ok(Math.abs(h1 - t.hp - 2500 * arm) < 1);
+  const h1 = t.hp; t.takeDamage(1000); assert.ok(Math.abs(h1 - t.hp - 3600 * arm) < 1);
 });
 test('Broadside shells the deploy zone, not the front line', () => {
   const b = evBattle(2); b.update(1 / 30);
@@ -868,6 +870,27 @@ test('Tidecallers push the front back without a boss banner', () => {
   const tc = b.spawnEnemy('tidecaller', 700); const sp = b.makeAlly(U.spear, 600); b.allies.push(sp);
   b.patternName = ''; b.bossAct(tc, E.tidecaller.special);
   assert.ok(sp.x < 600, 'pushed'); assert.equal(b.patternName, '', 'no big banner for a mob');
+});
+
+/* ---------------- 3.4 영웅의 체급 · 극적인 진화 ---------------- */
+test('Legends and myths outclass their cost: more hp/atk, melee heroes get armor, knockback immunity and a second wind', () => {
+  const thor = G.resolveUnit(U.thor, 1), wukong = G.resolveUnit(U.wukong, 1), odin = G.resolveUnit(U.odin, 1);
+  const plain = G.resolveUnit(Object.assign({}, U.thor, { gacha: false, id: 'thor_plain' }), 1);
+  assert.ok(thor.hp >= plain.hp * 1.25 * 1.3 - 2 && thor.atk > plain.atk, 'melee hero hp ' + thor.hp + ' vs ' + plain.hp);
+  assert.ok(thor.ab.kbImmune && thor.ab.revive >= 0.3 && thor.ab.armor >= 0.1, 'melee hero kit');
+  assert.ok(wukong.ab.kbImmune && wukong.ab.revive >= 0.3, 'wukong kit');
+  assert.ok(odin.hp > U.odin.hp && odin.atk > U.odin.atk && !(odin.ab && odin.ab.kbImmune), 'ranged hero: stats only');
+  const spear = G.resolveUnit(U.spear, 1); assert.equal(spear.hp, U.spear.hp, 'regular units untouched');
+});
+test('Some evolutions change the whole silhouette, and every new look is drawn', () => {
+  const render = fs.readFileSync(path.join(__dirname, '../js/render.js'), 'utf8');
+  const big = Object.keys(G.EVOLUTIONS).filter(id => G.EVOLUTIONS[id].look);
+  assert.ok(big.length >= 8, 'several dramatic evolutions');
+  for (const id of big) {
+    const r = G.resolveUnit(U[id], 10, true), base = G.resolveUnit(U[id], 10, false);
+    assert.notEqual(r.shape, base.shape, id); assert.ok(r.bigEvo, id); assert.ok(r.scale > base.scale, id + ' grows');
+    assert.ok(render.indexOf("case '" + r.shape + "'") >= 0, id + ' drawn');
+  }
 });
 
 console.log(count + ' regression checks passed');

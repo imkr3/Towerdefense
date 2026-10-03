@@ -465,7 +465,7 @@ const I18N_EN = {
   '핏빛 월식': 'Blood Eclipse',
   '피의 갈증': 'Bloodthirst',
   '대지 거신': 'Earth Titan',
-  '용암 핵 · 평소엔 피해 85% 감소, 대지 분쇄 뒤 6초간 핵이 드러나 2.5배 — 그때 액티브와 왕명을 · 기절 면역': 'Magma core · takes 85% less damage, but after Earthshatter the core is exposed for 6s and takes 2.5× — use actives and the Command then · stun immune',
+  '용암 핵 · 평소엔 피해 95% 감소, 대지 분쇄 뒤 6초간 핵이 드러나 3.6배 — 그때 액티브와 왕명을 · 기절 면역': 'Magma core · takes 95% less damage, but after Earthshatter the core is exposed for 6s and takes 3.6× — use actives and the Command then · stun immune',
   '대지 분쇄': 'Earthshatter',
   '바위 떼': 'Rock Swarm',
   '거신의 분노': 'Titan\'s Wrath',

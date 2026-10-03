@@ -1080,18 +1080,18 @@ const ENEMIES = {
   titan:    { name: '대지 거신', body: '#6a6458', accent: '#ffb03c', tunic: '#4a453c', shape: 'titan',
               hp: 30000, atk: 900, range: 170, speed: 14, interval: 2.8, kb: 1, gold: 900,
               area: true, areaRadius: 160, scale: 2.2, boss: true,
-              ab: { kbImmune: true, core: { armor: 0.85, mul: 2.5 } },
+              ab: { kbImmune: true, core: { armor: 0.95, mul: 3.6 } },
               special: { t: 'slam', name: '대지 분쇄', first: 9, cd: 15, dmg: 1100, radius: 220, warn: 2.4, stun: 1.2, expose: 6 },
               phases: [
                 { at: 0.60, t: 'summon', name: '바위 떼', id: 'rockling', n: 3 },
                 { at: 0.30, t: 'swap', name: '거신의 분노',
                             special: { t: 'slam', name: '대지 분쇄', first: 4, cd: 11, dmg: 1300, radius: 240, warn: 2.2, stun: 1.4, expose: 5 } }
               ],
-              abText: '용암 핵 · 평소엔 피해 85% 감소, 대지 분쇄 뒤 6초간 핵이 드러나 2.5배 — 그때 액티브와 왕명을' },
+              abText: '용암 핵 · 평소엔 피해 95% 감소, 대지 분쇄 뒤 6초간 핵이 드러나 3.6배 — 그때 액티브와 왕명을' },
   ghostcaptain:{ name: '유령 선장', body: '#6a8a96', accent: '#5de0d0', tunic: '#2a3a48', shape: 'ghostcaptain',
               hp: 24000, atk: 760, range: 150, speed: 22, interval: 2.0, kb: 1, gold: 800,
               area: true, areaRadius: 130, scale: 1.7, boss: true, ab: { dodge: 0.15 },
-              special: { t: 'barrage', name: '일제 포격', first: 8, cd: 13, n: 5, gap: 80, radius: 85, dmg: 900, warn: 2.0, kind: 'firestorm' },
+              special: { t: 'barrage', name: '일제 포격', first: 8, cd: 13, n: 5, gap: 80, radius: 85, dmg: 2000, warn: 2.0, kind: 'firestorm' },
               phases: [
                 { at: 0.70, t: 'summon', name: '승선하라', id: 'ghostsailor', n: 4 },
                 { at: 0.35, t: 'swap', name: '전 포문 개방',
@@ -1218,7 +1218,7 @@ STAGES.push(
     W(2,'orcshield',4,2),W(22,'siegeram',2,5),W(46,'ballista',6,2),W(72,'frostgiant',1),W(100,'orcshield',6,1.8),W(126,'orccatapult',3,5),W(154,'warchief',2,5),W(184,'frostgiant',1),W(214,'dark',7,1.8)]},
   {name:'★ 영원의 겨울 왕좌',hint:'연속 광역 공격 뒤 왕명으로 회복',baseHp:44000,money:440,rate:54,reward:1600,boss:true,enemyMul:11.2,waves:[
     W(2,'wolf',8,1),W(24,'frostgiant',1),W(52,'troll',1),W(78,'orcshield',6,1.8),W(104,'frostgiant',1),W(136,'golem',2,5),W(164,'warchief',2,5),W(192,'frostgiant',1),W(224,'orcberserk',8,1)]},
-  {name:'불타는 태양 회랑',hint:'화상을 정화하며 화룡을 견제',baseHp:45500,money:445,rate:55,reward:1500,enemyMul:5.5,waves:[
+  {name:'불타는 태양 회랑',hint:'화상을 정화하며 화룡을 견제',baseHp:45500,money:445,rate:55,reward:1500,enemyMul:6,waves:[
     W(2,'hellhound',9,.8),W(26,'powder',6,1.8),W(52,'drake',1),W(80,'plaguer',6,2),W(108,'orcshield',6,1.8),W(138,'drake',1),W(170,'hellhound',10,.8),W(200,'siegeram',2,4),W(230,'dark',7,1.5)]},
   {name:'황금 일식의 제단',hint:'치유·가속 토템을 범위 공격으로 압박',baseHp:47500,money:450,rate:56,reward:1650,boss:true,enemyMul:4.2,waves:[
     W(2,'orcshield',5,2),W(26,'totem',2,6),W(50,'shaman',5,3),W(78,'warlord',1),W(108,'golem',2,5),W(140,'drake',1),W(174,'warchief',3,5),W(208,'orcberserk',8,1),W(240,'lich',2,8)]},
@@ -1500,7 +1500,7 @@ STAGES.forEach((st, i) => {
  * ======================================================================= */
 const EVENT_STAGES = [
   { name: '핏빛 월식', bossId: 'vampire', bossRole: 'caster', boss: true, look: 'graveyard', music: 'underworld',
-    bossMusic: 'boss_lich', mods: ['curse'], baseHp: 36000, money: 520, rate: 58, reward: 0, enemyMul: 10, bossMul: { hp: 18, atk: 1.6 },
+    bossMusic: 'boss_lich', mods: ['curse'], baseHp: 36000, money: 520, rate: 58, reward: 0, enemyMul: 10, bossMul: { hp: 20, atk: 1.6 },
     fury: { per30: 0.1, max: 1.2 }, len: 1500,
     event: { id: 'eclipse', deck: ['thor','zeus','ra','odin','pyro','javelin','knight','spartan','frost','catapult'],
              unlock: 10, reward: 6000, stones: 12,
@@ -1509,7 +1509,7 @@ const EVENT_STAGES = [
             W(70,'wraith',5,1.4), W(96,'bat',10,.5), W(120,'bloodthrall',4,1.6), W(150,'hexer',4,1.4), W(180,'wraith',6,1.2),
             W(210,'bloodthrall',5,1.4)] },
   { name: '거신의 망치', bossId: 'titan', bossRole: 'bruiser', boss: true, look: 'volcano', music: 'volcano',
-    bossMusic: 'boss_troll', mods: ['ironclad'], baseHp: 42000, money: 540, rate: 60, reward: 0, enemyMul: 10, bossMul: { hp: 2.6, atk: 1.6 },
+    bossMusic: 'boss_troll', mods: ['ironclad'], baseHp: 42000, money: 540, rate: 60, reward: 0, enemyMul: 10, bossMul: { hp: 5.6, atk: 1.6 },
     fury: { per30: 0.1, max: 1.2 }, len: 1550,
     event: { id: 'titan', deck: ['thor','ra','odin','rapriest','venom','pyro','alchemist','javelin','shield','knight'],
              unlock: 15, reward: 9000, stones: 15,
@@ -1518,7 +1518,7 @@ const EVENT_STAGES = [
             W(66,'rockling',6,1.2), W(92,'golem',2,5), W(120,'stoneward',2,4), W(146,'siegeram',2,5), W(176,'rockling',8,1),
             W(206,'golem',2,5)] },
   { name: '망령 함대', bossId: 'ghostcaptain', bossRole: 'caster', boss: true, look: 'blackriver', music: 'blackriver',
-    bossMusic: 'boss_drake', mods: ['blitz'], baseHp: 44000, money: 560, rate: 62, reward: 0, enemyMul: 6.5, bossMul: { hp: 2, atk: 1.6 },
+    bossMusic: 'boss_drake', mods: ['blitz'], baseHp: 44000, money: 560, rate: 62, reward: 0, enemyMul: 6, bossMul: { hp: 2, atk: 1.6 },
     fury: { per30: 0.1, max: 1.3 }, len: 1550,
     event: { id: 'fleet', deck: ['zeus','odin','thor','shield','spartan','frost','frostlancer','pyro','catapult','knight'],
              unlock: 20, reward: 12000, stones: 18,
@@ -1527,7 +1527,7 @@ const EVENT_STAGES = [
             W(46,'ghostsailor',5,.8), W(72,'ghostgunner',3,3), W(100,'ghostsailor',8,.7), W(128,'wraith',6,1),
             W(156,'ghostgunner',3,3), W(186,'ghostsailor',10,.6), W(216,'wraith',8,.9)] },
   { name: '혼돈의 균열', bossId: 'voidlord', bossRole: 'caster', boss: true, look: 'eclipse', music: 'eclipse',
-    bossMusic: 'boss_spiderqueen', mods: ['horde'], baseHp: 48000, money: 580, rate: 64, reward: 0, enemyMul: 10, bossMul: { hp: 4.4, atk: 1.6 },
+    bossMusic: 'boss_spiderqueen', mods: ['horde'], baseHp: 48000, money: 580, rate: 64, reward: 0, enemyMul: 10, bossMul: { hp: 4.8, atk: 1.6 },
     fury: { per30: 0.1, max: 1.3 }, len: 1600,
     event: { id: 'rift', deck: ['zeus','odin','thor','pyro','catapult','frost','knight','shield','spear','mage'],
              unlock: 25, reward: 15000, stones: 20,
@@ -1783,22 +1783,22 @@ const EVOLUTIONS = {
   beacon: { name: '대등대지기', short: '대등대', plus: '보호막 180 · 등불이 더 멀리', ab: { barrier: 180, radius: 280 }, cost: { 'ab.interval': 1.15 } },
   stormcaller: { name: '뇌우의 군주', short: '뇌우군주', plus: '벼락이 네 번 튕김', ab: { chain: { n: 4, fall: 0.66, range: 140 } }, cost: { interval: 1.12 } },
   anchorguard: { name: '심해 수호자', short: '심해수호', plus: '근접 피해 15% 반사', ab: { thorns: 0.15 }, cost: { speed: 0.85 } },
-  spear:   { name: '근위 창병', plus: '사거리 +20 · 찌를 때 적을 밀쳐 냄', add: { range: 20 }, ab: { push: 22 }, cost: { interval: 1.1 } },
+  spear:   { look: { shape: 'spear_evo', tunic: '#8e2f3a', accent: '#e8c65a', grow: 1.06 }, name: '근위 창병', plus: '사거리 +20 · 찌를 때 적을 밀쳐 냄', add: { range: 20 }, ab: { push: 22 }, cost: { interval: 1.1 } },
   shield:  { name: '철벽 방패병', short: '철벽병', plus: '넉백 면역 · 근접 피해 15% 반사', ab: { kbImmune: true, thorns: 0.15 }, cost: { speed: 0.85 } },
-  archer:  { name: '명궁', plus: '치명타 25% (2.2배)', ab: { crit: { chance: 0.25, mul: 2.2 } }, cost: { interval: 1.12 } },
-  priest:  { name: '대사제', plus: '치유 범위 +40 · 중독·화상·둔화 정화', ab: { cleanse: true }, abAdd: { radius: 40 }, cost: { 'ab.heal': 0.85 } },
+  archer:  { look: { shape: 'archer_evo', tunic: '#2f6a3a', accent: '#9fffb0', grow: 1.08 }, name: '명궁', plus: '치명타 25% (2.2배)', ab: { crit: { chance: 0.25, mul: 2.2 } }, cost: { interval: 1.12 } },
+  priest:  { look: { shape: 'priest_evo', tunic: '#f4f1e8', accent: '#ffe28a', grow: 1.08 }, name: '대사제', plus: '치유 범위 +40 · 중독·화상·둔화 정화', ab: { cleanse: true }, abAdd: { radius: 40 }, cost: { 'ab.heal': 0.85 } },
   berserk: { name: '피의 광전사', short: '피광전사', plus: '다칠수록 빨라짐 · 흡혈 15%', ab: { enrage: 1.8, lifesteal: 0.15 }, cost: { hp: 0.9 } },
   venom:   { name: '맹독 궁수', short: '맹독궁수', plus: '독이 주변으로 번짐 (범위 60)', set: { area: true, areaRadius: 60 }, cost: { interval: 1.15 } },
   bomber:  { name: '폭약 장인', short: '폭약장인', plus: '폭발 범위 +40 · 화상', add: { areaRadius: 40 }, ab: { burn: { dps: 30, dur: 3 } }, cost: { atk: 0.85 } },
   merchant:{ name: '왕실 조달관', short: '조달관', plus: '군자금 +40%', mul: { gold: 1.4 }, cost: { hp: 0.8 } },
-  knight:  { name: '성검 기사', short: '성검기사', plus: '범위 +20 · 흡혈 10%', add: { areaRadius: 20 }, ab: { lifesteal: 0.1 }, cost: { interval: 1.1 } },
+  knight:  { look: { shape: 'knight_evo', tunic: '#f0e6c8', accent: '#ffe9a0', grow: 1.1 }, name: '성검 기사', short: '성검기사', plus: '범위 +20 · 흡혈 10%', add: { areaRadius: 20 }, ab: { lifesteal: 0.1 }, cost: { interval: 1.1 } },
   frost:   { name: '빙결 마도사', short: '빙결마도', plus: '15% 확률로 얼림 (기절 0.8초)', ab: { stun: { chance: 0.15, dur: 0.8 } }, cost: { 'ab.slow': 0.7 } },
-  catapult:{ name: '화염 투석기', short: '화염투석', plus: '불붙은 바위 · 화상 · 범위 +25', add: { areaRadius: 25 }, ab: { burn: { dps: 35, dur: 4 } }, cost: { interval: 1.15 } },
+  catapult:{ look: { shape: 'catapult_evo', accent: '#ff8a3c', grow: 1.12 }, name: '화염 투석기', short: '화염투석', plus: '불붙은 바위 · 화상 · 범위 +25', add: { areaRadius: 25 }, ab: { burn: { dps: 35, dur: 4 } }, cost: { interval: 1.15 } },
   duelist: { name: '검성', plus: '체력 15% 이하 적 즉시 처치 (보스 제외)', ab: { execute: 0.15 }, cost: { 'ab.crit.chance': 0.67 } },
   sniper:  { name: '공성 저격수', short: '공성저격', plus: '파쇄 · 보스·중장갑에게 1.6배', ab: { breaker: 1.6 }, cost: { interval: 1.15 } },
-  mage:    { name: '대현자', plus: '기절 확률 30% · 화상', ab: { stun: { chance: 0.3, dur: 1.2 }, burn: { dps: 40, dur: 3 } }, cost: { areaRadius: 0.85 } },
-  colossus:{ name: '강철 요새', short: '강철요새', plus: '보호막 +20% · 근접 피해 20% 반사', mul: { barrier: 1.2 }, ab: { thorns: 0.2 }, cost: { speed: 0.85 } },
-  necro:   { name: '사령 군주', short: '사령군주', plus: '해골을 3기씩 소환', ab: { summon: { n: 3 } }, cost: { 'ab.interval': 1.3 } },
+  mage:    { look: { shape: 'mage_evo', tunic: '#2a2a6b', accent: '#9ad8ff', grow: 1.12 }, name: '대현자', plus: '기절 확률 30% · 화상', ab: { stun: { chance: 0.3, dur: 1.2 }, burn: { dps: 40, dur: 3 } }, cost: { areaRadius: 0.85 } },
+  colossus:{ look: { shape: 'colossus_evo', tunic: '#4a5a6a', accent: '#c9a227', grow: 1.12 }, name: '강철 요새', short: '강철요새', plus: '보호막 +20% · 근접 피해 20% 반사', mul: { barrier: 1.2 }, ab: { thorns: 0.2 }, cost: { speed: 0.85 } },
+  necro:   { look: { shape: 'necro_evo', tunic: '#1c1828', accent: '#7fffb0', grow: 1.1 }, name: '사령 군주', short: '사령군주', plus: '해골을 3기씩 소환', ab: { summon: { n: 3 } }, cost: { 'ab.interval': 1.3 } },
   herald:  { name: '전쟁 고수', short: '전쟁고수', plus: '가속에 더해 주변 아군 공격력 +12%', ab: { rally: { atk: 0.12, radius: 240 } }, cost: { 'ab.interval': 1.2 } },
   longbow: { name: '매의 눈', plus: '화살이 줄지어 선 적을 관통', ab: { pierce: true }, cost: { atk: 0.85 } },
   pyro:    { name: '업화술사', short: '업화술사', plus: '화상 +35% · 범위 +20', add: { areaRadius: 20 }, mul: { 'burn.dps': 1.35 }, cost: { atk: 0.85 } },
@@ -1815,7 +1815,7 @@ const EVOLUTIONS = {
   artemis: { name: '달의 여신', short: '달의여신', plus: '달빛 화살 · 둔화 · 치명타 20%', ab: { slow: 1.2, crit: { chance: 0.2, mul: 2 } }, cost: { interval: 1.1 } },
   medusa:  { name: '고르곤 여왕', short: '고르곤', plus: '석화의 시선이 주변으로 퍼짐', set: { area: true, areaRadius: 70 }, cost: { 'ab.stun.chance': 0.6 } },
   spartan: { name: '스파르타 왕', short: '스파르타왕', plus: '주변 아군 공격력 +12% · 반사 15%', ab: { thorns: 0.15, rally: { atk: 0.12, radius: 180 }, interval: 3 }, cost: { atk: 0.85 } },
-  thor:    { name: '천둥의 신', short: '천둥신', plus: '묠니르 번개가 2번 튕김', ab: { chain: { n: 2, fall: 0.5, range: 120 } }, cost: { 'ab.breaker': 0.89 } },
+  thor:    { look: { shape: 'thor_evo', accent: '#9ad8ff', grow: 1.12 }, name: '천둥의 신', short: '천둥신', plus: '묠니르 번개가 2번 튕김', ab: { chain: { n: 2, fall: 0.5, range: 120 } }, cost: { 'ab.breaker': 0.89 } },
   valkyrie:{ name: '발키리 대장', short: '발키리장', plus: '부활 체력 80% · 주변 보호막 90', ab: { revive: 0.8, barrier: 90 }, cost: { 'ab.heal': 0.5 } },
   fenrir:  { name: '종말의 늑대', short: '종말늑대', plus: '치명타 25% · 12% 기절', ab: { crit: { chance: 0.25, mul: 2.2 }, stun: { chance: 0.12, dur: 0.6 } }, cost: { 'ab.lifesteal': 0.6 } },
   viking:  { name: '바이킹 족장', short: '족장', plus: '도끼질이 범위 공격으로', set: { area: true, areaRadius: 70 }, cost: { interval: 1.15 } },
@@ -1855,7 +1855,7 @@ const EVOLUTIONS = {
   alchemist:{ name: '대연금술사', short: '대연금', plus: '부식 +75% · 범위 +20', add: { areaRadius: 20 }, mul: { 'sunmark.vuln': 1.75 }, cost: { 'ab.poison.dps': 0.6 } },
   monk:    { name: '금강 무승', short: '금강승', plus: '회피 20% · 흡혈 20%', ab: { dodge: 0.2, lifesteal: 0.2 }, cost: { atk: 0.9 } },
   // 3.0 서유기
-  wukong:  { name: '투전승불', plus: '분신 최대 6 · 여의봉 강타 강화', ab: { summon: { max: 6 } }, active: { mul: 2.9 }, cost: { atk: 0.85 } },
+  wukong:  { look: { shape: 'wukong_evo', tunic: '#c9a227', accent: '#ffd35a', grow: 1.1 }, name: '투전승불', plus: '분신 최대 6 · 여의봉 강타 강화', ab: { summon: { max: 6 } }, active: { mul: 2.9 }, cost: { atk: 0.85 } },
   nezha:   { name: '삼두육비 나타', short: '삼두육비', plus: '화상 +50% · 혼천릉 강화', mul: { 'burn.dps': 1.5 }, active: { pull: 130, slow: 4 }, cost: { hp: 0.9 } },
   sanzang: { name: '전단공덕불', short: '공덕불', plus: '회복 +30% · 적 공격력 -35%', mul: { heal: 1.3 }, ab: { pacify: { mul: 0.65 } }, cost: { 'ab.interval': 1.15 } },
   bajie:   { name: '정단사자', plus: '포식 25% · 근접 피해 15% 반사', ab: { feast: 0.25, thorns: 0.15 }, cost: { speed: 0.85 } },
@@ -1916,6 +1916,13 @@ function applyEvolution(r, e) {
   if (e.mul) for (const k in e.mul) { const v = _getPath(r.ab, k); if (typeof v === 'number') _setPath(r.ab, k, _r2(v * e.mul[k])); }
   if (e.abAdd) for (const k in e.abAdd) { const v = _getPath(r.ab, k); if (typeof v === 'number') _setPath(r.ab, k, v + e.abAdd[k]); }
   if (e.active && r.active) Object.assign(r.active, e.active);
+  // 3.4 극적인 진화: 모습 자체가 바뀐다 (다른 그림 · 색 · 몸집)
+  if (e.look) {
+    r.shape = e.look.shape;
+    for (const k of ['body', 'accent', 'tunic']) if (e.look[k]) r[k] = e.look[k];
+    r.scale = _r2(r.scale * (e.look.grow || 1));
+    r.bigEvo = true;
+  }
   if (e.cost) for (const k in e.cost) {
     if (k.indexOf('ab.') === 0) { const v = _getPath(r.ab, k.slice(3)); if (typeof v === 'number') _setPath(r.ab, k.slice(3), _r2(v * e.cost[k])); }
     else if (typeof r[k] === 'number') r[k] = k === 'interval' ? _r2(r[k] * e.cost[k]) : Math.round(r[k] * e.cost[k]);
@@ -2015,6 +2022,23 @@ function unitRoleStats(r, pw) {
 
 /* 레벨·진화를 반영한 병종. 전투·카드·훈련소가 모두 이것을 본다. */
 const _resolved = {};
+/* 3.4 영웅의 체급. 전설·신화는 역할로 값을 하되, 몸집과 힘도 일반 병사보다 한 수 위여야 한다.
+ * 근접 영웅은 앞에서 맞으며 싸우니 체력과 갑주를 더 받는다(예전엔 뭘 해 보기도 전에 쓰러졌다). */
+const HERO_POWER = { UR: { hp: 1.35, atk: 1.2 }, SSR: { hp: 1.25, atk: 1.15 } };
+const HERO_MELEE = { hp: 1.3, armor: 0.1, revive: 0.3 };
+function heroBuild(r) {
+  const p = r.gacha && HERO_POWER[r.rarity];
+  if (!p) return;
+  r.hp = Math.round(r.hp * p.hp);
+  r.atk = Math.round(r.atk * p.atk);
+  if (!r.ranged && r.atk > 0) {
+    r.hp = Math.round(r.hp * HERO_MELEE.hp);
+    r.ab = r.ab || {};
+    r.ab.armor = _r2(Math.min(0.5, (r.ab.armor || 0) + HERO_MELEE.armor));
+    r.ab.kbImmune = true;                       // 앞에서 버티는 영웅은 밀려나지 않는다
+    r.ab.revive = Math.max(r.ab.revive || 0, HERO_MELEE.revive);   // 불굴: 한 번은 다시 일어난다
+  }
+}
 function resolveUnit(u, lv, evo) {
   if (!u) return u;
   lv = Math.max(1, lv || 1);
@@ -2028,6 +2052,7 @@ function resolveUnit(u, lv, evo) {
   if (u.active) r.active = Object.assign({}, u.active);
   if (ev) applyEvolution(r, EVOLUTIONS[u.id]);
   growUnit(r, lv);
+  heroBuild(r);
   _resolved[key] = r;
   return r;
 }
