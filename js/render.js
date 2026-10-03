@@ -70,6 +70,7 @@ class Renderer {
     const q = (typeof Settings !== 'undefined') ? Settings.get('quality') : 'auto';
     if (q === 'high') { this.fxq = 1; return; }
     if (q === 'low') { this.fxq = 0; return; }
+    if (this.idle) return;
     const ms = Math.min(120, dt * 1000);
     this._frameMs += (ms - this._frameMs) * 0.12;
     if (this._qCool > 0) { this._qCool -= dt; return; }
@@ -103,25 +104,31 @@ class Renderer {
   /* 배경은 카메라에만 따라 움직이는 정지 화면이다. 카메라는 대부분의 프레임에서
    * 1픽셀도 채 움직이지 않으므로, 한 번 그려 두고 다시 쓰면 그만이다.
    * 가장 빨리 흐르는 층(땅 무늬)이 1픽셀 움직일 때마다만 다시 그린다. */
+  /* 3.5: 배경은 두 겹. 먼 풍경(하늘·산·뒷배경)은 시차가 작아 천천히 움직이니
+   * 따로 그려 두고 그 겹이 1px 이상 움직일 때만 다시 그린다 (해상도도 낮춰 — 흐릿해도 티가 안 난다).
+   * 땅은 카메라와 1:1 로 움직이고 단색 면이 대부분이라 매 프레임 바로 그린다.
+   * 예전엔 카메라가 움직일 때마다(전투 중엔 거의 매 프레임) 화면 전체를 처음부터 다시 칠했다. */
   drawBackground(look) {
-    const camQ = Math.round(this.cam * this.zoom);
-    const key = look + '|' + this.w + 'x' + this.h + '|' + this.groundY + '|' + camQ;
+    const far = Math.round(this.cam * BG_FAR_PAR);          // 먼 겹에서 가장 빠른 시차가 움직인 픽셀
+    const key = look + '|' + this.w + 'x' + this.h + '|' + this.groundY + '|' + far;
     if (this._bgKey !== key) {
       if (!this._bg) {
         this._bg = document.createElement('canvas');
-        this._bgCtx = this._bg.getContext('2d');
+        this._bgCtx = this._bg.getContext('2d', { alpha: false });
       }
-      if (this._bg.width !== this.cv.width || this._bg.height !== this.cv.height) {
-        this._bg.width = this.cv.width;
-        this._bg.height = this.cv.height;
-        const dpr = this.cv.width / this.w;
+      const dpr = Math.min(this.cv.width / this.w, BG_FAR_DPR);
+      const bw = Math.round(this.w * dpr), bh = Math.round(this.groundY * dpr) + 4;
+      if (this._bg.width !== bw || this._bg.height !== bh) {
+        this._bg.width = bw;
+        this._bg.height = bh;
         this._bgCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
         this._skyKey = null;                 // 그라디언트는 컨텍스트에 매여 있다
       }
-      this.paintBackground(this._bgCtx, look, camQ / this.zoom);
+      this.paintBackground(this._bgCtx, look, far / BG_FAR_PAR);
       this._bgKey = key;
     }
-    this.ctx.drawImage(this._bg, 0, 0, this.w, this.h);
+    this.ctx.drawImage(this._bg, 0, 0, this.w, this._bg.height * this.w / this._bg.width);
+    this.paintGround(this.ctx, look, this.cam);
   }
 
   paintBackground(ctx, look, cam) {
@@ -252,14 +259,23 @@ class Renderer {
     ctx.globalAlpha = pal.fog ? 1 : 0.2; ctx.fillStyle = mist;
     ctx.fillRect(0, gy - 60, w, 60); ctx.globalAlpha = 1;
 
+  }
+
+  paintGround(ctx, look, cam) {
+    const w = this.w, h = this.h, gy = this.groundY;
+    const pal = FIELD_LOOKS[look] || FIELD_LOOKS.meadow;
+    const layers = pal.layers || [];
     // 땅
     ctx.fillStyle = pal.ground;
     ctx.fillRect(0, gy + 2, w, h - gy);
     ctx.fillStyle = pal.groundDark;
     ctx.fillRect(0, gy + 2, w, 4);
-    const gg = ctx.createLinearGradient(0, gy, 0, h);          // 앞쪽으로 갈수록 어둡게
-    gg.addColorStop(0, 'rgba(0,0,0,0)'); gg.addColorStop(1, 'rgba(0,0,0,.22)');
-    ctx.fillStyle = gg; ctx.fillRect(0, gy + 2, w, h - gy);
+    if (this._groundKey !== gy + '|' + h) {                     // 앞쪽으로 갈수록 어둡게 (그라디언트는 한 번만)
+      this._groundGrad = ctx.createLinearGradient(0, gy, 0, h);
+      this._groundGrad.addColorStop(0, 'rgba(0,0,0,0)'); this._groundGrad.addColorStop(1, 'rgba(0,0,0,.22)');
+      this._groundKey = gy + '|' + h;
+    }
+    ctx.fillStyle = this._groundGrad; ctx.fillRect(0, gy + 2, w, h - gy);
 
     // 세 줄의 전열을 받치는 닳은 길
     ctx.fillStyle = 'rgba(225,211,171,.12)';
@@ -731,6 +747,21 @@ class Renderer {
 
     ctx.restore();
 
+    // 3.5: 모습이 바뀐 진화 병종은 몸 둘레로 금빛 불티가 천천히 떠오른다 (절전·느린 기기에선 생략)
+    if (f.s.bigEvo && this.fxq >= 0.5) {
+      const col = f.s.accent || '#ffe28a';
+      ctx.fillStyle = col;
+      ctx.globalCompositeOperation = 'lighter';
+      for (let i = 0; i < 4; i++) {
+        const q = ((clk * 0.45 + i * 0.25) % 1);
+        const px = x + Math.sin(clk * 1.7 + i * 2.3) * 16 * s, py = y - 8 * s - q * 62 * s;
+        ctx.globalAlpha = Math.sin(q * Math.PI) * 0.75;
+        ctx.fillRect(px - 1.3 * s, py - 1.3 * s, 2.6 * s, 2.6 * s);
+      }
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = 'source-over';
+    }
+
     const bw = 32 * s;
     if (f.hp < f.maxHp) {
       ctx.fillStyle = 'rgba(0,0,0,.45)';
@@ -981,8 +1012,17 @@ class Renderer {
         for(let i=0;i<18;i++){const a=i*2.399,rr=radius*(.2+.8*k);ctx.beginPath();ctx.arc(Math.cos(a)*rr,Math.sin(a)*rr*.2-k*(20+i%4*14)*cs,2*cs,0,7);ctx.fill();}
         ctx.restore();
       } else if (e.type === 'hit') {
+        // 3.5: 맞는 순간 짧은 섬광. 무거운 일격(보스·영웅·큰 진화)은 불티도 튄다
+        if (p > 0.55) {
+          const q = (p - 0.55) / 0.45, rr = (e.big ? 15 : 9) * cs * (1.3 - q * 0.5);
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.fillStyle = 'rgba(255,240,200,' + (q * (e.big ? 0.55 : 0.4)) + ')';
+          ctx.beginPath(); ctx.arc(x, y, rr, 0, 7); ctx.fill();
+          ctx.globalCompositeOperation = 'source-over';
+        }
+        if (e.big) this.glOnce(e, 'spark', x, y, e.color || '#ffd66e', 34);
         ctx.strokeStyle = 'rgba(255,255,255,' + p + ')';
-        ctx.lineWidth = 2.5 * cs;
+        ctx.lineWidth = (e.big ? 3.2 : 2.5) * cs;
         for (let i = 0; i < 3; i++) {
           const a = -0.6 + i * 0.7;
           const d = (1 - p) * 22 * cs + 6;
@@ -1176,6 +1216,14 @@ class Renderer {
           drawBody(ctx, e.st, sc, true, true, 0, false, 0);
         }
         ctx.restore();
+        if (e.hero && k < 0.5) {                        // 3.5: 영웅이 쓰러지면 빛이 흩어진다
+          this.glOnce(e, 'burst', x, this.rowY(e.row) - 30 * sc, '#ffe28a', 70 * sc);
+          const q = k / 0.5;
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.strokeStyle = 'rgba(255,226,138,' + (1 - q) * 0.8 + ')'; ctx.lineWidth = 3 * sc;
+          ctx.beginPath(); ctx.ellipse(x, this.rowY(e.row), (14 + q * 60) * sc, (5 + q * 18) * sc, 0, 0, 7); ctx.stroke();
+          ctx.globalCompositeOperation = 'source-over';
+        }
         if (k > 0.45) {                                 // 혼이 빠져나간다 (아군은 흰 빛, 적은 검은 연기)
           const q = (k - 0.45) / 0.55, ally = e.dir > 0;
           ctx.globalAlpha = Math.sin(q * Math.PI) * 0.5;
@@ -1198,15 +1246,20 @@ class Renderer {
         ctx.globalAlpha = 1;
       } else if (e.type === 'dmg') {
         if (!this.showDmg) continue;
-        const rise = (1 - p) * 34 * cs + (e.dy || 0);
-        ctx.globalAlpha = Math.min(1, p * 2);
-        ctx.font = 'bold ' + Math.round((e.crit ? 17 : 13) * cs) + 'px sans-serif';
+        // 3.5: 튀어나오듯 커졌다가 자리 잡고 떠오른다. 치명타는 더 크고 흔들린다
+        const k = 1 - p, ease = 1 - Math.pow(1 - Math.min(1, k / 0.6), 3);
+        const rise = ease * 34 * cs + (e.dy || 0);
+        const pop = k < 0.12 ? 1 + (k / 0.12) * 0.45 : 1.45 - Math.min(0.45, (k - 0.12) * 3);
+        const jx = e.crit && k < 0.3 ? Math.sin(k * 90) * 2 * cs : 0;
+        ctx.globalAlpha = Math.min(1, p * 2.5);
+        ctx.font = 'bold ' + Math.round((e.crit ? 18 : 13) * cs * pop) + 'px sans-serif';
         ctx.textAlign = 'center';
-        ctx.lineWidth = 3 * cs;
-        ctx.strokeStyle = 'rgba(0,0,0,.65)';
-        ctx.strokeText(e.v, x, y - rise);
+        ctx.lineWidth = (e.crit ? 4 : 3) * cs;
+        ctx.strokeStyle = e.crit ? 'rgba(90,30,0,.85)' : 'rgba(0,0,0,.65)';
+        const label = e.crit ? e.v + '!' : e.v;
+        ctx.strokeText(label, x + jx, y - rise);
         ctx.fillStyle = e.crit ? '#ffd166' : (e.ally ? '#ff9c8a' : '#f4ecd8');
-        ctx.fillText(e.v, x, y - rise);
+        ctx.fillText(label, x + jx, y - rise);
         ctx.textAlign = 'left';
         ctx.globalAlpha = 1;
       } else if (e.type === 'rally') {
@@ -1227,7 +1280,37 @@ class Renderer {
       } else if (e.type === 'cast') {
         if (this.glfx && this.glfx.ok) this.emitCast(e, x, cs);
         else this.drawCast(e, x, y, p, cs);
+      } else if (e.type === 'revive') {
+        // 3.5: 불굴 — 쓰러졌던 자리에서 금빛 고리가 솟고 '불굴!' 이 뜬다
+        const k = 1 - p, gy = this.rowY(e.row || 0), sc = cs * (e.scale || 1);
+        this.glOnce(e, 'holy', x, gy, '#ffe28a', 46 * sc);
+        ctx.globalCompositeOperation = 'lighter';
+        for (let i = 0; i < 2; i++) {
+          const q = Math.min(1, k * 1.6 - i * 0.25);
+          if (q <= 0) continue;
+          ctx.strokeStyle = 'rgba(255,226,138,' + (1 - q) * 0.9 + ')'; ctx.lineWidth = 3 * cs;
+          ctx.beginPath(); ctx.ellipse(x, gy - q * 70 * sc, (18 + q * 10) * sc, (6 + q * 3) * sc, 0, 0, 7); ctx.stroke();
+        }
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.globalAlpha = Math.min(1, p * 2.5);
+        ctx.font = 'bold ' + Math.round(15 * cs) + 'px sans-serif'; ctx.textAlign = 'center';
+        ctx.lineWidth = 3.5 * cs; ctx.strokeStyle = 'rgba(70,40,0,.85)';
+        const ty = gy - 92 * sc - k * 18 * cs;
+        ctx.strokeText(tr('불굴!'), x, ty); ctx.fillStyle = '#ffe28a'; ctx.fillText(tr('불굴!'), x, ty);
+        ctx.textAlign = 'left'; ctx.globalAlpha = 1;
       } else if (e.type === 'spawn') {
+        if (e.grand) {                                 // 3.5: 큰 진화·영웅은 빛기둥 속에서 내려선다
+          const gy = this.rowY(e.row), k = 1 - p, wv = (1 - k) * 18 * cs + 4 * cs;
+          this.glOnce(e, 'holy', x, gy, e.color || '#ffe28a', 50 * cs);
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.fillStyle = 'rgba(255,236,170,' + (p * 0.5) + ')';
+          ctx.fillRect(x - wv, gy - 170 * cs, wv * 2, 170 * cs);
+          ctx.fillStyle = 'rgba(255,255,240,' + (p * 0.6) + ')';
+          ctx.fillRect(x - wv * 0.35, gy - 170 * cs, wv * 0.7, 170 * cs);
+          ctx.globalCompositeOperation = 'source-over';
+          ctx.strokeStyle = 'rgba(255,226,138,' + p + ')'; ctx.lineWidth = 3 * cs;
+          ctx.beginPath(); ctx.ellipse(x, gy + 2, k * 46 * cs, k * 14 * cs, 0, 0, 7); ctx.stroke();
+        }
         ctx.strokeStyle = 'rgba(255,255,255,' + p + ')';
         ctx.lineWidth = 2.5 * cs;
         ctx.beginPath();
@@ -1649,7 +1732,8 @@ class Renderer {
     const camBefore = this.cam;
     this.follow(battle, dt);
     const ctx = this.ctx;
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!this._rmq) this._rmq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const reduced = this._rmq.matches;
     const shakeOn = typeof Settings === 'undefined' || Settings.get('shake');
     const sh = (reduced || !shakeOn) ? 0 : (battle.shake || 0);
     this.sceneTime = battle.time;
@@ -1741,9 +1825,11 @@ class Renderer {
       ctx.textAlign = 'center';
       ctx.lineWidth = 4;
       ctx.strokeStyle = 'rgba(0,0,0,.8)';
-      ctx.strokeText(text, this.w / 2, this.h * 0.3 - rise);
+      // 3.5: 폰 가로 화면(높이 390)에선 h*0.3 이 미니맵·보스 체력바와 겹쳤다. 그 아래로 내린다.
+      const ty = Math.max(this.h * 0.3, 136 + this.safeTop + fs) - rise;
+      ctx.strokeText(text, this.w / 2, ty);
       ctx.fillStyle = '#ffcf70';
-      ctx.fillText(text, this.w / 2, this.h * 0.3 - rise);
+      ctx.fillText(text, this.w / 2, ty);
       ctx.textAlign = 'left';
       ctx.globalAlpha = 1;
     }
@@ -5769,6 +5855,7 @@ const FIELD_LOOKS = {
 /* 예전 이름 (진군도 점 색 등) */
 const FIELD_PALETTES = Object.keys(FIELD_LOOKS).map(k => FIELD_LOOKS[k]);
 /* 시차를 두고 같은 모양을 반복해 그린다 */
+const BG_FAR_PAR = 0.6, BG_FAR_DPR = 1.25;   // 먼 배경 겹: 가장 빠른 시차, 해상도 상한
 function repL(R, cam, par, period, fn) {
   const o = cam * par;
   const k0 = Math.floor((o - 240) / period), k1 = Math.ceil((o + R.w + 240) / period);

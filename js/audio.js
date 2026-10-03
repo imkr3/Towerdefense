@@ -98,6 +98,9 @@ const SFX = {
   bossIn:   function () { this.tone(120, 0.5, 'sawtooth', 0.26, 260); this.noise(0.5, 400, 0.24); },
   levelUp:  function () { [523, 659, 784].forEach((f, i) =>
                 setTimeout(() => this.tone(f, 0.12, 'square', 0.18), i * 70)); },
+  // 3.5: 함성(rally)·불굴 부활. 엔진은 예전부터 불렀지만 소리가 없었다
+  rally:    function () { [440, 587, 784].forEach((f, i) =>
+                setTimeout(() => this.tone(f, 0.14, 'triangle', 0.2, f * 1.06), i * 55)); },
   command:  function () { [392, 523, 659, 880].forEach((f, i) =>
                 setTimeout(() => this.tone(f, 0.16, 'square', 0.2), i * 60)); },
   // 음악이 켜져 있으면 관현악 팡파르·애가(BGM.sting)가 대신 울린다

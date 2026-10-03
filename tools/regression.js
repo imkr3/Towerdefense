@@ -893,4 +893,34 @@ test('Some evolutions change the whole silhouette, and every new look is drawn',
   }
 });
 
+/* ---------------- 3.5 최적화 · 병력 상한 ---------------- */
+test('Field cap: at most 50 deployed soldiers, summons stop at 80 in total', () => {
+  const s = save(); s.loadout = ['spear', 'shield', 'archer', 'knight', 'mage', 'venom', 'longbow', 'priest']; const b = new Battle(0, s, { baseHp: 1e6, money: 1e6, rate: 0, waves: [], reward: 0 });
+  for (let i = 0; i < 120; i++) for (const id of s.loadout) { b.cooldowns[id] = 0; b.money = 1e6; b.deploy(id); }
+  assert.equal(b.allies.length, 50); assert.ok(b.fieldFull()); b.cooldowns.spear = 0; assert.equal(b.canDeploy('spear'), false);
+  for (let i = 0; i < 30; i++) { const m = b.makeAlly(U.skeleton, 300); m.summoned = true; b.allies.push(m); }
+  assert.equal(b.roomForSummon(), false, 'no room past 80');
+  b.allies[0].dead = true; b.allies.splice(0, 1); b.cooldowns.spear = 0; assert.ok(b.canDeploy('spear'), 'a fallen soldier frees a slot');
+});
+test('Renderer and HUD stay light: frame cap, HUD diffing, cached background layers', () => {
+  const main = fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8');
+  const render = fs.readFileSync(path.join(__dirname, '../js/render.js'), 'utf8');
+  assert.ok(/FRAME_MIN_MS/.test(main) && /ts - lastTs < /.test(main), 'frame cap');
+  const hud = main.slice(main.indexOf('function updateHud()'), main.indexOf('function updateHud()') + 4000);
+  assert.ok(!/\$\('#/.test(hud), 'updateHud must not query the DOM every frame');
+  assert.ok(!/\.textContent = /.test(hud.replace('el.textContent = v', '')), 'updateHud writes text only through hudText');
+  assert.ok(/paintGround\(/.test(render) && /BG_FAR_PAR/.test(render), 'background split into cached far layer + ground');
+  const css = fs.readFileSync(path.join(__dirname, '../css/style.css'), 'utf8');
+  for (const m of css.matchAll(/@keyframes\s+([\w-]+)\{([\s\S]*?)\}\s*\}/g))
+    assert.ok(!/box-shadow|\bleft:|\bwidth:/.test(m[2]), 'keyframes ' + m[1] + ' animates a paint/layout property');
+});
+
+test('Undying heroes show their second wind once', () => {
+  const b = battle(); const th = b.makeAlly(G.resolveUnit(U.thor, 5), 500); b.allies.push(th);
+  th.takeDamage(th.maxHp * 5); assert.ok(!th.dead && th.hp > 0 && th.usedRevive, 'revived');
+  b.update(1 / 30); assert.equal(b.fx.filter(e => e.type === 'revive').length, 1, 'one revive effect');
+  b.update(1 / 30); assert.equal(b.fx.filter(e => e.type === 'revive').length, 1, 'not repeated');
+  th.takeDamage(th.maxHp * 5); assert.ok(th.dead, 'only once');
+});
+
 console.log(count + ' regression checks passed');

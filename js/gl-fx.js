@@ -215,7 +215,7 @@ class GLFx {
     if (this.ok) this.gl.viewport(0, 0, cw, ch);
   }
 
-  clear() { this.count = 0; }
+  clear() { this.count = 0; this._empty = false; }
   setOffset(x, y) { this.offX = x || 0; this.offY = y || 0; }
 
   /* 파티클 하나. 자리가 없으면 조용히 버린다 (연출이 끊기는 게 렉보다 낫다). */
@@ -275,8 +275,11 @@ class GLFx {
   draw() {
     if (!this.ok) return;
     const gl = this.gl;
+    // 3.5: 파티클이 없으면 한 번만 비우고 그 뒤로는 손대지 않는다 (빈 화면을 매 프레임 합성하지 않게)
+    if (!this.count && this._empty) return;
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
+    this._empty = !this.count;
     if (!this.count) return;
 
     const d = this.data, o = this.inst, dpr = this.dpr;

@@ -4,6 +4,7 @@
 
 /* 전장 가로 길이(월드 좌표). 전장마다 다르다(STAGES[i].len).
  * 적 요새·적 출진 위치가 길이에 매여 있어서 전투를 만들 때 함께 맞춘다. */
+const FIELD_CAP = 50, FIELD_TOTAL_CAP = 80;   // 3.5: 전장 병력 상한 (직접 낸 병사 / 소환물 포함)
 const WORLD_DEFAULT = 2000;
 let WORLD = WORLD_DEFAULT;
 const ALLY_BASE_X = 96;      // 아군 성채 위치
@@ -19,7 +20,7 @@ const KILL_GOLD_RATE = 0.20; // 처치 보상 배율
 
 /* 효과음 헬퍼: 브라우저에서만 동작하고, 같은 소리가 몰릴 때는 솎아낸다 */
 const _sfxAt = {};
-const _sfxGap = { slash: 90, hit: 90, arrow: 110, boom: 140, die: 120, deploy: 40, gold: 200 };
+const _sfxGap = { slash: 90, hit: 90, arrow: 110, boom: 140, die: 120, deploy: 40, gold: 200, rally: 250 };
 function sfx(name) {
   if (typeof SFX === 'undefined' || !SFX.ready || !SFX.on) return;
   const now = (typeof performance !== 'undefined') ? performance.now() : Date.now();
@@ -415,9 +416,15 @@ class Battle {
     return unitFor(this.save, id);
   }
 
+  /* 3.5: 전장 병력 상한. 오래 끄는 싸움(무한 전장 등)에서 병력이 100명 넘게 쌓여
+   * 기기가 버거워했다. 직접 낸 병사 FIELD_CAP, 소환물까지 합쳐 FIELD_TOTAL_CAP. */
+  fieldCount() { let n = 0; for (const a of this.allies) if (!a.dead && !a.summoned) n++; return n; }
+  fieldFull() { return this.fieldCount() >= FIELD_CAP; }
+  roomForSummon() { return this.allies.length < FIELD_TOTAL_CAP; }
+
   canDeploy(id) {
     const u = this.stats(id);
-    return !!u && this.state === 'play' && this.roster.some(r => r.id === id) &&
+    return !!u && this.state === 'play' && this.roster.some(r => r.id === id) && !this.fieldFull() &&
       this.cooldowns[id] <= 0 && this.money >= u.cost &&
       (!u.maxActive || this.allies.filter(a => !a.dead && a.s.id === id).length < u.maxActive);
   }
@@ -453,7 +460,9 @@ class Battle {
       this.fx.push({ type: 'charm', x: f.x, row: f.row, t: 0.7, life: 0.7 });
     }
     this.allies.push(f);
-    this.fx.push({ type: 'spawn', x: f.x, row: f.row, t: 0.4, life: 0.4 });
+    // 3.5: 모습이 통째로 바뀐 진화 병종·영웅은 빛기둥과 함께 내려선다
+    const grand = !!(f.s.bigEvo || f.s.gacha);
+    this.fx.push({ type: 'spawn', x: f.x, row: f.row, t: grand ? 0.75 : 0.4, life: grand ? 0.75 : 0.4, grand: grand, color: f.s.accent });
     sfx('deploy');
     return true;
   }
@@ -512,7 +521,7 @@ class Battle {
       // 여의봉 강타: 분신이 곧바로 튀어나온다
       if (a.clones && f.ab.summon) {
         const u = UNIT_BY_ID[f.ab.summon.id];
-        for (let k = 0; u && k < a.clones; k++) {
+        for (let k = 0; u && k < a.clones && this.roomForSummon(); k++) {
           const m = this.makeAlly(u, f.x + f.dir * (30 + k * 24), f);
           m.summoned = true; m.summonedBy = f; m.lifeT = f.ab.summon.life || 8;
           this.allies.push(m);
@@ -750,7 +759,7 @@ class Battle {
       if (Math.abs(h.x - corpse.x) > r.radius) continue;
       let raised = 0;
       for (const a of this.allies) if (!a.dead && a.raisedBy === h) raised++;
-      if (raised >= r.max) continue;
+      if (raised >= r.max || !this.roomForSummon()) continue;
       const u = UNIT_BY_ID[r.id];
       if (!u) return;
       const m = this.makeAlly(u, corpse.x, h);
@@ -821,7 +830,7 @@ class Battle {
       if (!isEnemySide && !f.summoned) this.feedSouls(f);
       // 쓰러지는 연출 + 먼지
       this.fx.push({ type: 'corpse', st: f.s, x: f.x, row: f.row, dir: f.dir,
-                     scale: f.scale, t: 0.9, life: 0.9 });
+                     scale: f.scale, t: 0.9, life: 0.9, hero: !!(f.s.gacha && !f.summoned) });
       this.fx.push({ type: 'poof', x: f.x, row: f.row, t: 0.4, life: 0.4,
                      color: f.s.body, big: f.boss });
       if (f.boss) {
@@ -956,6 +965,12 @@ class Battle {
             f.usedRevive = true; f.hp = Math.round(f.maxHp * f.ab.revive); f.reviveFx = true;
           } else { f.hp = 0; f.dead = true; continue; }
         }
+      }
+      // 3.5: 부활(불굴)이 화면에 보이게 한다 — 전엔 표시만 해 두고 아무도 읽지 않았다
+      if (f.reviveFx) {
+        f.reviveFx = false;
+        this.fx.push({ type: 'revive', x: f.x, row: f.row, t: 0.9, life: 0.9, scale: f.scale, hero: !!f.s.gacha });
+        sfx('rally');
       }
 
       if (f.ab.regen && !burning) f.heal(f.ab.regen * dt);
@@ -1129,6 +1144,7 @@ class Battle {
         const sx = f.x - f.dir * (20 + i * 22);
         if (isAlly) {
           const u = UNIT_BY_ID[ab.summon.id];
+          if (u && !this.roomForSummon()) break;
           if (u) {
             // 포탑처럼 수가 정해진 소환물은 그 이상 세우지 않는다
             if (ab.summon.max) {
@@ -1281,7 +1297,7 @@ class Battle {
           const sx = f.x - f.dir * (30 + i * 26);
           if (f.side === 'ally') {
             const u = UNIT_BY_ID[a.id];
-            if (u) { const m = this.makeAlly(u, sx, f); m.summoned = true; this.allies.push(m); }
+            if (u && this.roomForSummon()) { const m = this.makeAlly(u, sx, f); m.summoned = true; this.allies.push(m); }
           } else {
             const m = this.spawnEnemy(a.id, sx); m.summoned = true; m.wave = f.wave;
           }
@@ -1723,7 +1739,8 @@ class Battle {
     f.cd = f.intervalNow;
     f.swing = 0.22;
     this.hitOne(f.atk, best, null, false);
-    this.fx.push({ type: 'hit', x: best.x, row: best.row, dir: -f.dir, t: 0.2, life: 0.2 });
+    this.fx.push({ type: 'hit', x: best.x, row: best.row, dir: -f.dir, t: 0.2, life: 0.2,
+                   big: !!(f.boss || f.s.gacha || f.s.bigEvo || f.scale >= 1.4), color: f.s.accent });
   }
 
   /* 제우스의 연쇄 번개. 맞은 적에서 가까운 적으로 줄줄이 옮겨 가며 약해진다.

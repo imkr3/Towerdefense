@@ -1269,73 +1269,85 @@ function autoDeploy(dt) {
   if (ready.length) battle.deploy(ready[0].id);
 }
 
+/* 3.5: HUD 는 매 프레임 불리지만 값이 바뀐 곳만 DOM 에 쓴다.
+ * 예전엔 매 프레임 글자·너비·속성을 전부 다시 써서 스타일 재계산이 끊이지 않았다(발열의 한 원인). */
+const hudEls = {};
+function hudEl(sel) { return hudEls[sel] || (hudEls[sel] = $(sel)); }
+function hudText(el, v) { v = String(v); if (el._t !== v) { el._t = v; el.textContent = v; } }
+function hudStyle(el, k, v) { const key = '_s' + k; if (el[key] !== v) { el[key] = v; el.style.setProperty(k, v); } }
+function hudAttr(el, k, v) { const key = '_a' + k; if (el[key] !== v) { el[key] = v; el.setAttribute(k, v); } }
+function hudClass(el, c, on) { const key = '_c' + c; on = !!on; if (el[key] !== on) { el[key] = on; el.classList.toggle(c, on); } }
+const pct1 = v => (Math.round(v * 10) / 10) + '%';
 function updateHud() {
   const money = Math.floor(battle.money);
-  $('#kill-count').textContent = battle.kills;
+  hudText(hudEl('#kill-count'), battle.kills);
   // 증원이 돌기 시작하면 남은 적을 셀 수 없다
-  $('#foe-left').textContent = (battle.endless || battle.reinforcing()) ? '∞' : battle.foesLeft();
-  const cmdBtn = $('#btn-command');
+  hudText(hudEl('#foe-left'), (battle.endless || battle.reinforcing()) ? '∞' : battle.foesLeft());
+  const cmdBtn = hudEl('#btn-command');
   const ready = battle.canCommand();
-  cmdBtn.disabled = !canBattleInput() || !ready;
+  const cmdOff = !canBattleInput() || !ready;
+  if (cmdBtn.disabled !== cmdOff) cmdBtn.disabled = cmdOff;
   const allyPct = Math.max(0, battle.allyCastle.hp / battle.allyCastle.maxHp * 100);
   const enemyPct = Math.max(0, battle.enemyCastle.hp / battle.enemyCastle.maxHp * 100);
-  $('#ally-hp').style.width = allyPct + '%';
-  $('#enemy-hp').style.width = enemyPct + '%';
-  $('#ally-hp-txt').textContent = Math.ceil(allyPct) + '%';
-  $('#enemy-hp-txt').textContent = Math.ceil(enemyPct) + '%';
-  $('#castle-status').classList.toggle('critical', allyPct < 30);
+  hudStyle(hudEl('#ally-hp'), 'width', pct1(allyPct));
+  hudStyle(hudEl('#enemy-hp'), 'width', pct1(enemyPct));
+  hudText(hudEl('#ally-hp-txt'), Math.ceil(allyPct) + '%');
+  hudText(hudEl('#enemy-hp-txt'), Math.ceil(enemyPct) + '%');
+  hudClass(hudEl('#castle-status'), 'critical', allyPct < 30);
   // 적이 언제 나오는지는 알려 주지 않는다. 무한 전장만 몇 웨이브째인지 보여 준다.
   const preview = battle.endless
     ? '웨이브 ' + battle.currentWave() + ' · 적 ×' + endlessMul(battle.currentWave() - 1).toFixed(1) +
       (battle.wardUp() ? ' · 요새 결계 (' + ENDLESS_FORT_WAVE + '웨이브부터 함락 가능)' : '')
     : (battle.wardUp() ? '보스의 결계 · 보스를 쓰러뜨려야 요새가 무너집니다'
       : (battle.reinforcing() ? '적 증원 중' : ''));
-  const wp = $('#wave-preview');
-  if (wp.textContent !== preview) wp.textContent = preview;
-  wp.hidden = !preview;
-  $('#battle-clock').textContent = Math.floor(battle.time / 60) + ':' + String(Math.floor(battle.time % 60)).padStart(2, '0');
-  cmdBtn.classList.toggle('ready', ready);
-  $('#cmd-cd').textContent = ready ? '준비'
-    : (battle.cmdCd > 0 ? Math.ceil(battle.cmdCd) : '대기');
+  const full = battle.state === 'play' && battle.fieldFull();
+  const msg = full ? (preview ? preview + ' · ' : '') + '병력 가득 · 전장엔 ' + FIELD_CAP + '명까지' : preview;
+  const wp = hudEl('#wave-preview');
+  hudText(wp, msg);
+  if (wp.hidden !== !msg) wp.hidden = !msg;
+  hudText(hudEl('#battle-clock'), Math.floor(battle.time / 60) + ':' + String(Math.floor(battle.time % 60)).padStart(2, '0'));
+  hudClass(cmdBtn, 'ready', ready);
+  hudText(hudEl('#cmd-cd'), ready ? '준비' : (battle.cmdCd > 0 ? Math.ceil(battle.cmdCd) : '대기'));
   // 시간 주술사가 살아 있으면 카드가 느리게 찬다는 걸 보여 준다
-  $('#cards').classList.toggle('chrono', !!battle.chronoOn);
-  $('#money-txt').textContent = money;
-  $('#wallet-txt').textContent = battle.walletMax;
-  $('#wallet-fill').style.width = (battle.money / battle.walletMax * 100) + '%';
+  hudClass(hudEl('#cards'), 'chrono', !!battle.chronoOn);
+  hudText(hudEl('#money-txt'), money);
+  hudText(hudEl('#wallet-txt'), battle.walletMax);
+  hudStyle(hudEl('#wallet-fill'), 'width', pct1(battle.money / battle.walletMax * 100));
+  const inputOk = canBattleInput();
   cardEls.forEach(el => {
     const id = el.dataset.id;
     const cd = battle.cooldowns[id];
-    const cool = el.querySelector('.cool');
+    const cool = el._cool || (el._cool = el.querySelector('.cool'));
     const u = battle.stats(id);
     // 전설·신화가 전장에 서 있으면 카드는 액티브 버튼이 된다
     const alive = !!(u.active && battle.heroCaster(id));
-    el.classList.toggle('alive', alive);
+    hudClass(el, 'alive', alive);
     if (u.active) {
-      const act = el.querySelector('.c-act');
-      act.classList.toggle('hide', !alive);
+      const act = el._act || (el._act = el.querySelector('.c-act'));
+      hudClass(act, 'hide', !alive);
       if (alive) {
         const acd = Math.max(battle.heroCooldowns[id] || 0, battle.heroGlobalCd);
         const ready = battle.canHeroActive(id);
-        el.classList.toggle('act-ready', ready);
+        hudClass(el, 'act-ready', ready);
         const k = acd > 0 && !ready ? '충전' : '필살';
         const v = ready ? '발동!' : (acd > 0 ? Math.ceil(acd) + '초' : '대상 없음');
-        const kEl = act.querySelector('.c-act-k'), vEl = act.querySelector('.c-act-v');
-        if (kEl.textContent !== k) kEl.textContent = k;
-        if (vEl.textContent !== v) vEl.textContent = v;
-        el.style.setProperty('--act', (u.active.cd ? Math.min(1, acd / u.active.cd) : 0) * 100 + '%');
-        el.setAttribute('aria-label', u.name + ' ' + u.active.name + ' ' + v);
+        hudText(el._actK || (el._actK = act.querySelector('.c-act-k')), k);
+        hudText(el._actV || (el._actV = act.querySelector('.c-act-v')), v);
+        hudStyle(el, '--act', pct1((u.active.cd ? Math.min(1, acd / u.active.cd) : 0) * 100));
+        hudAttr(el, 'aria-label', u.name + ' ' + u.active.name + ' ' + v);
       } else {
-        el.classList.remove('act-ready');
-        el.setAttribute('aria-label', u.name + ' 출진, 비용 ' + u.cost);
+        hudClass(el, 'act-ready', false);
+        hudAttr(el, 'aria-label', u.name + ' 출진, 비용 ' + u.cost);
       }
     }
-    if (cd > 0 && !alive) { cool.classList.remove('hide'); cool.textContent = cd.toFixed(1); }
-    else cool.classList.add('hide');
-    el.classList.toggle('poor', !alive && money < u.cost);
-    el.classList.toggle('available', alive ? battle.canHeroActive(id) : battle.canDeploy(id));
-    el.setAttribute('aria-disabled', String(!canBattleInput() || !(battle.canDeploy(id) || (u.active && battle.canHeroActive(id)))));
+    if (cd > 0 && !alive) { hudClass(cool, 'hide', false); hudText(cool, cd.toFixed(1)); }
+    else hudClass(cool, 'hide', true);
+    const canDeploy = battle.canDeploy(id), canAct = !!(u.active && battle.canHeroActive(id));
+    hudClass(el, 'poor', !alive && money < u.cost);
+    hudClass(el, 'available', alive ? canAct : canDeploy);
+    hudAttr(el, 'aria-disabled', String(!inputOk || !(canDeploy || canAct)));
     const max = u.cooldown * battle.cdMul;
-    el.style.setProperty('--cooldown', (max ? cd / max * 100 : 0) + '%');
+    hudStyle(el, '--cooldown', pct1(max ? cd / max * 100 : 0));
   });
 }
 
@@ -1431,24 +1443,38 @@ function showEndlessResult() {
 
 /* ------------------------------ 루프 ------------------------------ */
 let bossMusic = false, bossMusicT = 0;
+/* 3.5: 화면 주사율이 90·120Hz 인 폰은 requestAnimationFrame 이 그만큼 자주 와서
+ * 같은 장면을 두 배로 그리느라 뜨거워졌다. 60fps(절전은 30fps)로 묶는다. */
+const FRAME_MIN_MS = { auto: 14, high: 14, low: 30 };
+const IDLE_FRAME_MS = 48;      // 멈춤·결과 화면처럼 거의 움직이지 않을 때 (약 20fps)
+const TITLE_FRAME_MS = 30;     // 타이틀 배경 행진 (약 30fps)
+let battleScr = null;
 function loop(ts) {
   requestAnimationFrame(loop);
   if (!lastTs) lastTs = ts;
+  battleScr = battleScr || $('#scr-battle');
+  const inBattle = !titleAnim.on && battle && battleScr.classList.contains('active');
+  const modal = inBattle && !!document.querySelector('.modal.show');
+  const idle = inBattle && (paused || modal || battle.state !== 'play');
+  const minMs = Math.max(FRAME_MIN_MS[Settings.get('quality')] || 14,
+                         titleAnim.on ? TITLE_FRAME_MS : (idle ? IDLE_FRAME_MS : 0));
+  if (ts - lastTs < minMs) return;
   let dt = (ts - lastTs) / 1000;
   lastTs = ts;
   if (dt > 0.1) dt = 0.1;
 
   if (titleAnim.on) { drawTitle(dt); return; }
-  if (!battle || !$('#scr-battle').classList.contains('active')) return;
+  if (!inBattle) return;
 
   const before = battle.state;
-  if (!paused && !$('.modal.show')) {
+  if (!paused && !modal) {
     autoDeploy(dt * battle.speed);
     battle.update(dt);
     if (battle.state === 'play') playAccum += dt;
   }
   else battle.updateFx(dt * 0.4);
-  renderer.render(battle, dt, (paused || $('.modal.show')) ? dt * 0.4 : dt);
+  renderer.idle = idle;           // 일부러 늦춘 프레임은 품질 판단에 넣지 않는다
+  renderer.render(battle, dt, (paused || modal) ? dt * 0.4 : dt);
   updateHud();
   // 보스가 서면 곡을 바꾼다. 매 프레임 적을 훑을 필요는 없다.
   if (!bossMusic && battle.state === 'play' && (bossMusicT -= dt) <= 0) {
