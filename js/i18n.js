@@ -736,6 +736,18 @@ const I18N_EN = {
   '강철 의지': 'Will of Iron', '하드코어 전장 10곳 돌파': 'Clear 10 stages on Hardcore',
   '꺾이지 않는 왕국': 'The Unbroken Kingdom', '하드코어 전장 30곳 모두 돌파': 'Clear all 30 stages on Hardcore',
   '모든 시즌에서 전설 이상을 각각 보유': 'Own a Legend or better from every season',
+  // 저장소 오류 문구 (save-store.js). '복원하지 않았습니다: …' 뒤에 붙어서도 나온다.
+  '기존 저장을 읽지 못해 덮어쓰기를 막았습니다. 저장 관리에서 원본을 백업하거나 복원해 주세요.': 'Couldn\'t read the existing save, so overwriting is blocked. Back up or restore it from the save manager.',
+  '저장에 실패했습니다. 저장 관리에서 백업을 내보내 주세요.': 'Saving failed. Export a backup from the save manager.',
+  '게임 저장 데이터가 아닙니다.': 'This is not game save data.',
+  '백업은 1MB 이하의 JSON 파일이어야 합니다.': 'A backup must be a JSON file of 1MB or less.',
+  '지원하지 않는 백업 버전입니다.': 'Unsupported backup version.',
+  '저장 항목 형식 오류': 'Bad save field',
+  '저장 숫자 오류': 'Bad save number',
+  '저장 능력치 오류': 'Bad save stat',
+  '진화 데이터 오류': 'Bad evolution data',
+  '편성 데이터 오류': 'Bad squad data',
+  '일일 임무 데이터 오류': 'Bad daily mission data'
 };
 
 /* 목록 문단처럼 굵은 글씨가 섞인 덩어리는 통째로 바꾼다 */
@@ -770,6 +782,12 @@ const I18N_EN_PATTERNS = [
   [/지금 슬롯 (\d)을 저장하고 슬롯 (\d)\(으\)로 바꿉니다\./g, 'Saves slot $1 and switches to slot $2.'],
   [/슬롯 (\d)의 (진행도와 소환한 병종이 모두 삭제됩니다)/g, 'Slot $1: $2'],
   [/(\d+)시간 (\d+)분/g, '$1h $2m'],
+  [/(\d+)분/g, '$1m'],
+  [/전장 (\d+)개 돌파 · 골드 (\d+) · 소환석 (\d+)\./g, 'Stages cleared $1 · Gold $2 · Summon stones $3.'],
+  [/(\d+)개 칸을 채웠습니다/g, 'Filled $1 slots'],
+  [/병력 가득 · 전장엔 (\d+)명까지/g, 'Army full · up to $1 on the field'],
+  [/추천 편성 (\d+)개 병종을 넣었습니다/g, 'Added $1 recommended units'],
+  [/레벨 (\d+) 완료/g, 'reached Lv $1'],
   [/(\d+)\s*전장 돌파/g, 'Stage $1 cleared'],
   [/전장 (\d+)/g, 'Stage $1'],
   [/(\d+)\s*전장/g, 'Stage $1'],

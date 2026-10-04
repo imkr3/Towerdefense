@@ -97,6 +97,19 @@ class GLFx {
     // 합성식이 포화형이어서 1 을 넘겨도 흰 덩어리로 터지지는 않는다.
     this.gain = 1.15;
     this.ok = this._init();
+    // 모바일은 앱을 내렸다 올리거나 GPU 가 재설정되면 컨텍스트를 잃는다.
+    // ok 를 내려 두면 렌더러가 Canvas2D 연출로 되돌아가고, 되살아나면 다시 올린다.
+    cv.addEventListener('webglcontextlost', e => {
+      e.preventDefault();
+      this.ok = false;
+      this.count = 0;
+    });
+    cv.addEventListener('webglcontextrestored', () => {
+      this.ok = this._init();
+      if (this.ok && this.w) this.resize(this.w, this.h, this.dpr);
+      this.count = 0;
+      this._empty = false;
+    });
   }
 
   _init() {

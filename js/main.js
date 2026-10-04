@@ -452,13 +452,15 @@ function renderStageDetail(i) {
   box.innerHTML = '';
   const ch = CHAPTERS[mapChapter];
   if (ch.endless || i < 0) {
+    const endlessOpen = ch.endless && save.cleared >= ENDLESS_UNLOCK_STAGE;
     box.innerHTML = ch.endless
-      ? '<div class="sd-name">무한 전장</div><p class="sd-hint">웨이브가 끝없이 몰려옵니다. 웨이브마다 적이 강해지고, 5웨이브마다 보스가 등장합니다. 25웨이브를 넘기면 적 요새를 무너뜨려 끝낼 수 있습니다!</p>'
+      ? '<div class="sd-name">무한 전장</div><p class="sd-hint">웨이브가 끝없이 몰려옵니다. 웨이브마다 적이 강해지고, 5웨이브마다 보스가 등장합니다. 25웨이브를 넘기면 적 요새를 무너뜨려 끝낼 수 있습니다!</p>' +
+        (endlessOpen ? '' : '<p class="sd-hint">🔒 ' + ENDLESS_UNLOCK_STAGE + '전장을 돌파하면 열립니다.</p>')
       : '<div class="sd-name">' + ch.name + ' · ' + ch.sub + '</div><p class="sd-hint">이전 장을 먼저 돌파해야 합니다.</p>';
     const fb = document.createElement('button');
     fb.className = 'btn ghost sd-formation';
     fb.textContent = '편성';
-    fb.addEventListener('click', () => openFormation(ch.endless ? 'endless' : null));
+    fb.addEventListener('click', () => openFormation(endlessOpen ? 'endless' : null));
     box.appendChild(fb);
     return;
   }
@@ -841,6 +843,7 @@ function renderTraining() {
             if (save.loadout.length <= 1) { toast('최소 1개 병종은 편성해야 합니다'); return; }
             save.loadout = save.loadout.filter(id => id !== u.id);
           } else {
+            if (!heroRoom(u.id)) return;
             save.loadout.push(u.id);
           }
           saveGame(save);
@@ -1123,6 +1126,7 @@ function drawBanner(sn) {
 
 /* ------------------------------ 전투 ------------------------------ */
 function startEndless() {
+  if (save.cleared < ENDLESS_UNLOCK_STAGE) return;
   battle = new Battle(0, save, makeEndlessStage());
   $('#scr-battle').classList.remove('hardcore');
   $('#battle-stage').textContent = '무한 전장 · 최고 ' + (save.endlessBest || 0) + '웨이브';
@@ -1358,20 +1362,28 @@ function flushPlayTime() {
   playAccum = 0;
 }
 
-function showResult() {
-  // 누적 기록과 임무 진행
+/* 누적 기록과 임무 진행. 전투가 끝나는 순간 한 번만 적는다 — 결과창은 0.7초 뒤에
+ * 뜨므로, 거기서 적으면 그 사이에 나가 버린 판의 승리·처치가 사라진다. */
+function recordBattle(b) {
+  if (!b || b._recorded) return;
+  b._recorded = true;
   flushPlayTime();
-  save.stats.bossKills += battle.bossKills || 0;
-  addStat('kills', battle.kills);
-  addStat('bosses', battle.bossKills || 0);
-  if (battle.endless) addStat('endless', battle.wavesCleared || 0);
-  if (battle.state === 'win') {
+  save.stats.bossKills += b.bossKills || 0;
+  addStat('kills', b.kills);
+  addStat('bosses', b.bossKills || 0);
+  addStat('commands', b.cmdUses || 0);
+  if (b.endless) addStat('endless', b.wavesCleared || 0);
+  if (b.state === 'win') {
     save.stats.wins++;
     addStat('wins', 1);
-    if (battle.stars >= 3) addStat('perfect', 1);
+    if (b.stars >= 3) addStat('perfect', 1);
   }
   saveGame(save);
   checkAchievements();
+}
+
+function showResult() {
+  recordBattle(battle);
 
   if (battle.endless) { showEndlessResult(); return; }
   if (battle.event) { showEventResult(); return; }
@@ -1487,6 +1499,7 @@ function loop(ts) {
     if (BGM.vol > 0) BGM.sting(battle.state === 'win' || (battle.endless && battle.newRecord) ? 'victory' : 'defeat');
     else BGM.stop(0.6);
     const ended = battle;
+    recordBattle(ended);
     resultTimer = setTimeout(() => {
       if (battle === ended && $('#scr-battle').classList.contains('active')) showResult();
     }, 700);
@@ -1695,7 +1708,6 @@ function init() {
     if (glfx.ok) {
       renderer.glfx = glfx;
       renderer.syncGlSize();
-      window.addEventListener('resize', () => renderer.syncGlSize());
       // Canvas2D 때문에 4개로 묶어 두었던 제한을 넓힌다. 다만 무한정은 아니다 —
       // 가산 합성이라 너무 많이 겹치면 화면이 빛으로 덮여 전장이 안 보인다.
       if (typeof setCastLimits === 'function') setCastLimits(8, 3);
@@ -1708,9 +1720,16 @@ function init() {
   BGM.setVolume(Settings.get('bgm'));
   BGM.play('title');
   // 모바일은 사용자 조작이 한 번 있어야 오디오가 열린다
-  const wake = () => { SFX.init(); SFX.resume(); BGM.resume(); BGM.prefetch(['map']); };
-  ['pointerdown', 'touchstart', 'keydown'].forEach(ev =>
-    window.addEventListener(ev, wake, { once: true, passive: true }));
+  // 터치는 pointerup/touchend 여야 사용자 조작으로 인정되는 브라우저가 있다.
+  // 한 번에 안 열릴 수 있으니 실제로 running 이 될 때까지 매 조작마다 다시 시도한다.
+  const WAKE_EVENTS = ['pointerup', 'touchend', 'click', 'keydown'];
+  const wake = () => {
+    SFX.init(); SFX.resume(); BGM.resume(); BGM.prefetch(['map']);
+    if (SFX.ctx && SFX.ctx.state === 'running') {
+      WAKE_EVENTS.forEach(ev => window.removeEventListener(ev, wake, true));
+    }
+  };
+  WAKE_EVENTS.forEach(ev => window.addEventListener(ev, wake, { capture: true, passive: true }));
   titleAnim.cv = $('#title-bg');
   titleAnim.ctx = titleAnim.cv.getContext('2d');
   resizeTitle();
@@ -1738,6 +1757,7 @@ function init() {
         const fresh = defaultSave();
         if (!SaveStore.write(fresh, true)) { toast(SaveStore.error); return; }
         save = fresh;
+        $('#save-warning').hidden = true;
         refreshTitleBadges();
         toast('기록을 초기화했습니다');
       });
@@ -1906,7 +1926,7 @@ function initSettings() {
   }));
   $$('#set-quality button').forEach(b => b.addEventListener('click', () => {
     Settings.set('quality', b.dataset.v);
-    if (renderer) { renderer.resize(); renderer.syncGlSize(); }
+    if (renderer) renderer.resize();
     refreshSettingsUI();
     SFX.ui();
   }));
@@ -2034,7 +2054,9 @@ function initSaveManager() {
   });
   $('#btn-previous-save').addEventListener('click', () => {
     try {
-      const raw = localStorage.getItem(SaveStore.key + '-restore-point') || localStorage.getItem(SaveStore.backupKey);
+      // 자동 백업(바로 이전 저장)이 먼저다. 복원 지점은 마지막 '복원' 직전의 것이라
+      // 몇 주 전 상태일 수 있으므로 자동 백업이 없을 때만 꺼낸다.
+      const raw = localStorage.getItem(SaveStore.backupKey) || localStorage.getItem(SaveStore.key + '-restore-point');
       if (!raw) { toast('남아 있는 이전 백업이 없습니다.'); return; }
       window.receiveSaveBackup(raw);
     } catch (e) { toast('이전 백업을 읽지 못했습니다.'); }

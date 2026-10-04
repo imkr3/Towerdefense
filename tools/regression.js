@@ -923,4 +923,26 @@ test('Undying heroes show their second wind once', () => {
   th.takeDamage(th.maxHp * 5); assert.ok(th.dead, 'only once');
 });
 
+/* ---------------- 3.5.1 손질 ---------------- */
+test('Strike warning circles run on battle time, not real time', () => {
+  const b = battle(); b.speed = 3; const src = new Fighter(E.goblin, 'enemy', 1500);
+  b.queueStrike(src, { x: 900, r: 80, warn: 2.4, dmg: 10, kind: 'slam' });
+  const warn = b.fx.find(e => e.type === 'warn'), strike = b.pending[0];
+  b.update(0.1); assert.ok(Math.abs(warn.t - strike.t) < 1e-9, 'circle follows the strike at 3x');
+  b.updateFx(30); assert.ok(b.fx.indexOf(warn) >= 0, 'a long pause does not erase the warning');
+  for (let i = 0; i < 12 && b.pending.length; i++) b.update(0.1);
+  assert.equal(b.pending.length, 0, 'strike landed'); b.updateFx(0);
+  assert.ok(b.fx.indexOf(warn) < 0, 'circle closes when the strike lands');
+});
+test("The king's command does not water down a stronger haste", () => {
+  const b = battle(); const a = b.makeAlly(U.spear, 500); b.allies.push(a);
+  a.hasteT = 5; a.hasteMul = 0.4; b.useCommand();
+  assert.equal(a.hasteMul, 0.4); assert.ok(a.hasteT >= 5);
+});
+test('Veiled bosses take no poison or burn either', () => {
+  const b = battle(), e = new Fighter(E.goblin, 'enemy', 1800);
+  e.veilT = 5; e.poisonT = 3; e.poisonDps = 100; e.burnT = 3; e.burnDps = 100;
+  const hp = e.hp; b.step([e], [], b.allyCastle, 0.5, false); assert.equal(e.hp, hp);
+});
+
 console.log(count + ' regression checks passed');

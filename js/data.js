@@ -2121,7 +2121,8 @@ function enemyTactic(e) {
 }
 function unitRoleColor(u) {
   if (u.ab && u.ab.noAttack) return '#7bcda6';
-  if (u.role === '방어' || u.role === '불굴') return '#8abcf2';
+  // 영어로 켜면 i18nData 가 role 을 'Defense'/'Unyielding' 으로 바꿔 놓는다
+  if (['방어', '불굴', 'Defense', 'Unyielding'].indexOf(u.role) >= 0) return '#8abcf2';
   if (u.ranged) return '#c6adfa';
   return '#efbd76';
 }

@@ -521,7 +521,10 @@ class Battle {
       // 여의봉 강타: 분신이 곧바로 튀어나온다
       if (a.clones && f.ab.summon) {
         const u = UNIT_BY_ID[f.ab.summon.id];
-        for (let k = 0; u && k < a.clones && this.roomForSummon(); k++) {
+        // 평소 분신 수 상한(ab.summon.max)을 액티브로도 넘지 않는다
+        let mine = 0;
+        if (f.ab.summon.max) for (const o of this.allies) if (!o.dead && o.summonedBy === f) mine++;
+        for (let k = 0; u && k < a.clones && this.roomForSummon() && !(f.ab.summon.max && mine >= f.ab.summon.max); k++, mine++) {
           const m = this.makeAlly(u, f.x + f.dir * (30 + k * 24), f);
           m.summoned = true; m.summonedBy = f; m.lifeT = f.ab.summon.life || 8;
           this.allies.push(m);
@@ -548,8 +551,9 @@ class Battle {
     }
     for (const a of this.allies) {
       a.heal(a.maxHp * this.cmdHeal);
+      // 더 센 가속(영웅 액티브)이 걸려 있으면 약한 쪽으로 덮지 않는다
+      a.hasteMul = a.hasteT > 0 ? Math.min(a.hasteMul, COMMAND.hasteMul) : COMMAND.hasteMul;
       a.hasteT = Math.max(a.hasteT, COMMAND.hasteDur);
-      a.hasteMul = COMMAND.hasteMul;
       a.stunT = 0;
       a.slowT = 0;
       this.fx.push({ type: 'rally', x: a.x, row: a.row, t: 0.6, life: 0.6 });
@@ -958,6 +962,8 @@ class Battle {
       if (f.poisonT > 0) { dot += f.poisonDps * Math.min(dt, f.poisonT); f.poisonT = Math.max(0, f.poisonT - dt); }
       if (f.burnT > 0) { dot += f.burnDps * Math.min(dt, f.burnT); f.burnT = Math.max(0, f.burnT - dt); }
       if (isAlly) dot *= 1 - 0.05 * Math.min(5, this.save.upgrades.resistance || 0);
+      // 지속 피해는 갑주·핵을 뚫지만(의도), 안개화 동안엔 takeDamage 처럼 아무것도 닿지 않는다
+      if (f.veilT > 0) dot = 0;
       if (dot > 0) {
         f.hp -= dot;
         if (f.hp <= 0) {
@@ -1132,8 +1138,8 @@ class Battle {
       for (const m of mates) {
         if (m.dead || m === f) continue;
         if (Math.abs(m.x - f.x) > ab.radius) continue;
+        m.hasteMul = m.hasteT > 0 ? Math.min(m.hasteMul, ab.haste.mul) : ab.haste.mul;
         m.hasteT = Math.max(m.hasteT, ab.haste.dur);
-        m.hasteMul = ab.haste.mul;
       }
       f.auraPulse = 0.5;
       this.fx.push({ type: 'aura', x: f.x, row: f.row, r: ab.radius,
@@ -1408,13 +1414,16 @@ class Battle {
   /* 예고 표시를 띄우고, 시간이 되면 그 자리에 내리꽂는다.
    * 무작정 터지지 않으니 피할 틈이 있다. */
   queueStrike(f, o) {
+    // 예고 원은 전투 시간으로 줄어드는 공격에 묶어 둔다. 실제 시간으로 따로 줄이면
+    // 3배속에선 원이 덜 닫힌 채 터지고, 오래 멈춰 두면 원만 사라져 예고 없이 떨어진다.
+    const warn = { type: 'warn', x: o.x, r: o.r, t: o.warn, life: o.warn, sync: true,
+                   color: f.side === 'ally' ? '#6fc0ff' : '#e0503c' };
     this.pending.push({
       t: o.warn, side: f.side, x: o.x, r: o.r, dmg: o.dmg,
       burn: o.burn, stun: o.stun, kind: o.kind, color: f.s.accent, row: f.row,
-      expose: o.expose, src: o.expose ? f : null, noCastle: !!o.noCastle
+      expose: o.expose, src: o.expose ? f : null, noCastle: !!o.noCastle, fx: warn
     });
-    this.fx.push({ type: 'warn', x: o.x, r: o.r, t: o.warn, life: o.warn,
-                   color: f.side === 'ally' ? '#6fc0ff' : '#e0503c' });
+    this.fx.push(warn);
   }
 
   updatePending(dt) {
@@ -1422,6 +1431,7 @@ class Battle {
     let landed = false;
     for (const s of this.pending) {
       s.t -= dt;
+      if (s.fx) s.fx.t = Math.max(0, s.t);
       if (s.t > 0) continue;
       s.done = landed = true;
       const foes = this.foesOf(s.side);
@@ -1831,7 +1841,9 @@ class Battle {
   }
 
   updateFx(dt) {
-    for (const e of this.fx) e.t -= dt;
+    // sync 표시는 updatePending 이 전투 시간으로 맞춘다. 전투가 끝나면 그냥 사라지게 둔다.
+    const ended = this.state !== 'play';
+    for (const e of this.fx) if (!e.sync || ended) e.t -= dt;
     this.fx = this.fx.filter(e => e.t > 0);
     if (this.fx.length > FX_LIMIT) this.fx.splice(0, this.fx.length - FX_LIMIT);
     this.dmgFxCount = 0;
@@ -1959,6 +1971,7 @@ class Battle {
       const d = (e.x - f.x) * f.dir;
       if (d > front && d <= lp.range && d > td) { td = d; target = e; }
     }
+    // 노릴 원거리 병사가 아직 사거리 밖이면 도약을 아껴 둔다
     if (!target) return;
     const from = f.x;
     f.x = target.x - f.dir * 30;

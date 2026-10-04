@@ -42,6 +42,9 @@ class Renderer {
                      Math.min(this.h * 0.86, this.h - hudH - 26)));
     // cs: 지면 위 여유 높이에 맞춘 캐릭터 배율
     this.cs = Math.max(0.70, Math.min(1.45, this.groundY / 350));
+    // 전투 화면이 숨겨진 채로 만들어지면 첫 크기는 320x240 이다.
+    // 2D 캔버스가 제 크기를 찾을 때 WebGL 레이어도 같이 맞춰야 한다.
+    this.syncGlSize();
   }
 
   /* WebGL 레이어를 2D 캔버스와 같은 크기로 맞춘다 */
@@ -53,6 +56,7 @@ class Renderer {
   /* 전투가 새로 시작되면 남아 있던 연출을 비운다 */
   resetFx() {
     this.prevCam = undefined;
+    this._glCam = undefined;
     if (this.glfx && this.glfx.ok) this.glfx.clear();
   }
 
@@ -625,72 +629,74 @@ class Renderer {
     ctx.beginPath(); ctx.ellipse(0, 2, 20 * s, 5 * s, 0, 0, 7); ctx.stroke();
     ctx.fillStyle = 'rgba(0,0,0,.22)';
     ctx.beginPath(); ctx.ellipse(0, 1, 17 * s, 4.5 * s, 0, 0, 7); ctx.fill();
+    // 출진 페이드인·사망·안개화의 투명도를 오라 블록이 1 로 덮어쓰지 않도록 기준값을 잡아 둔다
+    const a0 = ctx.globalAlpha;
     if (f.s.rarity === 'UR' || f.s.rarity === 'SSR' || f.s.rarity === 'SR') {      // 상위 등급 발밑 오라
         // 신화가 전설보다 흐리게 빛나면 안 된다
         const glow = f.s.rarity === 'UR' ? 0.62
                    : (f.s.rarity === 'SSR' ? 0.5 : 0.28);
         const pulse = 0.85 + Math.sin(f.bob * 1.4) * 0.15;
-        ctx.globalAlpha = glow * pulse;
+        ctx.globalAlpha = a0 * (glow * pulse);
         ctx.fillStyle = f.s.accent;
         ctx.beginPath();
         ctx.ellipse(0, 1, 24 * s * pulse, 6.5 * s * pulse, 0, 0, 7);
         ctx.fill();
-        ctx.globalAlpha = glow * 0.55;
+        ctx.globalAlpha = a0 * (glow * 0.55);
         ctx.strokeStyle = f.s.accent;
         ctx.lineWidth = 1.6 * s;
         ctx.beginPath();
         ctx.ellipse(0, 1, 30 * s * pulse, 8 * s * pulse, 0, 0, 7);
         ctx.stroke();
-        ctx.globalAlpha = 1;
+        ctx.globalAlpha = a0;
     }
     if (f.s.evo) {                                         // 진화한 병사: 발밑 금빛 문양
       const pulse = 0.85 + Math.sin(f.bob * 1.8) * 0.15;
-      ctx.globalAlpha = 0.55 * pulse;
+      ctx.globalAlpha = a0 * (0.55 * pulse);
       ctx.strokeStyle = '#f6d365';
       ctx.lineWidth = 1.8 * s;
       ctx.beginPath(); ctx.ellipse(0, 1, 26 * s, 7 * s, 0, 0, 7); ctx.stroke();
-      ctx.globalAlpha = 0.3 * pulse;
+      ctx.globalAlpha = a0 * (0.3 * pulse);
       ctx.beginPath(); ctx.ellipse(0, 1, 33 * s * pulse, 9 * s * pulse, 0, 0, 7); ctx.stroke();
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = a0;
     }
     if (f.veilT > 0) {                                     // 안개화: 붉은 안개가 소용돌이친다
       ctx.fillStyle = '#e04b6a';
       for (let i = 0; i < 7; i++) {
         const a = clk * 1.3 + i * 0.9, rr = (26 + (i % 3) * 10) * s;
-        ctx.globalAlpha = 0.16 + (i % 2) * 0.08;
+        ctx.globalAlpha = a0 * (0.16 + (i % 2) * 0.08);
         ctx.beginPath(); ctx.ellipse(Math.cos(a) * rr, -38 * s + Math.sin(a * 1.4) * 22 * s, 18 * s, 10 * s, a, 0, 7); ctx.fill();
       }
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = a0;
     }
     if (f.reflectT > 0) {                                  // 반사 결계: 보랏빛 육각 막
       const pulse = 0.85 + Math.sin(clk * 8) * 0.15;
-      ctx.globalAlpha = 0.28 * pulse;
+      ctx.globalAlpha = a0 * (0.28 * pulse);
       ctx.fillStyle = '#b784e0';
       ctx.beginPath(); ctx.ellipse(0, -40 * s, 44 * s, 56 * s, 0, 0, 7); ctx.fill();
-      ctx.globalAlpha = 0.85;
+      ctx.globalAlpha = a0 * 0.85;
       ctx.strokeStyle = '#e8d0ff'; ctx.lineWidth = 2 * s;
       ctx.beginPath();
       for (let i = 0; i <= 6; i++) { const a = i / 6 * Math.PI * 2 + clk * 0.8; const px = Math.cos(a) * 46 * s, py = -40 * s + Math.sin(a) * 58 * s; i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }
       ctx.stroke();
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = a0;
     }
     if (f.exposedT > 0) {                                  // 약점 노출: 핵 자리에 금빛 과녁
       const pulse = 0.75 + Math.sin(clk * 10) * 0.25;
       ctx.strokeStyle = '#ffd35a'; ctx.lineWidth = 3 * s;
-      ctx.globalAlpha = pulse;
+      ctx.globalAlpha = a0 * pulse;
       ctx.beginPath(); ctx.arc(0, -40 * s, 22 * s * (1.1 - pulse * 0.2), 0, 7); ctx.stroke();
       ctx.beginPath(); ctx.arc(0, -40 * s, 10 * s, 0, 7); ctx.stroke();
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = a0;
     }
     if (f.enraged || f.furious) {                          // 광폭화·격노한 보스의 붉은 기운
       const pulse = 0.8 + Math.sin(f.bob * 3.2) * 0.2;
-      ctx.globalAlpha = 0.45 * pulse;
+      ctx.globalAlpha = a0 * (0.45 * pulse);
       ctx.strokeStyle = '#ff5a3c';
       ctx.lineWidth = 2.4 * s;
       ctx.beginPath();
       ctx.ellipse(0, 1, 34 * s * pulse, 9 * s * pulse, 0, 0, 7);
       ctx.stroke();
-      ctx.globalAlpha = 0.3 * pulse;
+      ctx.globalAlpha = a0 * (0.3 * pulse);
       for (let i = 0; i < 3; i++) {
         const a = f.bob * 1.6 + i * 2.1;
         ctx.beginPath();
@@ -698,7 +704,7 @@ class Renderer {
         ctx.fillStyle = '#ff7a4c';
         ctx.fill();
       }
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = a0;
     }
     if (moving) {                                          // 발자국 먼지: 발이 닿을 때마다 뒤로 퍼진다
       const ph = ((f.bob / Math.PI) % 1 + 1) % 1;
@@ -1729,7 +1735,6 @@ class Renderer {
     this._battle = battle;
     this.clock = (this.clock || 0) + dt;             // 전투가 끝나 시간이 멈춰도 도는 시계
     this.showDmg = typeof Settings === 'undefined' || Settings.get('dmgNums');
-    const camBefore = this.cam;
     this.follow(battle, dt);
     const ctx = this.ctx;
     if (!this._rmq) this._rmq = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -1769,12 +1774,12 @@ class Renderer {
     ctx.restore();
     this.drawMiniMap(battle);
     this.drawBossBar(battle);
-    this.drawGlFx(battle, fxDt === undefined ? dt : fxDt, camBefore, shakeX, shakeY);
+    this.drawGlFx(battle, fxDt === undefined ? dt : fxDt, shakeX, shakeY);
   }
 
   /* WebGL 연출 레이어. 파티클은 화면 좌표로 살기 때문에 카메라가 흐른 만큼
    * 같이 밀어 주고, 화면 흔들림도 같은 값으로 따라가게 한다. */
-  drawGlFx(battle, dt, camBefore, shakeX, shakeY) {
+  drawGlFx(battle, dt, shakeX, shakeY) {
     if (this.glfx && this.glfx.ok) this.glfx.floorY = this.rowY(2) + 14 * this.cs;
     // 병사 그림자(부품마다 드리우는 짧은 그림자)는 절전·느린 기기에서 끈다. 잉크 테두리는 늘 켠다.
     MODEL.depth = this.fxq >= 0.5;
@@ -1782,7 +1787,11 @@ class Renderer {
     if (!g || !g.ok) return;
     g.quality = this.fxq < 0.5 ? 0.45 : (this.fxq < 1 ? 0.7 : 1);
     g.setOffset(shakeX, shakeY);
-    g.update(dt, (camBefore - this.cam) * this.zoom);
+    // 지난 그리기 이후 카메라가 움직인 만큼. 손가락으로 끄는 panBy 는 프레임 사이에
+    // cam 을 바꾸므로 render() 시작 시점이 아니라 지난번 레이어 갱신 때와 비교한다.
+    const prevCam = this._glCam === undefined ? this.cam : this._glCam;
+    this._glCam = this.cam;
+    g.update(dt, (prevCam - this.cam) * this.zoom);
     g.draw();
   }
 
