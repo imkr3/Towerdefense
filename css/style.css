@@ -602,6 +602,8 @@ button:focus-visible{outline:3px solid #48b9ee;outline-offset:3px;}
 #save-text{width:100%;height:90px;margin:12px 0;user-select:text;resize:vertical;background:#fff;color:#24333c;border:1px solid #82999f;border-radius:5px;padding:8px;font:12px monospace;}
 #save-warning{position:fixed;bottom:0;left:0;right:0;background:#8c3434;color:white;padding:8px;z-index:90;font-size:12px;text-align:center;}
 #modal-confirm{z-index:120;}
+/* 저장 경고 띠(90)가 저장 관리 창의 마지막 줄을 덮지 않게 */
+#modal-save,#modal-slots{z-index:95;}
 #modal-save .modal-card,#modal-slots .modal-card{max-height:90vh;overflow:auto;}
 @media(max-height:450px){.title-btns{gap:4px}.title-btns .btn{padding:6px}}
 

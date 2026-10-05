@@ -11,6 +11,14 @@
  * ======================================================================= */
 
 const I18N_EN = {
+  // 저장 오류 (save-store.js)
+  '게임 저장 데이터가 아닙니다.': 'This is not game save data.', '저장 항목 형식 오류: ': 'Bad save field: ',
+  '저장 숫자 오류: ': 'Bad save number: ', '저장 능력치 오류: ': 'Bad save stat: ', '진화 데이터 오류': 'Bad evolution data',
+  '편성 데이터 오류': 'Bad squad data', '일일 임무 데이터 오류': 'Bad daily mission data',
+  '백업은 1MB 이하의 JSON 파일이어야 합니다.': 'A backup must be a JSON file under 1MB.', '지원하지 않는 백업 버전입니다.': 'Unsupported backup version.',
+  '기존 저장을 읽지 못해 덮어쓰기를 막았습니다. 저장 관리에서 원본을 백업하거나 복원해 주세요.': "Couldn't read the existing save, so overwriting is blocked. Back up or restore it in Save manager.",
+  '저장에 실패했습니다. 저장 관리에서 백업을 내보내 주세요.': 'Saving failed. Export a backup from Save manager.',
+  '이어하기': 'Continue',
   /* ---------------- 병종 ---------------- */
   '창병': 'Spearman', '근접': 'Melee',
   '값싸고 빨리 나오는 징집병입니다. 긴 창으로 적보다 한발 먼저 찌릅니다.': 'Cheap, fast conscript. The long spear lands the first blow.',
@@ -317,7 +325,7 @@ const I18N_EN = {
   '토르(파쇄) · 중독 · 화상 · 태양 낙인': 'Thor (breaker) · poison · burn · sun brand',
   '물량': 'Horde', '적이 1.8배 많이 몰려옵니다 (하나하나는 약함)': '1.8× more foes (each one weaker)',
   '범위 공격 · 연쇄 번개 · 값싼 방패 벽': 'Area attacks · chain lightning · cheap shield walls',
-  '영웅 사냥꾼': 'Hero Hunters', '적이 비용 350 이상인 아군(영웅·전설·신화)에게 3배 피해': 'Foes deal 3× damage to allies costing 350+ (Epic/Legend/Mythic)',
+  '영웅 사냥꾼': 'Hero Hunters', '적이 비용 350 이상인 아군(영웅·전설·신화)에게 4배 피해': 'Foes deal 4× damage to allies costing 350+ (Epic/Legend/Mythic)',
   '값싼 병력을 많이 · 소환물 · 비싼 병종은 뒤에': 'Many cheap troops · summons · keep pricey units back',
   '저주': 'Curse', '소환된 아군이 초당 10%씩 시들고, 회복·흡혈이 절반': 'Summoned allies wither 10%/s; healing and lifesteal halved',
   '소환·치유에 기대지 않는 진짜 병력': 'Real troops that need no summons or healing',
@@ -762,6 +770,12 @@ const I18N_EN_HTML = {
 
 /* 숫자가 붙은 말. 구절 치환보다 먼저 한다. */
 const I18N_EN_PATTERNS = [
+  [/전장엔 (\d+)명까지/g, 'up to $1 on the field'],
+  [/(\d+)개 칸을 채웠습니다/g, '$1 slots filled'],
+  [/추천 편성 (\d+)개 병종을 넣었습니다/g, 'Added $1 recommended units'],
+  [/ 레벨 (\d+) 완료/g, ' Lv $1 done'],
+  [/레벨 (\d+)에 진화/g, 'Evolves at Lv $1'],
+  [/전장 (\d+)개 돌파 · 골드 (\d+) · 소환석 (\d+)\./g, '$1 stages cleared · Gold $2 · Stones $3.'],
   [/ · 요새 결계 \((\d+)웨이브부터 함락 가능\)/g, ' · fort ward (can fall from wave $1)'],
   [/(\d+)웨이브를 넘기면 적 요새를 무너뜨려 끝낼 수 있습니다!/g, 'Past wave $1 you can topple the enemy fort to finish!'],
   [/(\d+)전장 돌파 후/g, 'Clear stage $1 first'],
@@ -770,6 +784,8 @@ const I18N_EN_PATTERNS = [
   [/지금 슬롯 (\d)을 저장하고 슬롯 (\d)\(으\)로 바꿉니다\./g, 'Saves slot $1 and switches to slot $2.'],
   [/슬롯 (\d)의 (진행도와 소환한 병종이 모두 삭제됩니다)/g, 'Slot $1: $2'],
   [/(\d+)시간 (\d+)분/g, '$1h $2m'],
+  [/(\d+)분 (\d+)초/g, '$1m $2s'],
+  [/(\d+)분/g, '$1m'],
   [/(\d+)\s*전장 돌파/g, 'Stage $1 cleared'],
   [/전장 (\d+)/g, 'Stage $1'],
   [/(\d+)\s*전장/g, 'Stage $1'],
@@ -843,12 +859,14 @@ function i18nNode(node) {
     return;
   }
   if (node.nodeType !== 1) return;
-  if (node.tagName === 'SCRIPT' || node.tagName === 'STYLE' || node.tagName === 'TEXTAREA') return;
+  if (node.tagName === 'SCRIPT' || node.tagName === 'STYLE') return;
   for (const a of I18N_ATTRS) {
     const v = node.getAttribute(a);
     // 같은 값을 다시 쓰면 그것도 변경으로 잡혀 끝없이 돈다
     if (v && I18N.hangul.test(v)) { const n = t(v); if (n !== v) node.setAttribute(a, n); }
   }
+  // 입력칸은 안내 문구만 옮기고 내용(백업 JSON)은 건드리지 않는다
+  if (node.tagName === 'TEXTAREA') return;
   if ((node.tagName === 'LI' || node.tagName === 'P') && I18N_EN_HTML[node.innerHTML.trim()]) {
     node.innerHTML = I18N_EN_HTML[node.innerHTML.trim()];
     return;

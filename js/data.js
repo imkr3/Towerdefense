@@ -1259,7 +1259,7 @@ const STAGE_MODS = {
               counter: '토르(파쇄) · 중독 · 화상 · 태양 낙인', color: '#8fa3b5' },
   horde:    { name: '물량', desc: '적이 1.8배 많이 몰려옵니다 (하나하나는 약함)',
               counter: '범위 공격 · 연쇄 번개 · 값싼 방패 벽', color: '#c98a4b' },
-  giantslayer: { name: '영웅 사냥꾼', desc: '적이 비용 350 이상인 아군(영웅·전설·신화)에게 3배 피해',
+  giantslayer: { name: '영웅 사냥꾼', desc: '적이 비용 350 이상인 아군(영웅·전설·신화)에게 4배 피해',
               counter: '값싼 병력을 많이 · 소환물 · 비싼 병종은 뒤에', color: '#9b6bd1' },
   curse:    { name: '저주', desc: '소환된 아군이 초당 10%씩 시들고, 회복·흡혈이 절반',
               counter: '소환·치유에 기대지 않는 진짜 병력', color: '#5f8f5a' },

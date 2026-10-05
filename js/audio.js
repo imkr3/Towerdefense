@@ -363,11 +363,16 @@ const BGM = {
   /* ---------------- 재생 ---------------- */
   play: function (name, onEnd) {
     if (!BGM_TRACKS[name]) return;
-    if (this.name === name && (this.src || this.waiters[name])) return;
+    if (this.name === name && ((this.src && this.srcName === name) || this.waiters[name])) return;
     this.name = name;
     this.onEnd = onEnd || null;
-    if (!this.ensure() || this.vol <= 0) return;           // 오디오가 열리거나 소리를 켜면 그때
-    this.want(name, true).then(buf => { if (this.name === name) this.startBuffer(buf, name); }).catch(() => {});
+    if (!this.ensure()) return;                             // 오디오가 열리면 그때
+    // 소리를 꺼 둔 동안 바뀐 곡은 소리를 켤 때 튼다. 전에 돌던 곡이 조용히 남아 있으면 그 곡이 다시 들린다.
+    if (this.vol <= 0) { this.fadeOut(0.1); return; }
+    // 같은 곡을 여러 번 기다렸다면(첫 터치의 resume 등) 처음 도착한 것만 튼다
+    this.want(name, true).then(buf => {
+      if (this.name === name && !(this.src && this.srcName === name)) this.startBuffer(buf, name);
+    }).catch(() => {});
   },
 
   startBuffer: function (buf, name) {
@@ -382,12 +387,12 @@ const BGM = {
     src.start(t + 0.02);
     if (!src.loop) src.onended = () => {
       if (this.src !== src) return;
-      this.src = null; this.srcGain = null;
+      this.src = null; this.srcGain = null; this.srcName = null;
       if (this.name === name) this.name = null;
       const done = this.onEnd; this.onEnd = null;
       if (done) done();
     };
-    this.src = src; this.srcGain = g;
+    this.src = src; this.srcGain = g; this.srcName = name;
   },
 
   fadeOut: function (fade) {
@@ -397,7 +402,7 @@ const BGM = {
     g.gain.setValueAtTime(Math.max(0.0001, g.gain.value), t);
     g.gain.exponentialRampToValueAtTime(0.0001, t + fade);
     try { src.stop(t + fade + 0.05); } catch (e) { /* 이미 멈춤 */ }
-    this.src = null; this.srcGain = null;
+    this.src = null; this.srcGain = null; this.srcName = null;
   },
 
   /* 한 번만 울리는 곡(승리·패배) */

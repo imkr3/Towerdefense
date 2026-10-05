@@ -548,8 +548,8 @@ class Battle {
     }
     for (const a of this.allies) {
       a.heal(a.maxHp * this.cmdHeal);
+      a.hasteMul = a.hasteT > 0 ? Math.min(a.hasteMul, COMMAND.hasteMul) : COMMAND.hasteMul;
       a.hasteT = Math.max(a.hasteT, COMMAND.hasteDur);
-      a.hasteMul = COMMAND.hasteMul;
       a.stunT = 0;
       a.slowT = 0;
       this.fx.push({ type: 'rally', x: a.x, row: a.row, t: 0.6, life: 0.6 });
@@ -592,8 +592,12 @@ class Battle {
     }
     // 시간 주술사가 하나라도 살아 있으면 카드가 느리게 찬다
     this.chronoOn = false;
-    for (const e of this.enemies) if (!e.dead && e.ab.chrono) { this.chronoOn = true; break; }
-    const cdStep = dt * (this.chronoOn ? CHRONO_RATE : 1);
+    let chronoRate = 1;
+    for (const e of this.enemies) if (!e.dead && e.ab.chrono) {
+      this.chronoOn = true;
+      chronoRate = Math.min(chronoRate, typeof e.ab.chrono === 'number' ? e.ab.chrono : CHRONO_RATE);
+    }
+    const cdStep = dt * chronoRate;
     for (const k in this.cooldowns) {
       if (this.cooldowns[k] > 0) this.cooldowns[k] = Math.max(0, this.cooldowns[k] - cdStep);
     }
@@ -639,7 +643,8 @@ class Battle {
     if (this.enemyCastle.dead) { this.shake = 16; this.finish('win'); }
     else if (this.allyCastle.dead) { this.shake = 16; this.finish(this.endless ? 'over' : 'lose'); }
     // 웨이브 수가 정해진 무한 전장(검사용)만 다 버티면 끝. 진짜 무한 전장은 성채가 무너질 때까지.
-    else if (this.endless && !this.stage.infinite && this.qi >= this.queue.length && this.enemies.length === 0) {
+    else if (this.endless && !this.stage.infinite && this.qi >= this.queue.length && this.enemies.length === 0 &&
+             !(this.burrowers && this.burrowers.length)) {
       this.finish('over');
     }
   }
@@ -958,6 +963,7 @@ class Battle {
       if (f.poisonT > 0) { dot += f.poisonDps * Math.min(dt, f.poisonT); f.poisonT = Math.max(0, f.poisonT - dt); }
       if (f.burnT > 0) { dot += f.burnDps * Math.min(dt, f.burnT); f.burnT = Math.max(0, f.burnT - dt); }
       if (isAlly) dot *= 1 - 0.05 * Math.min(5, this.save.upgrades.resistance || 0);
+      if (f.veilT > 0) dot = 0;                                   // 안개화 중엔 독·불도 닿지 않는다
       if (dot > 0) {
         f.hp -= dot;
         if (f.hp <= 0) {
@@ -1098,6 +1104,7 @@ class Battle {
     if (ab.cleanse) {
       for (const m of mates) if (!m.dead && Math.abs(m.x - f.x) <= ab.radius) {
         m.poisonT = 0; m.poisonDps = 0; m.burnT = 0; m.burnDps = 0; m.slowT = 0;
+        m.weakT = 0; m.weakMul = 1;                              // 저주(약화)도 정화한다 — 도감 설명대로
       }
       this.fx.push({type:'aura',x:f.x,row:f.row,r:ab.radius,color:'#a4f6cc',t:.5,life:.5});
     }
@@ -1132,8 +1139,9 @@ class Battle {
       for (const m of mates) {
         if (m.dead || m === f) continue;
         if (Math.abs(m.x - f.x) > ab.radius) continue;
+        // 더 센 가속이 남아 있으면 약한 가속으로 덮지 않는다
+        m.hasteMul = m.hasteT > 0 ? Math.min(m.hasteMul, ab.haste.mul) : ab.haste.mul;
         m.hasteT = Math.max(m.hasteT, ab.haste.dur);
-        m.hasteMul = ab.haste.mul;
       }
       f.auraPulse = 0.5;
       this.fx.push({ type: 'aura', x: f.x, row: f.row, r: ab.radius,
@@ -1162,7 +1170,7 @@ class Battle {
             this.allies.push(m);
           }
         } else {
-          const m = this.spawnEnemy(ab.summon.id, sx); m.summoned = true; m.wave = f.wave;
+          const m = this.spawnEnemy(ab.summon.id, sx, f.mul); m.summoned = true; m.wave = f.wave;
         }
       }
       this.fx.push({ type: 'spawn', x: f.x - f.dir * 24, row: f.row, t: 0.4, life: 0.4 });
@@ -1299,7 +1307,7 @@ class Battle {
             const u = UNIT_BY_ID[a.id];
             if (u && this.roomForSummon()) { const m = this.makeAlly(u, sx, f); m.summoned = true; this.allies.push(m); }
           } else {
-            const m = this.spawnEnemy(a.id, sx); m.summoned = true; m.wave = f.wave;
+            const m = this.spawnEnemy(a.id, sx, f.mul); m.summoned = true; m.wave = f.wave;
           }
           this.fx.push({ type: 'spawn', x: sx, row: f.row, t: 0.4, life: 0.4 });
         }
@@ -1628,7 +1636,7 @@ class Battle {
       const ta = target.ab;
       if (target.boss || ta.armor || ta.kbImmune) dmg *= src.ab.breaker;
     }
-    // 영웅 사냥꾼: 적이 비싼(비용 350 이상) 아군 — 영웅·전설·신화 — 을 골라 두 배로 친다
+    // 영웅 사냥꾼: 적이 비싼(비용 350 이상) 아군 — 영웅·전설·신화 — 을 골라 네 배로 친다
     if (this.mods && this.mods.giantslayer && src && src.side === 'enemy' &&
         !target.isCastle && target.side === 'ally' && (target.s.cost || 0) >= HUNT_COST) dmg *= HUNT_MUL;
     // 반사 결계: 결계가 선 동안 때린 만큼 때린 자에게 돌아간다 (보스는 조금만 받는다)

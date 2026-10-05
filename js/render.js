@@ -42,6 +42,8 @@ class Renderer {
                      Math.min(this.h * 0.86, this.h - hudH - 26)));
     // cs: 지면 위 여유 높이에 맞춘 캐릭터 배율
     this.cs = Math.max(0.70, Math.min(1.45, this.groundY / 350));
+    // 숨은 화면에서 만들어졌거나 회전한 뒤에도 WebGL 층이 같은 크기를 따라가게
+    this.syncGlSize();
   }
 
   /* WebGL 레이어를 2D 캔버스와 같은 크기로 맞춘다 */
@@ -585,8 +587,8 @@ class Renderer {
     const wind = (f.engaged && !moving && f.swing <= 0 && f.stunT <= 0 && f.kbTimer <= 0 && f.s.atk > 0 && f.cd < windLen)
       ? 1 - Math.max(0, f.cd) / windLen : 0;
     // 치는 순간 몸이 따라 나간다. 찌르기는 길게, 내려찍기는 무겁게, 쏘기는 반동으로 뒤로.
-    const reach = { thrust: 12, heavy: 9, slash: 7, cast: 2, shoot: -4 }[style];
-    const pull = { thrust: 5, heavy: 4, slash: 3, cast: 1, shoot: 1 }[style];
+    const reach = LUNGE_REACH[style];
+    const pull = LUNGE_PULL[style];
     const lunge = atk > 0 ? atk * reach * this.cs : -wind * pull * this.cs;
     // 멈춰 있을 때는 숨쉬기 (병사마다 박자가 다르다)
     if (f._seed === undefined) f._seed = Math.random() * 10;
@@ -620,6 +622,8 @@ class Renderer {
       ctx.globalAlpha = Math.min(1, spawnK * 2.5);
       ctx.scale(pop, pop);
     }
+    // 등장할 때의 투명도. 아래 오라·결계 연출이 1 로 되돌려 버리지 않게 기준으로 삼는다
+    const baseA = ctx.globalAlpha;
     ctx.strokeStyle = f.side === 'ally' ? '#9cdef0' : '#efab91';
     ctx.lineWidth = 1.2 * s;
     ctx.beginPath(); ctx.ellipse(0, 2, 20 * s, 5 * s, 0, 0, 7); ctx.stroke();
@@ -630,67 +634,67 @@ class Renderer {
         const glow = f.s.rarity === 'UR' ? 0.62
                    : (f.s.rarity === 'SSR' ? 0.5 : 0.28);
         const pulse = 0.85 + Math.sin(f.bob * 1.4) * 0.15;
-        ctx.globalAlpha = glow * pulse;
+        ctx.globalAlpha = baseA * (glow * pulse);
         ctx.fillStyle = f.s.accent;
         ctx.beginPath();
         ctx.ellipse(0, 1, 24 * s * pulse, 6.5 * s * pulse, 0, 0, 7);
         ctx.fill();
-        ctx.globalAlpha = glow * 0.55;
+        ctx.globalAlpha = baseA * (glow * 0.55);
         ctx.strokeStyle = f.s.accent;
         ctx.lineWidth = 1.6 * s;
         ctx.beginPath();
         ctx.ellipse(0, 1, 30 * s * pulse, 8 * s * pulse, 0, 0, 7);
         ctx.stroke();
-        ctx.globalAlpha = 1;
+        ctx.globalAlpha = baseA;
     }
     if (f.s.evo) {                                         // 진화한 병사: 발밑 금빛 문양
       const pulse = 0.85 + Math.sin(f.bob * 1.8) * 0.15;
-      ctx.globalAlpha = 0.55 * pulse;
+      ctx.globalAlpha = baseA * (0.55 * pulse);
       ctx.strokeStyle = '#f6d365';
       ctx.lineWidth = 1.8 * s;
       ctx.beginPath(); ctx.ellipse(0, 1, 26 * s, 7 * s, 0, 0, 7); ctx.stroke();
-      ctx.globalAlpha = 0.3 * pulse;
+      ctx.globalAlpha = baseA * (0.3 * pulse);
       ctx.beginPath(); ctx.ellipse(0, 1, 33 * s * pulse, 9 * s * pulse, 0, 0, 7); ctx.stroke();
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = baseA;
     }
     if (f.veilT > 0) {                                     // 안개화: 붉은 안개가 소용돌이친다
       ctx.fillStyle = '#e04b6a';
       for (let i = 0; i < 7; i++) {
         const a = clk * 1.3 + i * 0.9, rr = (26 + (i % 3) * 10) * s;
-        ctx.globalAlpha = 0.16 + (i % 2) * 0.08;
+        ctx.globalAlpha = baseA * (0.16 + (i % 2) * 0.08);
         ctx.beginPath(); ctx.ellipse(Math.cos(a) * rr, -38 * s + Math.sin(a * 1.4) * 22 * s, 18 * s, 10 * s, a, 0, 7); ctx.fill();
       }
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = baseA;
     }
     if (f.reflectT > 0) {                                  // 반사 결계: 보랏빛 육각 막
       const pulse = 0.85 + Math.sin(clk * 8) * 0.15;
-      ctx.globalAlpha = 0.28 * pulse;
+      ctx.globalAlpha = baseA * (0.28 * pulse);
       ctx.fillStyle = '#b784e0';
       ctx.beginPath(); ctx.ellipse(0, -40 * s, 44 * s, 56 * s, 0, 0, 7); ctx.fill();
-      ctx.globalAlpha = 0.85;
+      ctx.globalAlpha = baseA * 0.85;
       ctx.strokeStyle = '#e8d0ff'; ctx.lineWidth = 2 * s;
       ctx.beginPath();
       for (let i = 0; i <= 6; i++) { const a = i / 6 * Math.PI * 2 + clk * 0.8; const px = Math.cos(a) * 46 * s, py = -40 * s + Math.sin(a) * 58 * s; i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }
       ctx.stroke();
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = baseA;
     }
     if (f.exposedT > 0) {                                  // 약점 노출: 핵 자리에 금빛 과녁
       const pulse = 0.75 + Math.sin(clk * 10) * 0.25;
       ctx.strokeStyle = '#ffd35a'; ctx.lineWidth = 3 * s;
-      ctx.globalAlpha = pulse;
+      ctx.globalAlpha = baseA * pulse;
       ctx.beginPath(); ctx.arc(0, -40 * s, 22 * s * (1.1 - pulse * 0.2), 0, 7); ctx.stroke();
       ctx.beginPath(); ctx.arc(0, -40 * s, 10 * s, 0, 7); ctx.stroke();
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = baseA;
     }
     if (f.enraged || f.furious) {                          // 광폭화·격노한 보스의 붉은 기운
       const pulse = 0.8 + Math.sin(f.bob * 3.2) * 0.2;
-      ctx.globalAlpha = 0.45 * pulse;
+      ctx.globalAlpha = baseA * (0.45 * pulse);
       ctx.strokeStyle = '#ff5a3c';
       ctx.lineWidth = 2.4 * s;
       ctx.beginPath();
       ctx.ellipse(0, 1, 34 * s * pulse, 9 * s * pulse, 0, 0, 7);
       ctx.stroke();
-      ctx.globalAlpha = 0.3 * pulse;
+      ctx.globalAlpha = baseA * (0.3 * pulse);
       for (let i = 0; i < 3; i++) {
         const a = f.bob * 1.6 + i * 2.1;
         ctx.beginPath();
@@ -698,7 +702,7 @@ class Renderer {
         ctx.fillStyle = '#ff7a4c';
         ctx.fill();
       }
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = baseA;
     }
     if (moving) {                                          // 발자국 먼지: 발이 닿을 때마다 뒤로 퍼진다
       const ph = ((f.bob / Math.PI) % 1 + 1) % 1;
@@ -735,7 +739,7 @@ class Renderer {
     const veiled = f.veilT > 0;
     if (veiled) ctx.globalAlpha *= 0.32 + Math.sin(clk * 6) * 0.06;
     drawBody(ctx, f.s, s, false, f.kbTimer > 0, f.bob, moving, atk, wind, won);
-    if (veiled) ctx.globalAlpha = 1;
+    if (veiled) ctx.globalAlpha = baseA;
     MODEL.blink = false; MODEL.angry = false;
     if (f.hitFlash > 0) {
       const a0 = ctx.globalAlpha;
@@ -1750,8 +1754,12 @@ class Renderer {
     this.drawCastle(battle.allyCastle, false);
     this.drawCastle(battle.enemyCastle, true);
 
-    const all = battle.allies.concat(battle.enemies);
-    all.sort((a, b) => (a.row - b.row) || (a.x - b.x));
+    // 그리는 순서용 배열은 매 프레임 새로 만들지 않고 돌려 쓴다
+    const all = this._drawList || (this._drawList = []);
+    all.length = 0;
+    for (const f of battle.allies) all.push(f);
+    for (const f of battle.enemies) all.push(f);
+    all.sort(byRowX);
     for (const f of all) this.drawFighter(f);
     if (battle.burrowers) for (const b of battle.burrowers) this.drawBurrow(b);
 
@@ -5856,6 +5864,11 @@ const FIELD_LOOKS = {
 const FIELD_PALETTES = Object.keys(FIELD_LOOKS).map(k => FIELD_LOOKS[k]);
 /* 시차를 두고 같은 모양을 반복해 그린다 */
 const BG_FAR_PAR = 0.6, BG_FAR_DPR = 1.25;   // 먼 배경 겹: 가장 빠른 시차, 해상도 상한
+/* 공격 자세별 몸이 따라 나가는 거리 (매 프레임 객체를 만들지 않게 밖에 둔다) */
+const LUNGE_REACH = { thrust: 12, heavy: 9, slash: 7, cast: 2, shoot: -4 };
+const LUNGE_PULL = { thrust: 5, heavy: 4, slash: 3, cast: 1, shoot: 1 };
+const byRowX = (a, b) => (a.row - b.row) || (a.x - b.x);
+
 function repL(R, cam, par, period, fn) {
   const o = cam * par;
   const k0 = Math.floor((o - 240) / period), k1 = Math.ceil((o + R.w + 240) / period);
@@ -6004,11 +6017,11 @@ const LOOK_LAYERS = {
     const top = R.groundY * 0.16;
     ctx.fillStyle = '#0e0d12';
     ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(R.w, 0); ctx.lineTo(R.w, top);
-    repL(R, cam, 0.5, 26, () => {});
+    // 꼭짓점을 월드에 붙여 둔다. 화면 x 에 고정하면 카메라가 움직일 때 높이가 칸칸이 튄다.
     const o = cam * 0.5;
-    for (let x = R.w + 26; x >= -26; x -= 13) {
-      const k = Math.floor((x + o) / 13), dip = _h(k) > 0.7 ? 24 + _h(k + 1) * 34 : 4 + _h(k + 2) * 10;
-      ctx.lineTo(x, top + dip);
+    for (let k = Math.ceil((R.w + 26 + o) / 13); k * 13 - o >= -26; k--) {
+      const dip = _h(k) > 0.7 ? 24 + _h(k + 1) * 34 : 4 + _h(k + 2) * 10;
+      ctx.lineTo(k * 13 - o, top + dip);
     }
     ctx.lineTo(0, top); ctx.closePath(); ctx.fill();
   } },

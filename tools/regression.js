@@ -923,4 +923,29 @@ test('Undying heroes show their second wind once', () => {
   th.takeDamage(th.maxHp * 5); assert.ok(th.dead, 'only once');
 });
 
+test('Enemy summons inherit the summoner strength multiplier', () => {
+  const id = Object.keys(E).find(k => E[k].ab && E[k].ab.summon && !E[k].boss);
+  const b = battle(); const f = b.spawnEnemy(id, 1500, 5);
+  b.supportTick(f, b.enemies, 1, false);
+  const kids = b.enemies.filter(e => e.summoned);
+  assert.ok(kids.length > 0, 'summoned'); for (const k of kids) assert.equal(k.mul, 5);
+});
+test('Mist form takes no damage over time either', () => {
+  const b = battle(), e = b.spawnEnemy('goblin', 1500);
+  e.veilT = 3; const hp = e.hp;
+  e.burnT = 2; e.burnDps = 500; e.poisonT = 2; e.poisonDps = 500;
+  b.step([e], [], b.allyCastle, .5, false); assert.equal(e.hp, hp); assert.ok(e.burnT < 2, 'timers still run');
+});
+test('Cleanse also lifts the weaken curse', () => {
+  const b = battle(), p = b.makeAlly(U.purifier, 500), a = b.makeAlly(U.spear, 520);
+  a.weakT = 5; a.weakMul = .5; b.supportTick(p, [p, a], .1, true);
+  assert.equal(a.weakT, 0); assert.equal(a.weakMul, 1);
+});
+test('A weaker haste never overwrites a stronger running one', () => {
+  const b = battle(), a = b.makeAlly(U.spear, 500); b.allies.push(a);
+  a.hasteT = 6; a.hasteMul = .5;
+  b.cmdCd = 0; assert.equal(b.useCommand(), true);
+  assert.equal(a.hasteMul, .5);
+});
+
 console.log(count + ' regression checks passed');
