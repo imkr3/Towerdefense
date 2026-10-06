@@ -842,7 +842,9 @@ class Battle {
           this.fx.push({ type: 'poof', x: f.x, row: f.row, t: 0.45, life: 0.45, color: f.s.accent, big: true });
         }
       }
-      if (f.boss && isEnemySide) { this.bossDown = true; this.enemyCastle.floor = 0; }   // 결계가 걷힌다
+      if (f.boss && isEnemySide) {                 // 결계가 걷힌다 (원정은 수레가 남았으면 원정 결계가 남는다)
+        this.bossDown = true; this.enemyCastle.floor = this.expWard ? this.enemyCastle.maxHp * WARD_FLOOR : 0;
+      }
       // 흡혼귀: 근처에서 쓰러진 아군의 넋을 삼킨다 (불려 나온 것은 넋이 없다)
       if (!isEnemySide && !f.summoned) this.feedSouls(f);
       // 쓰러지는 연출 + 먼지
@@ -1092,7 +1094,7 @@ class Battle {
     if (!f.ab.noAttack) return true;
     const keep = f.ab.standoff || 200;
     for (const e of foes) {
-      if (e.dead) continue;
+      if (e.dead || e.ab.flee) continue;     // 3.7.1: 지나가는 황금 수레 때문에 멈추지 않는다
       if ((e.x - f.x) * f.dir < keep) return false;
     }
     // 3.2.1: 적이 다 쓰러져도 적 성채까지 걸어 들어가 겹쳐 서지 않는다
@@ -2029,8 +2031,9 @@ class Battle {
     let front = ALLY_SPAWN_X + 260;
     for (const a of this.allies) front = Math.max(front, a.x);
     let back = ENEMY_SPAWN_X;
-    for (const e of this.enemies) back = Math.min(back, e.x);
-    if (this.enemies.length) return (front + back) / 2;
+    let any = false;                     // 3.7.1: 전선을 뚫고 굴러가는 황금 수레는 전선이 아니다
+    for (const e of this.enemies) if (!e.dead && !e.ab.flee) { back = Math.min(back, e.x); any = true; }
+    if (any) return (front + back) / 2;
     return front;
   }
 }

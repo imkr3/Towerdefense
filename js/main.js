@@ -1413,7 +1413,7 @@ function updateHud() {
   const preview = battle.endless
     ? '웨이브 ' + battle.currentWave() + ' · 적 ×' + endlessMul(battle.currentWave() - 1).toFixed(1) +
       (battle.wardUp() ? ' · 요새 결계 (' + ENDLESS_FORT_WAVE + '웨이브부터 함락 가능)' : '')
-    : battle.expWard && battle.wardUp() ? '원정 결계 · 수레와 적이 다 나올 때까지 요새가 버팁니다'
+    : battle.expWard && !(battle.bossWard && !battle.bossDown) && battle.wardUp() ? '원정 결계 · 수레와 적이 다 나올 때까지 요새가 버팁니다'
     : (battle.wardUp() ? '보스의 결계 · 보스를 쓰러뜨려야 요새가 무너집니다'
       : (battle.reinforcing() ? '적 증원 중' : ''));
   const full = battle.state === 'play' && battle.fieldFull();
@@ -1474,8 +1474,10 @@ function flushPlayTime() {
   playAccum = 0;
 }
 
-function showResult() {
-  // 누적 기록과 임무 진행
+/* 끝난 전투의 누적 기록과 임무 진행. 결과창이 뜨기 전에 나가도 한 번은 남긴다 */
+function recordResult() {
+  if (!battle || battle.state === 'play' || battle.recorded) return;
+  battle.recorded = true;
   flushPlayTime();
   save.stats.bossKills += battle.bossKills || 0;
   addStat('kills', battle.kills);
@@ -1488,7 +1490,10 @@ function showResult() {
   }
   saveGame(save);
   checkAchievements();
+}
 
+function showResult() {
+  recordResult();
   if (battle.endless) { showEndlessResult(); return; }
   if (battle.event) { showEventResult(); return; }
   if (battle.expedition) { showExpResult(); return; }
@@ -1559,7 +1564,7 @@ function showExpResult() {
   const lines = [];
   lines.push('획득 골드 💰 ' + fmtNum(battle.coins) + (win ? '' : '  (실패 · 절반만)'));
   const carts = (battle.caught || 0) + (battle.fled || 0);
-  if (carts) lines.push('황금 수레 ' + (battle.caught || 0) + ' / ' + carts + ' 대 잡음' + (battle.fled ? ' · ' + battle.fled + '대 놓침' : ''));
+  if (carts) lines.push('황금 수레 ' + (battle.caught || 0) + ' / ' + carts + ' 대 잡음' + (battle.fled ? ' · ' + battle.fled + ' 대 놓침' : ''));
   lines.push('처치 ' + battle.kills + '  ·  남은 성채 ' + Math.round(battle.allyCastle.hp / battle.allyCastle.maxHp * 100) + '%');
   if (!win) defeatTips(save, battle.stage, { foePct: battle.enemyCastle.hp / battle.enemyCastle.maxHp * 100, time: battle.time, bossAlive: !!battle.aliveBoss() })
     .forEach(tip => lines.push('💡 ' + tip));
@@ -1939,6 +1944,8 @@ function init() {
                  () => { flushPlayTime(); saveGame(save); show('scr-map'); });
       return;
     }
+    clearTimeout(resultTimer);
+    recordResult();                        // 결과창이 뜨기 전에 나가도 임무·기록은 남긴다
     flushPlayTime();
     saveGame(save);
     show('scr-map');
@@ -1975,7 +1982,8 @@ function init() {
   $('#btn-fix').addEventListener('click', () => {
     $('#result').classList.remove('show');
     $('#btn-retry').textContent = '다시 도전';
-    const idx = !battle ? null : battle.expedition ? 'exp:' + battle.expIndex : (!battle.endless && !battle.event ? battle.stageIndex : null);
+    const idx = !battle ? null : battle.expedition ? 'exp:' + battle.expIndex
+      : battle.hard ? 'hard:' + battle.stageIndex : (!battle.endless && !battle.event ? battle.stageIndex : null);
     show('scr-map');                       // 편성에서 '뒤로' 가면 진군도로 (전투 화면이 아니라)
     openFormation(idx);
   });

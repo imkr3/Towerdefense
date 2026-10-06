@@ -1027,5 +1027,23 @@ test('Gold raid fort holds until every wave and cart has come out', () => {
   b.enemyCastle.takeDamage(b.enemyCastle.maxHp * 2); b.update(1 / 30); b.update(1 / 30);
   assert.equal(b.state, 'win');
 });
+test('Gold carts behind the line do not drag the frontline or freeze support units (3.7.1)', () => {
+  const b = exBattle(2); b.update(1 / 30);
+  b.enemies.forEach(e => { e.dead = true; }); b.enemies = [];
+  b.allies.push(b.makeAlly(U.spear, 900));
+  const foe = b.spawnEnemy('goblin', 1000), cart = b.spawnEnemy('goldcart', 250);
+  const front = Math.max(...b.allies.map(a => a.x)), back = Math.min(...b.enemies.filter(e => e !== cart).map(e => e.x));
+  assert.ok(back > 300, 'test setup'); assert.equal(b.frontline(), (front + back) / 2, 'meteor aim ignores the cart');
+  const pr = b.makeAlly(U.priest, 600);
+  assert.ok(b.canAdvance(pr, [cart]), 'a cart behind does not stop a priest');
+  assert.ok(!b.canAdvance(pr, [foe, cart].concat([b.spawnEnemy('goblin', 700)])), 'a real foe ahead still does');
+});
+test('Killing the raid boss keeps the raid ward while carts remain (3.7.1)', () => {
+  const b = exBattle(2); b.update(1 / 30);
+  b.expWard = true;
+  const boss = b.spawnEnemy('goldwyrm', 1500); boss.takeDamage(boss.maxHp * 10); b.update(1 / 30);
+  assert.ok(b.bossDown);
+  assert.ok(b.enemyCastle.floor > 0, 'floor stays while the raid still has carts or waves');
+});
 
 console.log(count + ' regression checks passed');

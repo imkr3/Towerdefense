@@ -559,7 +559,8 @@ class Renderer {
       ctx.font = 'bold ' + Math.round(11 * s) + 'px sans-serif';
       ctx.textAlign = 'center';
       ctx.lineWidth = 3 * s; ctx.strokeStyle = 'rgba(0,0,0,.65)';
-      const wt = tr('보스의 결계 · 보스를 쓰러뜨리세요');
+      const b = this._battle;
+      const wt = tr(b.bossWard && !b.bossDown ? '보스의 결계 · 보스를 쓰러뜨리세요' : b.expWard ? '원정 결계 · 수레가 다 나올 때까지' : '요새 결계 · 웨이브를 더 버티세요');
       const half = ctx.measureText(wt).width / 2 + 6 * s;
       const lx = Math.max(half, Math.min(this.w - half, x));          // 화면 끝에 걸려도 다 보이게
       ctx.strokeText(wt, lx, y - hgt - 72 * s);
@@ -1906,6 +1907,11 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
   // 병종마다 직접 칠하는 부위(짐승·기계·보스 몸통)에도 같은 잉크 테두리를 두른다
   const autoInk = MODEL.ink && !flash;
   if (autoInk) { ctx.fill = inkedFill; ctx.stroke = inkedStroke; ctx._inkW = 0.95 * s; }
+  // 3.7.1: 사라지는 병사·장막 보스·피격 섬광처럼 반투명으로 부를 때, 병종 그림이 쓰는 globalAlpha 를
+  // 그 바탕 투명도에 대한 비율로 바꾼다 ('= 1' 로 되돌리는 순간 불투명하게 튀던 문제). 불투명하면 건드리지 않는다.
+  const baseA = ctx.globalAlpha;
+  if (baseA < 1) Object.defineProperty(ctx, 'globalAlpha', { configurable: true, get: alphaGet, set: alphaSet });
+  ctx._baseA = baseA;
   if (HUMANOID[st.shape]) armSwing(S);
   if (st.evo && !st.bigEvo) (NO_CAPE[st.shape] ? evoBanner : evoCape)(S);   // 진화: 등 뒤로 망토, 기계·짐승은 군기
 
@@ -4682,6 +4688,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
   if (st.evo) evoCrest(S);                        // 진화: 머리 위 금빛 문장
 
   if (autoInk) { delete ctx.fill; delete ctx.stroke; }
+  if (baseA < 1) delete ctx.globalAlpha;
 
   if (hurt) {
     ctx.strokeStyle = 'rgba(255,255,255,.8)';
@@ -4777,6 +4784,10 @@ const INK = 'rgba(12,16,24,.82)';
 /* 불투명한 면을 칠하면 잉크 테두리도 긋는다. 반투명 빛·그늘, 'lighter' 합성, 작은 장식은 건너뛴다. */
 const _fill0 = CanvasRenderingContext2D.prototype.fill;
 const _stroke0 = CanvasRenderingContext2D.prototype.stroke;
+/* 반투명으로 부른 drawBody 안의 globalAlpha: 바탕 투명도에 대한 비율 (3.7.1) */
+const ALPHA_DESC = Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype, 'globalAlpha');
+function alphaGet() { return ALPHA_DESC.get.call(this) / this._baseA; }
+function alphaSet(v) { ALPHA_DESC.set.call(this, Math.min(1, v) * this._baseA); }
 /* 굵고 불투명한 선(팔다리·무기 자루·바퀴)은 잉크를 한 겹 밑에 깐다 */
 function inkedStroke(a) {
   const ss = this.strokeStyle, lw = this.lineWidth;
@@ -5671,9 +5682,10 @@ function tri(S, x1, y1, x2, y2, x3, y3, col) {
   ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.lineTo(x3, y3);
   ctx.closePath();
   // 큰 삼각형(칼날·창끝·망토)만 테두리 — 작은 장식까지 그으면 뭉개진다
-  ctx._skipInk = Math.abs((x2 - x1) * (y3 - y1) - (x3 - x1) * (y2 - y1)) < 60 * S.s * S.s;
+  const skip0 = ctx._skipInk;            // 테두리를 끈 구간 안에서 불려도 그 구간을 켜지 않는다
+  ctx._skipInk = skip0 || Math.abs((x2 - x1) * (y3 - y1) - (x3 - x1) * (y2 - y1)) < 60 * S.s * S.s;
   ctx.fill();
-  ctx._skipInk = false;
+  ctx._skipInk = skip0;
 }
 
 /* 하트 (홀림) */

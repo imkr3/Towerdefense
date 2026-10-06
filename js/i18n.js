@@ -721,7 +721,7 @@ const I18N_EN = {
   '돌파 · 전열을 지나쳐 가니 둔화·기절·원거리로 성채 앞에서': 'Breach · runs past the line; stop him before the castle with slow, stun or range',
   /* 3.0 보스의 결계 · 하드코어 */
   '모든 적이 방어 60%(보스는 30%) — 아군의 공격 피해가 크게 줄어듭니다 (중독·화상은 그대로)': 'All foes have 60% armor (bosses 30%) — your hits deal far less (poison and burn unaffected)',
-  '보스의 결계 · 보스를 쓰러뜨리세요': 'Boss ward · defeat the boss', '보스의 결계 · 보스를 쓰러뜨려야 요새가 무너집니다': 'Boss ward · the fort cannot fall while the boss lives',
+  '보스의 결계 · 보스를 쓰러뜨리세요': 'Boss ward · defeat the boss', '원정 결계 · 수레가 다 나올 때까지': 'Raid ward · holds until every cart is out', '요새 결계 · 웨이브를 더 버티세요': 'Fort ward · survive more waves', '보스의 결계 · 보스를 쓰러뜨려야 요새가 무너집니다': 'Boss ward · the fort cannot fall while the boss lives',
   '보스가 요새에서 뛰쳐나온다!': 'The boss bursts out of the fort!',
   '💀 하드코어': '💀 Hardcore', '하드코어': 'Hardcore', '하드코어 돌파': 'Hardcore Cleared', '첫 돌파': 'First clear',
   '💀 하드코어 돌파 완료': '💀 Hardcore cleared',
