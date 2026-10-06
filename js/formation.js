@@ -94,6 +94,7 @@ function toggleUnit(id) {
 
 /* 비어 있는 칸을 레벨 높고 싼 병종부터 채운다 */
 function autoFillLoadout() {
+  rememberDeck('fill');
   const pool = unlockedUnits().filter(u => !save.loadout.includes(u.id));
   pool.sort((a, b) => ((save.levels[b.id] || 1) - (save.levels[a.id] || 1)) || (a.cost - b.cost));
   let n = 0;
@@ -274,12 +275,18 @@ function renderFormationSide() {
   clear.className = 'btn ghost';
   clear.textContent = '비우기';
   clear.addEventListener('click', () => {
+    rememberDeck('clear');
     save.loadout = save.loadout.slice(0, 1);
     commitLoadout('첫 칸만 남기고 비웠습니다');
   });
   tools.appendChild(fill);
   tools.appendChild(clear);
   side.appendChild(tools);
+  // 3.6: 출진할 전장이 정해져 있으면 그 전장 기준으로, 아니면 다음 전장 기준으로 점검한다
+  const evk0 = typeof fmTarget === 'string' && fmTarget.indexOf('event:') === 0 ? +fmTarget.slice(6) : -1;
+  const target = typeof fmTarget === 'number' ? STAGES[fmTarget]
+    : evk0 >= 0 ? EVENT_STAGES[evk0] : STAGES[Math.min(save.cleared, STAGES.length - 1)];
+  if (target && evk0 < 0) side.appendChild(deckCheckEl(target, renderFormation));
 
   const presets = formationPresets();
   const pbox = document.createElement('div');
@@ -330,6 +337,85 @@ function renderFormationSide() {
     });
     side.appendChild(go);
   }
+}
+
+/* ------------------------------ 3.6 편성 점검 · 추천 편성 ------------------------------
+ * 전장 특성마다 가진 대응 병종(편성했으면 ✓)과 지금 편성의 약점을 보여 주고,
+ * 버튼 하나로 추천 편성을 넣는다. 바로 전 편성은 기억해 두었다가 되돌릴 수 있다. */
+let deckUndo = null;          // { list, why } 마지막으로 통째로 바꾸기 전의 편성
+function rememberDeck(why) { deckUndo = { list: save.loadout.slice(), why: why }; }
+function undoDeck() {
+  if (!deckUndo) return false;
+  save.loadout = deckUndo.list;
+  deckUndo = null;
+  saveGame(save);
+  toast('이전 편성으로 되돌렸습니다');
+  return true;
+}
+function applyRecommended(stage) {
+  const next = recommendDeck(save, stage);
+  if (!next.length) { toast('추천할 병종이 없습니다'); return false; }
+  if (sameList(next, save.loadout)) { toast('이미 추천 편성입니다'); return false; }
+  rememberDeck('recommend');
+  save.loadout = next;
+  saveGame(save);
+  if (typeof SFX !== 'undefined') SFX.ui();
+  toast('추천 편성으로 바꿨습니다');
+  return true;
+}
+/* 편성 점검 상자. onChange: 편성이 바뀐 뒤 다시 그릴 함수 */
+function deckCheckEl(stage, onChange) {
+  const adv = deckAdvice(save, stage);
+  const el = document.createElement('div');
+  el.className = 'deck-check';
+  const head = document.createElement('div');
+  head.className = 'dc-head';
+  const ok = !adv.warns.length;
+  head.innerHTML = '<b>' + (ok ? '✓ 편성 점검' : '⚠ 편성 점검') + '</b>';
+  head.classList.toggle('ok', ok);
+  const rec = document.createElement('button');
+  rec.type = 'button';
+  rec.className = 'btn ghost dc-btn';
+  rec.textContent = '추천 편성';
+  rec.addEventListener('click', () => { if (applyRecommended(stage)) onChange(); });
+  head.appendChild(rec);
+  if (deckUndo) {
+    const back = document.createElement('button');
+    back.type = 'button';
+    back.className = 'btn ghost dc-btn';
+    back.textContent = '↶ 되돌리기';
+    back.addEventListener('click', () => { if (undoDeck()) onChange(); });
+    head.appendChild(back);
+  }
+  el.appendChild(head);
+  for (const c of adv.counters) {
+    const d = STAGE_MODS[c.mod];
+    const row = document.createElement('div');
+    row.className = 'dc-row';
+    row.style.setProperty('--mc', d.color);
+    row.innerHTML = '<b>' + d.name + '</b>';
+    const units = document.createElement('span');
+    units.className = 'dc-units';
+    if (!c.ids.length) units.innerHTML = '<i>가진 대응 병종이 없습니다</i>';
+    for (const id of c.ids) {
+      const u = UNIT_BY_ID[id], s = document.createElement('span');
+      s.className = 'dc-u' + (c.have.includes(id) ? ' on' : '');
+      s.title = u.name;
+      s.innerHTML = '<canvas></canvas><small>' + (u.short || u.name) + '</small>';
+      drawUnitIcon(s.querySelector('canvas'), unitFor(save, id), 24);
+      units.appendChild(s);
+    }
+    row.appendChild(units);
+    el.appendChild(row);
+  }
+  for (const w of adv.warns) {
+    if (w.mod) continue;                 // 대응 병종이 없다는 말은 위 줄(✓ 없음)이 대신한다
+    const wr = document.createElement('div');
+    wr.className = 'dc-warn';
+    wr.innerHTML = '<i>' + w.key + '</i>' + (w.n !== undefined ? ' <b>' + w.n + '</b>' : '');
+    el.appendChild(wr);
+  }
+  return el;
 }
 
 /* ------------------------------ 끌기 ------------------------------ */

@@ -518,11 +518,14 @@ function renderStageDetail(i) {
     foes.appendChild(f);
   });
   box.appendChild(foes);
+  box.appendChild(deckCheckEl(st, () => renderStageDetail(i)));   // 3.6 편성 점검 · 추천 편성
   const btns = document.createElement('div');
   btns.className = 'sd-btns';
   const fb = document.createElement('button');
   fb.className = 'btn ghost sd-formation';
   fb.textContent = '편성 (' + save.loadout.length + '/' + LOADOUT_MAX + ')';
+  const nWarn = deckAdvice(save, st).warns.length;           // 3.6: 편성 점검에 걸린 수
+  if (nWarn) { const w = document.createElement('span'); w.className = 'warn-n'; w.textContent = '⚠' + nWarn; fb.appendChild(w); }
   fb.addEventListener('click', () => openFormation(i));
   const go = document.createElement('button');
   go.className = 'btn primary sd-go';
@@ -665,19 +668,24 @@ function renderShop() {
   $('#shop-coins').textContent = fmtNum(save.coins);
   const box = $('#shop-list');
   box.innerHTML = '';
-  Object.keys(UPGRADES).forEach(key => {
+  // 3.6: 중요한 강화부터, 실제 효과(지금 → 다음)를 숫자로. 골드가 모자라면 흐리게.
+  const order = SHOP_ORDER.filter(k => UPGRADES[k]).concat(Object.keys(UPGRADES).filter(k => !SHOP_ORDER.includes(k)));
+  order.forEach(key => {
     const u = UPGRADES[key];
     const lv = save.upgrades[key] || 0;
     const maxed = lv >= u.max;
     const cost = upgradeCost(key, lv);
     const card = document.createElement('div');
-    card.className = 'up-card';
+    card.className = 'up-card' + (!maxed && save.coins < cost ? ' cant' : '');
+    const [fxName, fxNow] = upgradeEffect(key, lv);
+    const fxNext = maxed ? '' : upgradeEffect(key, lv + 1)[1];
     let pips = '';
     for (let i = 0; i < u.max; i++) pips += '<div class="pip' + (i < lv ? ' on' : '') + '"></div>';
     card.innerHTML =
       '<div class="up-head"><div class="up-name">' + u.name + '</div>' +
       '<div class="up-lv">레벨 ' + lv + ' / ' + u.max + '</div></div>' +
       '<div class="up-desc">' + u.desc + '</div>' +
+      (fxName ? '<div class="up-fx"><i>' + fxName + '</i> <b>' + fxNow + '</b>' + (fxNext ? ' → <b class="nx">' + fxNext + '</b>' : '') + '</div>' : '') +
       '<div class="pips">' + pips + '</div>' +
       '<button class="btn primary up-buy"' + (maxed ? ' disabled' : '') + '>' +
         (maxed ? '최대 강화 완료' : '💰 ' + cost + ' 골드로 강화') + '</button>';
@@ -1397,13 +1405,20 @@ function showResult() {
     if (battle.stoneGain) lines.push('소환석 🔮 +' + battle.stoneGain);
     if (battle.stageIndex + 1 >= STAGES.length) lines.push('왕국 방어전 전 전장 제패!');
   } else {
-    lines.push(battle.hard ? '하드코어는 강화와 편성을 끝까지 다듬어야 넘을 수 있습니다.'
-                           : '강화를 올리거나 편성을 바꿔 다시 도전하세요!');
+    // 3.6: 무엇을 바꾸면 좋을지 구체적으로
+    const tips = defeatTips(save, battle.stage, {
+      foePct: battle.enemyCastle.hp / battle.enemyCastle.maxHp * 100,
+      time: battle.time, bossAlive: !!battle.aliveBoss()
+    });
+    if (tips.length) tips.forEach(tip => lines.push('💡 ' + tip));
+    else lines.push(battle.hard ? '하드코어는 강화와 편성을 끝까지 다듬어야 넘을 수 있습니다.'
+                                : '강화를 올리거나 편성을 바꿔 다시 도전하세요!');
   }
   $('#result-desc').textContent = lines.join('\n');
   // 하드코어의 다음 전장은 이미 돌파한 곳일 때만
   const hasNext = win && battle.stageIndex + 1 < STAGES.length && (!battle.hard || battle.stageIndex + 1 < save.cleared);
   $('#btn-next').style.display = hasNext ? '' : 'none';
+  $('#btn-fix').style.display = win ? 'none' : '';       // 3.6: 지면 바로 편성을 고치러
   $('#result').classList.add('show');
 }
 
@@ -1422,6 +1437,7 @@ function showEventResult() {
   }
   $('#result-desc').textContent = lines.join('\n');
   $('#btn-next').style.display = 'none';
+  $('#btn-fix').style.display = 'none';
   $('#result').classList.add('show');
 }
 
@@ -1436,6 +1452,7 @@ function showEndlessResult() {
              (battle.stoneGain ? '  ·  소환석 🔮 ' + battle.stoneGain : ''));
   lines.push('처치 ' + battle.kills);
   $('#result-desc').textContent = lines.join('\n');
+  $('#btn-fix').style.display = 'none';
   $('#btn-next').style.display = 'none';
   $('#btn-retry').textContent = '다시 도전';
   $('#result').classList.add('show');
@@ -1825,6 +1842,13 @@ function init() {
     $('#btn-retry').textContent = '다시 도전';
     startBattle(battle.stageIndex + 1, battle.hard);
   });
+  $('#btn-fix').addEventListener('click', () => {
+    $('#result').classList.remove('show');
+    $('#btn-retry').textContent = '다시 도전';
+    const idx = battle && !battle.endless && !battle.event ? battle.stageIndex : null;
+    show('scr-map');                       // 편성에서 '뒤로' 가면 진군도로 (전투 화면이 아니라)
+    openFormation(idx);
+  });
   $('#btn-tomap').addEventListener('click', () => {
     $('#btn-retry').textContent = '다시 도전';
     show('scr-map');
@@ -1837,6 +1861,23 @@ function init() {
   });
   window.addEventListener('orientationchange', () => {
     setTimeout(() => { if (renderer) renderer.resize(); resizeTitle(); }, 250);
+  });
+  // 3.6: 편성 병종을 레벨 낮은 순으로 골드가 닿는 데까지 훈련
+  $('#btn-train-deck').addEventListener('click', () => {
+    const plan = trainDeckPlan(save);
+    if (!plan.n) { toast('훈련할 수 있는 편성 병종이 없습니다 (골드 부족 또는 상한)'); return; }
+    const ups = save.loadout.filter(id => (plan.levels[id] || 1) > (save.levels[id] || 1))
+      .map(id => (UNIT_BY_ID[id].short || UNIT_BY_ID[id].name) + ' ' + (save.levels[id] || 1) + '→' + plan.levels[id]);
+    askConfirm('편성 병종 고르게 훈련', '💰 ' + fmtNum(plan.spent) + '\n' + ups.join(' · '), () => {
+      save.coins -= plan.spent;
+      save.levels = plan.levels;
+      save.stats.trains += plan.n;
+      saveGame(save);
+      addStat('trains', plan.n);
+      renderTraining();
+      SFX.levelUp();
+      toast('편성 병종 훈련 완료 · Lv +' + plan.n);
+    });
   });
   $$('#training-filters button').forEach(el => el.addEventListener('click', () => {
     trainingFilter = el.dataset.filter;

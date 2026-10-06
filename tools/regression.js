@@ -923,4 +923,61 @@ test('Undying heroes show their second wind once', () => {
   th.takeDamage(th.maxHp * 5); assert.ok(th.dead, 'only once');
 });
 
+/* ---------------- 3.6 편의성 ---------------- */
+const Q = vm.runInContext('({deckAdvice, recommendDeck, availableUnits, isFrontUnit, MOD_COUNTERS, upgradeEffect, SHOP_ORDER, UPGRADES, trainDeckPlan, unitTrainCost, STAGE_MODS, HERO_SLOT_MAX, LOADOUT_MAX})', ctx);
+test('Deck check flags missing counters, thin front lines and hunted heroes', () => {
+  const st = { mods: ['ironclad', 'giantslayer'] };
+  const s = { cleared: 25, owned: { thor: 1, zeus: 1, hades: 1 }, levels: {}, loadout: ['archer', 'mage', 'longbow', 'zeus', 'hades', 'thor'] };
+  const a = Q.deckAdvice(s, st);
+  assert.equal(a.counters.length, 2);
+  assert.ok(a.counters[0].ids.includes('thor') && a.counters[0].have.includes('thor'), 'thor counters ironclad and is in the deck');
+  const keys = a.warns.map(w => w.key).join('|');
+  assert.ok(/근접 전열/.test(keys), 'thin front line'); assert.ok(/350 이상/.test(keys), 'expensive units vs hunters');
+  assert.ok(a.warns.some(w => w.mod === 'giantslayer'), 'no hunter counter in deck');
+  assert.ok(/4배/.test(Q.STAGE_MODS.giantslayer.desc), 'trait text matches HUNT_MUL 4');
+});
+test('Recommended deck: counters first, a real front line, hero cap, nothing locked or hunted', () => {
+  const owned = {}; for (const u of UNITS) if (u.gacha) owned[u.id] = 1;
+  for (const st of STAGES.slice(0, 40)) {
+    const i = STAGES.indexOf(st), s = { cleared: i, owned, levels: {}, loadout: [] };
+    const deck = Q.recommendDeck(s, st), avail = new Set(Q.availableUnits(s).map(u => u.id));
+    assert.ok(deck.length === Q.LOADOUT_MAX && new Set(deck).size === deck.length, 'full, unique: S' + (i + 1));
+    assert.ok(deck.every(id => avail.has(id)), 'only available units: S' + (i + 1));
+    assert.ok(deck.filter(id => U[id].rarity === 'SSR' || U[id].rarity === 'UR').length <= Q.HERO_SLOT_MAX, 'hero cap');
+    assert.ok(deck.filter(id => Q.isFrontUnit(U[id])).length >= 3, 'front line: S' + (i + 1));
+    if ((st.mods || []).includes('giantslayer')) assert.ok(deck.every(id => U[id].cost < 350), 'no hunted units: S' + (i + 1));
+    for (const m of st.mods || []) assert.ok(deck.some(id => Q.MOD_COUNTERS[m].includes(id)), m + ' countered: S' + (i + 1));
+  }
+});
+test('Shop shows the same numbers the battle uses', () => {
+  const b = new Battle(0, Object.assign(save(), { upgrades: { wallet: 4, income: 3, castle: 5, logistics: 2, treasury: 1, spoils: 3 } }), { baseHp: 1e4, money: 100, rate: 50, waves: [], reward: 0 });
+  assert.equal(Q.upgradeEffect('wallet', 4)[1], String(b.walletMax));
+  assert.equal(Q.upgradeEffect('income', 3)[1], '+' + Math.round((b.income / 50 - 1) * 100) + '%');
+  assert.equal(Q.upgradeEffect('castle', 5)[1], String(b.allyCastle.maxHp));
+  assert.equal(Q.upgradeEffect('logistics', 2)[1], '-' + Math.round((1 - b.cdMul) * 100) + '%');
+  assert.equal(Q.upgradeEffect('spoils', 3)[1], '+' + Math.round((b.goldMul - 1) * 100) + '%');
+  for (const k of Object.keys(Q.UPGRADES)) assert.ok(Q.SHOP_ORDER.includes(k) && Q.upgradeEffect(k, 1)[0], 'shop lists ' + k);
+});
+test('Train deck evenly: lowest level first, never past the cap or the gold', () => {
+  const s = { cleared: 3, coins: 2000, upgrades: {}, levels: { spear: 4, shield: 1, archer: 2 }, loadout: ['spear', 'shield', 'archer'] };
+  const plan = Q.trainDeckPlan(s);
+  assert.ok(plan.n > 0 && plan.spent <= 2000);
+  const cap = 5 + 3;
+  for (const id of s.loadout) assert.ok(plan.levels[id] <= cap);
+  assert.ok(plan.levels.shield >= 2 && plan.levels.archer >= 2, 'low ones first');
+  assert.equal(s.levels.shield, 1, 'plan does not touch the save');
+  let cost = 0; for (const id of s.loadout) for (let l = s.levels[id]; l < plan.levels[id]; l++) cost += Q.unitTrainCost(U[id], l);
+  assert.equal(cost, plan.spent);
+});
+
+test('Defeat tips point at the real problem, at most three', () => {
+  const D = vm.runInContext('defeatTips', ctx);
+  const s = { cleared: 20, coins: 0, upgrades: {}, owned: {}, levels: {}, loadout: ['archer', 'mage', 'longbow'] };
+  const tips = D(s, STAGES[19], { foePct: 95, time: 60, bossAlive: true });
+  assert.ok(tips.length >= 1 && tips.length <= 3);
+  assert.ok(/근접 전열/.test(tips[0]), 'thin front first');
+  const rich = D(Object.assign({}, s, { coins: 1e6, loadout: ['spear', 'shield', 'knight', 'javelin', 'frost', 'pyro'] }), STAGES[3], { foePct: 10, time: 300, bossAlive: false });
+  assert.ok(rich.some(x => /길어지면/.test(x)) && rich.some(x => /골드/.test(x)), rich.join(' / '));
+});
+
 console.log(count + ' regression checks passed');

@@ -52,7 +52,7 @@ const UNITS = [
   mk({
     id: 'berserk', castFx: 'slash', name: '광전사', role: '돌격', shape: 'berserk',
     body: '#2b3038', accent: '#b0b6bd', tunic: '#a63a2e',
-    hp: 600, atk: 52, range: 70, speed: 74, interval: 0.45,
+    hp: 690, atk: 54, range: 70, speed: 74, interval: 0.45,
     cost: 200, cooldown: 6.0, kb: 3, unlockStage: 5,
     desc: '쌍도끼를 미친 듯이 휘두릅니다. 방패병 뒤에 세워야 오래 살아남습니다.'
   }),
@@ -158,8 +158,8 @@ const UNITS = [
     body: '#2b3038', accent: '#e8c65a', tunic: '#c9a227',
     hp: 520, atk: 0, range: 0, speed: 34, interval: 3.0,
     cost: 195, cooldown: 14, kb: 2, unlockStage: 6,
-    ab: { haste: { mul: 0.7, dur: 4 }, radius: 240, interval: 3.5, noAttack: true },
-    abText: '주변 아군 공격 간격 30% 감소',
+    ab: { haste: { mul: 0.78, dur: 4 }, radius: 240, interval: 3.5, noAttack: true },
+    abText: '주변 아군 공격 간격 22% 감소',
     desc: '진군 나팔을 붑니다. 직접 싸우지 않지만 주변 아군의 공격 속도가 크게 오릅니다.'
   }),
   mk({
@@ -192,10 +192,10 @@ const UNITS = [
   mk({
     id: 'engineer', name: '공병', role: '축성', shape: 'engineer',
     body: '#2b3038', accent: '#8a6a3a', tunic: '#6b5a3f',
-    hp: 420, atk: 25, range: 70, speed: 40, interval: 2.0,
-    cost: 210, cooldown: 16, kb: 2, unlockStage: 17,
-    ab: { summon: { id: 'barricade', n: 1 }, interval: 9 },
-    abText: '9초마다 방벽 설치',
+    hp: 520, atk: 40, range: 70, speed: 40, interval: 2.0,
+    cost: 185, cooldown: 16, kb: 2, unlockStage: 17,
+    ab: { summon: { id: 'barricade', n: 1 }, interval: 6 },
+    abText: '6초마다 방벽 설치',
     desc: '전진하며 나무 방벽을 세웁니다. 방벽은 움직이지 않고 적의 공격을 대신 받아 냅니다.'
   }),
   mk({
@@ -213,14 +213,14 @@ const UNITS = [
     ab:{barrier:95,radius:145,interval:6},abText:'6초마다 주변 보호막 95 · 최대 2명',
     desc:'룬 방패로 좁은 전선을 지킵니다. 보호막은 중첩되지 않고 더 큰 값으로 갱신됩니다.'}),
   mk({id:'musketeer',name:'왕실 총사',role:'관통',shape:'musketeer',
-    body:'#35364d',accent:'#edbc70',tunic:'#754764',hp:360,atk:190,range:290,speed:32,interval:2.5,
+    body:'#35364d',accent:'#edbc70',tunic:'#754764',hp:420,atk:225,range:290,speed:32,interval:2.0,
     cost:285,cooldown:11,kb:2,unlockStage:10,ranged:true,
     ab:{pierce:true},abText:'사선 위 적 관통 · 느린 장전',
     desc:'긴 총신으로 밀집 대열을 관통합니다. 빠른 적이 접근하지 못하게 하세요.'}),
   mk({id:'purifier',name:'새벽 정화사',role:'정화',shape:'purifier',
     body:'#d5ddd6',accent:'#a4f6cc',tunic:'#478479',hp:550,atk:0,range:0,speed:31,interval:3,
-    cost:230,cooldown:16,kb:2,unlockStage:12,maxActive:2,
-    ab:{cleanse:true,heal:55,radius:185,interval:4,noAttack:true},abText:'4초마다 중독·화상·둔화 해제 및 회복 · 최대 2명',
+    cost:175,cooldown:16,kb:2,unlockStage:12,maxActive:2,
+    ab:{cleanse:true,heal:100,radius:200,interval:4,noAttack:true},abText:'4초마다 중독·화상·둔화 해제 및 회복 · 최대 2명',
     desc:'향로의 빛으로 상태이상을 정화합니다. 직접 공격하지 않으며, 기절은 해제하지 못합니다.'}),
   mk({id:'frostlancer',name:'서리 창기사',role:'둔화',shape:'frostlancer',
     body:'#4b6482',accent:'#c0efff',tunic:'#648aa8',hp:1250,atk:110,range:145,speed:39,interval:1.5,
@@ -234,15 +234,15 @@ const UNITS = [
     ab:{breaker:1.3},abText:'파쇄 · 갑주 무시 · 중장갑·보스에게 1.3배',
     desc:'무거운 투창을 던져 방패째 꿰뚫습니다. 궁수보다 짧게 던지지만 단단한 적에게 강합니다.'}),
   mk({id:'falconer',name:'매 조련사',short:'매조련사',role:'사냥',shape:'falconer',
-    body:'#2b3038',accent:'#c98a3a',tunic:'#5a6b3a',hp:380,atk:84,range:340,speed:34,interval:1.6,
-    cost:235,kb:2,ranged:true,unlockStage:10,
-    ab:{backline:true,hunter:1.6},abText:'매가 뒷줄을 노림 · 원거리 적에게 1.6배',
+    body:'#2b3038',accent:'#c98a3a',tunic:'#5a6b3a',hp:440,atk:115,range:340,speed:34,interval:1.6,
+    cost:210,kb:2,ranged:true,unlockStage:10,
+    ab:{backline:true,hunter:1.9},abText:'매가 뒷줄을 노림 · 원거리 적에게 1.9배',
     desc:'매를 날려 적 뒷줄의 궁수와 주술사부터 낚아챕니다. 앞의 덩치는 다른 병력에게 맡기세요.'}),
   mk({id:'bellringer',name:'종지기',role:'부동',shape:'bellringer',
-    body:'#2b3038',accent:'#e8c65a',tunic:'#6b4a7a',hp:720,atk:0,range:0,speed:30,interval:3,
-    cost:220,kb:1,unlockStage:15,maxActive:2,
-    ab:{ward:{dur:3},heal:40,radius:220,interval:5,noAttack:true},
-    abText:'5초마다 종소리 · 기절·둔화 풀고 3초 기절 면역 · 조금 회복 · 최대 2명',
+    body:'#2b3038',accent:'#e8c65a',tunic:'#6b4a7a',hp:950,atk:0,range:0,speed:30,interval:3,
+    cost:165,kb:1,unlockStage:15,maxActive:2,
+    ab:{ward:{dur:3},heal:90,radius:240,interval:4,noAttack:true},
+    abText:'4초마다 종소리 · 기절·둔화 풀고 3초 기절 면역 · 조금 회복 · 최대 2명',
     desc:'성당의 큰 종을 울려 휘청이는 아군을 다시 세웁니다. 기절을 거는 보스 앞에서 진가가 나옵니다.'}),
   mk({id:'lancer',name:'창기병',role:'기병 돌격',shape:'lancer',
     body:'#2b3038',accent:'#c8ced6',tunic:'#3f6bb5',hp:1500,atk:150,range:95,speed:72,interval:1.8,
@@ -261,23 +261,23 @@ const UNITS = [
     desc:'산사에서 수련한 권법가입니다. 어떤 충격에도 흔들리지 않고 주먹을 쉬지 않습니다.'}),
   /* ---------- 3.3 3막 '심연의 바다' 병종: 바다 군단을 받아칠 손 ---------- */
   mk({id:'harpoon',name:'작살병',role:'작살',shape:'harpoon',castFx:'harpoon',
-    body:'#2b3038',accent:'#9fd8e8',tunic:'#2f5a6b',hp:600,atk:95,range:210,speed:40,interval:1.6,
+    body:'#2b3038',accent:'#9fd8e8',tunic:'#2f5a6b',hp:640,atk:105,range:210,speed:40,interval:1.6,
     cost:180,kb:2,ranged:true,unlockStage:31,
     ab:{breaker:1.35,slow:1.0},abText:'작살 · 갑주 무시 · 단단한 적 1.35배 · 1초 둔화',
     desc:'밧줄 달린 작살로 등딱지째 꿰고 끌어당깁니다. 집게 게와 어인을 상대하는 바닷가의 기본 병종입니다.'}),
   mk({id:'corsair',name:'해적 검사',short:'해적검사',role:'칼춤',shape:'corsair',castFx:'slash',
-    body:'#2b3038',accent:'#e8c65a',tunic:'#8e2f3a',hp:1300,atk:120,range:70,speed:70,interval:.75,
+    body:'#2b3038',accent:'#e8c65a',tunic:'#8e2f3a',hp:1380,atk:140,range:70,speed:70,interval:.75,
     cost:260,kb:2,unlockStage:33,
-    ab:{dodge:.2,lifesteal:.15},abText:'칼춤 · 공격 20% 회피 · 흡혈 15%',
+    ab:{dodge:.25,lifesteal:.15},abText:'칼춤 · 공격 25% 회피 · 흡혈 15%',
     desc:'갑판 위에서 단련한 쌍검잡이입니다. 창끝을 흘려 넘기며 나가 창병의 품으로 파고듭니다.'}),
   mk({id:'beacon',name:'등대지기',role:'등불',shape:'beacon',
     body:'#2b3038',accent:'#ffe9a0',tunic:'#3f6bb5',hp:900,atk:0,range:0,speed:30,interval:3,
     cost:250,kb:1,unlockStage:34,maxActive:2,
-    ab:{ward:{dur:3},barrier:120,radius:230,interval:5,noAttack:true},
-    abText:'5초마다 등불 · 홀림·기절·둔화 해제와 3초 면역 · 보호막 120 · 최대 2명',
+    ab:{ward:{dur:3},barrier:170,radius:240,interval:5,noAttack:true},
+    abText:'5초마다 등불 · 홀림·기절·둔화 해제와 3초 면역 · 보호막 170 · 최대 2명',
     desc:'바다 건너까지 비추는 등불을 듭니다. 세이렌의 노래에 홀린 병사도 등불 아래에선 정신을 차립니다.'}),
   mk({id:'stormcaller',name:'폭풍술사',role:'뇌우',shape:'stormcaller',castFx:'storm',
-    body:'#2b3038',accent:'#9ad8ff',tunic:'#2a3a6b',hp:620,atk:110,range:280,speed:28,interval:2.2,
+    body:'#2b3038',accent:'#9ad8ff',tunic:'#2a3a6b',hp:700,atk:130,range:280,speed:28,interval:2.2,
     cost:420,kb:2,ranged:true,area:true,areaRadius:80,unlockStage:36,
     ab:{chain:{n:3,fall:.6,range:130}},abText:'뇌우 · 범위 벼락이 세 번 튕김',
     desc:'바다 위 먹구름을 불러 벼락을 내립니다. 떼로 몰려오는 해파리와 장어에게 특히 강합니다.'}),
@@ -290,7 +290,7 @@ const UNITS = [
   mk({
     id: 'barricade', name: '나무 방벽', role: '구조물', shape: 'barricade',
     body: '#7a5a34', accent: '#5c4326', tunic: '#7a5a34',
-    hp: 1600, atk: 0, range: 0, speed: 0, interval: 3,
+    hp: 2000, atk: 0, range: 0, speed: 0, interval: 3,
     cost: 0, cooldown: 0, kb: 1, unlockStage: 999,
     ab: { hold: true, noAttack: true, kbImmune: true },
     desc: '공병이 세운 방벽입니다. 공격은 못 하지만 오래 버팁니다.'
@@ -370,8 +370,8 @@ const SEASON_UNITS = [
     body: '#6b8f5f', accent: '#9de08e', tunic: '#4a6b46',
     hp: 760, atk: 92, range: 240, speed: 28, interval: 1.8,
     cost: 260, cooldown: 10, kb: 2, ranged: true,
-    ab: { stun: { chance: 0.35, dur: 1.6 }, slow: 2 },
-    abText: '35% 석화(기절) · 둔화',
+    ab: { stun: { chance: 0.3, dur: 1.4 }, slow: 2 },
+    abText: '30% 석화(기절) · 둔화',
     desc: '눈을 마주친 자는 돌이 됩니다. 적의 전선을 통째로 굳혀 버립니다.'
   }),
   mk({
@@ -1259,13 +1259,81 @@ const STAGE_MODS = {
               counter: '토르(파쇄) · 중독 · 화상 · 태양 낙인', color: '#8fa3b5' },
   horde:    { name: '물량', desc: '적이 1.8배 많이 몰려옵니다 (하나하나는 약함)',
               counter: '범위 공격 · 연쇄 번개 · 값싼 방패 벽', color: '#c98a4b' },
-  giantslayer: { name: '영웅 사냥꾼', desc: '적이 비용 350 이상인 아군(영웅·전설·신화)에게 3배 피해',
+  giantslayer: { name: '영웅 사냥꾼', desc: '적이 비용 350 이상인 아군(영웅·전설·신화)에게 4배 피해',
               counter: '값싼 병력을 많이 · 소환물 · 비싼 병종은 뒤에', color: '#9b6bd1' },
   curse:    { name: '저주', desc: '소환된 아군이 초당 10%씩 시들고, 회복·흡혈이 절반',
               counter: '소환·치유에 기대지 않는 진짜 병력', color: '#5f8f5a' },
   blitz:    { name: '질주', desc: '적 이동 속도 +45% · 공격 속도 +20%',
               counter: '둔화 · 넉백 면역 방패 · 튼튼한 앞줄', color: '#d0605a' }
 };
+/* 3.6 전장 특성마다 받아치는 병종 (앞일수록 잘 듣는다). 시뮬레이터의 공략 편성도 이 표를 쓴다. */
+const MOD_COUNTERS = {
+  ironclad: ['thor', 'javelin', 'venom', 'shield', 'alchemist', 'pyro', 'rapriest', 'knight', 'ra'],
+  horde:    ['zeus', 'frost', 'pyro', 'catapult', 'knight', 'shield', 'spear'],
+  blitz:    ['shield', 'frostlancer', 'frost', 'skadi', 'spartan', 'monk', 'colossus', 'medusa'],
+  giantslayer: ['spear', 'shield', 'javelin', 'venom', 'catapult', 'sniper', 'pyro', 'musketeer', 'frost'],
+  curse: ['knight', 'shield', 'spear', 'javelin', 'venom', 'pyro', 'frost']
+};
+/* 지금 쓸 수 있는 병종: 전장 진행으로 열린 것 + 소환해 얻은 것 */
+function availableUnits(save) {
+  return UNITS.filter(u => u.cost > 0 &&
+    (u.gacha ? !!(save.owned && save.owned[u.id]) : u.unlockStage <= (save.cleared || 0) + 1));
+}
+/* 앞에서 몸으로 막는 병종 (원거리 엄호 규칙의 '근접 전열') */
+function isFrontUnit(u) { return !!u && !u.ranged && !(u.ab && (u.ab.noAttack || u.ab.summon)); }
+const FRONT_MIN = 3;
+
+/* 출진 전 편성 점검. 특성마다 가진 대응 병종과, 지금 편성의 눈에 띄는 약점.
+ * 경고는 번역하기 쉽게 고정 문구(key) + 숫자(n) 로 돌려준다. */
+function deckAdvice(save, stage) {
+  const mods = stage.mods || [];
+  const inDeck = new Set(save.loadout || []);
+  const avail = new Set(availableUnits(save).map(u => u.id));
+  const counters = mods.map(m => {
+    const ids = (MOD_COUNTERS[m] || []).filter(id => avail.has(id)).slice(0, 5);
+    return { mod: m, ids: ids, have: ids.filter(id => inDeck.has(id)) };
+  });
+  const deck = (save.loadout || []).map(id => UNIT_BY_ID[id]).filter(Boolean);
+  const warns = [];
+  const front = deck.filter(isFrontUnit).length;
+  if (front < FRONT_MIN) warns.push({ key: '근접 전열이 부족합니다 · 원거리 병종이 엄호를 못 받습니다', n: front });
+  if (mods.includes('giantslayer')) {
+    const n = deck.filter(u => u.cost >= 350).length;
+    if (n >= 3) warns.push({ key: '비용 350 이상 병종이 많습니다 · 영웅 사냥꾼에게 4배 피해', n: n });
+  }
+  if (mods.includes('curse')) {
+    const n = deck.filter(u => u.ab && (u.ab.summon || u.ab.heal)).length;
+    if (n >= 3) warns.push({ key: '소환·치유 병종이 많습니다 · 저주로 약해집니다', n: n });
+  }
+  for (const c of counters) if (c.ids.length && !c.have.length) warns.push({ key: '대응 병종이 편성에 없습니다', mod: c.mod });
+  return { counters: counters, warns: warns };
+}
+
+/* 추천 편성: 특성 대응 병종을 번갈아 먼저, 근접 전열을 챙기고, 나머지는 비용·레벨 순.
+ * 영웅 사냥꾼이면 비싼 병종을, 저주면 소환·치유에 기대는 병종을 뒤로 뺀다. */
+function recommendDeck(save, stage) {
+  const mods = (stage && stage.mods) || [];
+  const hunted = mods.includes('giantslayer'), cursed = mods.includes('curse');
+  const lv = id => (save.levels && save.levels[id]) || 1;
+  const pool = availableUnits(save).filter(u => !(hunted && u.cost >= 350));
+  const ok = new Set(pool.map(u => u.id));
+  const picks = [];
+  let heroes = 0;
+  const add = id => {
+    const u = UNIT_BY_ID[id];
+    if (!ok.has(id) || picks.includes(id) || picks.length >= LOADOUT_MAX) return;
+    if (isHeroUnit(u)) { if (heroes >= HERO_SLOT_MAX) return; heroes++; }
+    picks.push(id);
+  };
+  for (let k = 0; k < 7; k++) for (const m of mods) { const id = (MOD_COUNTERS[m] || [])[k]; if (id) add(id); }
+  const score = u => u.cost * (1 + 0.08 * (lv(u.id) - 1)) * (cursed && u.ab && (u.ab.summon || u.ab.heal) ? 0.4 : 1);
+  const rest = pool.filter(u => !picks.includes(u.id)).sort((a, b) => score(b) - score(a));
+  const fronts = rest.filter(isFrontUnit);
+  while (picks.filter(id => isFrontUnit(UNIT_BY_ID[id])).length < FRONT_MIN + 1 && fronts.length && picks.length < LOADOUT_MAX) add(fronts.shift().id);
+  for (const u of rest) add(u.id);
+  return picks;
+}
+
 const HARD_STAGE_MODS = {
   9: ['ironclad'], 14: ['blitz'], 16: ['horde'], 17: ['ironclad', 'giantslayer'],
   19: ['horde', 'ironclad', 'giantslayer'],
@@ -1730,6 +1798,69 @@ const UPGRADES = {
   command: { name: '왕의 명령', max: 5, base: 700, step: 1.8,
              desc: '왕명 재사용 -8초, 회복량 +8%/레벨' }
 };
+
+/* 3.6 강화 병영: 중요한 것부터 보이게 늘어놓고, 레벨마다 실제 효과를 숫자로 보여 준다.
+ * 숫자는 game.js 의 계산과 같아야 한다 (회귀 테스트가 확인). [이름표, 값] */
+const SHOP_ORDER = ['wallet', 'income', 'power', 'vitality', 'castle', 'logistics', 'treasury', 'spoils',
+                    'command', 'academy', 'deployment', 'medicine', 'resistance'];
+function upgradeEffect(key, lv) {
+  lv = lv || 0;
+  switch (key) {
+    case 'wallet': return ['군자금 한도', String(900 + 260 * lv)];
+    case 'income': return ['군자금 수입', '+' + 12 * lv + '%'];
+    case 'power': return ['공격력', '+' + 6 * lv + '%'];
+    case 'vitality': return ['체력', '+' + 8 * lv + '%'];
+    case 'castle': return ['성채 체력', String(Math.round(4000 * (1 + 0.10 * lv)))];
+    case 'logistics': return ['쿨타임', '-' + 3 * lv + '%'];
+    case 'treasury': return ['시작 군자금', '+' + 60 * lv];
+    case 'spoils': return ['처치 골드', '+' + 8 * lv + '%'];
+    case 'academy': return ['레벨 상한', String(UNIT_LEVEL_HARD_CAP + lv)];
+    case 'command': return ['왕명 재사용', (COMMAND.baseCooldown - COMMAND.cooldownPerLv * lv) + '초'];
+    case 'deployment': return ['출진 보호막', String(25 * lv)];
+    case 'medicine': return ['회복량', '+' + 6 * lv + '%'];
+    case 'resistance': return ['중독·화상 피해', '-' + 5 * lv + '%'];
+  }
+  return ['', ''];
+}
+
+/* 3.6 편성 병종 고르게 훈련: 레벨이 가장 낮은 편성 병종부터 (같으면 싼 것부터) 골드가 닿는 데까지.
+ * 실제로 바꾸지 않고 계획만 돌려준다. */
+function trainDeckPlan(save) {
+  const cap = unitLevelCap(save.cleared, save.upgrades && save.upgrades.academy);
+  const levels = Object.assign({}, save.levels);
+  const ids = (save.loadout || []).filter(id => UNIT_BY_ID[id]);
+  let coins = save.coins || 0, spent = 0, n = 0;
+  for (;;) {
+    let best = null;
+    for (const id of ids) {
+      const lv = levels[id] || 1;
+      if (lv >= cap) continue;
+      if (!best || lv < best.lv || (lv === best.lv && UNIT_BY_ID[id].cost < UNIT_BY_ID[best.id].cost)) best = { id: id, lv: lv };
+    }
+    if (!best) break;
+    const cost = unitTrainCost(UNIT_BY_ID[best.id], best.lv);
+    if (coins < cost) break;
+    coins -= cost; spent += cost; n++;
+    levels[best.id] = best.lv + 1;
+  }
+  return { levels: levels, spent: spent, n: n };
+}
+
+/* 3.6 패배했을 때 무엇을 바꾸면 좋을지. 고정 문구(번역용)로 최대 3개.
+ * info: { foePct: 적 요새 남은 %, time: 전투 초, bossAlive, coins } */
+function defeatTips(save, stage, info) {
+  const tips = [];
+  for (const w of deckAdvice(save, stage).warns) {
+    if (w.mod) tips.push(STAGE_MODS[w.mod].name + ' · ' + STAGE_MODS[w.mod].counter);
+    else tips.push(w.key);
+  }
+  if (info.bossAlive) tips.push('보스가 끝까지 버텼습니다 · 보스에 강한 병종을 넣고 왕명을 보스 앞에서 쓰세요');
+  if (info.foePct > 70) tips.push('적 요새에 거의 닿지 못했습니다 · 무기 연마와 갑옷 강화를 올려 보세요');
+  else if (info.time >= 240) tips.push('싸움이 길어지면 적이 억세집니다 · 화력을 더 챙기세요');
+  const cheapest = Math.min.apply(null, SHOP_ORDER.slice(0, 5).map(k => (save.upgrades[k] || 0) >= UPGRADES[k].max ? Infinity : upgradeCost(k, save.upgrades[k] || 0)));
+  if ((save.coins || 0) >= cheapest) tips.push('지금 골드로 강화 병영·훈련소에서 더 강해질 수 있습니다');
+  return tips.slice(0, 3);
+}
 
 /* -------------------- 왕의 명령 (액티브) -------------------- */
 const COMMAND = {

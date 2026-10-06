@@ -114,7 +114,7 @@
     <div class="coin-chip">💰 <span id="train-coins">0</span></div>
   </header>
   <div class="cap-line"><span id="train-cap"></span></div>
-  <button class="btn ghost open-formation" id="btn-open-formation">편성 화면 열기 · 끌어서 배치</button>
+  <div class="train-tools"><button class="btn ghost open-formation" id="btn-open-formation">편성 화면 열기 · 끌어서 배치</button><button class="btn ghost" id="btn-train-deck">편성 병종 고르게 훈련</button></div>
   <nav id="training-filters" class="training-filters" aria-label="병종 목록 필터"><button class="on" data-filter="all" aria-pressed="true">전체</button><button data-filter="team" aria-pressed="false">내 편성</button><button data-filter="ally" aria-pressed="false">왕국군</button><button data-filter="enemy" aria-pressed="false">적 도감</button></nav>
   <div class="scroll grid" id="units-list"></div>
 </section>
@@ -221,6 +221,7 @@
       <div class="result-btns">
         <button class="btn" id="btn-retry">다시 도전</button>
         <button class="btn primary" id="btn-next">다음 전장으로</button>
+        <button class="btn ghost" id="btn-fix" style="display:none">편성 바꾸기</button>
         <button class="btn ghost" id="btn-tomap">진군도로</button>
       </div>
     </div>

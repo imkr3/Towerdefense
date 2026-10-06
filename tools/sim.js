@@ -47,7 +47,7 @@ function loadEngine(seed) {
     vm.runInContext(src, ctx, { filename: f });
   }
   return vm.runInContext(
-    '({Battle, STAGES, EVENT_STAGES, UNITS, UNIT_BY_ID, ROSTER_UNITS, LOADOUT_MAX, HERO_SLOT_MAX, unitLevelCap, unitTrainCost, UPGRADES, EVO_LEVEL, EVOLUTIONS})',
+    '({Battle, STAGES, EVENT_STAGES, MOD_COUNTERS, recommendDeck, UNITS, UNIT_BY_ID, ROSTER_UNITS, LOADOUT_MAX, HERO_SLOT_MAX, unitLevelCap, unitTrainCost, UPGRADES, EVO_LEVEL, EVOLUTIONS})',
     ctx);
 }
 
@@ -104,13 +104,7 @@ function comboLoadout(g, index) {
 /* 공략 편성: 전장 특성을 받아칠 병종을 먼저 챙기고 나머지는 전장 병종으로 채운다.
  * "특정 조합이면 풀린다" 를 재는 쪽이다. 소환 병종은 전부 가졌다고 본다. */
 const COUNTER_FRONT = 4;   // 공략 편성에 넣는 근접 전열 수 (3.2)
-const COUNTERS = {
-  ironclad: ['thor', 'javelin', 'venom', 'shield', 'alchemist', 'pyro', 'rapriest', 'knight', 'ra'],
-  horde:    ['zeus', 'frost', 'pyro', 'catapult', 'knight', 'shield', 'spear'],
-  blitz:    ['shield', 'frostlancer', 'frost', 'skadi', 'spartan', 'monk', 'colossus', 'medusa'],
-  giantslayer: ['spear', 'shield', 'javelin', 'venom', 'catapult', 'sniper', 'pyro', 'musketeer', 'frost'],
-  curse: ['knight', 'shield', 'spear', 'javelin', 'venom', 'pyro', 'frost']
-};
+/* 특성별 대응 병종 표는 js/data.js 의 MOD_COUNTERS (게임의 추천 편성과 같은 표) */
 function counterLoadout(g, index, stage) {
   const st = stage || g.STAGES[index];
   const hunted = (st.mods || []).includes('giantslayer');
@@ -122,7 +116,7 @@ function counterLoadout(g, index, stage) {
   // 특성마다 앞에서부터 번갈아 하나씩 — 두 특성이 겹치면 양쪽을 고루 챙긴다
   for (let k = 0; k < 7 && picks.length < g.LOADOUT_MAX; k++) {
     for (const m of mods) {
-      const id = (COUNTERS[m] || [])[k];
+      const id = (g.MOD_COUNTERS[m] || [])[k];
       if (id && ok(id) && !picks.includes(id) && picks.length < g.LOADOUT_MAX) picks.push(id);
     }
   }
@@ -162,7 +156,8 @@ function runStage(g, index, upLv, unitLv, trace, gacha, basic, opt) {
   g.UNITS.forEach(u => { levels[u.id] = Math.min(unitLv, cap); });
 
   const unlocked = g.ROSTER_UNITS.filter(u => u.unlockStage <= index + 1);
-  const loadout = basic ? basicLoadout(g)
+  const loadout = Array.isArray(gacha) ? gacha.slice()      // 3.6: 편성을 직접 넘길 수도 있다
+    : basic ? basicLoadout(g)
     : gacha === 'legend' ? legendLoadout(g)
     : (typeof gacha === 'string' && gacha.indexOf('trio:') === 0)
       ? unlocked.slice().sort((a, b) => b.cost - a.cost).slice(0, g.LOADOUT_MAX - gacha.slice(5).split('+').length).map(u => u.id).concat(gacha.slice(5).split('+'))
@@ -577,6 +572,25 @@ if (args[0] === '--event') {
   const g = loadEngine(12345), rows = [];
   for (let i = from; i < to; i++) rows.push(runStage(g, i, upLv, unitLv, false, 'smart'));
   printTable(rows, upLv, unitLv);
+} else if (args[0] === '--units') {
+  // node tools/sim.js --units [덱 수=60] [seed=1]
+  // 3.6 병종 기여도: 전장 병종 37개에서 무작위 10개 편성을 뽑아 막별 전장 10곳에서 돌리고,
+  // 그 병종이 든 판의 승률이 전장 평균보다 얼마나 높은지(%p)를 본다. 시너지까지 함께 잰다.
+  const N = +(args[1] || 60), seed0 = +(args[2] || 1);
+  let r = seed0 * 9301 + 49297; const rnd = () => (r = (r * 9301 + 49297) % 233280) / 233280;
+  const PTS = [[9,6,10],[13,6,10],[16,7,11],[18,7,11],[21,9,13],[24,9,13],[27,9,14],[32,10,16],[35,10,16],[38,10,17]];
+  const g0 = loadEngine(1), roster = g0.ROSTER_UNITS.map(u => u.id), rows = [];
+  for (let k = 0; k < N; k++) {
+    const a = roster.slice(), deck = []; while (deck.length < 10) deck.push(a.splice(Math.floor(rnd() * a.length), 1)[0]);
+    for (const [st, up, lv] of PTS) rows.push({ d: deck, s: st, w: runStage(loadEngine(seed0 * 1000 + k), st - 1, up, lv, false, deck.slice()).win ? 1 : 0 });
+  }
+  const avg = {}; for (const [st] of PTS) { const xs = rows.filter(x => x.s === st); avg[st] = xs.reduce((s, x) => s + x.w, 0) / xs.length; }
+  const U = {}; for (const x of rows) for (const id of x.d) { const u = U[id] = U[id] || { n: 0, sum: 0 }; u.n++; u.sum += x.w - avg[x.s]; }
+  const list = Object.keys(U).map(id => ({ id, n: U[id].n, d: U[id].sum / U[id].n * 100 })).sort((a, b) => b.d - a.d);
+  console.log('  판 ' + rows.length + ' · 전장별 평균 승률 ' + PTS.map(([st]) => st + ':' + avg[st].toFixed(2)).join(' '));
+  list.forEach(x => console.log('  ' + x.id.padEnd(13) + String(x.n).padStart(4) + '  ' + (x.d >= 0 ? '+' : '') + x.d.toFixed(1) + '%p'));
+  const m = list.reduce((s, x) => s + x.d, 0) / list.length;
+  console.log('  편차(표준편차) ' + Math.sqrt(list.reduce((s, x) => s + (x.d - m) ** 2, 0) / list.length).toFixed(2) + '%p');
 } else if (args[0] === '--solo') {
   // node tools/sim.js --solo <강화> <Lv> id,id,...  전장 편성 9 + 그 병종 하나
   const upLv = +args[1], unitLv = +args[2];

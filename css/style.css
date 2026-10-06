@@ -756,6 +756,7 @@ button:focus-visible{outline:3px solid #48b9ee;outline-offset:3px;}
 .formation-hint{margin:0;padding:3px 12px calc(5px + var(--sb));font-size:10.5px;color:#5c6b72;text-align:center;flex-shrink:0}
 #scr-formation.is-dragging .formation-pool{overflow:hidden}
 .open-formation{margin:6px 14px 0;padding:8px;font-size:12.5px}
+.train-tools{display:flex;gap:6px;margin:6px 14px 0}.train-tools .btn{flex:1;margin:0;padding:8px;font-size:12.5px}
 @media(max-height:420px){
   .formation-top{padding:5px 10px 3px}.f-slot{height:60px}.f-slot canvas,.f-tile canvas{width:30px;height:30px}
   .f-tile{height:62px}.formation-bottom{padding:5px 10px 2px;gap:8px}.formation-side{padding:8px;gap:5px}
@@ -1179,3 +1180,36 @@ body{background:var(--bg0);color:var(--tx)}
 .sd-btns.ev-btns{flex-wrap:wrap}
 .sd-btns.ev-btns .btn.ghost{flex:1 1 40%}
 .sd-btns.ev-btns .sd-go{flex:1 1 100%}
+
+/* 3.6: 편성 점검 · 추천 편성 (전장 정보와 편성 화면에 함께 쓴다) */
+.deck-check{display:flex;flex-direction:column;gap:4px;background:#0b152099;border:1px solid var(--ln-soft);border-radius:8px;padding:6px 8px}
+.dc-head{display:flex;align-items:center;gap:6px;font-size:12px;color:#ffb36b}
+.dc-head.ok{color:#7fdc8f}
+.dc-head b{flex:1;letter-spacing:.04em}
+.dc-btn{padding:4px 9px!important;font-size:11px!important;min-height:0}
+.dc-row{display:flex;align-items:center;gap:6px;border-left:3px solid var(--mc);padding-left:6px}
+.dc-row>b{color:var(--mc);font-size:11px;white-space:nowrap;min-width:30px}
+.dc-units{display:flex;flex-wrap:wrap;gap:3px}
+.dc-units i{font-size:10.5px;color:var(--tx2);font-style:normal}
+.dc-u{display:flex;flex-direction:column;align-items:center;width:38px;font-size:8.5px;color:var(--tx2);opacity:.55;position:relative}
+.dc-u canvas{background:#1d2f42;border-radius:5px;border:1px solid transparent}
+.dc-u small{max-width:38px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dc-u.on{opacity:1;color:var(--tx)}
+.dc-u.on canvas{border-color:#7fdc8f}
+.dc-u.on::after{content:'✓';position:absolute;top:-3px;right:1px;font-size:10px;color:#7fdc8f;font-weight:900}
+.dc-warn{font-size:10.5px;color:#ffc58a;line-height:1.35}
+.dc-warn::before{content:'⚠ '}
+.dc-warn i{font-style:normal}
+.dc-warn b{color:#fff}
+.formation-side .deck-check{margin-top:2px}
+.dc-head{flex-wrap:wrap}
+.dc-head b{white-space:nowrap}
+.formation-side .dc-row{flex-direction:column;align-items:flex-start;gap:2px}
+.sd-formation .warn-n{display:inline-block;margin-left:5px;background:#c0602a;color:#fff;border-radius:9px;padding:0 6px;font-size:11px;font-weight:800}
+/* 3.6 강화 병영: 실제 효과 · 골드 부족 */
+.up-fx{font-size:12px;color:var(--tx2);margin:2px 0 4px}
+.up-fx i{font-style:normal}
+.up-fx b{color:var(--tx)}
+.up-fx b.nx{color:#7fdc8f}
+.up-card.cant .up-buy{filter:grayscale(.75) brightness(.8)}
+#confirm-text{white-space:pre-line}
