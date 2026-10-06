@@ -4576,6 +4576,36 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
       break;
     }
 
+    case 'goldcart': {                                        // 3.7 황금 수레: 금화를 산더미로 실은 짐수레
+      const wood = S.flash ? '#fff' : '#7a5a34', dark = S.flash ? '#fff' : '#4a3520';
+      const bob = S.moving ? Math.sin(phase * 2) * 1.2 * s : 0;
+      ctx.save(); ctx.translate(0, bob);
+      ctx.fillStyle = wood; ctx.fillRect(-26 * s, -30 * s, 52 * s, 18 * s);          // 짐칸
+      ctx.fillStyle = dark; for (let i = -1; i <= 1; i++) ctx.fillRect(i * 17 * s - 1 * s, -30 * s, 2 * s, 18 * s);
+      ctx.fillStyle = S.flash ? '#fff' : '#ffd35a';                                    // 금화 더미
+      ctx.beginPath(); ctx.moveTo(-24 * s, -30 * s); ctx.quadraticCurveTo(-8 * s, -52 * s, 4 * s, -44 * s);
+      ctx.quadraticCurveTo(16 * s, -54 * s, 24 * s, -30 * s); ctx.closePath(); ctx.fill();
+      if (!S.flash) {
+        ctx.fillStyle = '#fff1a8';
+        for (const [x, y] of [[-12, -38], [2, -46], [12, -40], [-4, -34], [18, -34]]) { ctx.beginPath(); ctx.ellipse(x * s, y * s, 3 * s, 1.6 * s, 0, 0, 7); ctx.fill(); }
+        const tw = (Math.sin((MODEL.time || 0) * 5) + 1) / 2;                          // 반짝
+        ctx.save(); ctx._skipInk = true; ctx.globalAlpha *= 0.4 + tw * 0.6; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.4 * s;
+        ctx.beginPath(); ctx.moveTo(4 * s, -56 * s); ctx.lineTo(4 * s, -48 * s); ctx.moveTo(0, -52 * s); ctx.lineTo(8 * s, -52 * s); ctx.stroke();
+        ctx.restore(); ctx._skipInk = false;
+      }
+      ctx.fillStyle = S.flash ? '#fff' : '#8e2f3a';                                    // 보물 상자
+      ctx.fillRect(-20 * s, -42 * s, 12 * s, 9 * s);
+      ctx.fillStyle = S.flash ? '#fff' : '#ffd35a'; ctx.fillRect(-15 * s, -40 * s, 2 * s, 3 * s);
+      line(S, 26 * s, -20 * s, 40 * s, -24 * s, 2.6 * s, dark);                          // 끌채
+      ctx.restore();
+      wheels(S, [-16, 16], -9 * s, 9 * s, dark);
+      const O = sub(S, 0.62, 2.6 * s);                                                  // 끄는 고블린
+      ctx.save(); ctx.translate(46 * s, 0);
+      legs(O); torso(O); head(O, 'ears'); arm(O, 10 * O.s, -32 * O.s);
+      ctx.restore();
+      break;
+    }
+
     case 'siegeram': {
       // 지붕
       ctx.fillStyle = col;
@@ -5743,7 +5773,7 @@ function drawUnitIcon(canvas, stats, size) {
   const ctx = canvas.getContext('2d');
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, px, px);
-  const wide = { catapult: 1, knight_evo: 1, catapult_evo: 1, colossus_evo: 1, wukong_evo: 1, wolf: 1, spider: 1, merchant: 1, sniper: 1, drake: 1, hellhound: 1, spiderqueen: 1, lancer: 1 };
+  const wide = { catapult: 1, goldcart: 1, knight_evo: 1, catapult_evo: 1, colossus_evo: 1, wukong_evo: 1, wolf: 1, spider: 1, merchant: 1, sniper: 1, drake: 1, hellhound: 1, spiderqueen: 1, lancer: 1 };
   const k = wide[stats.shape] ? 0.86 : 1;
   const s = (px / 96) * k;
   ctx.save();

@@ -968,6 +968,25 @@ const ENEMIES = {
   thief:    { name: '금화 도둑', body: '#4d6b3a', accent: '#e8c65a', tunic: '#3a3a2a', shape: 'thief',
               hp: 620, atk: 38, range: 60, speed: 108, interval: .7, kb: 2, gold: 30, scale: .85,
               ab: { thief: { steal: 18 } }, abText: '소매치기 · 때릴 때마다 군자금을 훔치고, 쓰러뜨리면 되찾습니다' },
+  // 3.7 금화 원정
+  goldcart: { name: '황금 수레', body: '#7a5a34', accent: '#ffd35a', tunic: '#5c4326', shape: 'goldcart',
+              hp: 1300, atk: 0, range: 40, speed: 44, interval: 3, kb: 1, gold: 300, scale: 1.2, noReinf: true,
+              ab: { flee: 70, kbImmune: true, noAttack: true },
+              abText: '싸우지 않고 아군 성채로 굴러감 · 닿기 전에 부수면 금화, 닿으면 달아남' },
+  banditchief:{ name: '도적 두목', body: '#3a4a2e', accent: '#ffd35a', tunic: '#6b2a2a', shape: 'thief',
+              hp: 5200, atk: 120, range: 70, speed: 70, interval: .8, kb: 1, gold: 1500, scale: 1.35, noReinf: true,
+              ab: { thief: { steal: 45 }, dodge: .2 },
+              abText: '큰손 소매치기 · 때릴 때마다 군자금 45를 훔치고 공격 20% 회피 · 쓰러뜨리면 되찾고 큰 금화' },
+  goldwyrm: { name: '황금 비룡', body: '#c9a227', accent: '#fff1a8', tunic: '#8a6a1a', shape: 'drake',
+              hp: 16000, atk: 640, range: 200, speed: 22, interval: 2.4, kb: 1, gold: 3000,
+              area: true, areaRadius: 150, scale: 1.9, boss: true,
+              special: { t: 'meteor', name: '금빛 숨결', cd: 10, n: 3, dmg: 300, radius: 115, warn: 1.1, kind: 'firestorm' },
+              phases: [
+                { at: 0.70, t: 'summon', name: '보물을 지켜라', id: 'goldcart', n: 2 },
+                { at: 0.40, t: 'summon', name: '보물을 빼돌려라', id: 'goldcart', n: 3 },
+                { at: 0.20, t: 'enrage', name: '탐욕의 분노', atk: 1.2, rate: 0.8 }
+              ],
+              abText: '금빛 숨결 · 체력이 깎이면 황금 수레를 빼돌린다' },
   chrono:   { name: '시간 주술사', body: '#3f5a3c', accent: '#8fe0ff', tunic: '#2a3a5a', shape: 'chrono',
               hp: 1300, atk: 50, range: 270, speed: 24, interval: 2.0, kb: 2, gold: 65, ranged: true, noReinf: true,
               ab: { chrono: .6 }, abText: '모래시계 · 살아 있는 동안 아군 카드 재사용 대기가 40% 느려집니다' },
@@ -1129,6 +1148,7 @@ const ENEMIES = {
 
 /* -------------------- 전장 20개 -------------------- */
 function W(t, e, n, gap) { return { t: t, e: e, n: n || 1, gap: gap || 1.2 }; }
+function Wm(t, e, n, mul) { return { t: t, e: e, n: n || 1, gap: 1.2, mul: mul }; }   // 3.7: 이 적만 더 억세게
 
 const STAGES = [
   { name: '국경 초소', baseHp: 2600, money: 180, rate: 26, reward: 60, waves: [
@@ -1616,6 +1636,36 @@ const EVENT_STAGES = [
 EVENT_STAGES.forEach((st, k) => { st.eventIndex = k; st.opening = 'rush'; });
 function eventOpen(s, k) { return !!EVENT_STAGES[k] && (s.cleared || 0) >= EVENT_STAGES[k].event.unlock; }
 function eventCount(s) { let n = 0; for (const st of EVENT_STAGES) if (s.events && s.events[st.event.id]) n++; return n; }
+
+/* =======================================================================
+ *  3.7 금화 원정 — 몇 번이고 다시 돌며 금화를 버는 곳
+ *   - 돌파할 때마다 정해진 금화 + 황금 수레·도적 두목·비룡이 지닌 금화 (소환석은 없다)
+ *   - 황금 수레는 싸우지 않고 아군 성채로 굴러간다. 닿기 전에 부숴야 금화가 들어온다
+ *   - 난이도는 열리는 시점의 캠페인과 비슷하게, 금화는 그 무렵 전장을 다시 도는 것의 약 1.5~2배 (분당)
+ * ======================================================================= */
+const EXPEDITIONS = [
+  { name: '황금 수레 호송대', look: 'wheat', music: 'wheat', baseHp: 7000, money: 250, rate: 34, reward: 0, enemyMul: 3.0, len: 1000,
+    expedition: { id: 'convoy', unlock: 6, reward: 260, tier: '쉬움',
+                  mech: '황금 수레는 싸우지 않고 성채로 굴러갑니다 · 닿기 전에 부수세요' },
+    waves: [W(2,'goblin',4,1), W(8,'goldcart',1), W(14,'orcspear',3,1.4), W(24,'goldcart',1), W(30,'wolf',3,1.2),
+            W(40,'goblin',5,.8), W(46,'goldcart',1), W(56,'orcspear',4,1.2), W(64,'goldcart',1), W(72,'wolf',4,1),
+            W(80,'goldcart',1)] },
+  { name: '도적 소굴', look: 'darkforest', music: 'darkwood', baseHp: 17000, money: 370, rate: 47, reward: 0, enemyMul: 6.0, len: 1150,
+    expedition: { id: 'den', unlock: 15, reward: 600, tier: '보통',
+                  mech: '도적이 군자금을 훔칩니다 · 두목을 쓰러뜨리면 되찾고 큰 금화' },
+    waves: [W(2,'thief',3,1.2), W(10,'orcspear',4,1.2), Wm(18,'goldcart',1,3.5), W(24,'thief',4,1), W(34,'assassin',2,2),
+            Wm(42,'goldcart',1,3.5), W(50,'banditchief',1), W(56,'thief',5,.9), W(68,'orcshield',2,3), Wm(78,'goldcart',1,3.5),
+            W(88,'assassin',3,1.6), W(98,'thief',6,.8), Wm(108,'goldcart',1,3.5)] },
+  { name: '용의 보물창고', look: 'cave', music: 'cave', bossMusic: 'boss_drake', bossId: 'goldwyrm', boss: true,
+    baseHp: 36000, money: 430, rate: 53, reward: 0, enemyMul: 8.5, len: 1250,
+    expedition: { id: 'hoard', unlock: 25, reward: 1900, tier: '어려움',
+                  mech: '비룡이 다치면 황금 수레를 빼돌립니다 · 보스와 수레를 함께 노리세요' },
+    waves: [W(2,'spider',5,.8), Wm(12,'goldcart',1,4.2), W(18,'dark',2,3), W(28,'golem',1), Wm(36,'goldcart',1,4.2),
+            W(44,'goldwyrm',1), W(50,'spider',6,.7), W(64,'dark',2,3), W(80,'orcberserk',3,1.6), Wm(96,'goldcart',1,4.2),
+            W(110,'golem',1), W(126,'spider',8,.6)] }
+];
+EXPEDITIONS.forEach((st, k) => { st.expIndex = k; st.opening = 'rush'; });
+function expeditionOpen(s, k) { return !!EXPEDITIONS[k] && (s.cleared || 0) >= EXPEDITIONS[k].expedition.unlock; }
 
 /* =======================================================================
  *  무한 전장 - 끝없이 밀려오는 웨이브

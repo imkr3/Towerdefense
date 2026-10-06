@@ -35,6 +35,7 @@ const SIZES = [
 ];
 
 const failures = [];
+const EXPECT_RAID_MIN = 200;   // 원정 G1 돌파 보상(260) 언저리
 
 async function shot(page, name) {
   if (shotDir) await page.screenshot({ path: path.join(shotDir, name + '.png') });
@@ -133,6 +134,23 @@ async function runSize(browser, size) {
   await page.waitForTimeout(150);
   await page.evaluate(ids=>{save.loadout=ids;saveGame(save);mapChapter=-1;show('scr-map');},keepLoadout);
   if(!await page.evaluate(()=>save.cleared===13&&!save.stars[STAGES.length]))throw Error('Event battle touched campaign progress');
+
+  // 3.7 금화 원정: 원정 장 → G1 출진 → 수레 → 이기면 금화가 들어오고 캠페인 진행은 그대로
+  await page.evaluate(()=>{mapChapter=CHAPTERS.findIndex(c=>c.expedition);expSel=0;renderMap();});
+  await shot(page, 'raids-' + size.w);
+  const exCards=await page.evaluate(()=>({n:document.querySelectorAll('.exp-card').length,locked:[...document.querySelectorAll('.exp-card')].map(c=>c.classList.contains('locked'))}));
+  if(exCards.n!==3||exCards.locked[0]||!exCards.locked[1])throw Error('Gold raid chapter broken: '+JSON.stringify(exCards));
+  await page.click('#btn-exp-go');
+  await page.waitForTimeout(250);
+  if(!await page.evaluate(()=>battle.expedition&&battle.expedition.id==='convoy'&&$('#scr-battle').classList.contains('active')))throw Error('Gold raid did not start');
+  await page.evaluate(()=>{for(let i=0;i<300;i++)battle.update(1/30);});
+  await shot(page, 'raid-battle-' + size.w);
+  const before=await page.evaluate(()=>save.coins);
+  await page.evaluate(()=>{battle.finish('win');});
+  await page.waitForTimeout(900);
+  const raid=await page.evaluate(()=>({gain:save.coins,rec:save.expeditions.convoy,cleared:save.cleared,shown:$('#result').classList.contains('show')}));
+  if(raid.gain<before+EXPECT_RAID_MIN||!raid.rec||raid.cleared!==13)throw Error('Gold raid reward wrong: '+JSON.stringify(raid)+' before '+before);
+  await page.evaluate(()=>{$('#result').classList.remove('show');mapChapter=-1;show('scr-map');});
 
   // 병영
   await page.click('#btn-shop');
@@ -262,7 +280,8 @@ async function runSize(browser, size) {
   // browser scheduling and unavailable-card click timeouts cannot stall CI.
   await page.evaluate(() => { paused = true; battle.speed = 1; });
   // 증원이 끊이지 않으므로 결판이 날 때까지는 예전보다 오래 걸린다.
-  for (let i = 0; i < 300; i++) {
+  // 3.7: 비기는 판은 장기전(240초~)으로 적이 억세지며 끝난다 — 넉넉히 10분까지 본다.
+  for (let i = 0; i < 600; i++) {
     const done = await page.evaluate(() => {
       for (let t=0; t<30 && battle.state==='play'; t++) {
         for (const u of battle.roster) if (battle.canDeploy(u.id)) battle.deploy(u.id);
@@ -279,7 +298,7 @@ async function runSize(browser, size) {
     state: battle.state, allies: battle.allies.length, kills: battle.kills
   }));
   if (st.kills < 1) failures.push(size.name + ': 전투에서 처치가 0이다');
-  if (st.state === 'play') failures.push(size.name + ': 5분 안에 전투가 끝나지 않았다');
+  if (st.state === 'play') failures.push(size.name + ': 10분 안에 전투가 끝나지 않았다');
 
   // Exercise new shapes, genuine skill buttons, pause guards, and bounded effects.
   await page.evaluate(()=>{

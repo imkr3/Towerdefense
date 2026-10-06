@@ -284,8 +284,9 @@ function renderFormationSide() {
   side.appendChild(tools);
   // 3.6: 출진할 전장이 정해져 있으면 그 전장 기준으로, 아니면 다음 전장 기준으로 점검한다
   const evk0 = typeof fmTarget === 'string' && fmTarget.indexOf('event:') === 0 ? +fmTarget.slice(6) : -1;
+  const exk0 = typeof fmTarget === 'string' && fmTarget.indexOf('exp:') === 0 ? +fmTarget.slice(4) : -1;
   const target = typeof fmTarget === 'number' ? STAGES[fmTarget]
-    : evk0 >= 0 ? EVENT_STAGES[evk0] : STAGES[Math.min(save.cleared, STAGES.length - 1)];
+    : evk0 >= 0 ? EVENT_STAGES[evk0] : exk0 >= 0 ? EXPEDITIONS[exk0] : STAGES[Math.min(save.cleared, STAGES.length - 1)];
   if (target && evk0 < 0) side.appendChild(deckCheckEl(target, renderFormation));
 
   const presets = formationPresets();
@@ -328,11 +329,14 @@ function renderFormationSide() {
     go.className = 'btn primary fs-go';
     go.id = 'btn-formation-go';
     const evk = typeof fmTarget === 'string' && fmTarget.indexOf('event:') === 0 ? +fmTarget.slice(6) : -1;
-    const name = fmTarget === 'endless' ? '무한 전장' : evk >= 0 ? '✦ E' + (evk + 1) + '. ' + EVENT_STAGES[evk].name : (fmTarget + 1) + '. ' + STAGES[fmTarget].name;
+    const exk = typeof fmTarget === 'string' && fmTarget.indexOf('exp:') === 0 ? +fmTarget.slice(4) : -1;
+    const name = fmTarget === 'endless' ? '무한 전장' : evk >= 0 ? '✦ E' + (evk + 1) + '. ' + EVENT_STAGES[evk].name
+      : exk >= 0 ? '💰 G' + (exk + 1) + '. ' + EXPEDITIONS[exk].name : (fmTarget + 1) + '. ' + STAGES[fmTarget].name;
     go.innerHTML = '출진 ▶<small>' + name + '</small>';
     go.addEventListener('click', () => {
       if (fmTarget === 'endless') startEndless();
       else if (evk >= 0) startEvent(evk);
+      else if (exk >= 0) startExpedition(exk);
       else startBattle(fmTarget);
     });
     side.appendChild(go);

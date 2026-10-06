@@ -12,7 +12,7 @@ function defaultSave() {
     levels: lv, loadout: ['spear'], knownUnits: ['spear'],
     stars: {}, totalKills: 0, sound: true,
     owned: {}, stones: 3, pity: 0, mythPity: 0, season: 'olympus', pulls: 0, tutorial: false,
-    endlessBest: 0, achv: {}, daily: null, auto: false, evo: {}, hard: {}, events: {},
+    endlessBest: 0, achv: {}, daily: null, auto: false, evo: {}, hard: {}, events: {}, expeditions: {}, expRuns: 0,
     stats: { battles: 0, wins: 0, bossKills: 0, trains: 0, playSec: 0 }
   };
 }
@@ -76,6 +76,11 @@ function normalizeSave(raw) {
     const events = {};
     if (s.events && typeof s.events === 'object') for (const st of EVENT_STAGES) { const v = s.events[st.event.id]; if (v >= 1 && v <= 3) events[st.event.id] = v | 0; }
     s.events = events;
+    // 금화 원정 기록: id → 최고 별 수, 돈 횟수 (3.7)
+    const exps = {};
+    if (s.expeditions && typeof s.expeditions === 'object') for (const st of EXPEDITIONS) { const v = s.expeditions[st.expedition.id]; if (v >= 1 && v <= 3) exps[st.expedition.id] = v | 0; }
+    s.expeditions = exps;
+    s.expRuns = Math.max(0, Math.floor(+s.expRuns || 0));
     if (typeof s.sound !== 'boolean') s.sound = true;
     if (!s.owned || typeof s.owned !== 'object') s.owned = {};
     if (!s.achv || typeof s.achv !== 'object') s.achv = {};
@@ -312,16 +317,18 @@ const CHAPTERS = [
   { name: '2막', sub: '신화의 끝', from: 20, to: 30 },
   { name: '3막', sub: '심연의 바다', from: 30, to: 40 },
   { name: '무한', sub: '끝없는 웨이브', endless: true },
+  { name: '원정', sub: '금화 원정', expedition: true },
   { name: '이벤트', sub: '극악 도전', event: true }
 ];
 let eventSel = 0;          // 이벤트 장에서 고른 전장
+let expSel = 0;            // 금화 원정에서 고른 곳 (3.7)
 let mapChapter = -1;       // -1: 진행 중인 장을 자동으로 고른다
 let mapSel = -1;           // 고른 전장
 
 function chapterOf(i) {
   for (let c = 0; c < CHAPTERS.length; c++) {
     const ch = CHAPTERS[c];
-    if (!ch.endless && !ch.event && i >= ch.from && i < ch.to) return c;
+    if (!ch.endless && !ch.event && !ch.expedition && i >= ch.from && i < ch.to) return c;
   }
   return 0;
 }
@@ -360,21 +367,23 @@ function renderMap() {
   CHAPTERS.forEach((ch, c) => {
     const b = document.createElement('button');
     b.type = 'button';
-    const open = ch.event ? eventOpen(save, 0) : ch.endless ? save.cleared >= ENDLESS_UNLOCK_STAGE : ch.from <= save.cleared;
+    const open = ch.event ? eventOpen(save, 0) : ch.expedition ? expeditionOpen(save, 0) : ch.endless ? save.cleared >= ENDLESS_UNLOCK_STAGE : ch.from <= save.cleared;
+    const special = ch.endless || ch.event || ch.expedition;
     let stars = 0;
-    if (!ch.endless && !ch.event) for (let i = ch.from; i < ch.to; i++) stars += save.stars[i] || 0;
+    if (!special) for (let i = ch.from; i < ch.to; i++) stars += save.stars[i] || 0;
     b.className = 'chapter-tab' + (c === mapChapter ? ' on' : '') + (open ? '' : ' locked');
     b.setAttribute('aria-pressed', String(c === mapChapter));
     let crowns = 0;
-    if (!ch.endless && !ch.event) for (let i = ch.from; i < ch.to; i++) if (save.hard[i]) crowns++;
+    if (!special) for (let i = ch.from; i < ch.to; i++) if (save.hard[i]) crowns++;
     b.innerHTML = '<span class="ch-name">' + (open ? '' : '🔒 ') + ch.name + '</span>' +
       '<span class="ch-sub">' + ch.sub + '</span>' +
       (ch.event ? '<span class="ch-star">✦ ' + eventCount(save) + '/' + EVENT_STAGES.length + '</span>'
+      : ch.expedition ? '<span class="ch-star">💰 ' + EXPEDITIONS.filter((x, k) => expeditionOpen(save, k)).length + '/' + EXPEDITIONS.length + '</span>'
       : ch.endless ? '<span class="ch-star">' + (save.endlessBest || 0) + '</span>'
                   : '<span class="ch-star">★ ' + stars + '/' + ((ch.to - ch.from) * 3) + (crowns ? ' · 💀' + crowns : '') + '</span>');
     b.addEventListener('click', () => {
       mapChapter = c;
-      if (!ch.endless && !ch.event && (mapSel < ch.from || mapSel >= ch.to)) mapSel = Math.min(save.cleared, ch.to - 1);
+      if (!special && (mapSel < ch.from || mapSel >= ch.to)) mapSel = Math.min(save.cleared, ch.to - 1);
       SFX.ui();
       renderMap();
     });
@@ -387,8 +396,13 @@ function renderMap() {
   const endless = $('#endless-slot');
   list.innerHTML = '';
   path.innerHTML = '';
-  $('#trail').classList.toggle('endless-mode', !!(ch.endless || ch.event));
-  $('#trail').classList.toggle('event-mode', !!ch.event);
+  $('#trail').classList.toggle('endless-mode', !!(ch.endless || ch.event || ch.expedition));
+  $('#trail').classList.toggle('event-mode', !!(ch.event || ch.expedition));
+  if (ch.expedition) {
+    renderExpSlot();
+    renderExpDetail(expSel);
+    return;
+  }
   if (ch.event) {
     renderEventSlot();
     renderEventDetail(eventSel);
@@ -579,6 +593,99 @@ function renderEventSlot() {
     grid.appendChild(el);
   });
   slot.appendChild(grid);
+}
+
+/* ------------------------------ 금화 원정 (3.7) ------------------------------ */
+const EXP_ICON = ['goldcart', 'banditchief', 'goldwyrm'];
+function renderExpSlot() {
+  const slot = $('#endless-slot');
+  slot.innerHTML = '';
+  const grid = document.createElement('div');
+  grid.className = 'event-grid exp-grid';
+  EXPEDITIONS.forEach((st, k) => {
+    const open = expeditionOpen(save, k), best = save.expeditions[st.expedition.id] || 0, ic = ENEMIES[EXP_ICON[k]];
+    const el = document.createElement('button');
+    el.type = 'button';
+    el.className = 'event-card exp-card' + (open ? '' : ' locked') + (best ? ' done' : '') + (k === expSel ? ' sel' : '');
+    el.style.setProperty('--field', lookOf(st).ridge);
+    el.innerHTML = '<canvas></canvas><span class="ev-no">G' + (k + 1) + '</span>' +
+      '<span class="ev-name">' + (open ? st.name : '🔒 ' + st.name) + '</span>' +
+      '<span class="ev-boss">' + st.expedition.tier + '</span>' +
+      '<span class="ev-mark">' + (open ? '💰 ' + fmtNum(expGoldEstimate(st)) : st.expedition.unlock + '전장 돌파 후') + '</span>';
+    drawUnitIcon(el.querySelector('canvas'), ic, 40);
+    el.addEventListener('click', () => { expSel = k; SFX.ui(); renderMap(); });
+    grid.appendChild(el);
+  });
+  slot.appendChild(grid);
+}
+/* 다 잡았을 때 받는 금화: 돌파 보상 + 수레·두목·비룡이 지닌 금화 */
+function expGoldEstimate(st) {
+  let loot = 0;
+  for (const w of st.waves) { const e = ENEMIES[w.e]; if (e && (e.ab && e.ab.flee || w.e === 'banditchief' || w.e === 'goldwyrm')) loot += (e.gold || 0) * w.n; }
+  const boss = st.bossId && ENEMIES[st.bossId];
+  if (boss && boss.phases) for (const ph of boss.phases) if (ph.t === 'summon' && ENEMIES[ph.id]) loot += ENEMIES[ph.id].gold * (ph.n || 1);
+  return st.expedition.reward + Math.round(loot * KILL_GOLD_RATE);
+}
+function renderExpDetail(k) {
+  const st = EXPEDITIONS[k], ex = st.expedition;
+  const box = $('#stage-detail');
+  box.innerHTML = '';
+  const open = expeditionOpen(save, k), best = save.expeditions[ex.id] || 0;
+  let carts = st.waves.filter(w => w.e === 'goldcart').reduce((n, w) => n + w.n, 0);
+  const boss = st.bossId && ENEMIES[st.bossId];                 // 보스가 빼돌리는 수레까지
+  if (boss && boss.phases) for (const ph of boss.phases) if (ph.t === 'summon' && ph.id === 'goldcart') carts += ph.n || 1;
+  const head = document.createElement('div');
+  head.innerHTML =
+    '<div class="sd-no">금화 원정 G' + (k + 1) + ' · ' + ex.tier + '</div>' +
+    '<div class="sd-name">' + st.name + '</div>' +
+    '<div class="sd-stars">' + starMarks(best) + '</div>' +
+    '<div class="sd-event exp"><b>💰 금화 원정</b><span>' + ex.mech + '</span><small>몇 번이고 다시 돌 수 있습니다 · 소환석은 없습니다</small></div>' +
+    '<div class="sd-meta">' +
+      '<span>돌파 💰' + fmtNum(ex.reward) + '</span>' +
+      '<span>보물까지 💰' + fmtNum(expGoldEstimate(st)) + '+</span>' +
+      (carts ? '<span>황금 수레 ×' + carts + '</span>' : '') +
+      '<span>적 요새 ' + st.baseHp.toLocaleString() + '</span>' +
+    '</div>' +
+    (open ? '' : '<p class="sd-hint">🔒 ' + ex.unlock + '전장을 돌파하면 열립니다.</p>');
+  box.appendChild(head);
+  const foes = document.createElement('div');
+  foes.className = 'sd-foes';
+  [...new Set(st.waves.map(w => w.e))].slice(0, 8).forEach(id => {
+    const e = ENEMIES[id];
+    const f = document.createElement('span');
+    f.className = 'sd-foe' + (e.boss ? ' boss' : '');
+    f.title = e.name;
+    f.innerHTML = '<canvas></canvas><small>' + e.name + '</small>';
+    drawUnitIcon(f.querySelector('canvas'), e, 30);
+    foes.appendChild(f);
+  });
+  box.appendChild(foes);
+  if (!open) return;
+  box.appendChild(deckCheckEl(st, () => renderExpDetail(k)));
+  const btns = document.createElement('div');
+  btns.className = 'sd-btns';
+  const fb = document.createElement('button');
+  fb.className = 'btn ghost sd-formation';
+  fb.textContent = '편성 (' + save.loadout.length + '/' + LOADOUT_MAX + ')';
+  fb.addEventListener('click', () => openFormation('exp:' + k));
+  const go = document.createElement('button');
+  go.className = 'btn primary sd-go';
+  go.id = 'btn-exp-go';
+  go.textContent = '출진 ▶';
+  go.addEventListener('click', () => startExpedition(k));
+  btns.appendChild(fb);
+  btns.appendChild(go);
+  box.appendChild(btns);
+}
+function startExpedition(k) {
+  if (!expeditionOpen(save, k)) return;
+  const st = EXPEDITIONS[k];
+  battle = new Battle(STAGES.length + EVENT_STAGES.length + k, save, st);
+  battle.expIndex = k;
+  $('#scr-battle').classList.remove('hardcore');
+  $('#battle-stage').textContent = '💰 G' + (k + 1) + '. ' + st.name;
+  beginBattle();
+  battle.announce('금화 원정 · ' + st.expedition.mech, 3.6);
 }
 
 /* 추천 편성 가운데 지금 가진 병종만 */
@@ -1306,6 +1413,7 @@ function updateHud() {
   const preview = battle.endless
     ? '웨이브 ' + battle.currentWave() + ' · 적 ×' + endlessMul(battle.currentWave() - 1).toFixed(1) +
       (battle.wardUp() ? ' · 요새 결계 (' + ENDLESS_FORT_WAVE + '웨이브부터 함락 가능)' : '')
+    : battle.expWard && battle.wardUp() ? '원정 결계 · 수레와 적이 다 나올 때까지 요새가 버팁니다'
     : (battle.wardUp() ? '보스의 결계 · 보스를 쓰러뜨려야 요새가 무너집니다'
       : (battle.reinforcing() ? '적 증원 중' : ''));
   const full = battle.state === 'play' && battle.fieldFull();
@@ -1383,6 +1491,8 @@ function showResult() {
 
   if (battle.endless) { showEndlessResult(); return; }
   if (battle.event) { showEventResult(); return; }
+  if (battle.expedition) { showExpResult(); return; }
+  $('#btn-retry').textContent = '다시 도전';
 
   const win = battle.state === 'win';
   $('#result-title').textContent = win ? (battle.hard ? '하드코어 돌파' : '승 리') : '패 배';
@@ -1423,6 +1533,7 @@ function showResult() {
 }
 
 function showEventResult() {
+  $('#btn-retry').textContent = '다시 도전';
   const win = battle.state === 'win', ev = battle.event;
   $('#result-title').textContent = win ? '이벤트 돌파' : '패 배';
   $('#result-stars').innerHTML = win ? starMarks(battle.stars) + (battle.firstEvent ? '<span class="new-star">첫 돌파</span>' : '') : '';
@@ -1438,6 +1549,24 @@ function showEventResult() {
   $('#result-desc').textContent = lines.join('\n');
   $('#btn-next').style.display = 'none';
   $('#btn-fix').style.display = 'none';
+  $('#result').classList.add('show');
+}
+
+function showExpResult() {
+  const win = battle.state === 'win';
+  $('#result-title').textContent = win ? '원정 성공' : '원정 실패';
+  $('#result-stars').innerHTML = win ? starMarks(battle.stars) : '';
+  const lines = [];
+  lines.push('획득 골드 💰 ' + fmtNum(battle.coins) + (win ? '' : '  (실패 · 절반만)'));
+  const carts = (battle.caught || 0) + (battle.fled || 0);
+  if (carts) lines.push('황금 수레 ' + (battle.caught || 0) + ' / ' + carts + ' 대 잡음' + (battle.fled ? ' · ' + battle.fled + '대 놓침' : ''));
+  lines.push('처치 ' + battle.kills + '  ·  남은 성채 ' + Math.round(battle.allyCastle.hp / battle.allyCastle.maxHp * 100) + '%');
+  if (!win) defeatTips(save, battle.stage, { foePct: battle.enemyCastle.hp / battle.enemyCastle.maxHp * 100, time: battle.time, bossAlive: !!battle.aliveBoss() })
+    .forEach(tip => lines.push('💡 ' + tip));
+  $('#result-desc').textContent = lines.join('\n');
+  $('#btn-next').style.display = 'none';
+  $('#btn-fix').style.display = win ? 'none' : '';
+  $('#btn-retry').textContent = win ? '한 번 더' : '다시 도전';
   $('#result').classList.add('show');
 }
 
@@ -1836,6 +1965,7 @@ function init() {
   $('#btn-retry').addEventListener('click', () => {
     if (battle && battle.endless) startEndless();
     else if (battle && battle.event) startEvent(battle.eventIndex);
+    else if (battle && battle.expedition) startExpedition(battle.expIndex);
     else startBattle(battle.stageIndex, battle.hard);
   });
   $('#btn-next').addEventListener('click', () => {
@@ -1845,7 +1975,7 @@ function init() {
   $('#btn-fix').addEventListener('click', () => {
     $('#result').classList.remove('show');
     $('#btn-retry').textContent = '다시 도전';
-    const idx = battle && !battle.endless && !battle.event ? battle.stageIndex : null;
+    const idx = !battle ? null : battle.expedition ? 'exp:' + battle.expIndex : (!battle.endless && !battle.event ? battle.stageIndex : null);
     show('scr-map');                       // 편성에서 '뒤로' 가면 진군도로 (전투 화면이 아니라)
     openFormation(idx);
   });

@@ -980,4 +980,52 @@ test('Defeat tips point at the real problem, at most three', () => {
   assert.ok(rich.some(x => /길어지면/.test(x)) && rich.some(x => /골드/.test(x)), rich.join(' / '));
 });
 
+/* ---------------- 3.7 금화 원정 ---------------- */
+const X = vm.runInContext('({EXPEDITIONS, expeditionOpen, EVENT_STAGES})', ctx);
+function exBattle(k, s) { return new Battle(STAGES.length + X.EVENT_STAGES.length + k, s || save(), X.EXPEDITIONS[k]); }
+test('Gold raids: three repeatable stages that open with progress', () => {
+  assert.equal(X.EXPEDITIONS.length, 3);
+  const ids = new Set(X.EXPEDITIONS.map(st => st.expedition.id)); assert.equal(ids.size, 3);
+  assert.ok(!X.expeditionOpen({ cleared: 5 }, 0) && X.expeditionOpen({ cleared: 6 }, 0));
+  assert.ok(!X.expeditionOpen({ cleared: 24 }, 2) && X.expeditionOpen({ cleared: 25 }, 2));
+  const render = fs.readFileSync(path.join(__dirname, '../js/render.js'), 'utf8');
+  const i18n = fs.readFileSync(path.join(__dirname, '../js/i18n.js'), 'utf8');
+  assert.ok(render.indexOf("case 'goldcart'") >= 0, 'cart drawn');
+  for (const st of X.EXPEDITIONS) {
+    assert.ok(i18n.indexOf("'" + st.name + "'") >= 0 && i18n.indexOf("'" + st.expedition.mech + "'") >= 0, st.name);
+    for (const w of st.waves) assert.ok(E[w.e], w.e);
+  }
+  for (const id of ['goldcart', 'banditchief', 'goldwyrm']) assert.ok(i18n.indexOf("'" + E[id].name + "'") >= 0, id);
+});
+test('Gold raid win pays every time, never gives stones, keeps the best stars', () => {
+  const s = Object.assign(save(), { cleared: 30, coins: 0, stones: 0, expeditions: {} });
+  const b = exBattle(0, s); b.coins = 100; b.finish('win');
+  assert.equal(s.expeditions.convoy, 3); assert.equal(b.stoneGain, 0); assert.equal(s.stones, 0);
+  assert.equal(s.coins, 100 + X.EXPEDITIONS[0].expedition.reward);
+  const b2 = exBattle(0, s); b2.allyCastle.hp = b2.allyCastle.maxHp * 0.3; b2.finish('win');
+  assert.equal(s.expeditions.convoy, 3, 'best kept'); assert.equal(s.expRuns, 2);
+  const c0 = s.coins, b3 = exBattle(1, s); b3.coins = 200; b3.finish('lose');
+  assert.equal(s.coins, c0 + 100, 'a loss keeps half the loot'); assert.equal(s.expeditions.den, undefined);
+});
+test('Gold carts roll past the line, pay when broken and vanish (no gold) at the castle', () => {
+  const b = exBattle(0); b.update(1 / 30);
+  const sp = b.makeAlly(U.spear, 600); b.allies.push(sp);
+  const cart = b.spawnEnemy('goldcart', 640); const x0 = cart.x;
+  for (let i = 0; i < 10; i++) b.update(1 / 30);
+  assert.ok(cart.x < x0 - 1, 'keeps rolling even with a spear in front');
+  const c0 = b.coins; cart.takeDamage(cart.maxHp * 10); b.update(1 / 30);
+  assert.equal(b.coins - c0, Math.round(E.goldcart.gold * 0.2), 'cart gold'); assert.equal(b.caught, 1);
+  const run = b.spawnEnemy('goldcart', b.allyCastle.x + 40); const c1 = b.coins; b.update(1 / 30); b.update(1 / 30);
+  assert.ok(run.dead && run.vanish, 'escaped'); assert.equal(b.fled, 1); assert.equal(b.coins, c1, 'no gold for an escaped cart');
+});
+test('Gold raid fort holds until every wave and cart has come out', () => {
+  const b = exBattle(0); b.update(1 / 30);
+  b.enemyCastle.takeDamage(b.enemyCastle.maxHp * 2); b.update(1 / 30);
+  assert.ok(b.state === 'play' && b.enemyCastle.hp > 0, 'warded while waves remain');
+  assert.ok(b.expWard && b.wardUp());
+  b.qi = b.queue.length; b.enemies.forEach(e => { e.dead = true; }); b.update(1 / 30); b.update(1 / 30);
+  b.enemyCastle.takeDamage(b.enemyCastle.maxHp * 2); b.update(1 / 30); b.update(1 / 30);
+  assert.equal(b.state, 'win');
+});
+
 console.log(count + ' regression checks passed');

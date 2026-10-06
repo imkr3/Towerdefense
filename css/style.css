@@ -1213,3 +1213,9 @@ body{background:var(--bg0);color:var(--tx)}
 .up-fx b.nx{color:#7fdc8f}
 .up-card.cant .up-buy{filter:grayscale(.75) brightness(.8)}
 #confirm-text{white-space:pre-line}
+/* 3.7: 장 탭이 7개가 되어 폰 가로에서 이름이 두 줄로 꺾였다 */
+.chapter-tab .ch-name{white-space:nowrap}
+@media(max-width:1000px){.chapter-tab .ch-sub{display:none}.chapter-tab{grid-template-columns:auto auto;justify-content:space-between;min-width:0}}
+.sd-event.exp{border-left-color:#e8c65a}
+.sd-event.exp b{color:#ffd35a}
+.exp-card .ev-mark{color:#ffd35a}

@@ -47,7 +47,7 @@ function loadEngine(seed) {
     vm.runInContext(src, ctx, { filename: f });
   }
   return vm.runInContext(
-    '({Battle, STAGES, EVENT_STAGES, MOD_COUNTERS, recommendDeck, UNITS, UNIT_BY_ID, ROSTER_UNITS, LOADOUT_MAX, HERO_SLOT_MAX, unitLevelCap, unitTrainCost, UPGRADES, EVO_LEVEL, EVOLUTIONS})',
+    '({Battle, STAGES, EVENT_STAGES, EXPEDITIONS, MOD_COUNTERS, recommendDeck, UNITS, UNIT_BY_ID, ROSTER_UNITS, LOADOUT_MAX, HERO_SLOT_MAX, unitLevelCap, unitTrainCost, UPGRADES, EVO_LEVEL, EVOLUTIONS})',
     ctx);
 }
 
@@ -148,8 +148,10 @@ function styleLoadout(g, index, ranged, campaignOnly) {
  *  - 핵 보스에겐 약점이 드러났을 때 왕명을 쓴다 */
 function runStage(g, index, upLv, unitLv, trace, gacha, basic, opt) {
   opt = opt || {};
-  const evStage = opt.event !== undefined ? g.EVENT_STAGES[opt.event] : null;
-  if (evStage) index = g.STAGES.length - 1;             // 이벤트: 캠페인을 다 연 상태로 본다
+  const exStage = opt.expedition !== undefined ? g.EXPEDITIONS[opt.expedition] : null;   // 3.7 금화 원정
+  const evStage = opt.event !== undefined ? g.EVENT_STAGES[opt.event] : exStage;
+  if (exStage) index = exStage.expedition.unlock - 1;   // 원정: 열리는 시점의 병종으로
+  else if (evStage) index = g.STAGES.length - 1;        // 이벤트: 캠페인을 다 연 상태로 본다
   const academy = Math.min(5, Math.floor(upLv / 2));
   const cap = g.unitLevelCap(index, academy);
   const levels = {};
@@ -195,7 +197,7 @@ function runStage(g, index, upLv, unitLv, trace, gacha, basic, opt) {
     }
   };
 
-  const b = evStage ? new g.Battle(g.STAGES.length + opt.event, save, evStage)
+  const b = evStage ? new g.Battle(g.STAGES.length + (exStage ? g.EVENT_STAGES.length + opt.expedition : opt.event), save, evStage)
                     : new g.Battle(index, save, null, { hard: !!SIM_HARD });
   const dt = 1 / 30;
   let t = 0, nextLog = 20;
@@ -225,11 +227,11 @@ function runStage(g, index, upLv, unitLv, trace, gacha, basic, opt) {
     }
   }
   return {
-    stage: evStage ? 'E' + (opt.event + 1) : index + 1,
+    stage: exStage ? 'G' + (opt.expedition + 1) : evStage ? 'E' + (opt.event + 1) : index + 1,
     name: (evStage || g.STAGES[index]).name,
     win: b.state === 'win',
     seconds: Math.round(t),
-    coins: b.coins,
+    coins: b.coins, caught: b.caught || 0, fled: b.fled || 0,
     kills: b.kills,
     castle: Math.round(b.allyCastle.hp / b.allyCastle.maxHp * 100),
     foe: Math.round(b.enemyCastle.hp / b.enemyCastle.maxHp * 100)
@@ -307,6 +309,13 @@ const MONO_MAX = 12;
 const MONO_SUSPECTS = ['medusa', 'catapult', 'mage', 'necro', 'rogue', 'engineer', 'colossus', 'paladin',
   'rapriest', 'wukong', 'bajie', 'lancer', 'monk', 'alchemist', 'falconer', 'javelin'];
 const SEASON_SPREAD = 2;
+/* 3.7 금화 원정: 열리는 무렵의 전력(강화/Lv)으로 이만큼은 이겨야 하고, 너무 쉽지도 않게.
+ * 금화는 그 무렵 전장을 다시 도는 것의 분당 1.5~2배쯤 (minRate~maxRate, 전장 편성 기준) */
+const EXP_EXPECT = [
+  { up: 2, lv: 5,  min: 4, minRate: 400, maxRate: 850 },
+  { up: 5, lv: 9,  min: 4, minRate: 650, maxRate: 1400 },
+  { up: 8, lv: 12, min: 4, minRate: 1800, maxRate: 3000 }
+];
 const EVENT_EXPECT = { up: 10, lv: 15, naiveMax: 2, timedMin: 3 };   // 이벤트 전장 기대치 (3.2)
 const ACT3_ENTRY = { up: 10, lv: 14, min: 2, max: 5 };   // 3.3
 const SMART_ACT3 = { up: 10, lv: 18 };
@@ -486,6 +495,17 @@ function check() {
     else if (r.timed < EVENT_EXPECT.timedMin) { console.error(`  ✗ ${tag} — 타이밍을 맞춰도 못 넘는다 (최소 ${EVENT_EXPECT.timedMin})`); failed++; }
     else console.log(`  ✓ ${tag}`);
   }
+  // 3.7 금화 원정: 열리는 무렵 전력이면 거의 늘 이기고, 금화는 그 무렵 전장을 다시 도는 것보다 낫되 지나치지 않게
+  for (let k = 0; k < EXP_EXPECT.length; k++) {
+    const X = EXP_EXPECT[k];
+    let w = 0, coins = 0, sec = 0;
+    for (const sd of HARD_SEEDS) { const r = runStage(loadEngine(sd), 0, X.up, X.lv, false, false, false, { expedition: k }); w += r.win ? 1 : 0; coins += r.coins; sec += r.seconds; }
+    const rate = Math.round(coins / sec * 60);
+    const tag = `금화 원정 G${k + 1} (강화 ${X.up}/Lv${X.lv}) ${w}/${HARD_SEEDS.length}승 · 분당 금화 ${rate}`;
+    if (w < X.min) { console.error(`  ✗ ${tag} — 열리는 무렵 전력으로 너무 자주 진다 (최소 ${X.min})`); failed++; }
+    else if (rate < X.minRate || rate > X.maxRate) { console.error(`  ✗ ${tag} — 금화가 기대(${X.minRate}~${X.maxRate})를 벗어남`); failed++; }
+    else console.log(`  ✓ ${tag}`);
+  }
   if (failed) {
     console.error(`\n밸런스 검사 실패 (${failed}건)\n`);
     process.exit(1);
@@ -591,6 +611,25 @@ if (args[0] === '--event') {
   list.forEach(x => console.log('  ' + x.id.padEnd(13) + String(x.n).padStart(4) + '  ' + (x.d >= 0 ? '+' : '') + x.d.toFixed(1) + '%p'));
   const m = list.reduce((s, x) => s + x.d, 0) / list.length;
   console.log('  편차(표준편차) ' + Math.sqrt(list.reduce((s, x) => s + (x.d - m) ** 2, 0) / list.length).toFixed(2) + '%p');
+} else if (args[0] === '--exp') {
+  // node tools/sim.js --exp [강화] [Lv] [원정 번호,...]   3.7 금화 원정: 승수 · 금화 · 시간 · 잡은 수레 (전장 편성 / 공략 편성)
+  const ks = args[3] ? args[3].split(',').map(n => +n - 1) : null;
+  const g0 = loadEngine(1);
+  for (let k = 0; k < g0.EXPEDITIONS.length; k++) {
+    if (ks && !ks.includes(k)) continue;
+    const ex = g0.EXPEDITIONS[k];
+    const up = args[1] !== undefined ? +args[1] : EXP_EXPECT[k].up, lv = args[2] !== undefined ? +args[2] : EXP_EXPECT[k].lv;
+    for (const mode of [false, 'smart']) {
+      let w = 0, coins = 0, sec = 0, caught = 0, fled = 0;
+      for (const sd of HARD_SEEDS) {
+        const r = runStage(loadEngine(sd), 0, up, lv, false, mode, false, { expedition: k });
+        w += r.win ? 1 : 0; coins += r.coins; sec += r.seconds; caught += r.caught; fled += r.fled;
+      }
+      const n = HARD_SEEDS.length;
+      console.log('  G' + (k + 1) + ' ' + ex.name.padEnd(10) + ' (강화 ' + up + '/Lv' + lv + ') ' + (mode ? '공략' : '전장') + ' 편성  승 ' + w + '/' + n +
+        ' · 금화 ' + Math.round(coins / n) + ' · ' + Math.round(sec / n) + '초 · 분당 ' + Math.round(coins / sec * 60) + ' · 수레 ' + caught + '/' + (caught + fled));
+    }
+  }
 } else if (args[0] === '--solo') {
   // node tools/sim.js --solo <강화> <Lv> id,id,...  전장 편성 9 + 그 병종 하나
   const upLv = +args[1], unitLv = +args[2];

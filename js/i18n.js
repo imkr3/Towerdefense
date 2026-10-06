@@ -469,6 +469,9 @@ const I18N_EN = {
   '군자금 한도': 'Fund cap', '군자금 수입': 'Fund income', '성채 체력': 'Castle HP', '시작 군자금': 'Starting funds', '처치 골드': 'Kill gold', '왕명 재사용': 'Command cooldown', '출진 보호막': 'Deploy shield', '중독·화상 피해': 'Poison/burn damage',
   '편성 병종 고르게 훈련': 'Train deck evenly', '훈련할 수 있는 편성 병종이 없습니다 (골드 부족 또는 상한)': 'Nothing to train in the deck (gold or level cap)', '편성 병종 훈련 완료': 'Deck training done',
   '편성 바꾸기': 'Change deck', '보스가 끝까지 버텼습니다 · 보스에 강한 병종을 넣고 왕명을 보스 앞에서 쓰세요': 'The boss outlasted you · bring boss-killers and save the Command for it', '적 요새에 거의 닿지 못했습니다 · 무기 연마와 갑옷 강화를 올려 보세요': 'You barely reached the enemy fort · upgrade Weapons and Armor', '싸움이 길어지면 적이 억세집니다 · 화력을 더 챙기세요': 'Long fights make foes tougher · bring more damage', '지금 골드로 강화 병영·훈련소에서 더 강해질 수 있습니다': 'You can afford upgrades or training right now',
+  '황금 수레': 'Gold Cart', '도적 두목': 'Bandit Chief', '황금 비룡': 'Golden Wyrm', '싸우지 않고 아군 성채로 굴러감 · 닿기 전에 부수면 금화, 닿으면 달아남': "Won't fight, rolls toward your castle · break it first for gold, or it escapes", '큰손 소매치기 · 때릴 때마다 군자금 45를 훔치고 공격 20% 회피 · 쓰러뜨리면 되찾고 큰 금화': 'Master pickpocket · steals 45 funds per hit, dodges 20% · defeat it to get them back plus big gold', '금빛 숨결 · 체력이 깎이면 황금 수레를 빼돌린다': 'Golden breath · sends gold carts away as it weakens', '금빛 숨결': 'Golden Breath', '보물을 지켜라': 'Guard the Hoard', '보물을 빼돌려라': 'Smuggle the Gold', '탐욕의 분노': 'Greedy Fury', '황금 수레 호송대': 'Gold Cart Convoy', '도적 소굴': "Bandits' Den", '용의 보물창고': "Dragon's Hoard", '황금 수레는 싸우지 않고 성채로 굴러갑니다 · 닿기 전에 부수세요': "Gold carts won't fight and roll for your castle · break them before they arrive", '도적이 군자금을 훔칩니다 · 두목을 쓰러뜨리면 되찾고 큰 금화': 'Thieves steal your funds · defeat the chief to get them back plus big gold', '비룡이 다치면 황금 수레를 빼돌립니다 · 보스와 수레를 함께 노리세요': 'The wyrm sends carts away when hurt · hit both the boss and the carts', '쉬움': 'Easy', '보통': 'Normal', '어려움': 'Hard', '원정': 'Raids', '금화 원정': 'Gold Raids', '💰 금화 원정': '💰 Gold Raid', '몇 번이고 다시 돌 수 있습니다 · 소환석은 없습니다': 'Repeat as often as you like · no summon stones', '다 잡으면 최대': 'Max if you catch all', '원정 성공': 'Raid Success', '원정 실패': 'Raid Failed', '(실패 · 절반만)': '(failed · half)', '대 잡음': 'caught', '대 놓침': 'escaped', '한 번 더': 'Again', '황금 수레가 달아났습니다': 'A gold cart escaped', '금화 원정 G': 'Gold Raid G',
+  '원정 결계 · 수레와 적이 다 나올 때까지 요새가 버팁니다': 'Raid ward · the fort holds until every cart and foe has come out',
+  '보물까지': 'With treasure',
   '불굴!': 'Undying!', '병력 가득 · 전장엔 50명까지': 'Army full · up to 50 on the field', '병력 가득': 'Army full',
   '용암 핵 · 평소엔 피해 95% 감소, 대지 분쇄 뒤 6초간 핵이 드러나 3.6배 — 그때 액티브와 왕명을 · 기절 면역': 'Magma core · takes 95% less damage, but after Earthshatter the core is exposed for 6s and takes 3.6× — use actives and the Command then · stun immune',
   '대지 분쇄': 'Earthshatter',
@@ -878,7 +881,7 @@ function i18nStart() {
 }
 
 if (I18N.lang === 'en') {
-  [UNITS, ENEMIES, STAGES, EVENT_STAGES, SEASONS, MISSION_DEFS, ACHIEVEMENTS, UPGRADES, COMMAND, RARITY, STAGE_MODS, OPENINGS, EVOLUTIONS, EVO_LABELS, STAT_LABELS]
+  [UNITS, ENEMIES, STAGES, EVENT_STAGES, EXPEDITIONS, SEASONS, MISSION_DEFS, ACHIEVEMENTS, UPGRADES, COMMAND, RARITY, STAGE_MODS, OPENINGS, EVOLUTIONS, EVO_LABELS, STAT_LABELS]
     .forEach(o => i18nData(o, 0));
   // 무한 전장은 부를 때마다 새로 만든다
   const makeEndlessKo = makeEndlessStage;

@@ -287,6 +287,7 @@ class Battle {
     this.fury = this.endless ? null : this.hard ? HARDCORE.fury
       : (this.stage.fury || (this.stageIndex >= 20 && this.stageIndex < STAGES.length ? ACT2_FURY : null));
     this.event = this.stage.event || null;      // 3.2 이벤트 전장
+    this.expedition = this.stage.expedition || null;   // 3.7 금화 원정
 
     const up = save.upgrades;
     this.buff = {
@@ -609,6 +610,21 @@ class Battle {
       this.spawnEnemy(entry.e, undefined, entry.mul).wave = entry.wave;
       this.qi++;
     }
+    // 3.7 금화 원정: 웨이브가 다 나오고 황금 수레가 다 지나갈 때까지 요새는 결계로 버틴다
+    // (요새부터 부숴 수레를 건너뛰지 못하게). 요새를 결계까지 깎고 전장이 비면 다음 웨이브를 당겨 온다.
+    if (this.expedition) {
+      const pending = this.qi < this.queue.length;
+      let cart = false, alive = 0;
+      for (const e of this.enemies) if (!e.dead) { alive++; if (e.ab.flee) cart = true; }
+      this.expWard = pending || cart;
+      const floor = this.expWard ? this.enemyCastle.maxHp * WARD_FLOOR : 0;
+      if (!this.bossWard || this.bossDown) this.enemyCastle.floor = floor;
+      else this.enemyCastle.floor = Math.max(this.enemyCastle.floor, floor);
+      if (pending && !alive && this.enemyCastle.hp <= this.enemyCastle.maxHp * (WARD_FLOOR + 0.001)) {
+        const lead = this.queue[this.qi].t - this.time;
+        if (lead > 0) for (let i = this.qi; i < this.queue.length; i++) this.queue[i].t -= lead;
+      }
+    }
     if (this.stage.infinite) this.extendEndless();
     // 무한 전장의 요새: ENDLESS_FORT_WAVE 웨이브까지는 결계로 버틴다. 그 뒤로는 무너뜨리면 '요새 함락'
     if (this.endless) this.enemyCastle.floor = this.currentWave() < ENDLESS_FORT_WAVE ? this.enemyCastle.maxHp * WARD_FLOOR : 0;
@@ -706,7 +722,7 @@ class Battle {
   }
 
   /* 보스가 버티고 있어 요새가 무너지지 않는 중인가 (화면 표시용) */
-  wardUp() { return (this.bossWard && !this.bossDown || (this.endless && this.enemyCastle.floor > 0)) && this.enemyCastle.hp <= this.enemyCastle.maxHp * (WARD_FLOOR + 0.001); }
+  wardUp() { return (this.bossWard && !this.bossDown || (this.endless && this.enemyCastle.floor > 0) || this.expWard) && this.enemyCastle.hp <= this.enemyCastle.maxHp * (WARD_FLOOR + 0.001); }
 
   spawnEnemy(id, atX, mul) {
     const spec = ENEMIES[id];
@@ -808,6 +824,7 @@ class Battle {
         this.fx.push({ type: 'boom', x: f.x, r: b.radius, t: 0.35, life: 0.35 });
       }
       if (isEnemySide && !f.exploded) {
+        if (f.ab.flee) this.caught = (this.caught || 0) + 1;      // 3.7 잡은 황금 수레
         this.coins += Math.round((f.gold || 0) * KILL_GOLD_RATE * this.goldMul);
         this.kills++;
         this.reanimate(f);
@@ -863,6 +880,26 @@ class Battle {
         this.stoneGain += 2;
       }
       this.save.stones = (this.save.stones || 0) + this.stoneGain;
+      this.save.coins += this.coins;
+      this.save.totalKills = (this.save.totalKills || 0) + this.kills;
+      saveGame(this.save);
+      return;
+    }
+    if (this.expedition) {
+      // 3.7 금화 원정: 이기면 정해진 금화 + 잡은 만큼. 몇 번이고 다시 돈다. 소환석은 없다.
+      const ex = this.expedition;
+      if (!this.save.expeditions || typeof this.save.expeditions !== 'object') this.save.expeditions = {};
+      if (result === 'win') {
+        const ratio = this.allyCastle.hp / this.allyCastle.maxHp;
+        this.stars = ratio >= 0.9 ? 3 : (ratio >= 0.5 ? 2 : 1);
+        this.coins += ex.reward;
+        const prev = this.save.expeditions[ex.id] || 0;
+        if (this.stars > prev) this.save.expeditions[ex.id] = this.stars;
+        this.save.expRuns = (this.save.expRuns || 0) + 1;
+      } else {
+        this.coins = Math.floor(this.coins * 0.5);
+      }
+      this.stoneGain = 0;
       this.save.coins += this.coins;
       this.save.totalKills = (this.save.totalKills || 0) + this.kills;
       saveGame(this.save);
@@ -950,6 +987,12 @@ class Battle {
       if (f.ab.unshakable) { f.stunT = 0; f.slowT = 0; }          // 무승: 흔들리지 않는다
       // 분신은 잠깐만 머문다
       if (f.lifeT !== undefined) { f.lifeT -= dt; if (f.lifeT <= 0) { f.dead = true; f.vanish = true; continue; } }
+      // 3.7 금화 원정: 황금 수레는 아군 성채까지 가면 짐을 싣고 달아난다 (금화는 못 받는다)
+      if (f.ab.flee && f.side === 'enemy' && f.x <= this.allyCastle.x + f.ab.flee) {
+        f.dead = true; f.vanish = true; this.fled = (this.fled || 0) + 1;
+        this.announce('황금 수레가 달아났습니다', 1.6);
+        continue;
+      }
       f.bob += dt * (f.speedNow / 22);
 
       const burning = f.burnT > 0;
@@ -1007,6 +1050,12 @@ class Battle {
       // 지원 능력 (표적과 무관하게 주기적으로 발동)
       this.supportTick(f, list, dt, isAlly);
 
+      // 3.7 황금 수레: 싸우지 않고 아군 성채 쪽으로 계속 굴러간다 (앞을 막아도 비집고 지나간다)
+      if (f.ab.flee && !isAlly) {
+        f.engaged = false; f.moving = true;
+        f.x = Math.max(60, f.x + f.dir * f.speedNow * dt);
+        continue;
+      }
       const target = this.findTarget(f, foes, foeCastle);
       if (target) {
         f.engaged = true;
