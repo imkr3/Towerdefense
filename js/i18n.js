@@ -743,6 +743,14 @@ const I18N_EN = {
   '강철 의지': 'Will of Iron', '하드코어 전장 10곳 돌파': 'Clear 10 stages on Hardcore',
   '꺾이지 않는 왕국': 'The Unbroken Kingdom', '하드코어 전장 30곳 모두 돌파': 'Clear all 30 stages on Hardcore',
   '모든 시즌에서 전설 이상을 각각 보유': 'Own a Legend or better from every season',
+  // 저장 오류 (save-store.js) — 복원 알림 속에 끼어 나온다
+  '게임 저장 데이터가 아닙니다.': 'This is not game save data.',
+  '저장 항목 형식 오류: ': 'Bad save field: ', '저장 숫자 오류: ': 'Bad save number: ', '저장 능력치 오류: ': 'Bad save stat: ',
+  '진화 데이터 오류': 'Bad evolution data', '편성 데이터 오류': 'Bad squad data', '일일 임무 데이터 오류': 'Bad daily mission data',
+  '백업은 1MB 이하의 JSON 파일이어야 합니다.': 'A backup must be a JSON file under 1MB.',
+  '지원하지 않는 백업 버전입니다.': 'Unsupported backup version.',
+  '기존 저장을 읽지 못해 덮어쓰기를 막았습니다. 저장 관리에서 원본을 백업하거나 복원해 주세요.': "Couldn't read the existing save, so overwriting is blocked. Back it up or restore it in Save manager.",
+  '저장에 실패했습니다. 저장 관리에서 백업을 내보내 주세요.': 'Saving failed. Export a backup in Save manager.'
 };
 
 /* 목록 문단처럼 굵은 글씨가 섞인 덩어리는 통째로 바꾼다 */
@@ -777,6 +785,12 @@ const I18N_EN_PATTERNS = [
   [/지금 슬롯 (\d)을 저장하고 슬롯 (\d)\(으\)로 바꿉니다\./g, 'Saves slot $1 and switches to slot $2.'],
   [/슬롯 (\d)의 (진행도와 소환한 병종이 모두 삭제됩니다)/g, 'Slot $1: $2'],
   [/(\d+)시간 (\d+)분/g, '$1h $2m'],
+  [/^(\d+)분$/g, '$1m'],
+  [/병력 가득 · 전장엔 (\d+)명까지/g, 'Army full · max $1 on the field'],
+  [/ 레벨 (\d+) 완료$/g, ' → Lv $1'],
+  [/추천 편성 (\d+)개 병종을 넣었습니다/g, 'Recommended squad: added $1 units'],
+  [/(\d+)개 칸을 채웠습니다/g, 'Filled $1 slots'],
+  [/전장 (\d+)개 돌파 · 골드 (\d+) · 소환석 (\d+)\. /g, 'Stages cleared $1 · Gold $2 · Stones $3. '],
   [/(\d+)\s*전장 돌파/g, 'Stage $1 cleared'],
   [/전장 (\d+)/g, 'Stage $1'],
   [/(\d+)\s*전장/g, 'Stage $1'],
@@ -850,12 +864,13 @@ function i18nNode(node) {
     return;
   }
   if (node.nodeType !== 1) return;
-  if (node.tagName === 'SCRIPT' || node.tagName === 'STYLE' || node.tagName === 'TEXTAREA') return;
+  if (node.tagName === 'SCRIPT' || node.tagName === 'STYLE') return;
   for (const a of I18N_ATTRS) {
     const v = node.getAttribute(a);
     // 같은 값을 다시 쓰면 그것도 변경으로 잡혀 끝없이 돈다
     if (v && I18N.hangul.test(v)) { const n = t(v); if (n !== v) node.setAttribute(a, n); }
   }
+  if (node.tagName === 'TEXTAREA') return;   // 내용(백업 JSON)은 건드리지 않고 이름표·안내문만 바꾼다
   if ((node.tagName === 'LI' || node.tagName === 'P') && I18N_EN_HTML[node.innerHTML.trim()]) {
     node.innerHTML = I18N_EN_HTML[node.innerHTML.trim()];
     return;

@@ -13,7 +13,7 @@ const Settings = {
     let lang = 'ko';
     try {
       // 이미 한국어로 하던 저장이 있으면 한국어, 처음 받은 사람은 기기 언어를 따른다
-      const hasSave = !!localStorage.getItem('stick-kingdom-save-v1');
+      const hasSave = ['', '-s2', '-s3'].some(k => !!localStorage.getItem('stick-kingdom-save-v1' + k));
       const nav = (navigator.language || 'ko').toLowerCase();
       if (!hasSave && nav.indexOf('ko') !== 0) lang = 'en';
     } catch (e) { /* 저장소를 못 쓰면 한국어 */ }

@@ -36,7 +36,8 @@ const REINFORCE_FIRST = 10;  // 대본 웨이브가 끝나고 첫 증원까지
 const REINFORCE_MIN = 3.0;   // 증원 간격 하한
 const REINFORCE_STEP = 0.06; // 증원 한 번마다 적이 세지는 폭
 const REINFORCE_MAX = 1.9;   // 증원 강화 상한 (끝없이 세지면 이길 수가 없다)
-const REINFORCE_CAP = 16;    // 증원으로 전장에 동시에 설 수 있는 적 수
+const REINFORCE_CAP = 16;
+const ENEMY_SUMMON_CAP = 40;  // 소환하는 적(보스 포함)이 부르는 졸개도 전장에 이 이상은 쌓지 않는다    // 증원으로 전장에 동시에 설 수 있는 적 수
 /* 동시에 터지는 필살 연출 수. Canvas2D 로 그릴 때는 연출 수에 정비례해
  * 비용이 늘어나 4개에서 막아야 했다. WebGL 레이어가 살아 있으면 비용이
  * 거의 늘지 않으므로 화면 쪽에서 이 값을 올려 준다. */
@@ -194,6 +195,14 @@ class Fighter {
   heal(amount) {
     if (this.dead) return;
     this.hp = Math.min(this.maxHp, this.hp + amount * this.healMul);
+  }
+
+  /* 공속 가속. 더 센 가속이 걸려 있으면 약한 가속은 덮어쓰지도 늘리지도 않는다
+   * (약한 오라가 왕명을 묽히거나, 반대로 센 가속을 끝없이 이어 주지 않게) */
+  giveHaste(mul, dur) {
+    if (this.hasteT > 0 && this.hasteMul < mul) return;
+    this.hasteT = this.hasteT > 0 && this.hasteMul === mul ? Math.max(this.hasteT, dur) : dur;
+    this.hasteMul = mul;
   }
 
   giveBarrier(amount) {
@@ -489,7 +498,7 @@ class Battle {
     if(buff) {
       for(const m of this.allies) if(!m.dead && Math.abs(m.x-f.x)<=a.radius) {
         if(a.barrier){m.giveBarrier(a.barrier*f.abMul);m.poisonT=0;m.poisonDps=0;m.burnT=0;m.burnDps=0;}
-        if(a.haste){m.hasteMul=m.hasteT>0?Math.min(m.hasteMul,a.haste.mul):a.haste.mul;m.hasteT=Math.max(m.hasteT,a.haste.dur);m.stunT=0;}
+        if(a.haste){m.giveHaste(a.haste.mul,a.haste.dur);m.stunT=0;}
       }
     } else if (this.veiledBoss()) {
       // 안개가 액티브를 삼킨다: 피해는 없고 백작이 피를 채운다
@@ -522,7 +531,10 @@ class Battle {
       // 여의봉 강타: 분신이 곧바로 튀어나온다
       if (a.clones && f.ab.summon) {
         const u = UNIT_BY_ID[f.ab.summon.id];
-        for (let k = 0; u && k < a.clones && this.roomForSummon(); k++) {
+        let mine = 0;
+        for (const m of this.allies) if (!m.dead && m.summonedBy === f) mine++;
+        const room = f.ab.summon.max ? f.ab.summon.max - mine : a.clones;   // 분신 상한을 넘기지 않는다
+        for (let k = 0; u && k < Math.min(a.clones, room) && this.roomForSummon(); k++) {
           const m = this.makeAlly(u, f.x + f.dir * (30 + k * 24), f);
           m.summoned = true; m.summonedBy = f; m.lifeT = f.ab.summon.life || 8;
           this.allies.push(m);
@@ -549,8 +561,7 @@ class Battle {
     }
     for (const a of this.allies) {
       a.heal(a.maxHp * this.cmdHeal);
-      a.hasteT = Math.max(a.hasteT, COMMAND.hasteDur);
-      a.hasteMul = COMMAND.hasteMul;
+      a.giveHaste(COMMAND.hasteMul, COMMAND.hasteDur);
       a.stunT = 0;
       a.slowT = 0;
       this.fx.push({ type: 'rally', x: a.x, row: a.row, t: 0.6, life: 0.6 });
@@ -1000,6 +1011,7 @@ class Battle {
       let dot = 0;
       if (f.poisonT > 0) { dot += f.poisonDps * Math.min(dt, f.poisonT); f.poisonT = Math.max(0, f.poisonT - dt); }
       if (f.burnT > 0) { dot += f.burnDps * Math.min(dt, f.burnT); f.burnT = Math.max(0, f.burnT - dt); }
+      if (f.veilT > 0) dot = 0;   // 안개화 동안은 독·화상도 스며들지 않는다
       if (isAlly) dot *= 1 - 0.05 * Math.min(5, this.save.upgrades.resistance || 0);
       if (dot > 0) {
         f.hp -= dot;
@@ -1181,8 +1193,7 @@ class Battle {
       for (const m of mates) {
         if (m.dead || m === f) continue;
         if (Math.abs(m.x - f.x) > ab.radius) continue;
-        m.hasteT = Math.max(m.hasteT, ab.haste.dur);
-        m.hasteMul = ab.haste.mul;
+        m.giveHaste(ab.haste.mul, ab.haste.dur);
       }
       f.auraPulse = 0.5;
       this.fx.push({ type: 'aura', x: f.x, row: f.row, r: ab.radius,
@@ -1211,6 +1222,9 @@ class Battle {
             this.allies.push(m);
           }
         } else {
+          let alive = 0;
+          for (const e of this.enemies) if (!e.dead) alive++;
+          if (alive >= ENEMY_SUMMON_CAP) break;
           const m = this.spawnEnemy(ab.summon.id, sx); m.summoned = true; m.wave = f.wave;
         }
       }
@@ -1691,6 +1705,7 @@ class Battle {
       }
     }
     const dealt = target.takeDamage(dmg, pierce) || 0;
+    if (!target.isCastle && target.veilT > 0) return;   // 안개화: 피해도 상태 이상도 닿지 않는다
     if (mirror && dealt > 0 && !src.dead) {
       src.takeDamage(Math.min(120, dealt * mirror.reflect));
       this.fx.push({ type: 'mirror', x: target.x, x2: src.x, row: target.row, row2: src.row, t: 0.3, life: 0.3 });

@@ -472,7 +472,7 @@ function renderStageDetail(i) {
     const fb = document.createElement('button');
     fb.className = 'btn ghost sd-formation';
     fb.textContent = '편성';
-    fb.addEventListener('click', () => openFormation(ch.endless ? 'endless' : null));
+    fb.addEventListener('click', () => openFormation(ch.endless && save.cleared >= ENDLESS_UNLOCK_STAGE ? 'endless' : null));
     box.appendChild(fb);
     return;
   }
@@ -956,6 +956,9 @@ function renderTraining() {
             if (save.loadout.length <= 1) { toast('최소 1개 병종은 편성해야 합니다'); return; }
             save.loadout = save.loadout.filter(id => id !== u.id);
           } else {
+            if (isHeroUnit(u) && heroCount(save.loadout) >= HERO_SLOT_MAX) {
+              toast('전설·신화는 최대 ' + HERO_SLOT_MAX + '명까지 편성할 수 있습니다'); return;
+            }
             save.loadout.push(u.id);
           }
           saveGame(save);
@@ -1238,6 +1241,7 @@ function drawBanner(sn) {
 
 /* ------------------------------ 전투 ------------------------------ */
 function startEndless() {
+  if (save.cleared < ENDLESS_UNLOCK_STAGE) return;
   battle = new Battle(0, save, makeEndlessStage());
   $('#scr-battle').classList.remove('hardcore');
   $('#battle-stage').textContent = '무한 전장 · 최고 ' + (save.endlessBest || 0) + '웨이브';
@@ -1474,12 +1478,15 @@ function flushPlayTime() {
   playAccum = 0;
 }
 
-function showResult() {
-  // 누적 기록과 임무 진행
+/* 누적 기록과 임무 진행. 결과창이 뜨기 전에 나가도 한 번은 남긴다. */
+function recordBattleStats() {
+  if (!battle || battle.statsRecorded) return;
+  battle.statsRecorded = true;
   flushPlayTime();
   save.stats.bossKills += battle.bossKills || 0;
   addStat('kills', battle.kills);
   addStat('bosses', battle.bossKills || 0);
+  addStat('commands', battle.cmdUses || 0);
   if (battle.endless) addStat('endless', battle.wavesCleared || 0);
   if (battle.state === 'win') {
     save.stats.wins++;
@@ -1488,6 +1495,10 @@ function showResult() {
   }
   saveGame(save);
   checkAchievements();
+}
+
+function showResult() {
+  recordBattleStats();
 
   if (battle.endless) { showEndlessResult(); return; }
   if (battle.event) { showEventResult(); return; }
@@ -1559,7 +1570,7 @@ function showExpResult() {
   const lines = [];
   lines.push('획득 골드 💰 ' + fmtNum(battle.coins) + (win ? '' : '  (실패 · 절반만)'));
   const carts = (battle.caught || 0) + (battle.fled || 0);
-  if (carts) lines.push('황금 수레 ' + (battle.caught || 0) + ' / ' + carts + ' 대 잡음' + (battle.fled ? ' · ' + battle.fled + '대 놓침' : ''));
+  if (carts) lines.push('황금 수레 ' + (battle.caught || 0) + ' / ' + carts + ' 대 잡음' + (battle.fled ? ' · ' + battle.fled + ' 대 놓침' : ''));
   lines.push('처치 ' + battle.kills + '  ·  남은 성채 ' + Math.round(battle.allyCastle.hp / battle.allyCastle.maxHp * 100) + '%');
   if (!win) defeatTips(save, battle.stage, { foePct: battle.enemyCastle.hp / battle.enemyCastle.maxHp * 100, time: battle.time, bossAlive: !!battle.aliveBoss() })
     .forEach(tip => lines.push('💡 ' + tip));
@@ -1939,6 +1950,7 @@ function init() {
                  () => { flushPlayTime(); saveGame(save); show('scr-map'); });
       return;
     }
+    if (battle && battle.state !== 'play') recordBattleStats();   // 결과창이 뜨기 전에 나간 경우
     flushPlayTime();
     saveGame(save);
     show('scr-map');
@@ -1975,7 +1987,8 @@ function init() {
   $('#btn-fix').addEventListener('click', () => {
     $('#result').classList.remove('show');
     $('#btn-retry').textContent = '다시 도전';
-    const idx = !battle ? null : battle.expedition ? 'exp:' + battle.expIndex : (!battle.endless && !battle.event ? battle.stageIndex : null);
+    const idx = !battle ? null : battle.expedition ? 'exp:' + battle.expIndex
+      : battle.endless || battle.event ? null : battle.hard ? 'hard:' + battle.stageIndex : battle.stageIndex;
     show('scr-map');                       // 편성에서 '뒤로' 가면 진군도로 (전투 화면이 아니라)
     openFormation(idx);
   });

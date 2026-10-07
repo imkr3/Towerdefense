@@ -1027,5 +1027,16 @@ test('Gold raid fort holds until every wave and cart has come out', () => {
   b.enemyCastle.takeDamage(b.enemyCastle.maxHp * 2); b.update(1 / 30); b.update(1 / 30);
   assert.equal(b.state, 'win');
 });
+test('A veiled boss takes no status effects and no poison ticks', () => {
+  const b=battle(),a=b.makeAlly(U.venom,500),e=new Fighter(E.vampire,'enemy',550);
+  e.veilT=3;const hp=e.hp;b.hitOne(100,e,a,false);
+  assert.equal(e.hp,hp);assert.equal(e.poisonT,0);assert.equal(e.stunT,0);
+  e.poisonT=2;e.poisonDps=500;b.step([e],[],b.allyCastle,.1,false);assert.equal(e.hp,hp);
+});
+test('A weaker haste neither dilutes nor prolongs a stronger one', () => {
+  const b=battle(),a=b.makeAlly(U.spear,500);
+  a.giveHaste(0.6,8);a.giveHaste(0.78,10);assert.equal(a.hasteMul,0.6);assert.equal(a.hasteT,8);
+  a.hasteT=0;a.giveHaste(0.78,4);assert.equal(a.hasteMul,0.78);a.giveHaste(0.6,8);assert.equal(a.hasteMul,0.6);assert.equal(a.hasteT,8);
+});
 
 console.log(count + ' regression checks passed');
