@@ -1588,7 +1588,7 @@ STAGES.forEach((st, i) => {
  * ======================================================================= */
 const EVENT_STAGES = [
   { name: '핏빛 월식', bossId: 'vampire', bossRole: 'caster', boss: true, look: 'graveyard', music: 'underworld',
-    bossMusic: 'boss_lich', mods: ['curse'], baseHp: 36000, money: 520, rate: 58, reward: 0, enemyMul: 10, bossMul: { hp: 20, atk: 1.6 },
+    bossMusic: 'boss_lich', mods: ['curse'], baseHp: 36000, money: 520, rate: 58, reward: 0, enemyMul: 10, bossMul: { hp: 16, atk: 1.6 },
     fury: { per30: 0.1, max: 1.2 }, len: 1500,
     event: { id: 'eclipse', deck: ['thor','zeus','ra','odin','pyro','javelin','knight','spartan','frost','catapult'],
              unlock: 10, reward: 6000, stones: 12,
