@@ -1868,6 +1868,10 @@ function init() {
   const wake = () => { SFX.init(); SFX.resume(); BGM.resume(); BGM.prefetch(['map']); };
   ['pointerdown', 'touchstart', 'keydown'].forEach(ev =>
     window.addEventListener(ev, wake, { once: true, passive: true }));
+  // 전화 등으로 소리가 끊겼다가 돌아오면 다음 터치에 다시 연다
+  window.addEventListener('pointerdown', () => {
+    if (SFX.ctx && SFX.ctx.state !== 'running' && !document.hidden) SFX.resume();
+  }, { passive: true });
   titleAnim.cv = $('#title-bg');
   titleAnim.ctx = titleAnim.cv.getContext('2d');
   resizeTitle();

@@ -42,6 +42,7 @@ class Renderer {
                      Math.min(this.h * 0.86, this.h - hudH - 26)));
     // cs: 지면 위 여유 높이에 맞춘 캐릭터 배율
     this.cs = Math.max(0.70, Math.min(1.45, this.groundY / 350));
+    this.syncGlSize();   // 숨은 화면에서 잰 크기로 효과 레이어가 남지 않게 늘 함께 맞춘다
   }
 
   /* WebGL 레이어를 2D 캔버스와 같은 크기로 맞춘다 */
@@ -733,9 +734,10 @@ class Renderer {
     MODEL.time = clk;
     // 3.2 이벤트 보스: 안개화 중엔 반투명
     const veiled = f.veilT > 0;
+    const aBody = ctx.globalAlpha;
     if (veiled) ctx.globalAlpha *= 0.32 + Math.sin(clk * 6) * 0.06;
     drawBody(ctx, f.s, s, false, f.kbTimer > 0, f.bob, moving, atk, wind, won);
-    if (veiled) ctx.globalAlpha = 1;
+    if (veiled) ctx.globalAlpha = aBody;
     MODEL.blink = false; MODEL.angry = false;
     if (f.hitFlash > 0) {
       const a0 = ctx.globalAlpha;
@@ -1877,7 +1879,30 @@ function easeOutBack(k) {
   return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2);
 }
 
+/* 3.7.1: 부품 그리기는 globalAlpha 를 1·0.35 처럼 바로 써 넣는다. 그대로 두면
+ * 쓰러지며 흐려지는 몸·피격 섬광·안개화·출진 페이드가 부품마다 불투명하게 튄다.
+ * 들어온 투명도가 1 보다 작으면 그리는 동안만 globalAlpha 를 '들어온 값 × 쓴 값'으로 바꿔 끼운다. */
 function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
+  const a0 = ctx.globalAlpha;
+  if (a0 <= 0) return;
+  const scoped = a0 < 1;
+  if (scoped) {
+    const base = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(ctx), 'globalAlpha');
+    Object.defineProperty(ctx, 'globalAlpha', {
+      configurable: true,
+      get() { return base.get.call(this) / a0; },
+      set(v) { base.set.call(this, v * a0); }
+    });
+  }
+  try {
+    drawBodyParts(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer);
+  } finally {
+    if (scoped) delete ctx.globalAlpha;
+    delete ctx.fill; delete ctx.stroke;   // 그리다 멈춰도 잉크 테두리 덮개가 남지 않게
+  }
+}
+
+function drawBodyParts(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
   const S = {
     ctx: ctx, s: s, wind: wind || 0, cheer: !!cheer, style: attackStyle(st),
     live: wind !== undefined,          // 전투 중인 병사만 잔상을 그린다 (도감·배너 제외)

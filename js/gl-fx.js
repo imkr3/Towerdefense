@@ -97,6 +97,13 @@ class GLFx {
     // 합성식이 포화형이어서 1 을 넘겨도 흰 덩어리로 터지지는 않는다.
     this.gain = 1.15;
     this.ok = this._init();
+    // 앱을 내렸다 올리면 안드로이드가 GPU 컨텍스트를 거둬 가기도 한다.
+    // 잃은 동안은 2D 연출로 돌리고, 돌아오면 셰이더·버퍼를 다시 만든다.
+    canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); this.ok = false; this.count = 0; });
+    canvas.addEventListener('webglcontextrestored', () => {
+      this.ok = this._init();
+      if (this.ok) this.resize(this.w, this.h, this.dpr);
+    });
   }
 
   _init() {
