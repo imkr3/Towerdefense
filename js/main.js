@@ -904,7 +904,7 @@ function renderTraining() {
             roleNow.map(([k, v]) => '<span class="stat role">' + k + ' ' + v + '</span>').join('') +
           '</div>' + grow + evoHtml +
           '<div class="btn-row">' +
-            '<button class="btn train-btn"' + (atCap ? ' disabled' : '') + '>' +
+            '<button class="btn train-btn' + (atCap ? '' : (save.coins >= cost ? ' can' : ' cant')) + '"' + (atCap ? ' disabled' : '') + '>' +
               (atCap ? (lv >= hardCap ? '최대 레벨' : '상한 도달')
                      : '💰 ' + cost + ' → 레벨 ' + (lv + 1)) + '</button>' +
             '<button class="btn team-btn' + (inTeam ? ' on' : '') + '"' +
@@ -1275,6 +1275,7 @@ function beginBattle() {
   $('#result').classList.remove('show');
   battle.speed = Settings.get('keepSpeed') ? Settings.get('speed') : 1;
   $('#btn-speed').textContent = '▶▶ ' + battle.speed + 'x';
+  $('#btn-speed').classList.toggle('fast', battle.speed > 1);
   $('#btn-pause').textContent = '❚❚';
   bossMusic = false;
   bossMusicT = 0;
@@ -1429,6 +1430,7 @@ function updateHud() {
   hudText(hudEl('#money-txt'), money);
   hudText(hudEl('#wallet-txt'), battle.walletMax);
   hudStyle(hudEl('#wallet-fill'), 'width', pct1(battle.money / battle.walletMax * 100));
+  hudClass(hudEl('.wallet'), 'full', battle.money >= battle.walletMax - 1);   // 3.8: 가득 차면 쓰라고 빛난다
   const inputOk = canBattleInput();
   cardEls.forEach(el => {
     const id = el.dataset.id;
@@ -1650,7 +1652,10 @@ function bindCanvasDrag(cv) {
     moved += Math.abs(dx);
     if (moved > 4) renderer.panBy(dx);
   };
-  const up = () => { dragging = false; };
+  const up = () => {
+    if (dragging && moved <= 6 && paused && typeof resumeFromTap === 'function') resumeFromTap();   // 3.8: 멈춤 중 탭 → 재개
+    dragging = false;
+  };
 
   cv.addEventListener('touchstart', e => down(e.touches[0].clientX), { passive: true });
   cv.addEventListener('touchmove', e => { move(e.touches[0].clientX); e.preventDefault(); }, { passive: false });
@@ -1946,6 +1951,7 @@ function init() {
   $('#btn-speed').addEventListener('click', () => {
     battle.speed = battle.speed === 1 ? 2 : (battle.speed === 2 ? 3 : 1);
     $('#btn-speed').textContent = '▶▶ ' + battle.speed + 'x';
+    $('#btn-speed').classList.toggle('fast', battle.speed > 1);
     Settings.set('speed', battle.speed);
     SFX.ui();
   });
@@ -1955,6 +1961,16 @@ function init() {
     toast(paused ? '일시정지' : '재개');
     SFX.ui();
   });
+  // 3.8: 멈춘 동안엔 가운데 안내판이나 전장 아무 데나 눌러도 다시 시작한다
+  const resumeFromTap = () => {
+    if (!paused || $('.modal.show') || !battle || battle.state !== 'play') return;
+    setPaused(false);
+    toast('재개');
+    SFX.ui();
+  };
+  $('#pause-label').addEventListener('click', resumeFromTap);
+  $('#pause-label').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); resumeFromTap(); } });
+  window.resumeFromTap = resumeFromTap;
   $('#btn-command').addEventListener('click', () => {
     if (!canBattleInput()) return;
     if (!battle.canCommand()) { toast('왕의 명령이 아직 준비되지 않았습니다'); return; }

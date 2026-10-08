@@ -1028,4 +1028,22 @@ test('Gold raid fort holds until every wave and cart has come out', () => {
   assert.equal(b.state, 'win');
 });
 
+/* ---------------- 3.8 편의 · 최적화 ---------------- */
+test('Paused battle resumes from the centre card or a tap on the field', () => {
+  const main = fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8');
+  const css = fs.readFileSync(path.join(__dirname, '../css/style.css'), 'utf8');
+  const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
+  assert.ok(/#pause-label\{[^}]*pointer-events:auto/.test(css), 'pause card takes taps');
+  assert.ok(/\$\('#pause-label'\)\.addEventListener\('click', resumeFromTap\)/.test(main), 'card resumes');
+  assert.ok(/moved <= 6 && paused/.test(main), 'a tap (not a drag) on the field resumes');
+  assert.ok(/id="pause-label" role="button"/.test(html));
+});
+test('Menus stay light: icons cached and painted when visible, formation pool updated in place', () => {
+  const render = fs.readFileSync(path.join(__dirname, '../js/render.js'), 'utf8');
+  const form = fs.readFileSync(path.join(__dirname, '../js/formation.js'), 'utf8');
+  assert.ok(/_iconCache\.get\(key\)/.test(render) && /IntersectionObserver/.test(render), 'icon cache + lazy paint');
+  assert.ok(/box\._sig === sig/.test(form), 'pool reuses tiles when the list is unchanged');
+  assert.ok(/q === 'low' \? 1\.5 : 1\.75/.test(render), 'auto quality caps canvas density at 1.75');
+});
+
 console.log(count + ' regression checks passed');

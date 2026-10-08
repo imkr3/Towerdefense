@@ -2,6 +2,11 @@
  *  막대 왕국 전쟁 - 캔버스 렌더러 (졸라맨 스타일)
  * ======================================================================= */
 
+/* 3.8: 병사마다 매 프레임 새로 만들던 표를 한 번만 */
+const REACH_BY_STYLE = { thrust: 12, heavy: 9, slash: 7, cast: 2, shoot: -4 };
+const PULL_BY_STYLE = { thrust: 5, heavy: 4, slash: 3, cast: 1, shoot: 1 };
+const CROWD_NO_SHADOW = 36;      // 화면에 이보다 많이 서 있으면(자동 품질) 부품 그림자를 끈다
+
 class Renderer {
   constructor(canvas) {
     this.cv = canvas;
@@ -20,7 +25,8 @@ class Renderer {
   resize() {
     // 해상도는 설정의 품질을 따른다: 높음은 3배까지 선명하게, 절전은 1.5배
     const q = (typeof Settings !== 'undefined') ? Settings.get('quality') : 'auto';
-    const cap = q === 'high' ? 3 : q === 'low' ? 1.5 : 2;
+    // 3.8: 자동은 1.75배까지 (2배보다 픽셀 23% 적다 — 폰 화면에선 차이가 거의 안 보이고 GPU 부담이 준다)
+    const cap = q === 'high' ? 3 : q === 'low' ? 1.5 : 1.75;
     const dpr = Math.min(window.devicePixelRatio || 1, cap);
     // 노치 여백. 매 프레임 getComputedStyle 을 부르면 스타일 재계산이 걸린다.
     this.safeTop = parseFloat(
@@ -585,8 +591,8 @@ class Renderer {
     const wind = (f.engaged && !moving && f.swing <= 0 && f.stunT <= 0 && f.kbTimer <= 0 && f.s.atk > 0 && f.cd < windLen)
       ? 1 - Math.max(0, f.cd) / windLen : 0;
     // 치는 순간 몸이 따라 나간다. 찌르기는 길게, 내려찍기는 무겁게, 쏘기는 반동으로 뒤로.
-    const reach = { thrust: 12, heavy: 9, slash: 7, cast: 2, shoot: -4 }[style];
-    const pull = { thrust: 5, heavy: 4, slash: 3, cast: 1, shoot: 1 }[style];
+    const reach = REACH_BY_STYLE[style];
+    const pull = PULL_BY_STYLE[style];
     const lunge = atk > 0 ? atk * reach * this.cs : -wind * pull * this.cs;
     // 멈춰 있을 때는 숨쉬기 (병사마다 박자가 다르다)
     if (f._seed === undefined) f._seed = Math.random() * 10;
@@ -1752,6 +1758,9 @@ class Renderer {
 
     const all = battle.allies.concat(battle.enemies);
     all.sort((a, b) => (a.row - b.row) || (a.x - b.x));
+    let onScreen = 0;
+    for (const f of all) { const sx = this.screenX(f.x); if (sx > -140 && sx < this.w + 140) onScreen++; }
+    this._onScreen = onScreen;
     for (const f of all) this.drawFighter(f);
     if (battle.burrowers) for (const b of battle.burrowers) this.drawBurrow(b);
 
@@ -1777,7 +1786,9 @@ class Renderer {
   drawGlFx(battle, dt, camBefore, shakeX, shakeY) {
     if (this.glfx && this.glfx.ok) this.glfx.floorY = this.rowY(2) + 14 * this.cs;
     // 병사 그림자(부품마다 드리우는 짧은 그림자)는 절전·느린 기기에서 끈다. 잉크 테두리는 늘 켠다.
-    MODEL.depth = this.fxq >= 0.5;
+    // 3.8: 자동 품질에서 병사가 화면에 빽빽하면 그림자도 끈다 (그림자 있는 면은 두 번 칠해진다)
+    const q = typeof Settings !== 'undefined' ? Settings.get('quality') : 'auto';
+    MODEL.depth = this.fxq >= 0.5 && (q === 'high' || (this._onScreen || 0) <= CROWD_NO_SHADOW);
     const g = this.glfx;
     if (!g || !g.ok) return;
     g.quality = this.fxq < 0.5 ? 0.45 : (this.fxq < 1 ? 0.7 : 1);
@@ -5763,23 +5774,57 @@ function statusDot(ctx, x, y, s, color) {
 }
 
 /* 카드/도감용 아이콘 */
+/* 3.8: 아이콘은 한 번 그려 두고 복사만 한다. 편성·훈련소는 칸마다 80여 개를 다시 그리느라
+ * 누를 때마다 끊겼다 (폰에서 수십~수백 ms). 모습이 같으면(이름·모양·색·진화·크기) 같은 그림이다. */
+const _iconCache = new Map();
+const ICON_WIDE = { catapult: 1, goldcart: 1, knight_evo: 1, catapult_evo: 1, colossus_evo: 1, wukong_evo: 1, wolf: 1, spider: 1, merchant: 1, sniper: 1, drake: 1, hellhound: 1, spiderqueen: 1, lancer: 1 };
+/* 화면 밖 아이콘은 보일 때 그린다 (훈련소는 카드가 80개 넘지만 한 화면엔 네댓 개) */
+const _iconLazy = typeof IntersectionObserver !== 'undefined'
+  ? new IntersectionObserver(entries => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        _iconLazy.unobserve(e.target);
+        const job = e.target._icon; e.target._icon = null;
+        if (job) paintUnitIcon(e.target, job.stats, job.px);
+      }
+    }, { rootMargin: '200px' })
+  : null;
 function drawUnitIcon(canvas, stats, size) {
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const px = size || 52;
-  canvas.width = px * dpr;
-  canvas.height = px * dpr;
   canvas.style.width = px + 'px';
   canvas.style.height = px + 'px';
+  if (_iconLazy) {
+    canvas.width = px * dpr; canvas.height = px * dpr;     // 자리만 먼저 잡아 둔다
+    canvas._icon = { stats: stats, px: px };
+    _iconLazy.observe(canvas);
+    return;
+  }
+  paintUnitIcon(canvas, stats, px);
+}
+function paintUnitIcon(canvas, stats, px) {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  if (canvas.width !== px * dpr || canvas.height !== px * dpr) { canvas.width = px * dpr; canvas.height = px * dpr; }
+  const key = [stats.id || '', stats.name, stats.shape, stats.body, stats.accent, stats.tunic, stats.evo ? 1 : 0, px, dpr].join('|');
+  let img = _iconCache.get(key);
+  if (!img) {
+    img = document.createElement('canvas');
+    img.width = px * dpr; img.height = px * dpr;
+    const c = img.getContext('2d');
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const k = ICON_WIDE[stats.shape] ? 0.86 : 1;
+    const s = (px / 96) * k;
+    c.save();
+    c.translate(px * (ICON_WIDE[stats.shape] ? 0.5 : 0.44), px * 0.94);
+    drawBody(c, stats, s, false, false, 0, false, 0);
+    c.restore();
+    if (_iconCache.size > 600) _iconCache.clear();
+    _iconCache.set(key, img);
+  }
   const ctx = canvas.getContext('2d');
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.clearRect(0, 0, px, px);
-  const wide = { catapult: 1, goldcart: 1, knight_evo: 1, catapult_evo: 1, colossus_evo: 1, wukong_evo: 1, wolf: 1, spider: 1, merchant: 1, sniper: 1, drake: 1, hellhound: 1, spiderqueen: 1, lancer: 1 };
-  const k = wide[stats.shape] ? 0.86 : 1;
-  const s = (px / 96) * k;
-  ctx.save();
-  ctx.translate(px * (wide[stats.shape] ? 0.5 : 0.44), px * 0.94);
-  drawBody(ctx, stats, s, false, false, 0, false, 0);
-  ctx.restore();
+  if (canvas._painted) ctx.clearRect(0, 0, canvas.width, canvas.height);   // 새 캔버스는 이미 비어 있다
+  canvas._painted = true;
+  ctx.drawImage(img, 0, 0);
 }
 
 /* 캔버스에 쓰는 글자 번역. i18n.js 가 없으면(비교판 등) 그대로 */

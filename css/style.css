@@ -573,7 +573,9 @@ button:focus-visible{outline:3px solid #48b9ee;outline-offset:3px;}
 .wave-line{font-size:10px;display:flex;gap:8px;color:#e6efdf;background:#16313adc;padding:7px 9px;border-radius:5px;}
 #battle-clock{color:#d8c18b;font-variant-numeric:tabular-nums;}
 .boss-warning{color:#ffbf9f;}
-#pause-label{position:absolute;top:44%;left:50%;transform:translate(-50%,-50%);padding:18px 32px;border:1px solid #a0bac277;border-radius:10px;background:#142b39eb;color:#fff3d0;font-size:22px;font-weight:800;pointer-events:none;text-align:center;}
+#pause-label{position:absolute;top:44%;left:50%;transform:translate(-50%,-50%);padding:18px 32px;border:1px solid #a0bac277;border-radius:10px;background:#142b39eb;color:#fff3d0;font-size:22px;font-weight:800;pointer-events:auto;cursor:pointer;text-align:center;}
+#pause-label .pl-icon{display:block;font-size:34px;line-height:1;margin-bottom:6px;color:#ffd35a}
+#pause-label:active{transform:translate(-50%,-50%) scale(.97)}
 #pause-label small{display:block;margin-top:8px;font-size:11px;color:#bfd1da;font-weight:400;}
 .hud-bottom{background:linear-gradient(180deg,#132a3500,#142b39f5 18%);padding:12px 12px calc(8px + var(--sb));}
 .wallet{margin-bottom:7px;}
@@ -1219,3 +1221,64 @@ body{background:var(--bg0);color:var(--tx)}
 .sd-event.exp{border-left-color:#e8c65a}
 .sd-event.exp b{color:#ffd35a}
 .exp-card .ev-mark{color:#ffd35a}
+
+/* =======================================================================
+ * 3.8 한눈에 보이게: 색으로 역할을 나눈다
+ *   금색 = 돈·주요 행동 · 초록 = 준비됨·켜짐·살 수 있음 · 빨강 = 위험·적 · 보라 = 소환석 · 하늘 = 아군
+ * ======================================================================= */
+:root{--c-gold:#ffd35a;--c-green:#58e07a;--c-red:#ff6b5a;--c-blue:#6fc0ff;--c-purple:#c39bff;--c-orange:#ff9f43}
+
+/* 전투 상단: 처치·남은 적에 아이콘과 색, 자동·배속·멈춤은 켜지면 바로 보이게 */
+.kill-chip::before{content:'⚔ ';color:var(--c-gold)}
+.kill-chip #kill-count{color:var(--c-gold);font-weight:900}
+.kill-chip.foe-chip::before{content:'☠ ';color:var(--c-red)}
+.kill-chip.foe-chip #foe-left{color:#ff9a8a;font-weight:900}
+#btn-auto.on{color:#0d2a14;background:linear-gradient(180deg,#8ff0a4,#3fbf62);border-color:#c9ffd6;box-shadow:0 0 10px #58e07a66}
+#btn-speed.fast{color:#2a1d08;background:linear-gradient(180deg,#ffe08a,#e2a93c);border-color:#fff0c0;box-shadow:0 0 10px #ffd35a55}
+#btn-pause[aria-label="전투 재개"]{color:#2a1d08;background:linear-gradient(180deg,#ffe08a,#e2a93c);border-color:#fff0c0}
+
+/* 성채 체력: 막대를 굵게, 아군 하늘색 · 적 빨강, 위험하면 깜빡 */
+.castle-track{height:7px}
+#castle-status>span:first-child{color:#bfe6ff}
+#castle-status>span:last-child{color:#ffc2b6}
+#castle-status #ally-hp-txt{color:var(--c-blue)}
+#castle-status #enemy-hp-txt{color:var(--c-red)}
+#castle-status.critical{border-color:var(--c-red);box-shadow:0 0 12px #ff6b5a80;animation:critBlink 1s ease-in-out infinite}
+@keyframes critBlink{50%{opacity:.75}}
+
+/* 군자금: 숫자를 크게 금색으로, 가득 차면 '쓰세요' 하고 빛난다 */
+.wallet-txt{color:var(--c-gold);font-size:13px}
+.wallet.full .wallet-fill{background:linear-gradient(90deg,#ffd35a,#fff3b0)}
+.wallet.full .wallet-bar{box-shadow:0 0 10px #ffd35a99}
+.wallet.full .wallet-txt{color:#fff3b0;text-shadow:0 0 8px #ffd35a}
+
+/* 카드: 낼 수 있으면 역할색 테두리가 빛나고 값이 초록, 모자라면 값이 빨강 */
+.card.available{box-shadow:0 0 0 1px var(--role),0 0 12px color-mix(in srgb,var(--role) 55%,transparent)}
+.card.available .c-cost{color:#b6ffc4}
+.card.poor .c-cost{color:#ff9a8a}
+
+/* 진군도 아래 탭: 아이콘과 고유색 */
+#btn-formation::before{content:'🛡 '}
+#btn-shop::before{content:'⚒ '}
+#btn-units::before{content:'⚔ '}
+#btn-gacha::before{content:'🔮 '}
+#btn-quest::before{content:'📜 '}
+#btn-formation{box-shadow:inset 0 3px 0 #6fc0ff}
+#btn-shop{box-shadow:inset 0 3px 0 #ff9f43}
+#btn-units{box-shadow:inset 0 3px 0 #58e07a}
+#btn-gacha{box-shadow:inset 0 3px 0 #c39bff}
+#btn-quest{box-shadow:inset 0 3px 0 #ffd35a}
+
+/* 훈련소: 주 행동(훈련)을 눈에 띄게, 편성 해제는 조용하게 */
+.train-btn.can{background:linear-gradient(180deg,#8ff0a4,#3fbf62)!important;color:#0d2a14!important;border-color:#c9ffd6!important;font-weight:900}
+.train-btn.cant{color:#ff9a8a}
+.team-btn.on{background:#ffffff0d!important;color:var(--tx2)!important;border-color:var(--ln)!important;box-shadow:none!important}
+.team-btn:not(.on):not([disabled]){background:linear-gradient(180deg,#22405e,#152a40);color:#bfe6ff;border-color:#6fc0ff66}
+
+/* 임무: 막대를 굵고 밝게, 받을 수 있는 임무는 금색으로 빛난다 */
+.q-bar{height:9px;border-radius:5px;overflow:hidden}
+.q-bar div{background:linear-gradient(90deg,#3fbf62,#ffd35a)}
+.quest-card.done{box-shadow:0 0 0 2px var(--c-gold),0 0 16px #ffd35a55}
+
+/* 강화 병영: 살 수 있는 강화의 버튼은 금색 그대로, 다음 효과는 초록 */
+.up-card:not(.cant) .up-buy:not([disabled]){box-shadow:0 0 12px #ffd35a55}

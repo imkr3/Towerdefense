@@ -185,11 +185,28 @@ function renderFormationPool() {
   });
 
   const box = $('#formation-pool');
-  const keep = box.scrollTop;
-  box.innerHTML = '';
   const rank = { UR: 0, SSR: 1, SR: 2, R: 3, N: 4 };
   const list = unlockedUnits().filter(unitMatchesFilter)
     .sort((a, b) => (a.gacha ? rank[a.rarity] : 9) - (b.gacha ? rank[b.rarity] : 9) || a.cost - b.cost);
+  // 3.8: 목록이 그대로면(넣고 빼기·고르기만 했으면) 다시 만들지 않고 표시만 고친다.
+  // 예전엔 누를 때마다 80여 칸을 통째로 다시 만들어 폰에서 눈에 띄게 끊겼다.
+  const sig = fmFilter + '|' + list.map(u => u.id + (save.evo[u.id] ? '+' : '')).join(',');
+  if (box._sig === sig && box.children.length === list.length) {
+    for (const el of box.children) {
+      const id = el.dataset.unit, inTeam = save.loadout.includes(id);
+      el.classList.toggle('in', inTeam);
+      el.classList.toggle('focus', fmFocus === id);
+      el.setAttribute('aria-pressed', String(inTeam));
+      const chk = el.querySelector('.ft-check');
+      if (inTeam && !chk) el.insertAdjacentHTML('beforeend', '<span class="ft-check">✓</span>');
+      else if (!inTeam && chk) chk.remove();
+    }
+    return;
+  }
+  box._sig = sig;
+  const keep = box.scrollTop;
+  box.innerHTML = '';
+  const frag = document.createDocumentFragment();
   list.forEach(u => {
     const inTeam = save.loadout.includes(u.id);
     const el = document.createElement('div');
@@ -206,9 +223,10 @@ function renderFormationPool() {
     el.addEventListener('keydown', e => {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fmFocus = u.id; toggleUnit(u.id); }
     });
-    box.appendChild(el);
+    frag.appendChild(el);
   });
-  if (!list.length) box.innerHTML = '<p class="pool-empty">해당하는 병종이 없습니다</p>';
+  box.appendChild(frag);
+  if (!list.length) { box.innerHTML = '<p class="pool-empty">해당하는 병종이 없습니다</p>'; box._sig = ''; }
   box.scrollTop = keep;
 }
 
@@ -452,6 +470,7 @@ function dragBegin() {
   const g = d.el.cloneNode(true);
   // 복제본의 캔버스는 비어 있으니 그림을 옮겨 붙인다
   const from = d.el.querySelector('canvas'), to = g.querySelector('canvas');
+  if (from && from._icon) { paintUnitIcon(from, from._icon.stats, from._icon.px); from._icon = null; }   // 3.8: 아직 안 그린 아이콘이면 지금
   if (from && to) { to.width = from.width; to.height = from.height; to.getContext('2d').drawImage(from, 0, 0); }
   g.classList.add('f-ghost');
   g.style.width = r.width + 'px';
