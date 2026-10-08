@@ -227,7 +227,7 @@ class Fighter {
       if (this.ab.revive && !this.usedRevive) {     // 1회 부활
         this.usedRevive = true;
         this.hp = Math.round(this.maxHp * this.ab.revive);
-        this.kbTimer = 0.5;
+        this.kbTimer = 0.5;          // 넉백 면역이라도 쓰러졌다 일어날 땐 잠깐 휘청인다 (3.9 균형이 이걸 전제로 맞춰졌다)
         this.reviveFx = true;
         return dealt;
       }
@@ -550,8 +550,9 @@ class Battle {
     }
     for (const a of this.allies) {
       a.heal(a.maxHp * this.cmdHeal);
+      // 이미 더 센 가속(오버드라이브)이 걸려 있으면 그 배율을 지킨다
+      a.hasteMul = a.hasteT > 0 ? Math.min(a.hasteMul, COMMAND.hasteMul) : COMMAND.hasteMul;
       a.hasteT = Math.max(a.hasteT, COMMAND.hasteDur);
-      a.hasteMul = COMMAND.hasteMul;
       a.stunT = 0;
       a.slowT = 0;
       this.fx.push({ type: 'rally', x: a.x, row: a.row, t: 0.6, life: 0.6 });
@@ -649,8 +650,9 @@ class Battle {
       this.reap(this.enemies, this.allies, this.allyCastle, true);
       this.reap(this.allies, this.enemies, this.enemyCastle, false);
     }
-    this.enemies = this.enemies.filter(e => !e.dead);
-    this.allies = this.allies.filter(a => !a.dead);
+    // 아무도 쓰러지지 않은 틱(대부분)엔 배열을 새로 만들지 않는다
+    if (this.enemies.some(e => e.dead)) this.enemies = this.enemies.filter(e => !e.dead);
+    if (this.allies.some(a => a.dead)) this.allies = this.allies.filter(a => !a.dead);
 
     // 무한 전장도 적 요새를 무너뜨리면 끝난다 (요새 함락 · 웨이브 보상에 덤)
     if (this.enemyCastle.dead) { this.shake = 16; this.finish('win'); }
@@ -1012,6 +1014,9 @@ class Battle {
       if (f.poisonT > 0) { dot += f.poisonDps * Math.min(dt, f.poisonT); f.poisonT = Math.max(0, f.poisonT - dt); }
       if (f.burnT > 0) { dot += f.burnDps * Math.min(dt, f.burnT); f.burnT = Math.max(0, f.burnT - dt); }
       if (isAlly) dot *= 1 - 0.05 * Math.min(5, this.save.upgrades.resistance || 0);
+      // 안개화 중엔 독·불도 닿지 않는다 (직접 타격과 같게).
+      // 거신의 핵 갑주는 독·불이 스며든다 — 이벤트 편성(독술사·화염병·연금술사)이 그걸 노린다.
+      if (dot > 0 && f.veilT > 0) dot = 0;
       if (dot > 0) {
         f.hp -= dot;
         if (f.hp <= 0) {
@@ -1194,8 +1199,9 @@ class Battle {
       for (const m of mates) {
         if (m.dead || m === f) continue;
         if (Math.abs(m.x - f.x) > ab.radius) continue;
+        // 더 센 가속(왕명·오버드라이브)이 걸려 있으면 약한 북소리가 덮어쓰지 않는다
+        m.hasteMul = m.hasteT > 0 ? Math.min(m.hasteMul, ab.haste.mul) : ab.haste.mul;
         m.hasteT = Math.max(m.hasteT, ab.haste.dur);
-        m.hasteMul = ab.haste.mul;
       }
       f.auraPulse = 0.5;
       this.fx.push({ type: 'aura', x: f.x, row: f.row, r: ab.radius,
@@ -1224,7 +1230,8 @@ class Battle {
             this.allies.push(m);
           }
         } else {
-          const m = this.spawnEnemy(ab.summon.id, sx); m.summoned = true; m.wave = f.wave;
+          // 증원·무한 배율을 받은 소환사의 졸개도 같은 배율로 나온다 (보스 배율은 보스 몸에만)
+          const m = this.spawnEnemy(ab.summon.id, sx, f.boss ? undefined : f.mul); m.summoned = true; m.wave = f.wave;
         }
       }
       this.fx.push({ type: 'spawn', x: f.x - f.dir * 24, row: f.row, t: 0.4, life: 0.4 });
@@ -1361,7 +1368,7 @@ class Battle {
             const u = UNIT_BY_ID[a.id];
             if (u && this.roomForSummon()) { const m = this.makeAlly(u, sx, f); m.summoned = true; this.allies.push(m); }
           } else {
-            const m = this.spawnEnemy(a.id, sx); m.summoned = true; m.wave = f.wave;
+            const m = this.spawnEnemy(a.id, sx, f.boss ? undefined : f.mul); m.summoned = true; m.wave = f.wave;
           }
           this.fx.push({ type: 'spawn', x: sx, row: f.row, t: 0.4, life: 0.4 });
         }

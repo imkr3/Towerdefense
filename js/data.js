@@ -123,7 +123,7 @@ const UNITS = [
     hp: 300, atk: 205, range: 620, speed: 16, interval: 3.4,
     cost: 310, cooldown: 13, kb: 1, ranged: true, unlockStage: 13,
     ab: { pierce: true },
-    abText: '일직선 관통 · 사거리 520',
+    abText: '일직선 관통 · 사거리 620',
     desc: '거대 석궁으로 전선을 꿰뚫습니다. 한 발로 줄지어 선 적을 모두 관통합니다.'
   }),
   mk({
@@ -167,7 +167,7 @@ const UNITS = [
     body: '#2b3038', accent: '#6b8f3f', tunic: '#3f5a2f',
     hp: 340, atk: 111, range: 470, speed: 30, interval: 2.0,
     cost: 225, cooldown: 7.0, kb: 2, ranged: true, unlockStage: 9,
-    abText: '사거리 400 · 뒤에서 안전하게',
+    abText: '사거리 470 · 뒤에서 안전하게',
     desc: '장궁으로 전선 훨씬 뒤에서 쏩니다. 긴 사거리가 최대 무기입니다.'
   }),
   mk({

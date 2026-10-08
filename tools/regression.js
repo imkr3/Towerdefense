@@ -858,6 +858,19 @@ test('New sea units and foes are drawn, translated and evolve', () => {
     assert.ok(fs.readFileSync(path.join(__dirname, '../js/gl-fx.js'), 'utf8').indexOf("case '" + k + "':") >= 0, 'gl fx ' + k);
   }
 });
+test('Poison and burn cannot hurt a boss in mist', () => {
+  const b=battle(),e=new Fighter({...E.goblin,hp:1000},'enemy',1800);
+  e.veilT=5;e.poisonT=1;e.poisonDps=100;b.step([e],[],b.allyCastle,.1,false);assert.equal(e.hp,e.maxHp);
+});
+test('A weaker haste pulse does not dilute a stronger one; the command keeps overdrive', () => {
+  const b=battle(),a=b.makeAlly(U.spear,500),c=b.makeAlly(U.spear,520);b.allies.push(a,c);a.hasteT=6;a.hasteMul=0.55;
+  b.cmdCd=0;assert.equal(b.useCommand(),true);assert.equal(a.hasteMul,0.55);assert.equal(c.hasteMul,0.6);assert.ok(c.hasteT>0);
+  const d=b.makeAlly(U.herald,540);b.allies.push(d);b.supportTick(d,b.allies,1,true);assert.equal(c.hasteMul,0.6);
+});
+test('Non-boss enemy summons inherit the summoner reinforcement multiplier', () => {
+  const g=fs.readFileSync(path.join(__dirname,'../js/game.js'),'utf8');
+  assert.equal((g.match(/this\.spawnEnemy\((?:ab\.summon|a)\.id, sx, f\.boss \? undefined : f\.mul\)/g)||[]).length,2);
+});
 test('Every unit active skill has a WebGL particle burst', () => {
   const data = fs.readFileSync(path.join(__dirname, '../js/data.js'), 'utf8');
   const gl = fs.readFileSync(path.join(__dirname, '../js/gl-fx.js'), 'utf8');
