@@ -858,6 +858,13 @@ test('New sea units and foes are drawn, translated and evolve', () => {
     assert.ok(fs.readFileSync(path.join(__dirname, '../js/gl-fx.js'), 'utf8').indexOf("case '" + k + "':") >= 0, 'gl fx ' + k);
   }
 });
+test('Every unit active skill has a WebGL particle burst', () => {
+  const data = fs.readFileSync(path.join(__dirname, '../js/data.js'), 'utf8');
+  const gl = fs.readFileSync(path.join(__dirname, '../js/gl-fx.js'), 'utf8');
+  const kinds = new Set((data.match(/kind:'[a-z]+'/g) || []).map(m => m.slice(6, -1)));
+  assert.ok(kinds.size > 5);
+  for (const k of kinds) assert.ok(gl.indexOf("case '" + k + "':") >= 0, 'gl fx ' + k);
+});
 test('Siren song charms allies; the Lightkeeper lantern breaks it and wards it off', () => {
   const s = save(); s.loadout = ['beacon']; const b = new Battle(0, s, { baseHp: 10000, money: 900, rate: 0, waves: [], reward: 0 });
   const sp = b.makeAlly(U.spear, 500); b.allies.push(sp);

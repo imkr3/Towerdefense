@@ -13,7 +13,7 @@ const PRESET_COUNT = 3;
 const HOLD_MS = 170;          // 터치: 이만큼 누르고 있으면 끌기 시작
 const DRAG_START_PX = 8;
 
-let fmTarget = null;          // 전장 번호 | 'endless' | 'event:k' | null(그냥 편성)
+let fmTarget = null;          // 전장 번호 | 'hard:i' | 'endless' | 'event:k' | 'exp:k' | null(그냥 편성)
 let fmBack = 'scr-map';
 let fmFilter = 'all';
 let fmFocus = null;           // 오른쪽에 정보를 띄울 병종
@@ -190,7 +190,7 @@ function renderFormationPool() {
     .sort((a, b) => (a.gacha ? rank[a.rarity] : 9) - (b.gacha ? rank[b.rarity] : 9) || a.cost - b.cost);
   // 3.8: 목록이 그대로면(넣고 빼기·고르기만 했으면) 다시 만들지 않고 표시만 고친다.
   // 예전엔 누를 때마다 80여 칸을 통째로 다시 만들어 폰에서 눈에 띄게 끊겼다.
-  const sig = fmFilter + '|' + list.map(u => u.id + (save.evo[u.id] ? '+' : '')).join(',');
+  const sig = fmFilter + '|' + list.map(u => u.id + (save.evo[u.id] ? '+' : '') + (save.levels[u.id] || 1)).join(',');
   if (box._sig === sig && box.children.length === list.length) {
     for (const el of box.children) {
       const id = el.dataset.unit, inTeam = save.loadout.includes(id);
@@ -303,7 +303,8 @@ function renderFormationSide() {
   // 3.6: 출진할 전장이 정해져 있으면 그 전장 기준으로, 아니면 다음 전장 기준으로 점검한다
   const evk0 = typeof fmTarget === 'string' && fmTarget.indexOf('event:') === 0 ? +fmTarget.slice(6) : -1;
   const exk0 = typeof fmTarget === 'string' && fmTarget.indexOf('exp:') === 0 ? +fmTarget.slice(4) : -1;
-  const target = typeof fmTarget === 'number' ? STAGES[fmTarget]
+  const hk0 = typeof fmTarget === 'string' && fmTarget.indexOf('hard:') === 0 ? +fmTarget.slice(5) : -1;
+  const target = typeof fmTarget === 'number' ? STAGES[fmTarget] : hk0 >= 0 ? STAGES[hk0]
     : evk0 >= 0 ? EVENT_STAGES[evk0] : exk0 >= 0 ? EXPEDITIONS[exk0] : STAGES[Math.min(save.cleared, STAGES.length - 1)];
   if (target && evk0 < 0) side.appendChild(deckCheckEl(target, renderFormation));
 
@@ -322,7 +323,10 @@ function renderFormationSide() {
     load.disabled = !p.length;
     load.addEventListener('click', () => {
       const unlocked = new Set(unlockedUnits().map(x => x.id));
-      const next = p.filter(id => unlocked.has(id)).slice(0, LOADOUT_MAX);
+      let heroes = 0;
+      const next = p.filter(id => unlocked.has(id))
+        .filter(id => !isHeroUnit(UNIT_BY_ID[id]) || ++heroes <= HERO_SLOT_MAX)
+        .slice(0, LOADOUT_MAX);
       if (!next.length) { toast('불러올 편성이 없습니다'); return; }
       save.loadout = next;
       SFX.ui();
@@ -348,13 +352,16 @@ function renderFormationSide() {
     go.id = 'btn-formation-go';
     const evk = typeof fmTarget === 'string' && fmTarget.indexOf('event:') === 0 ? +fmTarget.slice(6) : -1;
     const exk = typeof fmTarget === 'string' && fmTarget.indexOf('exp:') === 0 ? +fmTarget.slice(4) : -1;
+    const hk = typeof fmTarget === 'string' && fmTarget.indexOf('hard:') === 0 ? +fmTarget.slice(5) : -1;
     const name = fmTarget === 'endless' ? '무한 전장' : evk >= 0 ? '✦ E' + (evk + 1) + '. ' + EVENT_STAGES[evk].name
-      : exk >= 0 ? '💰 G' + (exk + 1) + '. ' + EXPEDITIONS[exk].name : (fmTarget + 1) + '. ' + STAGES[fmTarget].name;
+      : exk >= 0 ? '💰 G' + (exk + 1) + '. ' + EXPEDITIONS[exk].name
+      : hk >= 0 ? '💀 ' + (hk + 1) + '. ' + STAGES[hk].name : (fmTarget + 1) + '. ' + STAGES[fmTarget].name;
     go.innerHTML = '출진 ▶<small>' + name + '</small>';
     go.addEventListener('click', () => {
       if (fmTarget === 'endless') startEndless();
       else if (evk >= 0) startEvent(evk);
       else if (exk >= 0) startExpedition(exk);
+      else if (hk >= 0) startBattle(hk, true);
       else startBattle(fmTarget);
     });
     side.appendChild(go);

@@ -97,6 +97,12 @@ class GLFx {
     // 합성식이 포화형이어서 1 을 넘겨도 흰 덩어리로 터지지는 않는다.
     this.gain = 1.15;
     this.ok = this._init();
+    // 앱이 뒤로 가거나 GPU 가 리셋되면 컨텍스트를 잃는다. 그동안은 렌더러가
+    // ok 를 보고 캔버스 연출로 돌아가고, 되살아나면 셰이더와 버퍼를 다시 만든다.
+    if (canvas.addEventListener) {
+      canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); this.ok = false; this.count = 0; });
+      canvas.addEventListener('webglcontextrestored', () => { this.count = 0; this._empty = false; this.ok = this._init(); });
+    }
   }
 
   _init() {
@@ -329,6 +335,7 @@ class GLFx {
 
     switch (kind) {
       /* 하늘에서 내리꽂는 번개 */
+      case 'thunderseal':
       case 'lightning': {
         for (let b = 0; b < 3; b++) {
           const ox = (b - 1) * 26 * sc;
@@ -456,6 +463,7 @@ class GLFx {
       }
 
       /* 회전하는 마법진 */
+      case 'runeveil':
       case 'runes': {
         for (let layer = 0; layer < 2; layer++) {       // 두 겹 고리
           const n = N(56), rr = R * (0.55 + layer * 0.42);
@@ -485,7 +493,8 @@ class GLFx {
         break;
       }
 
-      /* 솟구치는 빛기둥 */
+      /* 솟구치는 빛기둥 (태양의 심판도 같은 기둥) */
+      case 'sunfall':
       case 'pillar': {
         const hgt = 400 * sc;
         for (let i = 0, n = N(240); i < n; i++) {
@@ -579,6 +588,7 @@ class GLFx {
 
       /* 먹선 일섬: 가로로 긋는 푸른 넋의 선과 흩어지는 혼불 (저승사자) */
       case 'inkslash':
+      case 'underworld':
       case 'reaproll': {
         const roll = kind === 'reaproll';
         const cy = y - 30 * sc;

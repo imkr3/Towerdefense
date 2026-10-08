@@ -74,4 +74,9 @@ test('The chosen slot is picked up on the next launch',()=>{
   for(const f of ['data','save-store'])vm.runInContext(fs.readFileSync('js/'+f+'.js','utf8'),ctx);
   assert.equal(vm.runInContext('SaveStore.slot',ctx),3);assert.equal(vm.runInContext('SaveStore.key',ctx),'stick-kingdom-save-v1-s3');
 });
+test('A daily list naming a retired mission resets the day instead of blocking the save',()=>{
+  const {store:s}=fixture();
+  const got=s.parse(JSON.stringify({...old,daily:{date:'x',list:[{id:'gone-mission',got:1,claimed:false}]}}));
+  assert.equal(got.daily,null);assert.equal(got.coins,60000);
+});
 console.log(n+' save protection checks passed');

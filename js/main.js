@@ -956,6 +956,7 @@ function renderTraining() {
             if (save.loadout.length <= 1) { toast('최소 1개 병종은 편성해야 합니다'); return; }
             save.loadout = save.loadout.filter(id => id !== u.id);
           } else {
+            if (!heroRoom(u.id)) return;
             save.loadout.push(u.id);
           }
           saveGame(save);
@@ -1476,20 +1477,28 @@ function flushPlayTime() {
   playAccum = 0;
 }
 
-function showResult() {
-  // 누적 기록과 임무 진행
+/* 끝난 전투의 누적 기록과 임무 진행. 결과창이 뜨기 전에 나가도 빠지지 않게
+ * 전투가 끝나는 순간 한 번만 적는다. */
+function accountBattle(b) {
+  if (!b || b._accounted || b.state === 'play') return;
+  b._accounted = true;
   flushPlayTime();
-  save.stats.bossKills += battle.bossKills || 0;
-  addStat('kills', battle.kills);
-  addStat('bosses', battle.bossKills || 0);
-  if (battle.endless) addStat('endless', battle.wavesCleared || 0);
-  if (battle.state === 'win') {
+  save.stats.bossKills += b.bossKills || 0;
+  addStat('kills', b.kills);
+  addStat('bosses', b.bossKills || 0);
+  addStat('commands', b.cmdUses || 0);
+  if (b.endless) addStat('endless', b.wavesCleared || 0);
+  if (b.state === 'win') {
     save.stats.wins++;
     addStat('wins', 1);
-    if (battle.stars >= 3) addStat('perfect', 1);
+    if (b.stars >= 3) addStat('perfect', 1);
   }
   saveGame(save);
   checkAchievements();
+}
+
+function showResult() {
+  accountBattle(battle);
 
   if (battle.endless) { showEndlessResult(); return; }
   if (battle.event) { showEventResult(); return; }
@@ -1635,6 +1644,7 @@ function loop(ts) {
     if (BGM.vol > 0) BGM.sting(battle.state === 'win' || (battle.endless && battle.newRecord) ? 'victory' : 'defeat');
     else BGM.stop(0.6);
     const ended = battle;
+    accountBattle(ended);
     resultTimer = setTimeout(() => {
       if (battle === ended && $('#scr-battle').classList.contains('active')) showResult();
     }, 700);
@@ -1859,9 +1869,17 @@ function init() {
   BGM.setVolume(Settings.get('bgm'));
   BGM.play('title');
   // 모바일은 사용자 조작이 한 번 있어야 오디오가 열린다
-  const wake = () => { SFX.init(); SFX.resume(); BGM.resume(); BGM.prefetch(['map']); };
-  ['pointerdown', 'touchstart', 'keydown'].forEach(ev =>
-    window.addEventListener(ev, wake, { once: true, passive: true }));
+  // 터치의 pointerdown/touchstart 는 사용자 활성화로 치지 않는 브라우저가 있어,
+  // 손을 뗄 때까지 함께 듣고 오디오가 실제로 열린 뒤에야 떼어 낸다.
+  const WAKE_EVENTS = ['pointerdown', 'touchstart', 'pointerup', 'touchend', 'click', 'keydown'];
+  let prefetched = false;
+  const wake = () => {
+    SFX.init(); SFX.resume(); BGM.resume();
+    if (!prefetched) { prefetched = true; BGM.prefetch(['map']); }
+    if (SFX.ctx && SFX.ctx.state === 'running')
+      WAKE_EVENTS.forEach(ev => window.removeEventListener(ev, wake, { passive: true }));
+  };
+  WAKE_EVENTS.forEach(ev => window.addEventListener(ev, wake, { passive: true }));
   titleAnim.cv = $('#title-bg');
   titleAnim.ctx = titleAnim.cv.getContext('2d');
   resizeTitle();
@@ -1991,7 +2009,8 @@ function init() {
   $('#btn-fix').addEventListener('click', () => {
     $('#result').classList.remove('show');
     $('#btn-retry').textContent = '다시 도전';
-    const idx = !battle ? null : battle.expedition ? 'exp:' + battle.expIndex : (!battle.endless && !battle.event ? battle.stageIndex : null);
+    const idx = !battle ? null : battle.expedition ? 'exp:' + battle.expIndex
+      : battle.endless || battle.event ? null : battle.hard ? 'hard:' + battle.stageIndex : battle.stageIndex;
     show('scr-map');                       // 편성에서 '뒤로' 가면 진군도로 (전투 화면이 아니라)
     openFormation(idx);
   });
@@ -2032,7 +2051,7 @@ function init() {
   document.addEventListener('visibilitychange', () => {
     if (document.hidden && battle && battle.state === 'play') setPaused(true);
     // 앱이 뒤로 가면 음악도 멈춘다 (배터리)
-    if (SFX.ctx) { if (document.hidden) SFX.ctx.suspend(); else SFX.ctx.resume(); }
+    if (SFX.ctx) { if (document.hidden) SFX.ctx.suspend().catch(() => {}); else SFX.resume(); }
     lastTs = 0;
   });
   window.addEventListener('keydown', e => {

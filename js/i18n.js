@@ -745,6 +745,15 @@ const I18N_EN = {
   '강철 의지': 'Will of Iron', '하드코어 전장 10곳 돌파': 'Clear 10 stages on Hardcore',
   '꺾이지 않는 왕국': 'The Unbroken Kingdom', '하드코어 전장 30곳 모두 돌파': 'Clear all 30 stages on Hardcore',
   '모든 시즌에서 전설 이상을 각각 보유': 'Own a Legend or better from every season',
+  // 저장 검사 · 실패 안내 (저장 관리 경고와 복원 알림에 그대로 뜬다)
+  '게임 저장 데이터가 아닙니다.': 'This is not a game save.',
+  '진화 데이터 오류': 'Invalid evolution data',
+  '편성 데이터 오류': 'Invalid squad data',
+  '일일 임무 데이터 오류': 'Invalid daily mission data',
+  '백업은 1MB 이하의 JSON 파일이어야 합니다.': 'A backup must be a JSON file of 1 MB or less.',
+  '지원하지 않는 백업 버전입니다.': 'This backup version is not supported.',
+  '기존 저장을 읽지 못해 덮어쓰기를 막았습니다. 저장 관리에서 원본을 백업하거나 복원해 주세요.': 'The existing save could not be read, so overwriting it is blocked. Back it up or restore it in the Save manager.',
+  '저장에 실패했습니다. 저장 관리에서 백업을 내보내 주세요.': 'Saving failed. Please export a backup from the Save manager.',
 };
 
 /* 목록 문단처럼 굵은 글씨가 섞인 덩어리는 통째로 바꾼다 */
@@ -771,6 +780,13 @@ const I18N_EN_HTML = {
 
 /* 숫자가 붙은 말. 구절 치환보다 먼저 한다. */
 const I18N_EN_PATTERNS = [
+  [/^저장 항목 형식 오류: /, 'Invalid save field: '],
+  [/^저장 숫자 오류: /, 'Invalid save number: '],
+  [/^저장 능력치 오류: /, 'Invalid save stat: '],
+  [/ 레벨 (\d+) 완료$/, ' reached Lv $1'],
+  [/추천 편성 (\d+)개 병종을 넣었습니다/, 'Added $1 recommended units'],
+  [/^(\d+)개 칸을 채웠습니다$/, 'Filled $1 slots'],
+  [/전장 (\d+)개 돌파 · 골드 (\d+) · 소환석 (\d+)\./, '$1 stages cleared · $2 gold · $3 summon stones.'],
   [/ · 요새 결계 \((\d+)웨이브부터 함락 가능\)/g, ' · fort ward (can fall from wave $1)'],
   [/(\d+)웨이브를 넘기면 적 요새를 무너뜨려 끝낼 수 있습니다!/g, 'Past wave $1 you can topple the enemy fort to finish!'],
   [/(\d+)전장 돌파 후/g, 'Clear stage $1 first'],
@@ -779,6 +795,7 @@ const I18N_EN_PATTERNS = [
   [/지금 슬롯 (\d)을 저장하고 슬롯 (\d)\(으\)로 바꿉니다\./g, 'Saves slot $1 and switches to slot $2.'],
   [/슬롯 (\d)의 (진행도와 소환한 병종이 모두 삭제됩니다)/g, 'Slot $1: $2'],
   [/(\d+)시간 (\d+)분/g, '$1h $2m'],
+  [/(\d+)분/g, '$1m'],
   [/(\d+)\s*전장 돌파/g, 'Stage $1 cleared'],
   [/전장 (\d+)/g, 'Stage $1'],
   [/(\d+)\s*전장/g, 'Stage $1'],

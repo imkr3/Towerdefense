@@ -32,7 +32,9 @@ const SaveStore = {
     for (const k of ['levels','upgrades','stars','stats']) for (const v of Object.values(s[k] || {})) if (!num(v)) throw Error('저장 능력치 오류: ' + k);
     if (s.evo !== undefined && (!obj(s.evo) || Object.values(s.evo).some(v => typeof v !== 'boolean'))) throw Error('진화 데이터 오류');
     if (s.loadout !== undefined && (!Array.isArray(s.loadout) || s.loadout.some(v => typeof v !== 'string'))) throw Error('편성 데이터 오류');
-    if (s.daily != null && (!obj(s.daily) || !Array.isArray(s.daily.list) || s.daily.list.some(m => !obj(m) || !missionById(m.id) || !num(m.got)))) throw Error('일일 임무 데이터 오류');
+    if (s.daily != null && (!obj(s.daily) || !Array.isArray(s.daily.list) || s.daily.list.some(m => !obj(m) || !num(m.got)))) throw Error('일일 임무 데이터 오류');
+    // 업데이트로 사라진 임무는 저장 전체를 막지 않고 그날 목록만 새로 뽑게 한다
+    if (s.daily != null && s.daily.list.some(m => !missionById(m.id))) s.daily = null;
     return s;
   },
   parse(raw) {
