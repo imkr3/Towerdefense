@@ -120,7 +120,7 @@ const UNITS = [
   mk({
     id: 'sniper', castFx: 'holy', name: '석궁 저격수', short: '저격수', role: '관통', shape: 'sniper',
     body: '#2b3038', accent: '#9aa3ad', tunic: '#3a4450',
-    hp: 300, atk: 205, range: 520, speed: 16, interval: 3.4,
+    hp: 300, atk: 205, range: 620, speed: 16, interval: 3.4,
     cost: 310, cooldown: 13, kb: 1, ranged: true, unlockStage: 13,
     ab: { pierce: true },
     abText: '일직선 관통 · 사거리 520',
@@ -165,7 +165,7 @@ const UNITS = [
   mk({
     id: 'longbow', name: '대궁병', role: '장거리', shape: 'longbow',
     body: '#2b3038', accent: '#6b8f3f', tunic: '#3f5a2f',
-    hp: 340, atk: 118, range: 400, speed: 30, interval: 2.0,
+    hp: 340, atk: 111, range: 470, speed: 30, interval: 2.0,
     cost: 225, cooldown: 7.0, kb: 2, ranged: true, unlockStage: 9,
     abText: '사거리 400 · 뒤에서 안전하게',
     desc: '장궁으로 전선 훨씬 뒤에서 쏩니다. 긴 사거리가 최대 무기입니다.'
@@ -213,7 +213,7 @@ const UNITS = [
     ab:{barrier:95,radius:145,interval:6},abText:'6초마다 주변 보호막 95 · 최대 2명',
     desc:'룬 방패로 좁은 전선을 지킵니다. 보호막은 중첩되지 않고 더 큰 값으로 갱신됩니다.'}),
   mk({id:'musketeer',name:'왕실 총사',role:'관통',shape:'musketeer',
-    body:'#35364d',accent:'#edbc70',tunic:'#754764',hp:420,atk:225,range:290,speed:32,interval:2.0,
+    body:'#35364d',accent:'#edbc70',tunic:'#754764',hp:420,atk:225,range:350,speed:32,interval:2.2,
     cost:285,cooldown:11,kb:2,unlockStage:10,ranged:true,
     ab:{pierce:true},abText:'사선 위 적 관통 · 느린 장전',
     desc:'긴 총신으로 밀집 대열을 관통합니다. 빠른 적이 접근하지 못하게 하세요.'}),
@@ -234,7 +234,7 @@ const UNITS = [
     ab:{breaker:1.3},abText:'파쇄 · 갑주 무시 · 중장갑·보스에게 1.3배',
     desc:'무거운 투창을 던져 방패째 꿰뚫습니다. 궁수보다 짧게 던지지만 단단한 적에게 강합니다.'}),
   mk({id:'falconer',name:'매 조련사',short:'매조련사',role:'사냥',shape:'falconer',
-    body:'#2b3038',accent:'#c98a3a',tunic:'#5a6b3a',hp:440,atk:115,range:340,speed:34,interval:1.6,
+    body:'#2b3038',accent:'#c98a3a',tunic:'#5a6b3a',hp:440,atk:110,range:380,speed:34,interval:1.6,
     cost:210,kb:2,ranged:true,unlockStage:10,
     ab:{backline:true,hunter:1.9},abText:'매가 뒷줄을 노림 · 원거리 적에게 1.9배',
     desc:'매를 날려 적 뒷줄의 궁수와 주술사부터 낚아챕니다. 앞의 덩치는 다른 병력에게 맡기세요.'}),
@@ -261,7 +261,7 @@ const UNITS = [
     desc:'산사에서 수련한 권법가입니다. 어떤 충격에도 흔들리지 않고 주먹을 쉬지 않습니다.'}),
   /* ---------- 3.3 3막 '심연의 바다' 병종: 바다 군단을 받아칠 손 ---------- */
   mk({id:'harpoon',name:'작살병',role:'작살',shape:'harpoon',castFx:'harpoon',
-    body:'#2b3038',accent:'#9fd8e8',tunic:'#2f5a6b',hp:640,atk:105,range:210,speed:40,interval:1.6,
+    body:'#2b3038',accent:'#9fd8e8',tunic:'#2f5a6b',hp:640,atk:113,range:175,speed:40,interval:1.6,
     cost:180,kb:2,ranged:true,unlockStage:31,
     ab:{breaker:1.35,slow:1.0},abText:'작살 · 갑주 무시 · 단단한 적 1.35배 · 1초 둔화',
     desc:'밧줄 달린 작살로 등딱지째 꿰고 끌어당깁니다. 집게 게와 어인을 상대하는 바닷가의 기본 병종입니다.'}),
@@ -561,7 +561,7 @@ SEASON_UNITS.push(
     desc:'아홉 꼬리의 여우입니다. 여우불에 홀린 적은 잠시 제 편을 공격합니다. 몰려오는 무리를 서로 싸우게 만들지만, 스스로 적을 쓰러뜨리는 힘은 약합니다.',
     active:{name:'여우 구슬',kind:'foxbead',cd:50,radius:220,mul:1.6,charm:4,desc:'가장 가까운 적 주변 피해·4초 홀림(보스 제외). 성채에는 피해 없음.'}}),
   mk({id:'saja',name:'저승사자',role:'명부',shape:'saja',castFx:'inkslash',season:'yokai',rarity:'SSR',gacha:true,unlockStage:999,
-    body:'#e9e4dc',accent:'#9fd3ff',tunic:'#17171d',hp:1700,atk:120,range:95,speed:32,interval:1.6,
+    body:'#e9e4dc',accent:'#9fd3ff',tunic:'#17171d',hp:2050,atk:120,range:95,speed:32,interval:1.6,
     cost:440,cooldown:36,kb:1,scale:1.15,
     ab:{execute:.2},
     abText:'명부 · 체력 20% 이하인 적을 즉시 거둠(보스 제외) · 명부 호명',
@@ -641,7 +641,7 @@ SEASON_UNITS.push(
     abText:'주변 아군 수리(회복) · 약한 렌치',
     desc:'렌치 하나로 사람도 기계도 고칩니다. 포탑과 거상 곁에 두면 오래 버팁니다.'}),
   mk({id:'rifleman',name:'소총수',role:'원거리',shape:'rifleman',season:'clockwork',rarity:'N',gacha:true,unlockStage:999,
-    body:'#2b3038',accent:'#b0b6bd',tunic:'#5a6b3a',hp:280,atk:50,range:300,speed:40,interval:1.3,
+    body:'#2b3038',accent:'#b0b6bd',tunic:'#5a6b3a',hp:280,atk:50,range:340,speed:40,interval:1.3,
     cost:150,cooldown:7,kb:2,ranged:true,
     abText:'값싼 원거리',
     desc:'공방에서 찍어 낸 소총을 든 민병입니다. 싸고 멀리 쏩니다.'}),
@@ -665,7 +665,7 @@ SEASON_UNITS.push(
     desc:'털 한 가닥을 뽑아 불면 분신이 튀어나옵니다. 분신은 금방 사라지니 싸움을 쉬지 않고 이어 가야 합니다. 혼자서는 적을 다 쓸어 낼 힘이 없습니다.',
     active:{name:'여의봉 강타',kind:'staff',cd:50,radius:210,mul:2.4,stun:1,clones:2,desc:'가장 가까운 적 주변 피해·1초 기절, 분신 2기를 곧바로 부름.'}}),
   mk({id:'nezha',name:'나타',role:'풍화륜',shape:'nezha',castFx:'firering',season:'journey',rarity:'SSR',gacha:true,unlockStage:999,
-    body:'#e8c8a8',accent:'#ff7a3c',tunic:'#d8453a',hp:1300,atk:95,range:80,speed:95,interval:1.1,
+    body:'#e8c8a8',accent:'#ff7a3c',tunic:'#d8453a',hp:1750,atk:95,range:80,speed:95,interval:1.1,
     cost:450,kb:2,area:true,areaRadius:70,scale:1.1,
     ab:{burn:{dps:45,dur:3}},abText:'풍화륜 · 빠른 범위 화염 · 혼천릉',
     desc:'불타는 바퀴를 타고 전장을 가로지르는 소년 장수입니다. 빠르게 파고들어 무리를 불태우지만, 몸이 가벼워 오래 버티지는 못합니다.',
@@ -1597,7 +1597,7 @@ const EVENT_STAGES = [
             W(70,'wraith',5,1.4), W(96,'bat',10,.5), W(120,'bloodthrall',4,1.6), W(150,'hexer',4,1.4), W(180,'wraith',6,1.2),
             W(210,'bloodthrall',5,1.4)] },
   { name: '거신의 망치', bossId: 'titan', bossRole: 'bruiser', boss: true, look: 'volcano', music: 'volcano',
-    bossMusic: 'boss_troll', mods: ['ironclad'], baseHp: 42000, money: 540, rate: 60, reward: 0, enemyMul: 10, bossMul: { hp: 5.6, atk: 1.6 },
+    bossMusic: 'boss_troll', mods: ['ironclad'], baseHp: 42000, money: 540, rate: 60, reward: 0, enemyMul: 10, bossMul: { hp: 10.4, atk: 1.6 },
     fury: { per30: 0.1, max: 1.2 }, len: 1550,
     event: { id: 'titan', deck: ['thor','ra','odin','rapriest','venom','pyro','alchemist','javelin','shield','knight'],
              unlock: 15, reward: 9000, stones: 15,
@@ -1606,7 +1606,7 @@ const EVENT_STAGES = [
             W(66,'rockling',6,1.2), W(92,'golem',2,5), W(120,'stoneward',2,4), W(146,'siegeram',2,5), W(176,'rockling',8,1),
             W(206,'golem',2,5)] },
   { name: '망령 함대', bossId: 'ghostcaptain', bossRole: 'caster', boss: true, look: 'blackriver', music: 'blackriver',
-    bossMusic: 'boss_drake', mods: ['blitz'], baseHp: 44000, money: 560, rate: 62, reward: 0, enemyMul: 6, bossMul: { hp: 2, atk: 1.6 },
+    bossMusic: 'boss_drake', mods: ['blitz'], baseHp: 44000, money: 560, rate: 62, reward: 0, enemyMul: 5.8, bossMul: { hp: 2, atk: 1.6 },
     fury: { per30: 0.1, max: 1.3 }, len: 1550,
     event: { id: 'fleet', deck: ['zeus','odin','thor','shield','spartan','frost','frostlancer','pyro','catapult','knight'],
              unlock: 20, reward: 12000, stones: 18,
@@ -1615,7 +1615,7 @@ const EVENT_STAGES = [
             W(46,'ghostsailor',5,.8), W(72,'ghostgunner',3,3), W(100,'ghostsailor',8,.7), W(128,'wraith',6,1),
             W(156,'ghostgunner',3,3), W(186,'ghostsailor',10,.6), W(216,'wraith',8,.9)] },
   { name: '혼돈의 균열', bossId: 'voidlord', bossRole: 'caster', boss: true, look: 'eclipse', music: 'eclipse',
-    bossMusic: 'boss_spiderqueen', mods: ['horde'], baseHp: 48000, money: 580, rate: 64, reward: 0, enemyMul: 10, bossMul: { hp: 4.8, atk: 1.6 },
+    bossMusic: 'boss_spiderqueen', mods: ['horde'], baseHp: 48000, money: 580, rate: 64, reward: 0, enemyMul: 10, bossMul: { hp: 5.4, atk: 1.6 },
     fury: { per30: 0.1, max: 1.3 }, len: 1600,
     event: { id: 'rift', deck: ['zeus','odin','thor','pyro','catapult','frost','knight','shield','spear','mage'],
              unlock: 25, reward: 15000, stones: 20,
@@ -2160,7 +2160,7 @@ const STAT_LABELS = {
   revive: '부활', chain: '연쇄', summon: '소환', spinup: '예열', weaken: '액막이', sunmark: '낙인',
   reanimate: '해골', range: '사거리', sec: '초', perSec: '/초', times: '번', max: '최대',
   hunter: '사냥', ward: '기절 면역', charge: '돌격', dodge: '회피', feast: '포식', pacify: '독경',
-  armor: '갑주', life: '유지'
+  armor: '갑주', life: '유지', vanguard: '선봉'
 };
 function unitRoleStats(r, pw) {
   const ab = r.ab || {}, L = STAT_LABELS, out = [];
@@ -2198,6 +2198,7 @@ function unitRoleStats(r, pw) {
   if (ab.feast) out.push([L.feast, pct(ab.feast)]);
   if (ab.pacify) out.push([L.pacify, '-' + pct(1 - ab.pacify.mul)]);
   if (ab.armor) out.push([L.armor, pct(ab.armor)]);
+  if (ab.vanguard) out.push([L.vanguard, '-' + pct(ab.vanguard.cut) + ' · ' + ab.vanguard.r]);
   return out;
 }
 
@@ -2206,7 +2207,9 @@ const _resolved = {};
 /* 3.4 영웅의 체급. 전설·신화는 역할로 값을 하되, 몸집과 힘도 일반 병사보다 한 수 위여야 한다.
  * 근접 영웅은 앞에서 맞으며 싸우니 체력과 갑주를 더 받는다(예전엔 뭘 해 보기도 전에 쓰러졌다). */
 const HERO_POWER = { UR: { hp: 1.35, atk: 1.2 }, SSR: { hp: 1.25, atk: 1.15 } };
-const HERO_MELEE = { hp: 1.3, armor: 0.1, revive: 0.3 };
+/* 3.9 근접 영웅은 '선봉': 맞아도 버티고(갑주·체력·흡혈) 곁의 아군도 지킨다(선봉 — 주변 아군이 받는 피해 -10%).
+ * 3.4 의 체력 ×1.3 · 갑주 +10% 로는 여전히 원거리 영웅보다 훨씬 자주 쓰러졌다. */
+const HERO_MELEE = { hp: 1.55, armor: 0.3, revive: 0.4, lifesteal: 0.12, vanguard: { r: 160, cut: 0.1 } };
 function heroBuild(r) {
   const p = r.gacha && HERO_POWER[r.rarity];
   if (!p) return;
@@ -2218,6 +2221,8 @@ function heroBuild(r) {
     r.ab.armor = _r2(Math.min(0.5, (r.ab.armor || 0) + HERO_MELEE.armor));
     r.ab.kbImmune = true;                       // 앞에서 버티는 영웅은 밀려나지 않는다
     r.ab.revive = Math.max(r.ab.revive || 0, HERO_MELEE.revive);   // 불굴: 한 번은 다시 일어난다
+    r.ab.lifesteal = Math.max(r.ab.lifesteal || 0, HERO_MELEE.lifesteal);
+    r.ab.vanguard = HERO_MELEE.vanguard;       // 선봉: 곁의 아군이 받는 피해를 줄인다
   }
 }
 function resolveUnit(u, lv, evo) {

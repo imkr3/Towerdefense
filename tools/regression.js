@@ -262,7 +262,8 @@ test('Stage traits: armored, horde, hero hunters and curse', () => {
   let a = cheap.hp; hunt.hitOne(10, cheap, orc, false); assert.equal(a - cheap.hp, 10);
   a = pricey.hp; hunt.hitOne(10, pricey, orc, false); const hurt = a - pricey.hp;
   const calm = mk([]), thor = calm.makeAlly(U.thor, 500); a = thor.hp; calm.hitOne(10, thor, calm.spawnEnemy('goblin', 520), false);
-  assert.ok(Math.abs(hurt - (a - thor.hp) * 4) <= 1, 'hero hunters hit heroes 4x: ' + hurt + ' vs ' + (a - thor.hp));
+  assert.equal(hurt, 40, 'hero hunters hit heroes 4x and pierce their armor (3.9): ' + hurt);
+  assert.ok(a - thor.hp < 10, 'outside hunter stages the hero armor still works');
   const cu = mk(['curse']), sk = cu.makeAlly(U.skeleton, 500); sk.summoned = true; cu.allies.push(sk);
   const kn = cu.makeAlly(U.knight, 480); cu.allies.push(kn);
   kn.hp = 100; kn.heal(100); assert.equal(kn.hp, 150);
@@ -1044,6 +1045,28 @@ test('Menus stay light: icons cached and painted when visible, formation pool up
   assert.ok(/_iconCache\.get\(key\)/.test(render) && /IntersectionObserver/.test(render), 'icon cache + lazy paint');
   assert.ok(/box\._sig === sig/.test(form), 'pool reuses tiles when the list is unchanged');
   assert.ok(/q === 'low' \? 1\.5 : 1\.75/.test(render), 'auto quality caps canvas density at 1.75');
+});
+
+/* ---------------- 3.9 근접 영웅 '선봉' · 사거리 · 연출 층 ---------------- */
+test('Melee legends are vanguards: tough, lifesteal, shield nearby allies, keep to the line', () => {
+  const th = G.resolveUnit(U.thor, 5);
+  assert.ok(th.ab.armor >= 0.3 && th.ab.lifesteal >= 0.12 && th.ab.revive >= 0.4 && th.ab.vanguard, 'vanguard kit');
+  assert.ok(!G.resolveUnit(U.zeus, 5).ab.vanguard, 'ranged heroes do not get it');
+  const b = battle(); const hero = b.makeAlly(th, 500), sp = b.makeAlly(U.spear, 520), far = b.makeAlly(U.spear, 900);
+  b.allies.push(hero, sp, far); b.updateCover(0);
+  const orc = b.spawnEnemy('goblin', 560);
+  let a = sp.hp; b.hitOne(100, sp, orc, false); const near = a - sp.hp;
+  a = far.hp; b.hitOne(100, far, orc, false); const away = a - far.hp;
+  assert.ok(Math.abs(near - away * 0.9) < 1, 'allies next to a vanguard take 10% less: ' + near + ' vs ' + away);
+  // 전열보다 멀리 앞서지 않는다
+  const b2 = battle(); const h2 = b2.makeAlly(G.resolveUnit(U.nezha, 5), 400), line = b2.makeAlly(U.shield, 300);
+  b2.allies.push(h2, line); for (let i = 0; i < 60; i++) b2.update(1 / 30);
+  assert.ok(h2.x - line.x <= 60 + 40, 'nezha waits for the line: ' + Math.round(h2.x - line.x));
+});
+test('Ranged reach is spread from skirmishers to artillery', () => {
+  const r = UNITS.filter(u => u.ranged && u.cost > 0 && !u.gacha).map(u => u.range);
+  assert.ok(Math.min(...r) <= 180 && Math.max(...r) >= 600, 'short and very long');
+  assert.ok(new Set(r.map(x => Math.round(x / 50))).size >= 7, 'many distinct bands');
 });
 
 console.log(count + ' regression checks passed');

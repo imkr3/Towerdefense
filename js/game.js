@@ -4,7 +4,8 @@
 
 /* 전장 가로 길이(월드 좌표). 전장마다 다르다(STAGES[i].len).
  * 적 요새·적 출진 위치가 길이에 매여 있어서 전투를 만들 때 함께 맞춘다. */
-const FIELD_CAP = 50, FIELD_TOTAL_CAP = 80;   // 3.5: 전장 병력 상한 (직접 낸 병사 / 소환물 포함)
+const FIELD_CAP = 50, FIELD_TOTAL_CAP = 80;
+const VANGUARD_LEAD = 60;    // 3.9: 근접 영웅이 전열보다 앞설 수 있는 거리   // 3.5: 전장 병력 상한 (직접 낸 병사 / 소환물 포함)
 const WORLD_DEFAULT = 2000;
 let WORLD = WORLD_DEFAULT;
 const ALLY_BASE_X = 96;      // 아군 성채 위치
@@ -664,6 +665,16 @@ class Battle {
    * 그보다 앞에 나선 원거리 병사는 엄호가 없다 (exposed). */
   updateCover(dt = 0) {
     let front = -Infinity;
+    // 3.9 선봉: 살아 있는 근접 영웅 (곁의 아군이 받는 피해를 줄인다)
+    const vg = this.vanguards || (this.vanguards = []);
+    vg.length = 0;
+    let line = -Infinity;            // 영웅이 아닌 근접 전열의 맨 앞 (선봉이 너무 앞서 나가지 않게)
+    for (const a of this.allies) {
+      if (a.dead) continue;
+      if (a.ab.vanguard) { vg.push(a); continue; }
+      if (!a.s.ranged && !a.ab.noAttack && !a.summoned && a.x > line) line = a.x;
+    }
+    this.lineFront = line;
     for (const a of this.allies) {
       // 불려 나온 해골·미라·분신은 엄호가 못 된다 (방벽은 된다). 직접 내보낸 근접 병사만.
       if (a.dead || a.s.ranged || (a.ab.noAttack && !a.ab.kbImmune) || (a.summoned && !a.ab.hold)) continue;
@@ -1075,6 +1086,8 @@ class Battle {
           f.x = Math.min(WORLD - 60, f.x + f.dir * TURRET_SPEED * dt);
         }
       } else if (!f.ab.hold && this.canAdvance(f, foes) &&
+                 // 3.9 선봉: 근접 영웅은 전열을 이끌되 혼자 멀리 앞서 나가지 않는다 (홀로 둘러싸여 쓰러지던 것)
+                 !(isAlly && f.ab.vanguard && this.lineFront > -Infinity && f.x >= this.lineFront + VANGUARD_LEAD) &&
                  // 원거리 아군은 근접 전열이 있으면 그 뒤에서 기다린다 (앞질러 나가 엄호를 잃지 않게)
                  !(isAlly && f.s.ranged && this.allyFront > -Infinity && f.x >= this.allyFront + COVER_SLACK * 0.5)) {
         f.spin = 0;                                 // 걸으면 식는다
@@ -1678,8 +1691,16 @@ class Battle {
       if (target.boss || ta.armor || ta.kbImmune) dmg *= src.ab.breaker;
     }
     // 영웅 사냥꾼: 적이 비싼(비용 350 이상) 아군 — 영웅·전설·신화 — 을 골라 두 배로 친다
-    if (this.mods && this.mods.giantslayer && src && src.side === 'enemy' &&
-        !target.isCastle && target.side === 'ally' && (target.s.cost || 0) >= HUNT_COST) dmg *= HUNT_MUL;
+    // 3.9: 사냥꾼은 영웅을 잡는 데 이골이 나 있다 — 갑주를 꿰뚫고, 선봉의 보호도 통하지 않는다
+    const hunted = this.mods && this.mods.giantslayer && src && src.side === 'enemy' &&
+        !target.isCastle && target.side === 'ally' && (target.s.cost || 0) >= HUNT_COST;
+    if (hunted) { dmg *= HUNT_MUL; pierce = true; }
+    // 3.9 선봉: 근접 영웅 곁의 아군은 적에게 덜 아프게 맞는다 (영웅 자신 포함)
+    if (!hunted && src && src.side === 'enemy' && !target.isCastle && target.side === 'ally' && this.vanguards && this.vanguards.length) {
+      for (const v of this.vanguards) {
+        if (!v.dead && Math.abs(v.x - target.x) <= v.ab.vanguard.r) { dmg *= 1 - v.ab.vanguard.cut; break; }
+      }
+    }
     // 반사 결계: 결계가 선 동안 때린 만큼 때린 자에게 돌아간다 (보스는 조금만 받는다)
     if (target.reflectT > 0 && src && src.side !== target.side && !src.dead && !target.isCastle) {
       const ab = target.reflectRatio || 0.8;

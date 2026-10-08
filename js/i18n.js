@@ -473,6 +473,7 @@ const I18N_EN = {
   '원정 결계 · 수레와 적이 다 나올 때까지 요새가 버팁니다': 'Raid ward · the fort holds until every cart and foe has come out',
   '보물까지': 'With treasure',
   '화면을 누르면 다시 시작': 'Tap anywhere to resume',
+  '선봉': 'Vanguard',
   '불굴!': 'Undying!', '병력 가득 · 전장엔 50명까지': 'Army full · up to 50 on the field', '병력 가득': 'Army full',
   '용암 핵 · 평소엔 피해 95% 감소, 대지 분쇄 뒤 6초간 핵이 드러나 3.6배 — 그때 액티브와 왕명을 · 기절 면역': 'Magma core · takes 95% less damage, but after Earthshatter the core is exposed for 6s and takes 3.6× — use actives and the Command then · stun immune',
   '대지 분쇄': 'Earthshatter',

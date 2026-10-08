@@ -248,6 +248,10 @@ async function runSize(browser, size) {
   if(!await page.evaluate(()=>mapSel===13&&$('#scr-map').classList.contains('active')))failures.push(size.name+': 전장 선택 오류');
   await page.click('#btn-sortie');
   await page.waitForTimeout(300);
+  // 3.9: WebGL 연출 층이 전투 캔버스와 같은 크기여야 파티클이 제자리에 나온다 (첫 전투에서 어긋났었다)
+  const glSync = await page.evaluate(() => !renderer.glfx || !renderer.glfx.ok ||
+    (renderer.glfx.cv.width === renderer.cv.width && renderer.glfx.cv.height === renderer.cv.height && renderer.glfx.w === renderer.w));
+  if (!glSync) failures.push(size.name + ': 연출 층과 전투 캔버스의 크기가 다르다 (파티클이 엉뚱한 곳에 나온다)');
   await page.evaluate(() => window.__androidBack());
   if (!(await page.$eval('#modal-confirm', e => e.classList.contains('show')))) failures.push(size.name + ': Android 전투 포기 확인 누락');
   await page.evaluate(() => window.__androidBack());

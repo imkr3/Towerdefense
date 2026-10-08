@@ -48,6 +48,9 @@ class Renderer {
                      Math.min(this.h * 0.86, this.h - hudH - 26)));
     // cs: 지면 위 여유 높이에 맞춘 캐릭터 배율
     this.cs = Math.max(0.70, Math.min(1.45, this.groundY / 350));
+    // 3.9: WebGL 연출 층도 언제나 같은 크기로. 예전엔 전투 화면이 보이기 전에 맞춘 크기(320×240)가
+    // 남아 첫 전투의 파티클이 엉뚱한 곳·크기로 나왔다 (창 크기가 한 번 바뀌어야 바로잡혔다).
+    this.syncGlSize();
   }
 
   /* WebGL 레이어를 2D 캔버스와 같은 크기로 맞춘다 */
@@ -59,6 +62,7 @@ class Renderer {
   /* 전투가 새로 시작되면 남아 있던 연출을 비운다 */
   resetFx() {
     this.prevCam = undefined;
+    this._glCam = undefined;
     if (this.glfx && this.glfx.ok) this.glfx.clear();
   }
 
@@ -1793,7 +1797,12 @@ class Renderer {
     if (!g || !g.ok) return;
     g.quality = this.fxq < 0.5 ? 0.45 : (this.fxq < 1 ? 0.7 : 1);
     g.setOffset(shakeX, shakeY);
-    g.update(dt, (camBefore - this.cam) * this.zoom);
+    // 3.9: 파티클은 화면 좌표에 산다. 지난번 연출을 그렸을 때의 카메라에서 움직인 만큼 같이 민다
+    // (손으로 끌어 옮긴 것까지 — 예전엔 렌더 안에서 움직인 만큼만 밀어 끌면 파티클이 화면에 붙어 있었다)
+    const from = this._glCam === undefined ? camBefore : this._glCam;
+    if (this._glZoom !== undefined && this._glZoom !== this.zoom) g.clear();   // 배율이 바뀌면 자리 계산이 틀어진다
+    g.update(dt, (from - this.cam) * this.zoom);
+    this._glCam = this.cam; this._glZoom = this.zoom;
     g.draw();
   }
 
