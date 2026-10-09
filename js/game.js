@@ -4,7 +4,9 @@
 
 /* 전장 가로 길이(월드 좌표). 전장마다 다르다(STAGES[i].len).
  * 적 요새·적 출진 위치가 길이에 매여 있어서 전투를 만들 때 함께 맞춘다. */
-const FIELD_CAP = 50, FIELD_TOTAL_CAP = 80;   // 3.5: 전장 병력 상한 (직접 낸 병사 / 소환물 포함)
+// 전장 병력 상한 (직접 낸 병사 / 소환물 포함). 병종·전장과 상관없이 모두 같다.
+// 3.12: 50 / 80 → 40 / 60. 화면에 병사가 쌓일수록 그리는 값이 늘어 폰이 뜨거워졌다.
+const FIELD_CAP = 40, FIELD_TOTAL_CAP = 60;
 const VANGUARD_LEAD = 60;    // 3.9: 근접 영웅이 전열보다 앞설 수 있는 거리
 
 const WORLD_DEFAULT = 2000;
@@ -437,6 +439,17 @@ class Battle {
     return !!u && this.state === 'play' && this.roster.some(r => r.id === id) && !this.fieldFull() &&
       this.cooldowns[id] <= 0 && this.money >= u.cost &&
       (!u.maxActive || this.allies.filter(a => !a.dead && a.s.id === id).length < u.maxActive);
+  }
+
+  /* 3.12: 자동 출진이 낼 만한가. 제한 없는 값싼 병종은 예전 상한(stackCap)까지만 자동으로 낸다 —
+   * 끝없이 사들이면 돈이 바닥나 비싼 주력을 영영 못 낸다. 손으로 누르면 공통 상한까지 얼마든지. */
+  autoWants(id) {
+    if (!this.canDeploy(id)) return false;
+    const u = this.stats(id);
+    if (!u.noStackCap) return true;
+    let n = 0;
+    for (const a of this.allies) if (!a.dead && a.s.id === id) n++;
+    return n < stackCap(u.cost);
   }
 
   /* owner 가 있으면 소환물이다. 소환한 병종 레벨의 절반만큼 자란다. */

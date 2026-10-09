@@ -5,7 +5,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const ctx = vm.createContext({ console, Math, JSON, saveGame() {} });
 for (const file of ['data', 'game']) vm.runInContext(fs.readFileSync(path.join(__dirname, '../js/' + file + '.js'), 'utf8'), ctx);
-const { Battle, Fighter, UNITS, UNIT_BY_ID: U, ENEMIES: E, makeEndlessStage, STAGES } = vm.runInContext('({Battle, Fighter, UNITS, UNIT_BY_ID, ENEMIES, makeEndlessStage, STAGES})', ctx);
+const { Battle, Fighter, UNITS, UNIT_BY_ID: U, ENEMIES: E, makeEndlessStage, STAGES, FIELD_CAP, FIELD_TOTAL_CAP } = vm.runInContext('({Battle, Fighter, UNITS, UNIT_BY_ID, ENEMIES, makeEndlessStage, STAGES, FIELD_CAP, FIELD_TOTAL_CAP})', ctx);
 const world = () => vm.runInContext('({WORLD, ENEMY_BASE_X, ENEMY_SPAWN_X})', ctx);
 function save() { return {cleared:20, coins:0, upgrades:{}, stars:{}, owned:{}, levels:{}, loadout:['spear','merchant','duelist']}; }
 function battle(stage) { return new Battle(0, save(), stage || {baseHp:10000,money:900,rate:0,waves:[],reward:0}); }
@@ -515,9 +515,24 @@ test('A stunned foe gets a short immunity, bosses stun for half as long', () => 
   boss.stun(1); assert.ok(Math.abs(boss.stunT - 0.5 * 0.75) < 1e-9, 'half, then the player stun cut');
   const m = b.makeAlly(U.monk, 500); assert.equal(m.stun(2), false, 'the monk is unshakable');
 });
-test('Every card unit has a stacking cap; pricier units stand in fewer copies', () => {
-  for (const u of UNITS.filter(u => u.cost > 0)) assert.ok(u.maxActive >= 1 && u.maxActive <= 12, u.id);
-  assert.ok(U.spear.maxActive > U.medusa.maxActive && U.medusa.maxActive > U.mage.maxActive);
+test('Card units stack up to a cost-based cap, except cheap basics which only the shared field cap limits', () => {
+  for (const u of UNITS.filter(u => u.cost > 0)) {
+    if (u.noStackCap) assert.ok(!u.maxActive && u.cost < 160, u.id + ' unlimited');
+    else assert.ok(u.maxActive >= 1 && u.maxActive <= 9, u.id);
+  }
+  for (const id of ['spear', 'shield', 'archer', 'javelin', 'hoplite']) assert.ok(U[id].noStackCap, id + ' has no own cap');
+  for (const id of ['merchant', 'bomber', 'priest', 'zeus']) assert.ok(U[id].maxActive >= 1, id + ' keeps its cap');
+  assert.ok(U.medusa.maxActive > U.mage.maxActive);
+  // 제한 없는 창병만 내도 공통 상한에서 멈춘다
+  const sp = save(); sp.loadout = ['spear'];
+  const bs = new Battle(0, sp, { baseHp: 1e6, money: 1e6, rate: 0, waves: [], reward: 0 });
+  for (let i = 0; i < 60; i++) { bs.cooldowns.spear = 0; bs.money = 1e6; bs.deploy('spear'); }
+  assert.equal(bs.allies.length, FIELD_CAP);
+  // 자동 출진은 예전 상한(stackCap)까지만 — 싼 병종만 끝없이 사서 돈이 마르지 않게
+  const sa = save(); sa.loadout = ['spear'];
+  const ba = new Battle(0, sa, { baseHp: 1e6, money: 1e6, rate: 0, waves: [], reward: 0 });
+  let auto = 0; for (let i = 0; i < 40; i++) { ba.cooldowns.spear = 0; ba.money = 1e6; if (ba.autoWants('spear')) { ba.deploy('spear'); auto++; } }
+  assert.equal(auto, 12, 'auto stops spear at its old cap'); ba.cooldowns.spear = 0; assert.ok(ba.canDeploy('spear'), 'a tap still deploys past it');
   const s = save(); s.owned.medusa = 1; s.loadout = ['medusa'];
   const b = new Battle(0, s, { baseHp: 10000, money: 99999, rate: 0, waves: [], reward: 0 });
   let n = 0; for (let i = 0; i < 10; i++) { b.cooldowns.medusa = 0; b.money = 900; if (b.deploy('medusa')) n++; }
@@ -895,12 +910,13 @@ test('Some evolutions change the whole silhouette, and every new look is drawn',
 });
 
 /* ---------------- 3.5 최적화 · 병력 상한 ---------------- */
-test('Field cap: at most 50 deployed soldiers, summons stop at 80 in total', () => {
+test('Field cap: one shared limit of 40 deployed soldiers, summons stop at 60 in total', () => {
+  assert.equal(FIELD_CAP, 40); assert.equal(FIELD_TOTAL_CAP, 60);
   const s = save(); s.loadout = ['spear', 'shield', 'archer', 'knight', 'mage', 'venom', 'longbow', 'priest']; const b = new Battle(0, s, { baseHp: 1e6, money: 1e6, rate: 0, waves: [], reward: 0 });
   for (let i = 0; i < 120; i++) for (const id of s.loadout) { b.cooldowns[id] = 0; b.money = 1e6; b.deploy(id); }
-  assert.equal(b.allies.length, 50); assert.ok(b.fieldFull()); b.cooldowns.spear = 0; assert.equal(b.canDeploy('spear'), false);
-  for (let i = 0; i < 30; i++) { const m = b.makeAlly(U.skeleton, 300); m.summoned = true; b.allies.push(m); }
-  assert.equal(b.roomForSummon(), false, 'no room past 80');
+  assert.equal(b.allies.length, FIELD_CAP); assert.ok(b.fieldFull()); b.cooldowns.spear = 0; assert.equal(b.canDeploy('spear'), false);
+  for (let i = 0; i < 20; i++) { const m = b.makeAlly(U.skeleton, 300); m.summoned = true; b.allies.push(m); }
+  assert.equal(b.roomForSummon(), false, 'no room past 60');
   b.allies[0].dead = true; b.allies.splice(0, 1); b.cooldowns.spear = 0; assert.ok(b.canDeploy('spear'), 'a fallen soldier frees a slot');
 });
 test('Renderer and HUD stay light: frame cap, HUD diffing, cached background layers', () => {

@@ -269,7 +269,7 @@ function renderFormationSide() {
       ' · 레벨 ' + (save.levels[u.id] || 1) + '</div></div></div>' +
       '<div class="fi-stats"><span>💰' + u.cost + '</span><span>쿨타임 ' + u.cooldown + '초</span>' +
       (u.range ? '<span>사거리 ' + u.range + '</span>' : '') +
-      (u.maxActive ? '<span>동시 ' + u.maxActive + '명</span>' : '') + '</div>' +
+      (u.maxActive ? '<span>동시 ' + u.maxActive + '명</span>' : u.noStackCap ? '<span class="free">동시 제한 없음</span>' : '') + '</div>' +
       (u.abText ? '<div class="fi-ab">◆ ' + u.abText + '</div>' : '') +
       (u.active ? '<div class="fi-ab act">액티브 · ' + u.active.name + '</div>' : '');
     drawUnitIcon(info.querySelector('canvas'), u, 40);

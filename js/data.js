@@ -717,7 +717,15 @@ SEASON_UNITS.forEach(u => { UNIT_BY_ID[u.id] = u; });
 function stackCap(cost) {
   return cost < 100 ? 12 : cost < 170 ? 9 : cost < 250 ? 6 : cost < 330 ? 4 : cost < 450 ? 3 : 2;
 }
-UNITS.forEach(u => { if (u.cost > 0 && !u.maxActive) u.maxActive = stackCap(u.cost); });
+/* 3.12: 값싼 기본 병종(창병·방패·투창·궁수, N 등급 소환병)은 동시 출진 제한이 없다 — 머릿수가 곧 쓸모다.
+ * 대신 모든 병종이 함께 쓰는 전장 병력 상한(FIELD_CAP, game.js)에 걸린다. */
+const FREE_STACK_COST = 160;
+UNITS.forEach(u => {
+  if (u.cost > 0 && !u.maxActive) {
+    if (u.cost < FREE_STACK_COST) u.noStackCap = true;
+    else u.maxActive = stackCap(u.cost);
+  }
+});
 
 UNIT_BY_ID.zeus.active={name:'천둥의 칙령',kind:'thunderseal',cd:48,radius:180,mul:3.0,stun:.8,desc:'가장 가까운 적 주변 번개 피해·0.8초 기절.'};
 UNIT_BY_ID.thor.active={name:'묠니르 강타',kind:'thunderseal',cd:45,radius:190,mul:2.6,stun:.6,desc:'가장 가까운 적 주변 충격파 피해·0.6초 기절.'};
@@ -1242,7 +1250,7 @@ STAGES.push(
     W(2,'hellhound',9,.8),W(26,'powder',6,1.8),W(52,'drake',1),W(80,'plaguer',6,2),W(108,'orcshield',6,1.8),W(138,'drake',1),W(170,'hellhound',10,.8),W(200,'siegeram',2,4),W(230,'dark',7,1.5)]},
   {name:'황금 일식의 제단',hint:'치유·가속 토템을 범위 공격으로 압박',baseHp:47500,money:450,rate:56,reward:1650,boss:true,enemyMul:4.2,waves:[
     W(2,'orcshield',5,2),W(26,'totem',2,6),W(50,'shaman',5,3),W(78,'warlord',1),W(108,'golem',2,5),W(140,'drake',1),W(174,'warchief',3,5),W(208,'orcberserk',8,1),W(240,'lich',2,8)]},
-  {name:'★ 세 신화의 종착지',hint:'원거리 호위를 먼저 걷어 내고, 대군주에게 액티브와 왕명을 집중하세요',baseHp:51000,money:465,rate:58,reward:2200,boss:true,enemyMul:11,waves:[
+  {name:'★ 세 신화의 종착지',hint:'원거리 호위를 먼저 걷어 내고, 대군주에게 액티브와 왕명을 집중하세요',baseHp:51000,money:465,rate:58,reward:2200,boss:true,enemyMul:11,bossMul:{hp:.65},waves:[
     W(2,'orcshield',5,2),W(26,'lich',1),W(52,'frostgiant',1),W(82,'drake',1),W(114,'warlord',1),W(148,'warchief',2,5),W(182,'spiderqueen',1),W(216,'golem',3,5),W(248,'warlord',1),W(276,'hellhound',10,.8)]}
 );
 
@@ -1624,7 +1632,7 @@ const EVENT_STAGES = [
             W(72,'riftcaller',2,4), W(98,'mirror',4,1.4), W(124,'voidspawn',10,.6), W(152,'souleater',2,4),
             W(180,'riftcaller',2,4), W(210,'voidspawn',12,.5)] },
   { name: '마왕 강림', bossId: 'demonking', bossRole: 'bruiser', boss: true, look: 'mythic', music: 'mythic',
-    bossMusic: 'finale', mods: ['giantslayer', 'curse'], baseHp: 56000, money: 600, rate: 66, reward: 0, enemyMul: 10, bossMul: { hp: 2.5, atk: 1.7 },
+    bossMusic: 'finale', mods: ['giantslayer', 'curse'], baseHp: 56000, money: 600, rate: 66, reward: 0, enemyMul: 9.5, bossMul: { hp: 2.5, atk: 1.7 },
     fury: { per30: 0.12, max: 1.5 }, len: 1650,
     event: { id: 'demonking', deck: ['spear','shield','javelin','venom','catapult','pyro','frost','knight','musketeer','sniper'],
              unlock: 30, reward: 25000, stones: 30,

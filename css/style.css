@@ -598,7 +598,7 @@ button:focus-visible{outline:3px solid #48b9ee;outline-offset:3px;}
 .modal-card,.result-card{border-radius:12px;border-width:1px;box-shadow:0 20px 80px #0a172966;}
 @media(min-width:1100px){.card{flex-basis:85px;height:104px}.card .c-ico{margin-top:7px}.card .c-name{font-size:11px}.card .c-role{font-size:9px}.card .c-cost{height:21px;line-height:21px}.cmd-btn{flex-basis:82px}.stage-list{grid-template-columns:repeat(auto-fill,minmax(340px,1fr))}}
 @media(max-height:450px){.title-eyebrow{margin-bottom:6px}.title-btns{padding:12px;gap:6px}.title-btns .btn{padding:8px}.title-btns .danger{padding:3px}.crest{font-size:28px}#scr-title h1{margin:5px 0}.battle-intel{top:calc(43px + var(--st))}.card{height:79px;flex-basis:66px}.card .c-ico{height:32px;width:32px}.card .c-name{font-size:9px}.card .c-role{font-size:8px}.hud-bottom{padding-top:8px}.hud-top{top:calc(5px + var(--st))}.castle-track{width:40px}.stage-tag{max-width:27vw}.stage-list{padding:8px 12px;gap:8px}.stage{min-height:78px;padding:9px}.bar{padding-top:5px;padding-bottom:5px}.training-filters{padding-top:5px}.title-eyebrow{letter-spacing:.25em}}
-@media(max-width:780px){.kill-chip:not(.foe-chip){display:none}.wave-line{font-size:9px}.castle-track{width:34px}.battle-intel{gap:5px}.stage-tag{max-width:28vw;font-size:10px}.hud-top{padding:0 8px}.hud-right{gap:4px}.icon-btn.small{padding:0 6px}.title-inner{gap:15px}.title-badges{gap:4px}.badge{padding:5px 7px;font-size:10px}}
+@media(max-width:780px){.kill-chip:not(.foe-chip):not(.troop-chip){display:none}.wave-line{font-size:9px}.castle-track{width:34px}.battle-intel{gap:5px}.stage-tag{max-width:28vw;font-size:10px}.hud-top{padding:0 8px}.hud-right{gap:4px}.icon-btn.small{padding:0 6px}.title-inner{gap:15px}.title-badges{gap:4px}.badge{padding:5px 7px;font-size:10px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;}}
 
 #save-text{width:100%;height:90px;margin:12px 0;user-select:text;resize:vertical;background:#fff;color:#24333c;border:1px solid #82999f;border-radius:5px;padding:8px;font:12px monospace;}
@@ -1293,3 +1293,10 @@ body{background:var(--bg0);color:var(--tx)}
 .dev-quick{display:flex;gap:6px;margin:6px 0 4px 92px}
 .dev-quick .btn{flex:1;padding:5px 0}
 .dev-now{margin:10px 0 0;font-size:13px;color:var(--c-gold,#e8c65a);text-align:center}
+
+/* 3.12 전장 병력 (공통 상한) */
+.kill-chip.troop-chip::before{content:'⚑ ';color:var(--c-blue)}
+.kill-chip.troop-chip #troop-count{color:#bfe3ff;font-weight:900}
+.kill-chip.troop-chip.full{border-color:var(--c-red);box-shadow:0 0 8px #ff6b5a66}
+.kill-chip.troop-chip.full #troop-count{color:var(--c-red)}
+.stat.free,.fi-stats .free{color:var(--c-green)}

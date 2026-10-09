@@ -207,7 +207,7 @@ function runStage(g, index, upLv, unitLv, trace, gacha, basic, opt) {
     if (timed) for (const e of b.enemies) if (e.boss && !e.dead) { boss = e; break; }
     const shelling = timed && b.pending.some(p => p.side === 'enemy' && p.t < 2.6 && Math.abs(p.x - b.allyCastle.x) < 520);
     const guarded = !!boss && (boss.veilT > 0 || boss.reflectT > 0 || (boss.ab.core && boss.exposedT <= 0));
-    if (!shelling && !(boss && boss.veilT > 0)) for (const u of b.roster) if (b.canDeploy(u.id)) b.deploy(u.id);
+    if (!shelling && !(boss && boss.veilT > 0)) for (const u of b.roster) if (b.autoWants(u.id)) b.deploy(u.id);   // 자동 출진과 같은 기준
     const cmdOk = !timed || !boss || (!(boss.reflectT > 0) && (!boss.ab.core || boss.exposedT > 0 || b.allyCastle.hp < b.allyCastle.maxHp * 0.4));
     if (b.canCommand() && b.allies.length > 4 && cmdOk && !shelling) b.useCommand();
     if (!guarded) for(const u of b.roster) if(u.active && b.canHeroActive(u.id)) b.useHeroActive(u.id);

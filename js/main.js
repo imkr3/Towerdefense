@@ -907,7 +907,8 @@ function renderTraining() {
             (r.range ? '<span class="stat">사거리 ' + r.range + '</span>' : '') +
             '<span class="stat">속도 ' + r.speed + '</span>' +
             '<span class="stat cd">쿨타임 ' + r.cooldown + '초</span>' +
-            (r.maxActive ? '<span class="stat">동시 출진 ' + r.maxActive + '명</span>' : '') +
+            (r.maxActive ? '<span class="stat">동시 출진 ' + r.maxActive + '명</span>'
+              : r.noStackCap ? '<span class="stat free">동시 출진 제한 없음</span>' : '') +
             roleNow.map(([k, v]) => '<span class="stat role">' + k + ' ' + v + '</span>').join('') +
           '</div>' + grow + evoHtml +
           '<div class="btn-row">' +
@@ -1387,7 +1388,7 @@ function autoDeploy(dt) {
   if (autoTimer > 0) return;
   autoTimer = 0.35;
   const ready = battle.roster
-    .filter(u => battle.canDeploy(u.id))
+    .filter(u => battle.autoWants(u.id))
     .sort((a, b) => b.cost - a.cost);
   if (ready.length) battle.deploy(ready[0].id);
 }
@@ -1406,6 +1407,10 @@ function updateHud() {
   hudText(hudEl('#kill-count'), battle.kills);
   // 증원이 돌기 시작하면 남은 적을 셀 수 없다
   hudText(hudEl('#foe-left'), (battle.endless || battle.reinforcing()) ? '∞' : battle.foesLeft());
+  // 3.12: 전장 병력 (모든 병종이 함께 쓰는 상한)
+  const troops = battle.fieldCount();
+  hudText(hudEl('#troop-count'), troops + '/' + FIELD_CAP);
+  hudClass(hudEl('.troop-chip'), 'full', troops >= FIELD_CAP);
   const cmdBtn = hudEl('#btn-command');
   const ready = battle.canCommand();
   const cmdOff = !canBattleInput() || !ready;
@@ -1610,6 +1615,7 @@ let bossMusic = false, bossMusicT = 0;
  * 같은 장면을 두 배로 그리느라 뜨거워졌다. 60fps(절전은 30fps)로 묶는다. */
 const FRAME_MIN_MS = { auto: 14, high: 14, low: 30 };
 const IDLE_FRAME_MS = 48;      // 멈춤·결과 화면처럼 거의 움직이지 않을 때 (약 20fps)
+const CROWD_FRAME_MS = 30;     // 3.12: 자동 품질에서 병사가 빽빽할 때 (약 30fps) — 발열이 가장 심한 순간
 const TITLE_FRAME_MS = 30;     // 타이틀 배경 행진 (약 30fps)
 let battleScr = null;
 // 3.10: 매 프레임 문서 전체를 선택자로 훑지 않는다. 살아 있는 목록이라 창이 열리고 닫히면 저절로 바뀐다.
@@ -1622,7 +1628,7 @@ function loop(ts) {
   const modal = inBattle && openModals.length > 0;
   const idle = inBattle && (paused || modal || battle.state !== 'play');
   const minMs = Math.max(FRAME_MIN_MS[Settings.get('quality')] || 14,
-                         titleAnim.on ? TITLE_FRAME_MS : (idle ? IDLE_FRAME_MS : 0));
+                         titleAnim.on ? TITLE_FRAME_MS : (idle ? IDLE_FRAME_MS : (renderer && renderer.crowded ? CROWD_FRAME_MS : 0)));
   if (ts - lastTs < minMs) return;
   let dt = (ts - lastTs) / 1000;
   lastTs = ts;

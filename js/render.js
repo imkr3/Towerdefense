@@ -6,6 +6,7 @@
 const REACH_BY_STYLE = { thrust: 12, heavy: 9, slash: 7, cast: 2, shoot: -4 };
 const PULL_BY_STYLE = { thrust: 5, heavy: 4, slash: 3, cast: 1, shoot: 1 };
 const CROWD_NO_SHADOW = 24;      // 화면에 이보다 많이 서 있으면(자동 품질) 부품 그림자를 끈다 (3.10: 36 → 24)
+const CROWD_ON = 26, CROWD_OFF = 20;   // 3.12: 자동 품질의 '빽빽함' (잉크 테두리 끄기 · 30fps)
 function byRowX(a, b) { return (a.row - b.row) || (a.x - b.x); }
 
 class Renderer {
@@ -82,7 +83,7 @@ class Renderer {
     const q = (typeof Settings !== 'undefined') ? Settings.get('quality') : 'auto';
     if (q === 'high') { this.fxq = 1; return; }
     if (q === 'low') { this.fxq = 0; return; }
-    if (this.idle) return;
+    if (this.idle || this.crowded) return;          // 일부러 늦춘 프레임은 '느려졌다' 로 치지 않는다
     const ms = Math.min(120, dt * 1000);
     this._frameMs += (ms - this._frameMs) * 0.12;
     if (this._qCool > 0) { this._qCool -= dt; return; }
@@ -1771,7 +1772,16 @@ class Renderer {
     let onScreen = 0;
     for (const f of all) { const sx = this.screenX(f.x); if (sx > -140 && sx < this.w + 140) onScreen++; }
     this._onScreen = onScreen;
+    // 3.12: 자동 품질에서 병사가 빽빽하면(발열의 주범) 잉크 테두리를 끄고, 루프에 프레임을 늦추라고 알린다.
+    // 켜고 끄는 문턱을 달리 둬 경계에서 깜빡이지 않게 한다.
+    const auto = typeof Settings === 'undefined' || Settings.get('quality') === 'auto';
+    if (!auto) this.crowded = false;
+    else if (onScreen >= CROWD_ON) this.crowded = true;
+    else if (onScreen <= CROWD_OFF) this.crowded = false;
+    const ink = MODEL.ink;
+    if (this.crowded) MODEL.ink = false;
     for (const f of all) this.drawFighter(f);
+    MODEL.ink = ink;
     if (battle.burrowers) for (const b of battle.burrowers) this.drawBurrow(b);
 
     this.drawShots(battle);
@@ -5828,6 +5838,9 @@ function paintUnitIcon(canvas, stats, px) {
     img = document.createElement('canvas');
     img.width = px * dpr; img.height = px * dpr;
     const c = img.getContext('2d');
+    // 아이콘은 한 번 그려 오래 쓴다. 전투가 남긴 그림자·테두리 끔 상태로 굳지 않게 늘 다 켜고 그린다.
+    const depth = MODEL.depth, ink = MODEL.ink;
+    MODEL.depth = true; MODEL.ink = true;
     c.setTransform(dpr, 0, 0, dpr, 0, 0);
     const k = ICON_WIDE[stats.shape] ? 0.86 : 1;
     const s = (px / 96) * k;
@@ -5835,6 +5848,7 @@ function paintUnitIcon(canvas, stats, px) {
     c.translate(px * (ICON_WIDE[stats.shape] ? 0.5 : 0.44), px * 0.94);
     drawBody(c, stats, s, false, false, 0, false, 0);
     c.restore();
+    MODEL.depth = depth; MODEL.ink = ink;
     if (_iconCache.size > 600) _iconCache.clear();
     _iconCache.set(key, img);
   }
