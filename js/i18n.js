@@ -640,6 +640,8 @@ const I18N_EN = {
   '훈련소에서 진화할 수 있습니다': 'can evolve at the Training Grounds', '형태': 'Form',
   '병력': 'Troops', '전장 병력 · 모든 병종 공통 상한': 'Troops on the field · shared limit for all units',
   '동시 출진 제한 없음': 'No limit on the field', '동시 제한 없음': 'No field limit',
+  '⚡ 필살 모두': '⚡ All actives', '준비된 필살 모두 발동': 'Fire every ready active', '필살 모두': 'All actives',
+  '자동일 때 필살도 자동': 'Auto also fires actives', '지금은 출진할 수 없습니다': 'Cannot deploy right now',
   '🛠 개발자 모드': '🛠 Developer mode', '원하는 만큼 넣고 지급을 누르세요. 지금 슬롯에 바로 저장됩니다.': 'Enter any amount and press Give. It is saved to this slot right away.',
   '💰 골드': '💰 Gold', '🔮 소환석': '🔮 Stones', '지급': 'Give', '+1만': '+10K', '+10만': '+100K', '+100만': '+1M',
   '전장 모두 열기': 'Unlock all stages', '1 이상의 숫자를 넣어 주세요': 'Enter a number of 1 or more',
@@ -767,7 +769,7 @@ const I18N_EN_HTML = {
   '병사는 자동으로 전진해 적과 싸웁니다. <b>적 요새를 무너뜨리면 승리!</b>': 'Soldiers advance and fight on their own. <b>Destroy the enemy fort to win</b>.',
   '아군 성채가 무너지면 패배. 화면을 좌우로 밀어 전장을 살필 수 있습니다.': 'Lose if your castle falls. Swipe to scan the field.',
   '체력이 일정 비율 아래로 떨어지면 병사가 뒤로 밀려납니다. 방패병으로 버티고 뒤에서 화살을 퍼부으세요!': 'Units get knocked back at certain HP thresholds. Hold with shields and rain arrows from behind.',
-  '키보드: <b>1~0</b> 출진 · <b>Q</b> 왕명 · <b>Space</b> 정지 · <b>A</b> 자동 · <b>F</b> 전선 추적.': 'Keys: <b>1~0</b> deploy · <b>Q</b> command · <b>Space</b> pause · <b>A</b> auto · <b>F</b> follow front.',
+  '키보드: <b>1~0</b> 출진 · <b>Q</b> 왕명 · <b>W</b> 필살 모두 · <b>Space</b> 정지 · <b>A</b> 자동 · <b>F</b> 전선 추적.': 'Keys: <b>1~0</b> deploy · <b>Q</b> command · <b>W</b> all actives · <b>Space</b> pause · <b>A</b> auto · <b>F</b> follow front.',
   '전투로 얻은 골드로 병영에서 무기·갑옷·성벽을 강화하세요.': 'Spend battle gold in the Barracks on weapons, armor and walls.',
   '훈련소에서 병종별로 레벨을 올릴 수 있습니다. 레벨당 체력과 공격력이 기본 능력치의 10%씩 오릅니다.': 'Level units in Training. Each level adds 10% of base HP and ATK.',
   '레벨 상한은 기본 5이며 전장 돌파와 사관학교 강화로 오릅니다. 기본 최대 15, 사관학교를 모두 강화하면 최대 20레벨.': 'The level cap starts at 5 and rises with progress and the Academy: 15 normally, 20 with a maxed Academy.',
@@ -779,6 +781,9 @@ const I18N_EN_HTML = {
 
 /* 숫자가 붙은 말. 구절 치환보다 먼저 한다. */
 const I18N_EN_PATTERNS = [
+  [/필살 (\d+)개 동시 발동/g, '$1 actives fired at once'],
+  [/전장 병력 가득 · (\d+)명까지/g, 'Field full · up to $1'],
+  [/ · 동시 출진 (\d+)명까지/g, ' · up to $1 on the field'],
   [/ · 요새 결계 \((\d+)웨이브부터 함락 가능\)/g, ' · fort ward (can fall from wave $1)'],
   [/(\d+)웨이브를 넘기면 적 요새를 무너뜨려 끝낼 수 있습니다!/g, 'Past wave $1 you can topple the enemy fort to finish!'],
   [/(\d+)전장 돌파 후/g, 'Clear stage $1 first'],

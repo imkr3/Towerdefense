@@ -426,7 +426,9 @@ class Battle {
 
   /* 레벨·진화를 반영한 이 판의 병종 스탯 */
   stats(id) {
-    return unitFor(this.save, id);
+    // 3.14: 전투 중엔 레벨·진화가 바뀌지 않는다. 예전엔 HUD·출진 판정이 매 프레임 카드마다 스탯을 새로 만들었다(쓰레기·발열)
+    const c = this._stats || (this._stats = {});
+    return c[id] || (c[id] = unitFor(this.save, id));
   }
 
   /* 3.5: 전장 병력 상한. 오래 끄는 싸움(무한 전장 등)에서 병력이 100명 넘게 쌓여
@@ -505,6 +507,15 @@ class Battle {
       f.stunT<=0 && f.kbTimer<=0 && (this.heroCooldowns[id]||0)<=0 && this.heroGlobalCd<=0 &&
       (u.active.barrier || u.active.haste || this.heroTarget(f)));
   }
+  /* 3.14: 자동 출진이 필살도 쓸 때 — 안개(흡수)·반사 결계·핵이 닫힌 보스 앞에선 아낀다 */
+  autoActiveOk(id) {
+    if (!this.canHeroActive(id)) return false;
+    const u = this.stats(id);
+    if (u.active.barrier || u.active.haste) return true;
+    if (this.veiledBoss() || this.reflectingBoss()) return false;
+    for (const e of this.enemies) if (!e.dead && e.boss && e.ab.core && !(e.exposedT > 0)) return false;
+    return true;
+  }
   useHeroActive(id) {
     if(!this.canHeroActive(id)) return false;
     const f=this.heroCaster(id), a=f.s.active, buff=a.barrier||a.haste, target=buff?f:this.heroTarget(f);
@@ -555,6 +566,9 @@ class Battle {
       }
     }
     this.fx.push({type:'mythic',kind:a.kind,x:target.x,row:target.row,r:a.radius,color:f.s.accent,t:1.15,life:1.15});
+    // 3.14: 시전자 머리 위에 기술 이름, 발밑에 빛 고리 — 여럿을 한꺼번에 써도 누가 무엇을 썼는지 보이게
+    let stack=0; for(const e of this.fx) if(e.type==='herocall'&&e.t>0.5&&Math.abs(e.x-f.x)<160) stack++;   // 붙어 서서 함께 쓰면 이름을 층층이
+    this.fx.push({type:'herocall',name:a.name,x:f.x,row:f.row,color:f.s.accent,scale:f.s.scale||1,stack:stack,t:1.1,life:1.1});
     this.shake=Math.max(this.shake,5);f.swing=.22;
     return true;
   }
@@ -1757,9 +1771,12 @@ class Battle {
       if (target.side === 'ally') this.shake = Math.max(this.shake, 8);
     } else if (dealt >= 1 && this.dmgFxCount < 14) {
       this.dmgFxCount++;
+      // 3.14: 같은 순간 같은 적에게 들어간 숫자는 한 줄씩 위로 (예전엔 '261999' 처럼 겹쳐 읽혔다)
+      let lift = 0;
+      for (const e of this.fx) if (e.type === 'dmg' && e.t > 0.5 && e.tgt === target) lift++;
       this.fx.push({ type: 'dmg', x: target.x + (Math.random() - 0.5) * 26,
-                     row: target.row, v: Math.round(dealt), dy: Math.random() * 10,
-                     crit: !!crit, ally: target.side === 'ally', t: 0.65, life: 0.65 });
+                     row: target.row, v: Math.round(dealt), dy: Math.random() * 10 + Math.min(lift, 4) * 15,
+                     crit: !!crit, ally: target.side === 'ally', tgt: target, t: 0.65, life: 0.65 });
     }
     if (!src) return;
     if (!target.isCastle && target.ab.thorns && !src.s.ranged && !src.dead && dealt > 0) {

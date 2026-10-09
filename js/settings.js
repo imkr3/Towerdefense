@@ -26,6 +26,7 @@ const Settings = {
       shake: true,       // 화면 흔들림
       quality: 'auto',   // 'auto' | 'high' | 'low'
       keepSpeed: true,   // 전투 속도 기억
+      autoActive: true,  // 3.14: 자동 출진일 때 필살도 자동
       speed: 1
     };
   },
@@ -39,7 +40,7 @@ const Settings = {
       for (const k of ['bgm', 'sfx']) {
         if (typeof raw[k] === 'number' && raw[k] >= 0 && raw[k] <= 1) d[k] = raw[k];
       }
-      for (const k of ['vibrate', 'dmgNums', 'shake', 'keepSpeed']) {
+      for (const k of ['vibrate', 'dmgNums', 'shake', 'keepSpeed', 'autoActive']) {
         if (typeof raw[k] === 'boolean') d[k] = raw[k];
       }
       if (['auto', 'high', 'low'].indexOf(raw.quality) >= 0) d.quality = raw.quality;

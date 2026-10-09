@@ -1300,3 +1300,12 @@ body{background:var(--bg0);color:var(--tx)}
 .kill-chip.troop-chip.full{border-color:var(--c-red);box-shadow:0 0 8px #ff6b5a66}
 .kill-chip.troop-chip.full #troop-count{color:var(--c-red)}
 .stat.free,.fi-stats .free{color:var(--c-green)}
+
+/* 3.14 필살 모두: 왕의 명령 위에 떠서, 둘 이상 준비되면 나타난다 */
+#btn-all-act{position:absolute;right:calc(8px + var(--sr,0px));bottom:calc(100% + 4px);z-index:4;padding:6px 12px;border-radius:9px;
+  font:900 13px sans-serif;color:#2a1d08;background:linear-gradient(180deg,#fff0b0,#e8b24a);border:1px solid #fff6d0;
+  box-shadow:0 0 12px #ffd35a88,0 3px 0 #6b4a12}
+#btn-all-act::after{content:'';position:absolute;inset:-3px;border-radius:11px;box-shadow:0 0 20px #ffd35acc;opacity:0;
+  pointer-events:none;animation:glowFade 1.1s ease-in-out infinite}
+#btn-all-act b{display:inline-block;min-width:18px;margin-left:4px;padding:0 4px;border-radius:9px;background:#2a1d08;color:#ffe08a;font-size:11px}
+#btn-all-act:active{transform:translateY(2px);box-shadow:0 0 12px #ffd35a88,0 1px 0 #6b4a12}

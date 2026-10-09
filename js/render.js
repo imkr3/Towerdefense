@@ -1280,6 +1280,24 @@ class Renderer {
         ctx.lineWidth = 3 * cs;
         const rr = (1 - p) * 26 * cs + 6;
         ctx.beginPath(); ctx.arc(x, y - 6 * cs, rr, 0, 7); ctx.stroke();
+      } else if (e.type === 'herocall') {           // 3.14 필살 발동: 시전자 머리 위 기술 이름 + 발밑 빛 고리
+        const k = 1 - p, gy = this.rowY(e.row || 0), sc = cs * (e.scale || 1);
+        this.glOnce(e, 'holy', x, gy - 30 * sc, e.color, 34 * sc);
+        ctx.globalAlpha = p * 0.9;
+        ctx.strokeStyle = e.color; ctx.lineWidth = 3 * cs;
+        const rr = (18 + k * 52) * sc;
+        ctx.beginPath(); ctx.ellipse(x, gy + 2 * cs, rr, rr * 0.26, 0, 0, 7); ctx.stroke();
+        ctx.globalAlpha = Math.min(1, p * 2.2);
+        ctx.font = 'bold ' + Math.round(14 * cs) + 'px sans-serif';
+        ctx.textAlign = 'center';
+        // 키 큰 영웅(배율 1.4)도 가리지 않게 같은 높이에서, 함께 쓴 기술은 한 줄씩 위로
+        const ty = this.rowY(0) - (150 + k * 26) * cs - (e.stack || 0) * 22 * cs;   // 줄(row)과 상관없이 같은 기준선
+        ctx.lineWidth = 3.5 * cs; ctx.strokeStyle = 'rgba(0,0,0,.75)';
+        const label = '⚡ ' + tr(e.name);
+        ctx.strokeText(label, x, ty);
+        ctx.fillStyle = '#fff4c8'; ctx.fillText(label, x, ty);
+        ctx.textAlign = 'left';
+        ctx.globalAlpha = 1;
       } else if (e.type === 'banner') {
         ctx.globalAlpha = Math.min(1, p * 1.4);
         ctx.fillStyle = 'rgba(201,162,39,.22)';

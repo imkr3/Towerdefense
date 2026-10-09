@@ -1341,9 +1341,7 @@ function buildCards() {
 function onCardTap(u) {
   if (!canBattleInput()) return;
   if (u.active && battle.heroCaster(u.id)) {
-    if (battle.useHeroActive(u.id)) {
-      SFX.command();
-      buzz(25);
+    if (castActive(u)) {
       toast(u.name + ' · ' + u.active.name);
       return;
     }
@@ -1353,7 +1351,12 @@ function onCardTap(u) {
   }
   if (battle.cooldowns[u.id] > 0) { toast('재사용 대기 중입니다'); return; }
   if (battle.money < u.cost) { toast('군자금이 부족합니다'); return; }
-  if (!battle.deploy(u.id)) toast('동시 출진 한도에 도달했습니다');
+  if (!battle.deploy(u.id)) {
+    // 3.14: 왜 못 나가는지 정확히 — 전장 공통 상한인지, 그 병종의 동시 출진 한도인지
+    if (battle.fieldFull()) toast('전장 병력 가득 · ' + FIELD_CAP + '명까지');
+    else if (u.maxActive) toast(u.name + ' · 동시 출진 ' + u.maxActive + '명까지');
+    else toast('지금은 출진할 수 없습니다');
+  }
   else buzz(8);
 }
 
@@ -1391,6 +1394,25 @@ function autoDeploy(dt) {
     .filter(u => battle.autoWants(u.id))
     .sort((a, b) => b.cost - a.cost);
   if (ready.length) battle.deploy(ready[0].id);
+  // 3.14: 자동일 때 필살도 (설정). 보스의 안개·반사·닫힌 핵 앞에선 아낀다
+  if (Settings.get('autoActive')) for (const u of battle.roster) if (u.active && battle.autoActiveOk(u.id)) castActive(u);
+}
+
+/* 필살 한 번 쓰기 (카드·필살 모두·자동이 함께 쓴다) */
+function castActive(u) {
+  if (!battle.useHeroActive(u.id)) return false;
+  SFX.command();
+  buzz(25);
+  return true;
+}
+/* 3.14: 준비된 필살을 한꺼번에 */
+function readyActives() { return battle.roster.filter(u => u.active && battle.canHeroActive(u.id)); }
+function castAllActives() {
+  if (!canBattleInput()) return;
+  const list = readyActives();
+  let n = 0;
+  for (const u of list) if (castActive(u)) n++;
+  if (n) toast('필살 ' + n + '개 동시 발동');
 }
 
 /* 3.5: HUD 는 매 프레임 불리지만 값이 바뀐 곳만 DOM 에 쓴다.
@@ -1444,6 +1466,13 @@ function updateHud() {
   hudStyle(hudEl('#wallet-fill'), 'width', pct1(battle.money / battle.walletMax * 100));
   hudClass(hudEl('.wallet'), 'full', battle.money >= battle.walletMax - 1);   // 3.8: 가득 차면 쓰라고 빛난다
   const inputOk = canBattleInput();
+  // 3.14: 필살이 둘 이상 준비되면 '필살 모두' 버튼
+  let actReady = 0;
+  for (const u of battle.roster) if (u.active && battle.canHeroActive(u.id)) actReady++;
+  const allBtn = hudEl('#btn-all-act');
+  const showAll = inputOk && actReady >= 2;
+  if (allBtn.hidden !== !showAll) allBtn.hidden = !showAll;
+  if (showAll) hudText(hudEl('#all-act-n'), actReady);
   cardEls.forEach(el => {
     const id = el.dataset.id;
     const cd = battle.cooldowns[id];
@@ -2046,6 +2075,7 @@ function init() {
   $('#pause-label').addEventListener('click', resumeFromTap);
   $('#pause-label').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); resumeFromTap(); } });
   window.resumeFromTap = resumeFromTap;
+  $('#btn-all-act').addEventListener('click', castAllActives);
   $('#btn-command').addEventListener('click', () => {
     if (!canBattleInput()) return;
     if (!battle.canCommand()) { toast('왕의 명령이 아직 준비되지 않았습니다'); return; }
@@ -2118,6 +2148,7 @@ function init() {
     if (!canBattleInput()) return;
     if (/^[0-9]$/.test(e.key)) { e.preventDefault(); const i = (Number(e.key) + 9) % 10; if (cardEls[i]) cardEls[i].click(); }
     if (e.key.toLowerCase() === 'q') $('#btn-command').click();
+    if (e.key.toLowerCase() === 'w') castAllActives();
     if (e.key.toLowerCase() === 'a') $('#btn-auto').click();
     if (e.key.toLowerCase() === 'f') { renderer.dragUntil = 0; }
   });
@@ -2140,7 +2171,7 @@ function refreshSettingsUI() {
     $('#set-' + k).value = Math.round(d[k] * 100);
     $('#set-' + k + '-v').textContent = Math.round(d[k] * 100);
   }
-  for (const k of ['vibrate', 'dmgNums', 'shake', 'keepSpeed']) {
+  for (const k of ['vibrate', 'dmgNums', 'shake', 'keepSpeed', 'autoActive']) {
     $('#set-' + k).setAttribute('aria-checked', String(!!d[k]));
   }
 }
@@ -2186,7 +2217,7 @@ function initSettings() {
     $('#set-sfx-v').textContent = e.target.value;
   });
   $('#set-sfx').addEventListener('change', () => SFX.ui());
-  for (const k of ['vibrate', 'dmgNums', 'shake', 'keepSpeed']) {
+  for (const k of ['vibrate', 'dmgNums', 'shake', 'keepSpeed', 'autoActive']) {
     $('#set-' + k).addEventListener('click', () => {
       Settings.set(k, !Settings.get(k));
       refreshSettingsUI();

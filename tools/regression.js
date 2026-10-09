@@ -135,6 +135,13 @@ test('Rune protection cleanses nearby allies without stacking shields',()=>{
   assert.equal(b.useHeroActive('odin'),true);assert.equal(a.poisonT+a.burnT,0);assert.equal(a.barrier,320);
   b.heroCooldowns.odin=0;b.heroGlobalCd=0;b.useHeroActive('odin');assert.equal(a.barrier,320);
 });
+test('3.14: stats are cached per battle, a cast names itself, auto holds actives before a closed core',()=>{
+  const b=heroBattle('thor');assert.equal(b.stats('thor'),b.stats('thor'),'same object, no rebuild each frame');
+  b.heroCooldowns.thor=0;b.spawnEnemy('ogre',700);assert.equal(b.autoActiveOk('thor'),true);
+  const boss=b.spawnEnemy('ogre',720);boss.boss=true;boss.ab=Object.assign({},boss.ab,{core:true});boss.exposedT=0;
+  assert.equal(b.autoActiveOk('thor'),false,'core shut: save it');boss.exposedT=3;assert.equal(b.autoActiveOk('thor'),true);
+  assert.equal(b.useHeroActive('thor'),true);const call=b.fx.find(e=>e.type==='herocall');assert.ok(call&&call.name&&call.stack===0);
+});
 test('Own cooldown and stun block skill spam',()=>{
   const b=heroBattle('odin');b.heroCooldowns.odin=0;b.allies[0].stunT=1;assert.equal(b.canHeroActive('odin'),false);
 });
