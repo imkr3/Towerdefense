@@ -7,7 +7,8 @@
 // 전장 병력 상한 (직접 낸 병사 / 소환물 포함). 병종·전장과 상관없이 모두 같다.
 // 3.12: 50 / 80 → 40 / 60. 화면에 병사가 쌓일수록 그리는 값이 늘어 폰이 뜨거워졌다.
 const FIELD_CAP = 40, FIELD_TOTAL_CAP = 60;
-const VANGUARD_LEAD = 60;    // 3.9: 근접 영웅이 전열보다 앞설 수 있는 거리
+const VANGUARD_LEAD = 60;
+const HERO_SHARED_CD = 0;   // 3.13: 액티브 공용 대기 (예전 6초)    // 3.9: 근접 영웅이 전열보다 앞설 수 있는 거리
 
 const WORLD_DEFAULT = 2000;
 let WORLD = WORLD_DEFAULT;
@@ -507,7 +508,8 @@ class Battle {
   useHeroActive(id) {
     if(!this.canHeroActive(id)) return false;
     const f=this.heroCaster(id), a=f.s.active, buff=a.barrier||a.haste, target=buff?f:this.heroTarget(f);
-    this.heroCooldowns[id]=a.cd; this.heroGlobalCd=6;
+    // 3.13: 영웅끼리 묶인 공용 대기(6초)를 없앴다 — 각자 자기 재사용 대기만 본다. 여럿을 한꺼번에 써도 된다
+    this.heroCooldowns[id]=a.cd; this.heroGlobalCd=HERO_SHARED_CD;
     if(buff) {
       for(const m of this.allies) if(!m.dead && Math.abs(m.x-f.x)<=a.radius) {
         if(a.barrier){m.giveBarrier(a.barrier*f.abMul);m.poisonT=0;m.poisonDps=0;m.burnT=0;m.burnDps=0;}

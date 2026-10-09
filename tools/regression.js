@@ -135,9 +135,15 @@ test('Rune protection cleanses nearby allies without stacking shields',()=>{
   assert.equal(b.useHeroActive('odin'),true);assert.equal(a.poisonT+a.burnT,0);assert.equal(a.barrier,320);
   b.heroCooldowns.odin=0;b.heroGlobalCd=0;b.useHeroActive('odin');assert.equal(a.barrier,320);
 });
-test('Shared active cooldown and stun block skill spam',()=>{
-  const b=heroBattle('odin');b.heroCooldowns.odin=0;b.heroGlobalCd=1;assert.equal(b.canHeroActive('odin'),false);
-  b.heroGlobalCd=0;b.allies[0].stunT=1;assert.equal(b.canHeroActive('odin'),false);
+test('Own cooldown and stun block skill spam',()=>{
+  const b=heroBattle('odin');b.heroCooldowns.odin=0;b.allies[0].stunT=1;assert.equal(b.canHeroActive('odin'),false);
+});
+test('Several heroes can fire their actives back to back (no shared cooldown)',()=>{
+  const s=save();s.owned.odin=true;s.owned.anubis=true;s.loadout=['odin','anubis'];
+  const b=new Battle(0,s,{baseHp:10000,money:5000,rate:0,waves:[],reward:0});b.money=5000;b.deploy('odin');b.money=5000;b.deploy('anubis');b.spawnEnemy('ogre',700);
+  b.heroCooldowns.odin=0;b.heroCooldowns.anubis=0;
+  assert.equal(b.useHeroActive('odin'),true);assert.equal(b.canHeroActive('anubis'),true);assert.equal(b.useHeroActive('anubis'),true);
+  assert.equal(b.canHeroActive('odin'),false,'each still waits for its own cooldown');
 });
 test('Forty stages retain the existing endless unlock threshold',()=>{
   const {STAGES,ENDLESS_UNLOCK_STAGE}=vm.runInContext('({STAGES,ENDLESS_UNLOCK_STAGE})',ctx);

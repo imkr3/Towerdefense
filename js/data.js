@@ -1623,7 +1623,7 @@ const EVENT_STAGES = [
             W(46,'ghostsailor',5,.8), W(72,'ghostgunner',3,3), W(100,'ghostsailor',8,.7), W(128,'wraith',6,1),
             W(156,'ghostgunner',3,3), W(186,'ghostsailor',10,.6), W(216,'wraith',8,.9)] },
   { name: '혼돈의 균열', bossId: 'voidlord', bossRole: 'caster', boss: true, look: 'eclipse', music: 'eclipse',
-    bossMusic: 'boss_spiderqueen', mods: ['horde'], baseHp: 48000, money: 580, rate: 64, reward: 0, enemyMul: 10, bossMul: { hp: 5.4, atk: 1.6 },
+    bossMusic: 'boss_spiderqueen', mods: ['horde'], baseHp: 48000, money: 580, rate: 64, reward: 0, enemyMul: 10, bossMul: { hp: 5.1, atk: 1.6 },
     fury: { per30: 0.1, max: 1.3 }, len: 1600,
     event: { id: 'rift', deck: ['zeus','odin','thor','pyro','catapult','frost','knight','shield','spear','mage'],
              unlock: 25, reward: 15000, stones: 20,
