@@ -70,11 +70,13 @@ void main() {
 function glfxDowngrade(src) {
   return src
     .replace('#version 300 es\n', '')
-    .replace(/\bin vec/g, 'attribute vec').replace(/\bin float/g, 'attribute float')
+    // varying 부터 바꾼다. 일반 'in vec' 규칙이 먼저 돌면 조각 셰이더의
+    // 'in vec2 v_uv' 가 attribute 가 되어 컴파일이 깨진다.
     .replace(/\bout vec2 v_uv;/, 'varying vec2 v_uv;')
     .replace(/\bout vec4 v_color;/, 'varying vec4 v_color;')
     .replace(/\bin vec2 v_uv;/, 'varying vec2 v_uv;')
     .replace(/\bin vec4 v_color;/, 'varying vec4 v_color;')
+    .replace(/\bin vec/g, 'attribute vec').replace(/\bin float/g, 'attribute float')
     .replace(/\bout vec4 outColor;\n/, '')
     .replace(/\boutColor\b/g, 'gl_FragColor');
 }
@@ -97,6 +99,10 @@ class GLFx {
     // 합성식이 포화형이어서 1 을 넘겨도 흰 덩어리로 터지지는 않는다.
     this.gain = 1.15;
     this.ok = this._init();
+    // 앱을 내렸다 오거나 GPU 가 재설정되면 컨텍스트를 잃는다. 그동안은 ok=false 로
+    // 두어 렌더러가 Canvas2D 연출로 대신 그리게 하고, 돌아오면 자원을 다시 만든다.
+    canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); this.ok = false; this.count = 0; });
+    canvas.addEventListener('webglcontextrestored', () => { this.ok = this._init(); });
   }
 
   _init() {
