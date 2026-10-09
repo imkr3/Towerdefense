@@ -1684,6 +1684,56 @@ function bindCanvasDrag(cv) {
   window.addEventListener('mouseup', up);
 }
 
+/* ------------------------------ 3.10 개발자 모드 ------------------------------ */
+/* 타이틀의 ⚔ 문장을 2.5초 안에 7번 누르면 열린다. 골드·소환석을 원하는 만큼 넣는다. */
+const DEV_TAPS = 7, DEV_WINDOW_MS = 2500, DEV_MAX = 1e9;   // 한 번에 10억, 보유도 10억까지 (숫자가 넘치지 않게)
+function devAmount(v) { v = Math.floor(Number(v)); return Number.isFinite(v) && v > 0 ? Math.min(DEV_MAX, v) : 0; }
+function refreshDevNow() {
+  $('#dev-now').textContent = '보유 💰 ' + fmtNum(save.coins) + ' · 🔮 ' + fmtNum(save.stones);
+}
+function devGive(kind, amount) {
+  const n = devAmount(amount);
+  if (!n) { toast('1 이상의 숫자를 넣어 주세요'); return; }
+  const key = kind === 'gold' ? 'coins' : 'stones';
+  save[key] = Math.min(DEV_MAX, (save[key] || 0) + n);
+  saveGame(save);
+  refreshTitleBadges();
+  refreshDevNow();
+  SFX.gold();
+  toast((kind === 'gold' ? '💰 골드 +' : '🔮 소환석 +') + fmtNum(n));
+}
+function initDevMode() {
+  let taps = [];
+  $('#title-crest').addEventListener('click', () => {
+    const now = performance.now();
+    taps = taps.filter(t => now - t < DEV_WINDOW_MS);
+    taps.push(now);
+    if (taps.length < DEV_TAPS) return;
+    taps = [];
+    refreshDevNow();
+    $('#modal-dev').classList.add('show');
+    SFX.levelUp();
+  });
+  $$('[data-dev-give]').forEach(b => b.addEventListener('click', () => {
+    const kind = b.dataset.devGive;
+    devGive(kind, $(kind === 'gold' ? '#dev-gold' : '#dev-stones').value);
+  }));
+  $$('[data-dev-add]').forEach(b => b.addEventListener('click', () => {
+    const [kind, n] = b.dataset.devAdd.split(':');
+    devGive(kind, n);
+  }));
+  $('#dev-unlock').addEventListener('click', () => {
+    if (save.cleared >= STAGES.length) { toast('이미 모든 전장이 열려 있습니다'); return; }
+    askConfirm('전장 모두 열기', '모든 전장을 돌파한 것으로 바꾸고 병종도 모두 합류시킵니다. 별·보상은 그대로입니다.', () => {
+      save.cleared = STAGES.length;
+      syncLoadout();
+      saveGame(save);
+      refreshTitleBadges();
+      toast('모든 전장을 열었습니다');
+    });
+  });
+}
+
 /* ------------------------------ 초기화 ------------------------------ */
 /* 전체화면 + 가로 고정 시도 (지원하는 기기에서만 동작) */
 function toggleFullscreen() {
@@ -1887,6 +1937,7 @@ function init() {
   bindCanvasDrag($('#cv'));
 
   initSaveManager();
+  initDevMode();
   $('#btn-start').addEventListener('click', () => {
     if (SaveStore.blocked) { $('#modal-save').classList.add('show'); return; }
     show('scr-map');

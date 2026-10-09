@@ -1282,3 +1282,14 @@ body{background:var(--bg0);color:var(--tx)}
 
 /* 강화 병영: 살 수 있는 강화의 버튼은 금색 그대로, 다음 효과는 초록 */
 .up-card:not(.cant) .up-buy:not([disabled]){box-shadow:0 0 12px #ffd35a55}
+
+/* 3.10 개발자 모드 */
+.dev-card{max-width:420px}
+.dev-sub{font-size:12px;opacity:.8;margin:0 0 10px}
+.dev-row{display:flex;align-items:center;gap:8px;margin-top:8px}
+.dev-k{flex:0 0 84px;font-weight:900;white-space:nowrap}
+.dev-row input{flex:1 1 auto;width:100%;min-width:0;padding:8px;border-radius:7px;border:1px solid var(--ln2);background:#0b1520;color:#f0e6c8;font:700 15px sans-serif;user-select:text}
+.modal-card .dev-row .btn{flex:0 0 auto;width:auto;min-width:76px;padding:8px 14px}
+.dev-quick{display:flex;gap:6px;margin:6px 0 4px 92px}
+.dev-quick .btn{flex:1;padding:5px 0}
+.dev-now{margin:10px 0 0;font-size:13px;color:var(--c-gold,#e8c65a);text-align:center}

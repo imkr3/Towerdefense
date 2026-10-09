@@ -92,6 +92,18 @@ async function runSize(browser, size) {
   await page.waitForTimeout(200);
   if (!await page.evaluate(() => SaveStore.slot === 1 && save.cleared === 13 && save.coins === 60000 && SaveStore.peek(2).coins === 77)) throw Error('Slots are not independent');
 
+  // 3.11: 개발자 모드 — 문장을 7번 눌러야 열리고, 넣은 만큼 지급된 뒤 원래대로 되돌린다
+  for (let i = 0; i < 6; i++) await page.click('#title-crest');
+  if (await page.evaluate(() => $('#modal-dev').classList.contains('show'))) throw Error('Developer mode opened too early');
+  await page.click('#title-crest');
+  if (!await page.evaluate(() => $('#modal-dev').classList.contains('show'))) throw Error('Developer mode did not open');
+  await shot(page, 'dev-' + size.w);
+  await page.fill('#dev-gold', '5000');
+  await page.click('[data-dev-give="gold"]');
+  await page.click('[data-dev-add="stones:10"]');
+  if (!await page.evaluate(() => save.coins === 65000 && save.stones === 40 && SaveStore.peek(1).coins === 65000)) throw Error('Developer grant failed');
+  await page.evaluate(() => { save.coins = 60000; save.stones = 30; saveGame(save); $('#modal-dev').classList.remove('show'); refreshTitleBadges(); });
+
   await page.click('#btn-start');
   await page.waitForTimeout(250);
   await shot(page, 'map-' + size.w);

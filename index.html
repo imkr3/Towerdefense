@@ -21,7 +21,7 @@
   <div class="title-inner">
     <div class="title-art">
       <p class="title-eyebrow">왕국의 마지막 방어선</p>
-      <div class="crest">⚔</div>
+      <div class="crest" id="title-crest">⚔</div>
       <h1>막대 왕국 전쟁</h1>
       <p class="sub">왕국군 <b>vs</b> 오크 군단</p>
       <div class="title-badges">
@@ -320,6 +320,25 @@
 <input id="save-file" type="file" accept=".json,application/json" hidden>
 <textarea id="save-text" aria-label="백업 JSON" placeholder="백업 내용을 복사하거나 여기에 붙여 넣을 수 있습니다."></textarea>
 <div class="confirm-btns"><button class="btn" id="btn-restore-text">붙여 넣은 백업 복원</button><button class="btn primary" data-close>닫기</button></div>
+</div></div>
+<!-- 3.10 개발자 모드: 타이틀의 ⚔ 문장을 빠르게 7번 누르면 열린다 -->
+<div class="modal" id="modal-dev"><div class="modal-card dev-card">
+<h3>🛠 개발자 모드</h3>
+<p class="dev-sub">원하는 만큼 넣고 지급을 누르세요. 지금 슬롯에 바로 저장됩니다.</p>
+<div class="dev-row">
+  <label class="dev-k" for="dev-gold">💰 골드</label>
+  <input type="number" id="dev-gold" min="0" step="1000" value="100000" inputmode="numeric">
+  <button type="button" class="btn primary" data-dev-give="gold">지급</button>
+</div>
+<div class="dev-quick"><button type="button" class="btn small" data-dev-add="gold:10000">+1만</button><button type="button" class="btn small" data-dev-add="gold:100000">+10만</button><button type="button" class="btn small" data-dev-add="gold:1000000">+100만</button></div>
+<div class="dev-row">
+  <label class="dev-k" for="dev-stones">🔮 소환석</label>
+  <input type="number" id="dev-stones" min="0" step="10" value="100" inputmode="numeric">
+  <button type="button" class="btn primary" data-dev-give="stones">지급</button>
+</div>
+<div class="dev-quick"><button type="button" class="btn small" data-dev-add="stones:10">+10</button><button type="button" class="btn small" data-dev-add="stones:100">+100</button><button type="button" class="btn small" data-dev-add="stones:1000">+1000</button></div>
+<p class="dev-now" id="dev-now"></p>
+<div class="confirm-btns"><button type="button" class="btn" id="dev-unlock">전장 모두 열기</button><button type="button" class="btn primary" data-close>닫기</button></div>
 </div></div>
 <div id="rotate-hint">
   <div class="rot-box">
