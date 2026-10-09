@@ -2313,9 +2313,11 @@ function enemyTactic(e) {
   if (e.area) return '광역 공격 · 소수 정예와 치유 조합';
   return '전열 병력 · 방패와 궁수의 합동 공격';
 }
+// 영어로 켜면 i18nData 가 role 을 번역해 두므로 두 말을 다 본다 (예전엔 영어에서 방어 병종이 근접 색이었다)
+const DEFENSE_ROLES = { '방어': 1, '불굴': 1, 'Defense': 1, 'Unyielding': 1 };
 function unitRoleColor(u) {
   if (u.ab && u.ab.noAttack) return '#7bcda6';
-  if (u.role === '방어' || u.role === '불굴') return '#8abcf2';
+  if (DEFENSE_ROLES[u.role]) return '#8abcf2';
   if (u.ranged) return '#c6adfa';
   return '#efbd76';
 }

@@ -190,7 +190,7 @@ function renderFormationPool() {
     .sort((a, b) => (a.gacha ? rank[a.rarity] : 9) - (b.gacha ? rank[b.rarity] : 9) || a.cost - b.cost);
   // 3.8: 목록이 그대로면(넣고 빼기·고르기만 했으면) 다시 만들지 않고 표시만 고친다.
   // 예전엔 누를 때마다 80여 칸을 통째로 다시 만들어 폰에서 눈에 띄게 끊겼다.
-  const sig = fmFilter + '|' + list.map(u => u.id + (save.evo[u.id] ? '+' : '')).join(',');
+  const sig = fmFilter + '|' + list.map(u => u.id + (save.evo[u.id] ? '+' : '') + ':' + (save.levels[u.id] || 1)).join(',');   // 레벨도 — 훈련 뒤 옛 레벨이 남았다
   if (box._sig === sig && box.children.length === list.length) {
     for (const el of box.children) {
       const id = el.dataset.unit, inTeam = save.loadout.includes(id);
@@ -303,7 +303,8 @@ function renderFormationSide() {
   // 3.6: 출진할 전장이 정해져 있으면 그 전장 기준으로, 아니면 다음 전장 기준으로 점검한다
   const evk0 = typeof fmTarget === 'string' && fmTarget.indexOf('event:') === 0 ? +fmTarget.slice(6) : -1;
   const exk0 = typeof fmTarget === 'string' && fmTarget.indexOf('exp:') === 0 ? +fmTarget.slice(4) : -1;
-  const target = typeof fmTarget === 'number' ? STAGES[fmTarget]
+  const hdk0 = typeof fmTarget === 'string' && fmTarget.indexOf('hard:') === 0 ? +fmTarget.slice(5) : -1;
+  const target = typeof fmTarget === 'number' ? STAGES[fmTarget] : hdk0 >= 0 ? STAGES[hdk0]
     : evk0 >= 0 ? EVENT_STAGES[evk0] : exk0 >= 0 ? EXPEDITIONS[exk0] : STAGES[Math.min(save.cleared, STAGES.length - 1)];
   if (target && evk0 < 0) side.appendChild(deckCheckEl(target, renderFormation));
 
@@ -348,13 +349,16 @@ function renderFormationSide() {
     go.id = 'btn-formation-go';
     const evk = typeof fmTarget === 'string' && fmTarget.indexOf('event:') === 0 ? +fmTarget.slice(6) : -1;
     const exk = typeof fmTarget === 'string' && fmTarget.indexOf('exp:') === 0 ? +fmTarget.slice(4) : -1;
+    const hdk = typeof fmTarget === 'string' && fmTarget.indexOf('hard:') === 0 ? +fmTarget.slice(5) : -1;
     const name = fmTarget === 'endless' ? '무한 전장' : evk >= 0 ? '✦ E' + (evk + 1) + '. ' + EVENT_STAGES[evk].name
-      : exk >= 0 ? '💰 G' + (exk + 1) + '. ' + EXPEDITIONS[exk].name : (fmTarget + 1) + '. ' + STAGES[fmTarget].name;
+      : exk >= 0 ? '💰 G' + (exk + 1) + '. ' + EXPEDITIONS[exk].name
+      : hdk >= 0 ? '💀 ' + (hdk + 1) + '. ' + STAGES[hdk].name : (fmTarget + 1) + '. ' + STAGES[fmTarget].name;
     go.innerHTML = '출진 ▶<small>' + name + '</small>';
     go.addEventListener('click', () => {
       if (fmTarget === 'endless') startEndless();
       else if (evk >= 0) startEvent(evk);
       else if (exk >= 0) startExpedition(exk);
+      else if (hdk >= 0) startBattle(hdk, true);
       else startBattle(fmTarget);
     });
     side.appendChild(go);

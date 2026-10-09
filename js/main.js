@@ -331,6 +331,12 @@ let eventSel = 0;          // 이벤트 장에서 고른 전장
 let expSel = 0;            // 금화 원정에서 고른 곳 (3.7)
 let mapChapter = -1;       // -1: 진행 중인 장을 자동으로 고른다
 let mapSel = -1;           // 고른 전장
+/* 저장을 통째로 바꾸면(초기화·복원) 지난 저장의 지도 위치와 '되돌리기' 편성을 버린다.
+ * 남겨 두면 잠긴 장이 열린 채 보이거나, 되돌리기가 옛 저장의 편성을 새 저장에 써 넣었다. */
+function resetUiState() {
+  mapChapter = -1; mapSel = -1; eventSel = 0; expSel = 0;
+  if (typeof deckUndo !== 'undefined') deckUndo = null;
+}
 
 function chapterOf(i) {
   for (let c = 0; c < CHAPTERS.length; c++) {
@@ -964,6 +970,7 @@ function renderTraining() {
             if (save.loadout.length <= 1) { toast('최소 1개 병종은 편성해야 합니다'); return; }
             save.loadout = save.loadout.filter(id => id !== u.id);
           } else {
+            if (!heroRoom(u.id)) return;           // 전설·신화 상한 (넘기면 전투에서 조용히 빠졌다)
             save.loadout.push(u.id);
           }
           saveGame(save);
@@ -1246,6 +1253,8 @@ function drawBanner(sn) {
 
 /* ------------------------------ 전투 ------------------------------ */
 function startEndless() {
+  // 잠긴 '무한' 탭에서도 편성 → 출진으로 들어올 수 있었다 (보상까지 받으며)
+  if ((save.cleared || 0) < ENDLESS_UNLOCK_STAGE) { toast('🔒 무한 전장은 20전장을 모두 돌파하면 열립니다'); return; }
   battle = new Battle(0, save, makeEndlessStage());
   $('#scr-battle').classList.remove('hardcore');
   $('#battle-stage').textContent = '무한 전장 · 최고 ' + (save.endlessBest || 0) + '웨이브';
@@ -1993,6 +2002,7 @@ function init() {
         const fresh = defaultSave();
         if (!SaveStore.write(fresh, true)) { toast(SaveStore.error); return; }
         save = fresh;
+        resetUiState();
         refreshTitleBadges();
         toast('기록을 초기화했습니다');
       });
@@ -2073,7 +2083,7 @@ function init() {
     SFX.ui();
   };
   $('#pause-label').addEventListener('click', resumeFromTap);
-  $('#pause-label').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); resumeFromTap(); } });
+  $('#pause-label').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); resumeFromTap(); } });
   window.resumeFromTap = resumeFromTap;
   $('#btn-all-act').addEventListener('click', castAllActives);
   $('#btn-command').addEventListener('click', () => {
@@ -2096,7 +2106,10 @@ function init() {
   $('#btn-fix').addEventListener('click', () => {
     $('#result').classList.remove('show');
     $('#btn-retry').textContent = '다시 도전';
-    const idx = !battle ? null : battle.expedition ? 'exp:' + battle.expIndex : (!battle.endless && !battle.event ? battle.stageIndex : null);
+    // 하드코어에서 졌으면 하드코어로 다시 나간다 (예전엔 hard 가 빠져 보통 전장이 시작됐다)
+    const idx = !battle ? null : battle.expedition ? 'exp:' + battle.expIndex
+      : battle.event ? (battle.eventIndex >= 0 ? 'event:' + battle.eventIndex : null)
+      : battle.endless ? null : battle.hard ? 'hard:' + battle.stageIndex : battle.stageIndex;
     show('scr-map');                       // 편성에서 '뒤로' 가면 진군도로 (전투 화면이 아니라)
     openFormation(idx);
   });
@@ -2342,6 +2355,7 @@ window.receiveSaveBackup = function(raw) {
       ' · 소환석 ' + candidate.stones + '. 이 데이터로 교체할까요? 현재 저장은 자동 백업에 남깁니다.', () => {
       if (!SaveStore.write(candidate, true)) { toast(SaveStore.error); return; }
       save=candidate;
+      resetUiState();
       $('#modal-save').classList.remove('show'); $('#save-warning').hidden=true;
       show('scr-title'); toast('진행도를 복원했습니다.');
     });
