@@ -1098,4 +1098,43 @@ test('Ranged reach is spread from skirmishers to artillery', () => {
   assert.ok(new Set(r.map(x => Math.round(x / 50))).size >= 7, 'many distinct bands');
 });
 
+/* ---------------- 3.15 점검 ---------------- */
+test('Mist and a closed core also stop poison and burn ticks', () => {
+  const b = evBattle(0); b.update(1 / 30);
+  const v = b.spawnEnemy('vampire', 700); b.bossAct(v, E.vampire.special);
+  v.poisonT = 3; v.poisonDps = 500; const hv = v.hp;
+  b.step([v], [], b.allyCastle, 0.5, false); assert.equal(v.hp, hv, 'veiled: no DOT');
+  const b2 = evBattle(1); b2.update(1 / 30);
+  const t = b2.spawnEnemy('titan', 900); t.burnT = 3; t.burnDps = 1000; const ht = t.hp;
+  b2.step([t], [], b2.allyCastle, 0.5, false);
+  assert.ok(Math.abs((ht - t.hp) - 500 * (1 - t.ab.core.armor)) < 1, 'closed core cuts DOT: ' + (ht - t.hp));
+});
+test('Auto deploy waits out the mist (troops sent in would be charmed)', () => {
+  const s = save(); s.loadout = ['spear']; s.cleared = 30;
+  const b = evBattle(0, s); b.update(1 / 30); b.money = 9999; b.cooldowns.spear = 0;
+  assert.ok(b.autoWants('spear'));
+  const v = b.spawnEnemy('vampire', 700); b.bossAct(v, E.vampire.special);
+  assert.equal(b.autoWants('spear'), false); assert.ok(b.canDeploy('spear'), 'a tap still works');
+});
+test('A weaker haste pulse does not overwrite a stronger one', () => {
+  const b = battle(); const m = b.makeAlly(U.spear, 500), h = b.makeAlly(U.herald, 520);
+  b.allies.push(m, h); b.cmdCd = 0; b.useCommand();
+  const strong = m.hasteMul; assert.ok(strong < U.herald.ab.haste.mul);
+  b.supportTick(h, b.allies, 1, true); assert.equal(m.hasteMul, strong);
+});
+test('Strike warnings shrink on the battle clock, not while paused', () => {
+  const b = evBattle(1); b.update(1 / 30);
+  const t = b.spawnEnemy('titan', 900); b.allies.push(b.makeAlly(U.spear, 700));
+  b.bossAct(t, E.titan.special); const w = b.fx.find(e => e.type === 'warn'), t0 = w.t;
+  b.updateFx(5); assert.equal(w.t, t0, 'paused fx update leaves it alone');
+  b.updatePending(t0 / 2); assert.ok(Math.abs(w.t - t0 / 2) < 1e-9, 'tracks the strike');
+});
+test('WebGL1 shader downgrade keeps varyings as varyings', () => {
+  const src = fs.readFileSync(path.join(__dirname, '../js/gl-fx.js'), 'utf8');
+  const g = new Function(src + ';return {glfxDowngrade, GLFX_FRAG, GLFX_VERT}')();
+  const frag = g.glfxDowngrade(g.GLFX_FRAG), vert = g.glfxDowngrade(g.GLFX_VERT);
+  assert.ok(!/attribute/.test(frag), 'no attributes in the fragment shader');
+  assert.ok(/varying vec2 v_uv/.test(frag) && /varying vec4 v_color/.test(vert) && /attribute vec2 a_pos/.test(vert));
+});
+
 console.log(count + ' regression checks passed');
