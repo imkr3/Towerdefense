@@ -5,7 +5,8 @@
 /* 3.8: 병사마다 매 프레임 새로 만들던 표를 한 번만 */
 const REACH_BY_STYLE = { thrust: 12, heavy: 9, slash: 7, cast: 2, shoot: -4 };
 const PULL_BY_STYLE = { thrust: 5, heavy: 4, slash: 3, cast: 1, shoot: 1 };
-const CROWD_NO_SHADOW = 36;      // 화면에 이보다 많이 서 있으면(자동 품질) 부품 그림자를 끈다
+const CROWD_NO_SHADOW = 24;      // 화면에 이보다 많이 서 있으면(자동 품질) 부품 그림자를 끈다 (3.10: 36 → 24)
+function byRowX(a, b) { return (a.row - b.row) || (a.x - b.x); }
 
 class Renderer {
   constructor(canvas) {
@@ -63,6 +64,7 @@ class Renderer {
   resetFx() {
     this.prevCam = undefined;
     this._glCam = undefined;
+    if (this._drawList) this._drawList.length = 0;   // 지난 전투의 병사를 붙잡아 두지 않게
     if (this.glfx && this.glfx.ok) this.glfx.clear();
   }
 
@@ -1760,8 +1762,12 @@ class Renderer {
     this.drawCastle(battle.allyCastle, false);
     this.drawCastle(battle.enemyCastle, true);
 
-    const all = battle.allies.concat(battle.enemies);
-    all.sort((a, b) => (a.row - b.row) || (a.x - b.x));
+    // 3.10: 그릴 순서 목록은 프레임마다 새로 만들지 않고 다시 쓴다
+    const all = this._drawList || (this._drawList = []);
+    all.length = 0;
+    for (const f of battle.allies) all.push(f);
+    for (const f of battle.enemies) all.push(f);
+    all.sort(byRowX);
     let onScreen = 0;
     for (const f of all) { const sx = this.screenX(f.x); if (sx > -140 && sx < this.w + 140) onScreen++; }
     this._onScreen = onScreen;
@@ -1792,7 +1798,9 @@ class Renderer {
     // 병사 그림자(부품마다 드리우는 짧은 그림자)는 절전·느린 기기에서 끈다. 잉크 테두리는 늘 켠다.
     // 3.8: 자동 품질에서 병사가 화면에 빽빽하면 그림자도 끈다 (그림자 있는 면은 두 번 칠해진다)
     const q = typeof Settings !== 'undefined' ? Settings.get('quality') : 'auto';
-    MODEL.depth = this.fxq >= 0.5 && (q === 'high' || (this._onScreen || 0) <= CROWD_NO_SHADOW);
+    // 3.10: 부품 그림자는 병사 그리는 값의 1/3 남짓을 먹는다. 자동 품질은 프레임이 한 번 밀리면 그림자부터 끈다
+    // (예전엔 파티클을 두 단계 다 줄인 뒤에야 껐다). 높음은 그대로 켜 둔다.
+    MODEL.depth = q === 'high' ? this.fxq >= 0.5 : (this.fxq >= 1 && (this._onScreen || 0) <= CROWD_NO_SHADOW);
     const g = this.glfx;
     if (!g || !g.ok) return;
     g.quality = this.fxq < 0.5 ? 0.45 : (this.fxq < 1 ? 0.7 : 1);

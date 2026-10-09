@@ -88,9 +88,16 @@ function normalizeSave(raw) {
     if (typeof s.auto !== 'boolean') s.auto = false;
     s.stats = Object.assign({ battles: 0, wins: 0, bossKills: 0, trains: 0, playSec: 0 },
                             s.stats || {});
-    if (typeof s.stones !== 'number') s.stones = 3;
-    if (typeof s.pity !== 'number') s.pity = 0;
-    if (typeof s.pulls !== 'number') s.pulls = 0;
+    // 3.10: 숫자 칸이 깨져 있으면(NaN·문자열·음수) 골드·소환석이 'NaN' 으로 번지고 뽑기·상점이 막혔다
+    const count = (v, dflt) => { v = Number(v); return Number.isFinite(v) && v >= 0 ? Math.floor(v) : dflt; };
+    s.coins = count(s.coins, 0);
+    s.stones = count(s.stones, 3);
+    s.pity = count(s.pity, 0);
+    s.mythPity = count(s.mythPity, 0);
+    s.pulls = count(s.pulls, 0);
+    s.totalKills = count(s.totalKills, 0);
+    for (const k in s.upgrades) s.upgrades[k] = count(s.upgrades[k], 0);
+    for (const k of Object.keys(d.stats)) s.stats[k] = count(s.stats[k], 0);
     if (!seasonById(s.season)) s.season = 'olympus';
     if (!Array.isArray(s.presets)) s.presets = [];
     s.presets = s.presets.slice(0, 3).map(p => Array.isArray(p) ? p.filter(id => typeof id === 'string' && UNIT_BY_ID[id]).slice(0, LOADOUT_MAX) : []);
@@ -181,13 +188,13 @@ function missionDone(m) {
 }
 
 /* 전투/소환/훈련 결과를 임무 진행도에 반영한다 */
-function addStat(stat, n) {
+function addStat(stat, n, defer) {
   refreshDaily();
   let changed = false;
   save.daily.list.forEach(m => {
     if (missionById(m.id).stat === stat && !m.claimed) { m.got += n; changed = true; }
   });
-  if (changed) saveGame(save);
+  if (changed && !defer) saveGame(save);      // defer: 부르는 쪽이 한꺼번에 저장한다
   updateQuestBadge();
 }
 
@@ -1476,20 +1483,28 @@ function flushPlayTime() {
   playAccum = 0;
 }
 
-function showResult() {
-  // 누적 기록과 임무 진행
+/* 3.10: 전투가 끝난 그 순간 누적 기록·임무 진행을 남기고 저장한다.
+ * 예전엔 0.7초 뒤 결과창을 띄울 때 남겨서, 그 사이 진군도로 나가거나 앱을 끄면
+ * 보상(골드)은 남았는데 처치 수·승리 임무·업적은 빠졌다. */
+function recordBattle(b) {
+  if (!b || b._recorded) return;
+  b._recorded = true;
   flushPlayTime();
-  save.stats.bossKills += battle.bossKills || 0;
-  addStat('kills', battle.kills);
-  addStat('bosses', battle.bossKills || 0);
-  if (battle.endless) addStat('endless', battle.wavesCleared || 0);
-  if (battle.state === 'win') {
+  save.stats.bossKills += b.bossKills || 0;
+  addStat('kills', b.kills, true);
+  addStat('bosses', b.bossKills || 0, true);
+  if (b.endless) addStat('endless', b.wavesCleared || 0, true);
+  if (b.state === 'win') {
     save.stats.wins++;
-    addStat('wins', 1);
-    if (battle.stars >= 3) addStat('perfect', 1);
+    addStat('wins', 1, true);
+    if (b.stars >= 3) addStat('perfect', 1, true);
   }
   saveGame(save);
   checkAchievements();
+}
+
+function showResult() {
+  recordBattle(battle);
 
   if (battle.endless) { showEndlessResult(); return; }
   if (battle.event) { showEventResult(); return; }
@@ -1597,12 +1612,14 @@ const FRAME_MIN_MS = { auto: 14, high: 14, low: 30 };
 const IDLE_FRAME_MS = 48;      // 멈춤·결과 화면처럼 거의 움직이지 않을 때 (약 20fps)
 const TITLE_FRAME_MS = 30;     // 타이틀 배경 행진 (약 30fps)
 let battleScr = null;
+// 3.10: 매 프레임 문서 전체를 선택자로 훑지 않는다. 살아 있는 목록이라 창이 열리고 닫히면 저절로 바뀐다.
+const openModals = document.getElementsByClassName('modal show');
 function loop(ts) {
   requestAnimationFrame(loop);
   if (!lastTs) lastTs = ts;
   battleScr = battleScr || $('#scr-battle');
   const inBattle = !titleAnim.on && battle && battleScr.classList.contains('active');
-  const modal = inBattle && !!document.querySelector('.modal.show');
+  const modal = inBattle && openModals.length > 0;
   const idle = inBattle && (paused || modal || battle.state !== 'play');
   const minMs = Math.max(FRAME_MIN_MS[Settings.get('quality')] || 14,
                          titleAnim.on ? TITLE_FRAME_MS : (idle ? IDLE_FRAME_MS : 0));
@@ -1634,6 +1651,7 @@ function loop(ts) {
     // 승리는 팡파르, 패배는 애가. 음악을 꺼 두었으면 효과음이 대신한다.
     if (BGM.vol > 0) BGM.sting(battle.state === 'win' || (battle.endless && battle.newRecord) ? 'victory' : 'defeat');
     else BGM.stop(0.6);
+    recordBattle(battle);
     const ended = battle;
     resultTimer = setTimeout(() => {
       if (battle === ended && $('#scr-battle').classList.contains('active')) showResult();
@@ -1660,6 +1678,7 @@ function bindCanvasDrag(cv) {
   cv.addEventListener('touchstart', e => down(e.touches[0].clientX), { passive: true });
   cv.addEventListener('touchmove', e => { move(e.touches[0].clientX); e.preventDefault(); }, { passive: false });
   cv.addEventListener('touchend', up);
+  cv.addEventListener('touchcancel', () => { dragging = false; });   // 3.10: 알림·제스처로 끊긴 터치가 끌기 상태로 남지 않게
   cv.addEventListener('mousedown', e => down(e.clientX));
   window.addEventListener('mousemove', e => move(e.clientX));
   window.addEventListener('mouseup', up);
@@ -1845,8 +1864,7 @@ function init() {
     const glfx = new GLFx($('#cv-fx'));
     if (glfx.ok) {
       renderer.glfx = glfx;
-      renderer.syncGlSize();
-      window.addEventListener('resize', () => renderer.syncGlSize());
+      renderer.syncGlSize();          // 창 크기가 바뀌면 renderer.resize() 가 같이 맞춘다
       // Canvas2D 때문에 4개로 묶어 두었던 제한을 넓힌다. 다만 무한정은 아니다 —
       // 가산 합성이라 너무 많이 겹치면 화면이 빛으로 덮여 전장이 안 보인다.
       if (typeof setCastLimits === 'function') setCastLimits(8, 3);
@@ -2001,10 +2019,8 @@ function init() {
   });
 
   $('#btn-full').addEventListener('click', toggleFullscreen);
-  window.addEventListener('resize', () => {
-    if (renderer) renderer.resize();
-    resizeTitle();
-  });
+  // 전장 캔버스는 Renderer 가 스스로 resize 를 듣는다 (3.10: 예전엔 여기서도 불러 창이 바뀔 때마다 두 번 다시 만들었다)
+  window.addEventListener('resize', resizeTitle);
   window.addEventListener('orientationchange', () => {
     setTimeout(() => { if (renderer) renderer.resize(); resizeTitle(); }, 250);
   });
@@ -2031,6 +2047,9 @@ function init() {
   }));
   document.addEventListener('visibilitychange', () => {
     if (document.hidden && battle && battle.state === 'play') setPaused(true);
+    // 3.10: 전투 중에 뒤로 가면 쌓인 전투 시간을 바로 저장한다 (안드로이드는 백그라운드 앱을 예고 없이 끈다).
+    // 전투 밖에선 바뀐 게 다 저장돼 있다 — 여기서 무조건 쓰면 슬롯을 바꾸며 새로고침할 때 옛 슬롯 내용이 새 슬롯에 덮인다.
+    if (document.hidden && playAccum > 0) { flushPlayTime(); saveGame(save); }
     // 앱이 뒤로 가면 음악도 멈춘다 (배터리)
     if (SFX.ctx) { if (document.hidden) SFX.ctx.suspend(); else SFX.ctx.resume(); }
     lastTs = 0;

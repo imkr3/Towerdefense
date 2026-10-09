@@ -4,10 +4,18 @@
 
 /* 전장 가로 길이(월드 좌표). 전장마다 다르다(STAGES[i].len).
  * 적 요새·적 출진 위치가 길이에 매여 있어서 전투를 만들 때 함께 맞춘다. */
-const FIELD_CAP = 50, FIELD_TOTAL_CAP = 80;
-const VANGUARD_LEAD = 60;    // 3.9: 근접 영웅이 전열보다 앞설 수 있는 거리   // 3.5: 전장 병력 상한 (직접 낸 병사 / 소환물 포함)
+const FIELD_CAP = 50, FIELD_TOTAL_CAP = 80;   // 3.5: 전장 병력 상한 (직접 낸 병사 / 소환물 포함)
+const VANGUARD_LEAD = 60;    // 3.9: 근접 영웅이 전열보다 앞설 수 있는 거리
+
 const WORLD_DEFAULT = 2000;
 let WORLD = WORLD_DEFAULT;
+
+function anyDead(list) { for (let i = 0; i < list.length; i++) if (list[i].dead) return true; return false; }
+function coolCastle(c, dt) {
+  if (c.hitFlash > 0) c.hitFlash = Math.max(0, c.hitFlash - dt);
+  if (c.wardHit > 0) c.wardHit = Math.max(0, c.wardHit - dt);
+}
+
 const ALLY_BASE_X = 96;      // 아군 성채 위치
 let ENEMY_BASE_X = WORLD - 96;
 const ALLY_SPAWN_X = 150;
@@ -588,10 +596,8 @@ class Battle {
     if (this.bossAlert > 0) this.bossAlert -= dt;
     if (this.patternT > 0) this.patternT -= dt;
     this.updatePending(dt);
-    for (const c of [this.allyCastle, this.enemyCastle]) {
-      if (c.hitFlash > 0) c.hitFlash = Math.max(0, c.hitFlash - dt);
-      if (c.wardHit > 0) c.wardHit = Math.max(0, c.wardHit - dt);
-    }
+    coolCastle(this.allyCastle, dt);
+    coolCastle(this.enemyCastle, dt);
     // 시간 주술사가 하나라도 살아 있으면 카드가 느리게 찬다
     this.chronoOn = false;
     for (const e of this.enemies) if (!e.dead && e.ab.chrono) { this.chronoOn = true; break; }
@@ -649,8 +655,9 @@ class Battle {
       this.reap(this.enemies, this.allies, this.allyCastle, true);
       this.reap(this.allies, this.enemies, this.enemyCastle, false);
     }
-    this.enemies = this.enemies.filter(e => !e.dead);
-    this.allies = this.allies.filter(a => !a.dead);
+    // 3.10: 아무도 안 쓰러진 틱(대부분)에는 배열을 새로 만들지 않는다 (틱마다 쓰레기 두 개)
+    if (anyDead(this.enemies)) this.enemies = this.enemies.filter(e => !e.dead);
+    if (anyDead(this.allies)) this.allies = this.allies.filter(a => !a.dead);
 
     // 무한 전장도 적 요새를 무너뜨리면 끝난다 (요새 함락 · 웨이브 보상에 덤)
     if (this.enemyCastle.dead) { this.shake = 16; this.finish('win'); }

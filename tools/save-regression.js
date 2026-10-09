@@ -74,4 +74,17 @@ test('The chosen slot is picked up on the next launch',()=>{
   for(const f of ['data','save-store'])vm.runInContext(fs.readFileSync('js/'+f+'.js','utf8'),ctx);
   assert.equal(vm.runInContext('SaveStore.slot',ctx),3);assert.equal(vm.runInContext('SaveStore.key',ctx),'stick-kingdom-save-v1-s3');
 });
+test('Damaged number fields are repaired when a save is loaded',()=>{
+  // main.js 는 DOM 을 쓰므로 저장 정리 함수만 떼어 data.js 위에서 돌린다
+  const src=fs.readFileSync('js/main.js','utf8');
+  const grab=name=>{const i=src.indexOf('function '+name+'(');const j=src.indexOf('\n}\n',i);return src.slice(i,j+3);};
+  const ctx=vm.createContext({console});vm.runInContext(fs.readFileSync('js/data.js','utf8'),ctx);
+  vm.runInContext(grab('defaultSave')+grab('normalizeSave'),ctx);
+  ctx.raw={...old,coins:'abc',stones:-4,pity:NaN,mythPity:'7',totalKills:null,upgrades:{wallet:'x',income:3.7},stats:{wins:'oops',battles:5}};
+  const s=vm.runInContext('normalizeSave(raw)',ctx);
+  assert.equal(s.coins,0);assert.equal(s.stones,3);assert.equal(s.pity,0);assert.equal(s.mythPity,7);assert.equal(s.totalKills,0);
+  assert.equal(s.upgrades.wallet,0);assert.equal(s.upgrades.income,3);assert.equal(s.stats.wins,0);assert.equal(s.stats.battles,5);
+  ctx.raw=old;const ok=vm.runInContext('normalizeSave(raw)',ctx);
+  assert.equal(ok.coins,60000);assert.equal(ok.stones,30);assert.equal(ok.levels.spear,20);
+});
 console.log(n+' save protection checks passed');
