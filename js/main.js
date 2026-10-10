@@ -3,7 +3,7 @@
  * ======================================================================= */
 
 
-const APP_VERSION = '3.18.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
+const APP_VERSION = '3.19.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
 
 function defaultSave() {
   const lv = {};
@@ -1289,8 +1289,8 @@ function beginBattle() {
   $('#btn-pause').textContent = '❚❚';
   bossMusic = false;
   bossMusicT = 0;
-  BGM.play(stageMusic(battle.stage));
-  BGM.prefetch([battle.stage.bossId ? bossTrack(battle.stage, battle.stage.bossId) : null, 'victory', 'defeat']);
+  BGM.play(stageMusic(battle.stage, battle.hard));
+  BGM.prefetch([battle.stage.bossId ? bossTrack(battle.stage, battle.stage.bossId, battle.hard) : null, 'victory', 'defeat']);
   setPaused(false);
   autoTimer = 0;
   refreshAutoBtn();
@@ -1736,7 +1736,7 @@ function loop(ts) {
   if (!bossMusic && battle.state === 'play' && (bossMusicT -= dt) <= 0) {
     bossMusicT = 0.5;
     const boss = battle.aliveBoss();
-    if (boss) { bossMusic = true; BGM.play(bossTrack(battle.stage, boss.kind)); }
+    if (boss) { bossMusic = true; BGM.play(bossTrack(battle.stage, boss.kind, battle.hard)); }
   }
   if (before === 'play' && battle.state !== 'play') {
     // 승리는 팡파르, 패배는 애가. 음악을 꺼 두었으면 효과음이 대신한다.

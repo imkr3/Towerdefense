@@ -2268,6 +2268,8 @@ function unitFor(save, id) {
  *   다 키운 공략 편성으로도 30곳 중 절반 남짓만 넘는다 (`npm run balance` 가 검사).
  * ======================================================================= */
 const HARDCORE = { enemyMul: 3.5, fortMul: 2, castleMul: 0.6, cmdMul: 1.5, reward: 3, stones: 5, stunResist: 0.3,
+                   // 3.19: 하드코어 보스는 따로 더 억세다. 다 키운 영웅 편성이 필살을 몰아 쓰면 10~20초 만에 녹았다
+                   boss: { hp: 2.6, atk: 1.1 },
                    fury: { per30: 0.15, max: 1.5 },   // 3.1: 오래 끌수록 새로 나오는 적이 억세진다 (최대 2.5배)
                    // 앞쪽 전장도 모질게: 적 배율과 요새 체력에 바닥을 깐다 (2막 초입 수준)
                    mulFloor: 5, fortFloor: 40000,

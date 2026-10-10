@@ -640,6 +640,50 @@ const BGM_TRACKS = {
       'C5*4 F5*4 A5*8', 'B5*4 G5*4 D5*8', 'E5*2 A5*2 C6*4 B5*4 A5*4', 'A5*16',
       'A5*4 C6*4 F5*8', 'G5*4 B5*4 D6*8', 'E6*4 D6*2 C6*2 B5*4 G#5*4', 'A5*12 .*4'] }] },
 
+  /* ---------------- 3.19 하드코어 곡 (grand): 신나고 웅장하고 빠르게 — 막마다 하나 + 하드코어 보스 ---------------- */
+  hc_iron: { bpm: 160, style: 'grand', sections: [               // 1막 하드코어: 나단조에서 라장조로 치고 나간다
+    { chords: 'Bm Bm G A', lead: 'horn', int: 1, mel: [
+      'B4*4 D5*4 F#5*8', 'E5*4 D5*4 B4*8', 'G4*4 B4*4 D5*8', 'C#5*8 E5*8'] },
+    { chords: 'Bm G D A Bm G A A', lead: 'trumpet', dbl: 'horn', int: 2, mel: [
+      'B4*2 D5*2 F#5*2 B5*2 A5*4 F#5*4', 'G5*2 F#5*2 E5*2 D5*2 B4*8', 'A4*2 D5*2 F#5*2 A5*2 D6*8', 'C#6*4 A5*4 E5*8',
+      'B5*2 A5*2 F#5*2 D5*2 B4*4 D5*4', 'E5*2 G5*2 B5*4 A5*4 G5*4', 'F#5*4 A5*4 C#6*8', 'E6*8 C#6*8'] },
+    { chords: 'G A F#m Bm G A D D', lead: 'strings', dbl: 'trumpet', int: 3,
+      cm: ['B4*16', 'C#5*16', 'C#5*16', 'B4*16', 'B4*16', 'C#5*16', 'A4*16', 'A4*16'], cmi: 'choir', mel: [
+      'D5*4 G5*4 B5*8', 'C#5*4 E5*4 A5*8', 'C#5*2 F#5*2 A5*4 G5*4 F#5*4', 'D5*4 F#5*4 B5*8',
+      'B5*4 A5*2 G5*2 D5*8', 'E5*4 A5*4 C#6*8', 'D6*6 C#6*2 A5*8', 'D6*12 .*4'] }] },
+
+  hc_storm: { bpm: 164, style: 'grand', sections: [              // 2막 하드코어: 몰아치는 마단조, 사장조로 들어 올린다
+    { chords: 'Em Em C D', lead: 'lowbrass', int: 1, mel: [
+      'E3*2 E3*2 .*2 E3*2 G3*4 B3*4', 'E3*2 E3*2 .*2 E3*2 D3*8', 'C3*4 E3*4 G3*8', 'D3*8 F#3*8'] },
+    { chords: 'Em C G D Em C D B', lead: 'horn', dbl: 'strings', int: 2, mel: [
+      'E5*2 G5*2 B5*2 G5*2 E5*4 B4*4', 'C5*2 E5*2 G5*2 C6*2 B5*8', 'D5*2 G5*2 B5*4 A5*4 G5*4', 'F#5*4 A5*4 D6*8',
+      'E6*2 D6*2 B5*2 G5*2 E5*8', 'C6*4 B5*2 A5*2 G5*8', 'A5*2 B5*2 C6*2 D6*2 F#6*8', 'D#6*8 B5*8'] },
+    { chords: 'C D G Em C D B B', lead: 'trumpet', dbl: 'horn', int: 3, mel: [
+      'E5*4 G5*4 C6*8', 'F#5*4 A5*4 D6*8', 'G5*2 B5*2 D6*4 B5*4 G5*4', 'E5*4 G5*4 B5*8',
+      'C6*4 E6*4 G5*8', 'A5*4 D6*4 F#5*8', 'B5*4 D#6*4 F#5*8', 'B5*12 .*4'] }] },
+
+  hc_abyss: { bpm: 158, style: 'grand', sections: [              // 3막 하드코어: 다단조에서 내림마장조의 영웅 주제로
+    { chords: 'Cm Ab Eb Bb', lead: 'choir', int: 1, mel: [
+      'C5*8 Eb5*4 G5*4', 'Ab5*8 G5*4 Eb5*4', 'G5*8 Bb5*4 G5*4', 'F5*8 D5*8'] },
+    { chords: 'Cm Ab Eb Bb Cm Ab Bb G', lead: 'trumpet', dbl: 'strings', int: 2, mel: [
+      'C5*2 Eb5*2 G5*2 C6*2 Bb5*4 G5*4', 'Ab5*2 G5*2 F5*2 Eb5*2 C5*8', 'Eb5*2 G5*2 Bb5*4 Ab5*4 G5*4', 'F5*4 Bb5*4 D6*8',
+      'C6*2 Bb5*2 G5*2 Eb5*2 C5*8', 'Ab4*2 C5*2 Eb5*4 Ab5*8', 'Bb5*4 D6*4 F5*8', 'B5*4 D6*4 G5*8'] },
+    { chords: 'Ab Bb Eb Cm Ab Bb G G', lead: 'strings', dbl: 'trumpet', int: 3,
+      cm: ['C5*16', 'D5*16', 'Eb5*16', 'C5*16', 'C5*16', 'D5*16', 'B4*16', 'B4*16'], cmi: 'choir', mel: [
+      'Eb5*4 Ab5*4 C6*8', 'F5*4 Bb5*4 D6*8', 'G5*2 Bb5*2 Eb6*4 D6*4 Bb5*4', 'C6*4 G5*4 Eb5*8',
+      'Ab5*4 C6*4 Eb6*8', 'D6*4 Bb5*4 F5*8', 'B5*4 D6*4 G5*8', 'G5*12 .*4'] }] },
+
+  hc_boss: { bpm: 168, style: 'grand', sections: [               // 하드코어 보스: 가장 빠른 가단조 (화성 단음계)
+    { chords: 'Am Am F E', lead: 'lowbrass', dbl: 'horn', int: 2, mel: [
+      'A2*2 A2*2 C3*2 E3*2 A3*4 G#3*4', 'A2*2 A2*2 E3*2 A2*2 C3*8', 'F2*2 F2*2 A2*2 C3*2 F3*8', 'E3*8 G#2*8'] },
+    { chords: 'Am Dm E Am F Dm E E', lead: 'trumpet', dbl: 'strings', int: 2, mel: [
+      'A4*2 C5*2 E5*2 A5*2 G#5*4 E5*4', 'F5*2 A5*2 D6*4 C6*4 A5*4', 'G#5*2 B5*2 E6*4 D6*4 B5*4', 'C6*4 B5*2 A5*2 E5*8',
+      'F5*2 A5*2 C6*2 F6*2 E6*4 C6*4', 'D6*4 F6*4 A5*8', 'B5*2 D6*2 E6*2 G#5*2 B5*8', 'G#5*8 E5*8'] },
+    { chords: 'F G Am Am Dm E Am Am', lead: 'strings', dbl: 'trumpet', int: 3,
+      cm: ['A4*16', 'B4*16', 'C5*16', 'C5*16', 'A4*16', 'B4*16', 'A4*16', 'A4*16'], cmi: 'choir', mel: [
+      'C5*4 F5*4 A5*8', 'D5*4 G5*4 B5*8', 'E5*2 A5*2 C6*4 B5*4 A5*4', 'A5*16',
+      'F5*4 A5*4 D6*8', 'E5*4 G#5*4 B5*8', 'C6*4 B5*2 A5*2 G#5*4 B5*4', 'A5*12 .*4'] }] },
+
   boss_kraken: { bpm: 146, style: 'grand', sections: [
     { chords: 'Em Em C B', lead: 'lowbrass', int: 1, mel: [
       'E4*4 G4*2 D4*2 G4*8',
@@ -745,6 +789,7 @@ const BGM_GAIN = {
   strait: 0.85, abyssgate: 0.95, leviathan: 0.85,
   // 3.18 새 보스곡 (렌더해 재서 맞춤)
   boss_vampire: 0.83, boss_titan: 0.9, boss_ghostfleet: 0.8, boss_voidlord: 0.79, boss_demonking: 0.84, boss_goldwyrm: 0.82,
+  hc_iron: 0.82, hc_storm: 0.82, hc_abyss: 0.86, hc_boss: 0.8,
   boss_kraken: 0.83, boss_tidequeen: 0.82, finale2: 0.91
 };
 
@@ -752,18 +797,22 @@ const BGM_GAIN = {
  * 겹침 악기가 없는 본격 구간엔 한 옥타브 아래 겹침을 붙여 악기 수를 늘린다 (현 ⇄ 호른). */
 ['boss_lich', 'boss_troll', 'boss_frostgiant', 'boss_drake', 'boss_spiderqueen', 'boss_warlord',
  'boss_kraken', 'boss_tidequeen', 'finale', 'finale2',
- 'boss_vampire', 'boss_titan', 'boss_ghostfleet', 'boss_voidlord', 'boss_demonking', 'boss_goldwyrm'].forEach(k => {
+ 'boss_vampire', 'boss_titan', 'boss_ghostfleet', 'boss_voidlord', 'boss_demonking', 'boss_goldwyrm',
+ 'hc_iron', 'hc_storm', 'hc_abyss', 'hc_boss'].forEach(k => {
   for (const sec of BGM_TRACKS[k].sections) {
     if (!sec.dbl && (sec.int || 1) >= 2) sec.dbl = sec.lead === 'strings' ? 'horn' : 'strings';
   }
 });
 
 /* 전장 컨셉 → 전장 곡. 보스가 나오면 보스곡, 마지막 전장은 finale. */
-function stageMusic(stage) {
+function stageMusic(stage, hard) {
   if (stage && stage.endless) return 'endless';
+  // 3.19 하드코어: 막마다 신나고 빠른 전용 곡 (1막 · 2막 · 3막)
+  if (hard) { const i = STAGES.indexOf(stage); return i >= ACT3_FROM ? 'hc_abyss' : i >= 15 ? 'hc_storm' : 'hc_iron'; }
   return (stage && stage.music && BGM_TRACKS[stage.music]) ? stage.music : 'meadow';
 }
-function bossTrack(stage, bossId) {
+function bossTrack(stage, bossId, hard) {
+  if (hard) return 'hc_boss';                                     // 3.19 하드코어 보스는 모두 이 곡
   if (stage && stage.finale) return 'finale';
   if (stage && stage.bossMusic && BGM_TRACKS[stage.bossMusic]) return stage.bossMusic;   // 이벤트 보스
   return BGM_TRACKS['boss_' + bossId] ? 'boss_' + bossId : 'boss_warlord';

@@ -815,6 +815,7 @@ class Battle {
       // 이벤트 보스는 따로 더 억세다 (전장마다 bossMul)
       const bm = this.stage.bossMul;
       if (bm) { f.maxHp = Math.round(f.maxHp * (bm.hp || 1)); f.hp = f.maxHp; f.atk = Math.round(f.atk * (bm.atk || 1)); }
+      if (this.hard) { f.maxHp = Math.round(f.maxHp * HARDCORE.boss.hp); f.hp = f.maxHp; f.atk = Math.round(f.atk * HARDCORE.boss.atk); }
       f.baseAtk = f.atk;
     }
     if (f.boss) { this.bossAlert = 2.6; this.bossName = spec.name; this.shake = 10; sfx('bossIn'); f.bornT = this.time; }
