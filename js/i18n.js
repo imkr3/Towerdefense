@@ -948,6 +948,11 @@ const I18N_EN_PATTERNS = [
   [/슬롯 (\d)의 (진행도와 소환한 병종이 모두 삭제됩니다)/g, 'Slot $1: $2'],
   [/(\d+)시간 (\d+)분/g, '$1h $2m'],
   [/(\d+)분 (\d+)초/g, '$1m $2s'],          // 4.2: 기록 탭의 총 전투 시간
+  [/(\d+)분(?![가-힣\d])/g, '$1m'],           // 4.4: 슬롯 목록의 한 시간 미만 플레이 시간
+  [/병력 가득 · 전장엔 (\d+)명까지/g, 'Army full · up to $1 on the field'],
+  [/전장 (\d+)개 돌파 · 골드 (\d+) · 소환석 (\d+)\./g, 'Stages cleared $1 · Gold $2 · Summon stones $3.'],
+  [/ 레벨 (\d+) 완료/g, ' upgraded to Lv $1'],
+  [/추천 편성 (\d+)개 병종을 넣었습니다/g, 'Added the recommended squad ($1 units)'],
   [/(\d+)\s*전장 돌파/g, 'Stage $1 cleared'],
   [/전장 (\d+)/g, 'Stage $1'],
   [/(\d+)\s*전장/g, 'Stage $1'],

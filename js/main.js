@@ -351,6 +351,15 @@ let expSel = 0;            // 금화 원정에서 고른 곳 (3.7)
 let mapChapter = -1;       // -1: 진행 중인 장을 자동으로 고른다
 let mapSel = -1;           // 고른 전장
 
+/* 저장을 통째로 바꾼 뒤(초기화·복원) 이전 저장에 맞춰 골라 둔 화면 상태를 비운다.
+ * 그대로 두면 잠긴 장이 열리거나 '되돌리기' 가 이전 저장의 편성을 새 저장에 써 넣는다. */
+function resetUiState() {
+  mapChapter = -1; mapSel = -1; eventSel = 0; expSel = 0;
+  fmFocus = null; deckUndo = null;
+  const pool = document.getElementById('formation-pool');
+  if (pool) pool._sig = '';
+}
+
 function chapterOf(i) {
   for (let c = 0; c < CHAPTERS.length; c++) {
     const ch = CHAPTERS[c];
@@ -1019,6 +1028,7 @@ function renderTraining() {
             if (save.loadout.length <= 1) { toast('최소 1개 병종은 편성해야 합니다'); return; }
             save.loadout = save.loadout.filter(id => id !== u.id);
           } else {
+            if (!heroRoom(u.id)) return;
             save.loadout.push(u.id);
           }
           saveGame(save);
@@ -1507,7 +1517,8 @@ function updateHud() {
     : (battle.wardUp() ? '보스의 결계 · 보스를 쓰러뜨려야 요새가 무너집니다'
       : (battle.reinforcing() ? '적 증원 중' : ''));
   const full = battle.state === 'play' && battle.fieldFull();
-  const msg = full ? (preview ? preview + ' · ' : '') + '병력 가득 · 전장엔 ' + FIELD_CAP + '명까지' : preview;
+  // 조각마다 따로 옮긴다 — 이어 붙인 문장은 영어 사전의 통문장과 맞지 않는다
+  const msg = full ? (preview ? t(preview) + ' · ' : '') + t('병력 가득 · 전장엔 ' + FIELD_CAP + '명까지') : preview;
   const wp = hudEl('#wave-preview');
   hudText(wp, msg);
   if (wp.hidden !== !msg) wp.hidden = !msg;
@@ -2109,6 +2120,7 @@ function init() {
         const fresh = defaultSave();
         if (!SaveStore.write(fresh, true)) { toast(SaveStore.error); return; }
         save = fresh;
+        resetUiState();
         refreshTitleBadges();
         toast('기록을 초기화했습니다');
       });
@@ -2212,7 +2224,9 @@ function init() {
   $('#btn-fix').addEventListener('click', () => {
     $('#result').classList.remove('show');
     $('#btn-retry').textContent = '다시 도전';
-    const idx = !battle ? null : battle.expedition ? 'exp:' + battle.expIndex : (!battle.endless && !battle.event ? battle.stageIndex : null);
+    const idx = !battle ? null : battle.expedition ? 'exp:' + battle.expIndex
+      : battle.event ? 'event:' + battle.eventIndex
+      : battle.endless ? 'endless' : battle.hard ? 'hard:' + battle.stageIndex : battle.stageIndex;
     show('scr-map');                       // 편성에서 '뒤로' 가면 진군도로 (전투 화면이 아니라)
     openFormation(idx);
   });
@@ -2457,7 +2471,8 @@ window.receiveSaveBackup = function(raw) {
     askConfirm('진행도 복원', '전장 ' + candidate.cleared + '개 돌파 · 골드 ' + candidate.coins +
       ' · 소환석 ' + candidate.stones + '. 이 데이터로 교체할까요? 현재 저장은 자동 백업에 남깁니다.', () => {
       if (!SaveStore.write(candidate, true)) { toast(SaveStore.error); return; }
-      save=candidate;
+      save = candidate;
+      resetUiState();
       $('#modal-save').classList.remove('show'); $('#save-warning').hidden=true;
       show('scr-title'); toast('진행도를 복원했습니다.' + (candidate._refund ? ' (3진 금화 ' + candidate._refund.gold + ' 환불)' : ''));
     });
