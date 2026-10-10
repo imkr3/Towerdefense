@@ -507,6 +507,13 @@ class GLFx {
         break;
       }
 
+      /* 4.0 엑스칼리버: 빛기둥 위에 성광이 터진다 (아서) */
+      case 'excalibur': {
+        this.emit('pillar', x, y, opt);
+        this.emit('holy', x, y, opt);
+        break;
+      }
+
       /* 치명타 불꽃: 작고 빠르게 튄다 */
       case 'spark': {
         for (let i = 0, n = N(14); i < n; i++) {

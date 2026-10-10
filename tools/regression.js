@@ -165,7 +165,7 @@ test('Several heroes can fire their actives back to back (no shared cooldown)',(
 });
 test('Forty stages retain the existing endless unlock threshold',()=>{
   const {STAGES,ENDLESS_UNLOCK_STAGE}=vm.runInContext('({STAGES,ENDLESS_UNLOCK_STAGE})',ctx);
-  assert.equal(STAGES.length,40);assert.equal(ENDLESS_UNLOCK_STAGE,20);
+  assert.equal(STAGES.length,50);assert.equal(ENDLESS_UNLOCK_STAGE,20);
   assert.ok(STAGES.slice(20).every(s=>s.waves.length>=8&&s.reward>900));
 });
 test('First expansion victory advances from 20 to 21 and retains old stars',()=>{
@@ -366,9 +366,9 @@ test('A squad brings at most five legends and mythics', () => {
   assert.equal(ids.filter(id => U[id].rarity === 'UR' || U[id].rarity === 'SSR').length, 5);
   assert.ok(ids.includes('spear')); assert.ok(!ids.includes('zeus'));
 });
-test('Six seasons, every summon points at a real unit', () => {
+test('Seven seasons, every summon points at a real unit', () => {
   const { SEASONS } = vm.runInContext('({SEASONS})', ctx);
-  assert.equal(SEASONS.length, 6);
+  assert.equal(SEASONS.length, 7);
   for (const sn of SEASONS) for (const id of sn.units) { assert.ok(U[id], id); assert.equal(U[id].season, sn.id); }
   for (const u of UNITS) if (u.ab && u.ab.summon) assert.ok(U[u.ab.summon.id], u.id);
 });
@@ -870,10 +870,10 @@ test('Overtime: a stalled battle without fury slowly toughens new foes so it alw
 
 /* ---------------- 3.3 3막 '심연의 바다' ---------------- */
 test('Act 3: ten sea stages with their own bosses, looks and music', () => {
-  const A = STAGES.slice(30);
+  const A = STAGES.slice(30, 40);
   assert.equal(A.length, 10);
   assert.equal(A.filter(s => s.bossId).map(s => s.bossId).join(','), 'kraken,tidequeen,leviathan');
-  const seen = new Set(STAGES.map(s => s.music)); assert.equal(seen.size, 40, 'every stage has its own track');
+  const seen = new Set(STAGES.map(s => s.music)); assert.equal(seen.size, 50, 'every stage has its own track');
   const mus = fs.readFileSync(path.join(__dirname, '../js/music.js'), 'utf8');
   for (const st of A) assert.ok(mus.indexOf('  ' + st.music + ': {') >= 0, st.music);
   for (const t of ['boss_kraken', 'boss_tidequeen', 'finale2']) assert.ok(mus.indexOf('  ' + t + ': {') >= 0, t);
@@ -1107,6 +1107,47 @@ test('Ranged reach is spread from skirmishers to artillery', () => {
   const r = UNITS.filter(u => u.ranged && u.cost > 0 && !u.gacha).map(u => u.range);
   assert.ok(Math.min(...r) <= 180 && Math.max(...r) >= 600, 'short and very long');
   assert.ok(new Set(r.map(x => Math.round(x / 50))).size >= 7, 'many distinct bands');
+});
+
+/* ---------------- 4.0 4막 '천공 요새' · 원탁의 기사 ---------------- */
+test('Act 4 Sky Citadel: ten stages, sky looks, three bosses, ramps up', () => {
+  const A = STAGES.slice(40, 50);
+  assert.equal(A.length, 10);
+  assert.equal(A.filter(s => s.bossId).map(s => s.bossId).join(','), 'stormgriffin,cloudking,skylord');
+  const render = fs.readFileSync(path.join(__dirname, '../js/render.js'), 'utf8');
+  for (const look of new Set(A.map(s => s.look))) assert.ok(render.indexOf('  ' + look + ':') >= 0, look);
+  assert.equal(STAGES[49].bossMusic, 'finale3');
+  assert.ok(A[9].baseHp > A[0].baseHp && A[8].enemyMul >= A[0].enemyMul, 'the act ramps up');
+  const music = fs.readFileSync(path.join(__dirname, '../js/music.js'), 'utf8');
+  for (const st of A) assert.ok(music.indexOf('  ' + st.music + ':') >= 0, 'music ' + st.music);
+  for (const k of ['boss_stormgriffin', 'boss_cloudking', 'boss_skylord', 'finale3', 'hc_sky']) assert.ok(music.indexOf('  ' + k + ':') >= 0, k);
+});
+test('Round Table season units and sky foes are drawn and translated', () => {
+  const render = fs.readFileSync(path.join(__dirname, '../js/render.js'), 'utf8');
+  const i18n = fs.readFileSync(path.join(__dirname, '../js/i18n.js'), 'utf8');
+  const { SEASONS } = vm.runInContext('({SEASONS})', ctx);
+  const sn = SEASONS.find(x => x.id === 'camelot');
+  assert.equal(sn.units.slice().sort().join(','), 'arthur,camelotguard,galahad,lancelot,merlin,morgana,tristan');
+  for (const id of sn.units) {
+    assert.ok(render.indexOf("case '" + U[id].shape + "'") >= 0, id);
+    assert.ok(i18n.indexOf("'" + U[id].name + "'") >= 0, id + ' name');
+  }
+  for (const id of ['harpy', 'griffinrider', 'stormwisp', 'cloudgiant', 'skycannon', 'windcaller', 'stormgriffin', 'cloudking', 'skylord']) {
+    assert.ok(render.indexOf("case '" + E[id].shape + "'") >= 0, id); assert.ok(i18n.indexOf("'" + E[id].name + "'") >= 0, id);
+    if (E[id].abText) assert.ok(i18n.indexOf("'" + E[id].abText + "'") >= 0, id + ' abText');
+  }
+  assert.ok(render.indexOf("e.kind==='excalibur'") >= 0, 'canvas excalibur');
+  assert.ok(fs.readFileSync(path.join(__dirname, '../js/gl-fx.js'), 'utf8').indexOf("case 'excalibur':") >= 0, 'gl excalibur');
+});
+test('Arthur rallies others but not himself; cloud giants stop regenerating when burned', () => {
+  const b = battle(); const ar = b.makeAlly(G.resolveUnit(U.arthur, 5), 500), sp = b.makeAlly(U.spear, 520);
+  b.allies.push(ar, sp);
+  assert.ok(U.arthur.ab.rally && U.arthur.active.kind === 'excalibur');
+  const g = b.spawnEnemy('cloudgiant', 900); g.hp = g.maxHp * 0.5; const h0 = g.hp;
+  g.burnT = 3; g.burnDps = 1; for (let i = 0; i < 30; i++) b.update(1 / 30);
+  assert.ok(g.hp <= h0, 'burning blocks regen');
+  g.burnT = 0; const h1 = g.hp; for (let i = 0; i < 30; i++) b.update(1 / 30);
+  assert.ok(g.hp > h1, 'regen resumes');
 });
 
 console.log(count + ' regression checks passed');

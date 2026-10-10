@@ -301,7 +301,8 @@ const LEGEND_PROOF = [
 /* 시즌마다 대표 셋. 어느 시즌을 뽑든 비슷한 값어치여야 한다. */
 const SEASON_TRIOS = [
   ['hades', 'zeus', 'artemis'], ['odin', 'thor', 'valkyrie'], ['ra', 'anubis', 'pharaoh'],
-  ['gumiho', 'saja', 'dokkaebi'], ['inventor', 'steammech', 'mechanic'], ['wukong', 'nezha', 'bajie']
+  ['gumiho', 'saja', 'dokkaebi'], ['inventor', 'steammech', 'mechanic'], ['wukong', 'nezha', 'bajie'],
+  ['arthur', 'merlin', 'lancelot']
 ];
 /* 3.0: 병종 하나만 들고 전장을 쓸어 담으면 안 된다 (메두사 하나로 30전장 중 18곳을 넘던 것).
  * 한 병종 편성으로 넘을 수 있는 전장 수 상한. 겹쳐 세우기 좋은 병종들로 잰다. */
@@ -322,6 +323,8 @@ const EVENT_EXPECT = { up: 10, lv: 15, naiveMax: 4, timedMin: 6 };   // 이벤�
 const EVENT_TIMED_MIN = { 2: 5 };
 const ACT3_ENTRY = { up: 10, lv: 14, min: 2, max: 5 };   // 3.3
 const SMART_ACT3 = { up: 10, lv: 18 };
+const ACT4_ENTRY = { up: 10, lv: 18, min: 2, max: 5 };   // 4.0: 3막을 끝낸 수준으론 앞 몇 곳만
+const SMART_ACT4 = { up: 10, lv: 24 };                   // 4.0: 레벨 상한 20(+사관학교 5)까지 키우면 전부
 const HARD_MODE = { up: 10, lv: 15, min: 12, max: 20, bossMax: 6 };   // 하드코어 기대치 (3.1)
 const LEGEND_PROOF_MAX = 1;      // 전설만 편성이 이길 수 있는 최대 판 수
 const COUNTER_MIN = 4;           // 공략 편성이 이겨야 하는 최소 판 수
@@ -475,6 +478,20 @@ function check() {
     printTable(rows, SMART_ACT3.up, SMART_ACT3.lv);
     if (rows.some(r => !r.win || r.seconds > 400)) { console.error('  ✗ 3막: 끝까지 키운 공략 편성은 400초 안에 전부 넘어야 한다 (seed ' + seed + ')'); failed++; }
     else console.log('  ✓ 3막 공략 편성 완주 (seed ' + seed + ')');
+  }
+  // 4.0 4막 '천공 요새': 3막을 끝낸 수준(10/Lv18)으론 앞 몇 곳만, 새 상한까지 키우면(10/Lv24) 전부
+  {
+    const g = loadEngine(12345); let w = 0;
+    for (let i = 40; i < 50; i++) w += runStage(g, i, ACT4_ENTRY.up, ACT4_ENTRY.lv, false, 'smart').win ? 1 : 0;
+    const tag = `4막 진입 (강화 ${ACT4_ENTRY.up}/Lv${ACT4_ENTRY.lv} 공략 편성) ${w}/10 (기대 ${ACT4_ENTRY.min}~${ACT4_ENTRY.max})`;
+    if (w < ACT4_ENTRY.min || w > ACT4_ENTRY.max) { console.error('  ✗ ' + tag); failed++; } else console.log('  ✓ ' + tag);
+  }
+  for (const seed of [12345, 98765]) {
+    const g = loadEngine(seed), rows = [];
+    for (let i = 40; i < 50; i++) rows.push(runStage(g, i, SMART_ACT4.up, SMART_ACT4.lv, false, 'smart'));
+    printTable(rows, SMART_ACT4.up, SMART_ACT4.lv);
+    if (rows.some(r => !r.win || r.seconds > 400)) { console.error('  ✗ 4막: 끝까지 키운 공략 편성은 400초 안에 전부 넘어야 한다 (seed ' + seed + ')'); failed++; }
+    else console.log('  ✓ 4막 공략 편성 완주 (seed ' + seed + ')');
   }
   // 3.1: 하드코어는 확실히 어렵다. 다 키운 공략 편성으로도 절반 남짓, 보스 전장은 대부분 막힌다.
   {

@@ -696,6 +696,45 @@ SEASON_UNITS.push(
     cost:145,kb:2,
     ab:{armor:.15},abText:'값싼 창방패 · 갑주 15%',
     desc:'천궁을 지키는 하늘의 병사입니다. 싸고 단단하게 전열을 채웁니다.'}),
+  // 4.0 시즌: 원탁의 기사 (아서왕 전설)
+  mk({id:'arthur',name:'아서왕',short:'아서',role:'왕의 검',shape:'arthur',castFx:'holy',season:'camelot',rarity:'UR',gacha:true,unlockStage:999,
+    body:'#d8d2c4',accent:'#ffd76a',tunic:'#2a4a8e',hp:1800,atk:140,range:96,speed:40,interval:1.5,
+    cost:560,kb:2,area:true,areaRadius:85,scale:1.2,
+    ab:{rally:{atk:.25,radius:240},interval:3},
+    abText:'왕의 기치 · 주변 아군 공격력 +25% (자신 제외) · 엑스칼리버',
+    desc:'호수의 여인에게서 받은 성검을 든 브리튼의 왕입니다. 앞에 서서 기사들을 이끌 때 가장 강합니다. 혼자서는 그저 좋은 검사일 뿐입니다.',
+    active:{name:'엑스칼리버',kind:'excalibur',cd:50,radius:230,mul:2.8,stun:.8,desc:'가장 가까운 적 주변에 성검의 빛 · 0.8초 기절.'}}),
+  mk({id:'merlin',name:'멀린',role:'대마법사',shape:'merlin',castFx:'runes',season:'camelot',rarity:'SSR',gacha:true,unlockStage:999,
+    body:'#c8c0d8',accent:'#8fd0ff',tunic:'#3a2e6b',hp:1150,atk:118,range:300,speed:26,interval:2.2,
+    cost:470,kb:2,ranged:true,area:true,areaRadius:90,scale:1.1,
+    ab:{slow:1.5},abText:'비전 구슬 · 범위 · 1.5초 둔화 · 시간의 매듭',
+    desc:'왕을 길러 낸 늙은 마법사입니다. 시간을 묶어 적 무리를 한자리에 붙잡습니다.',
+    active:{name:'시간의 매듭',kind:'thunderseal',cd:46,radius:240,mul:1.8,stun:1.6,slow:4,desc:'가장 가까운 적 주변 피해 · 1.6초 정지 · 4초 둔화.'}}),
+  mk({id:'lancelot',name:'랜슬롯',role:'호수의 기사',shape:'lancelot',castFx:'slash',season:'camelot',rarity:'SR',gacha:true,unlockStage:999,
+    body:'#c8ced6',accent:'#7ac8ff',tunic:'#3a5a8a',hp:1500,atk:115,range:80,speed:48,interval:1.1,
+    cost:360,kb:2,
+    ab:{crit:{chance:.25,mul:2.2},lifesteal:.15},abText:'무쌍의 검 · 치명타 25% ×2.2 · 흡혈 15%',
+    desc:'원탁에서 가장 뛰어난 검사입니다. 날카롭게 베고 벤 만큼 버팁니다.'}),
+  mk({id:'morgana',name:'모르가나',role:'요정의 마녀',shape:'morgana',season:'camelot',rarity:'SR',gacha:true,unlockStage:999,
+    body:'#d8c0d0',accent:'#b07aff',tunic:'#3a1a4a',hp:720,atk:80,range:250,speed:30,interval:1.9,
+    cost:320,kb:2,ranged:true,
+    ab:{poison:{dps:42,dur:5},slow:1},abText:'요정의 저주 · 중독 42/초 5초 · 1초 둔화',
+    desc:'아발론의 마녀입니다. 저주를 건 적은 천천히 시들어 갑니다.'}),
+  mk({id:'tristan',name:'트리스탄',role:'하프 궁수',shape:'tristan',season:'camelot',rarity:'R',gacha:true,unlockStage:999,
+    body:'#d0c8b8',accent:'#e8c65a',tunic:'#2a6a4a',hp:600,atk:70,range:330,speed:34,interval:1.4,
+    cost:250,kb:2,ranged:true,
+    ab:{crit:{chance:.2,mul:2.4}},abText:'하프 활 · 긴 사거리 · 치명타 20% ×2.4',
+    desc:'하프 줄을 시위 삼아 쏘는 음유 기사입니다. 멀리서 정확히 꿰뚫습니다.'}),
+  mk({id:'galahad',name:'갈라하드',role:'성배의 기사',shape:'galahad',season:'camelot',rarity:'R',gacha:true,unlockStage:999,
+    body:'#e8e4d8',accent:'#ffe28a',tunic:'#c8c0a8',hp:1700,atk:55,range:70,speed:30,interval:1.4,
+    cost:240,kb:1,
+    ab:{armor:.3,kbImmune:true,regen:20},abText:'성배의 가호 · 갑주 30% · 넉백 면역 · 초당 20 회복',
+    desc:'성배를 찾아낸 순결한 기사입니다. 흔들리지 않고 앞줄을 지킵니다.'}),
+  mk({id:'camelotguard',name:'카멜롯 경비병',short:'경비병',role:'성문 수비',shape:'camelotguard',season:'camelot',rarity:'N',gacha:true,unlockStage:999,
+    body:'#2b3038',accent:'#7aa8e8',tunic:'#2a4a8e',hp:660,atk:42,range:74,speed:42,interval:1.1,
+    cost:150,kb:2,
+    ab:{armor:.12,dodge:.1},abText:'값싼 창방패 · 갑주 12% · 회피 10%',
+    desc:'카멜롯 성문을 지키는 병사입니다. 싸고 날래게 전열을 채웁니다.'}),
   // 소환 전용
   mk({id:'monkeyclone',name:'분신',role:'소환수',shape:'monkeyclone',unlockStage:999,
     body:'#c98a4a',accent:'#ffd24a',tunic:'#b8322e',hp:520,atk:60,range:80,speed:60,interval:1.0,
@@ -752,7 +791,9 @@ const UNIT_COOLDOWN = {
   javelin: 5.4, celestial: 6.1, monkey: 12.8, falconer: 13.0, wujing: 13.8, bellringer: 14.2,
   alchemist: 18.0, monk: 18.8, lancer: 20.0, sanzang: 26.0, bajie: 27.5, nezha: 44.0, wukong: 68.0,
   // 3.3
-  harpoon: 7.5, corsair: 13.7, beacon: 15.0, stormcaller: 33.0, anchorguard: 40.0
+  harpoon: 7.5, corsair: 13.7, beacon: 15.0, stormcaller: 33.0, anchorguard: 40.0,
+  // 4.0 원탁의 기사 (같은 등급 병종들과 나란히)
+  camelotguard: 6.4, galahad: 12.6, tristan: 13.1, morgana: 21.0, lancelot: 27.0, merlin: 50.0, arthur: 66.0
 };
 const TIER_FROM = 200, TIER_TO = 560, TIER_MAX = 0.35;
 function costTierMul(cost) {
@@ -800,7 +841,11 @@ const SEASONS = [
   { id: 'journey', name: '서유기', sub: '천궁 대란',
     color: '#e8a23a', accent: '#8e3a1f',
     desc: '구름을 타고 온 제천대성과 서역으로 가던 일행이 왕국의 전장에 내려섭니다.',
-    units: ['wukong', 'nezha', 'sanzang', 'bajie', 'wujing', 'monkey', 'celestial'] }
+    units: ['wukong', 'nezha', 'sanzang', 'bajie', 'wujing', 'monkey', 'celestial'] },
+  { id: 'camelot', name: '원탁의 기사', sub: '아서왕 전설',
+    color: '#8fb4ec', accent: '#2a4a8e',
+    desc: '성검이 다시 뽑히고, 원탁에 둘러앉았던 기사들이 왕국의 부름에 응합니다.',
+    units: ['arthur', 'merlin', 'lancelot', 'morgana', 'tristan', 'galahad', 'camelotguard'] }
 ];
 
 /* 소환 풀: 시즌 병종 + (다른 시즌은 낮은 확률로) */
@@ -1063,6 +1108,59 @@ const ENEMIES = {
                             special: { t: 'meteor', name: '해일 낙하', first: 3, cd: 7, n: 5, dmg: 480, radius: 125, warn: 1.1, kind: 'tidal' } },
                 { at: 0.12, t: 'enrage', name: '바다의 종말', atk: 1.25, rate: 0.8, speed: 1.2 }
               ] },
+  /* ---------- 4.0 4막 '천공 요새': 하늘의 군단 ---------- */
+  harpy:    { name: '하피', body: '#8a6a9a', accent: '#ffd07a', tunic: '#5a3a6a', shape: 'harpy',
+              hp: 860, atk: 100, range: 58, speed: 108, interval: .8, kb: 3, gold: 24, scale: .85,
+              ab: { dodge: .25 }, abText: '날쌘 깃털 · 25% 회피 · 아주 빠름' },
+  griffinrider:{ name: '그리폰 기수', body: '#c8a060', accent: '#e8e0c8', tunic: '#6a4a2a', shape: 'griffinrider',
+              hp: 1700, atk: 150, range: 72, speed: 60, interval: 1.2, kb: 2, gold: 70, scale: 1.2,
+              ab: { leap: { trigger: 170, range: 320 } }, abText: '급강하 · 전열을 넘어 뒤의 원거리 병사를 덮칩니다' },
+  stormwisp:{ name: '폭풍 정령', body: '#6a8ab8', accent: '#e8f6ff', tunic: '#3a4a7a', shape: 'stormwisp',
+              hp: 1200, atk: 105, range: 240, speed: 30, interval: 2.0, kb: 2, gold: 55, ranged: true,
+              ab: { chain: { n: 3, fall: 0.6, range: 120 } }, abText: '연쇄 번개 · 맞은 아군 옆으로 세 번 튕깁니다' },
+  cloudgiant:{ name: '구름 거인', body: '#c8d4e4', accent: '#7a9ac8', tunic: '#8aa0c0', shape: 'cloudgiant',
+              hp: 3800, atk: 220, range: 92, speed: 22, interval: 1.9, kb: 1, gold: 150, scale: 1.45, noReinf: true,
+              ab: { kbImmune: true, armor: 0.25, regen: 60 }, abText: '구름 몸 · 갑주 25% · 초당 60 회복 · 화상이면 재생 멈춤' },
+  skycannon:{ name: '천공 포대', body: '#5a6a7a', accent: '#ffd35a', tunic: '#3a4a5a', shape: 'skycannon',
+              hp: 1100, atk: 70, range: 300, speed: 14, interval: 3.6, kb: 1, gold: 95, ranged: true, noReinf: true,
+              area: true, areaRadius: 80, scale: 1.15, abText: '포격 · 아주 멀리서 무리를 노립니다' },
+  windcaller:{ name: '바람 주술사', body: '#5a8a8a', accent: '#c8fff0', tunic: '#2a4a4a', shape: 'windcaller',
+              hp: 1700, atk: 60, range: 230, speed: 26, interval: 2.0, kb: 1, gold: 70, ranged: true, noReinf: true,
+              special: { t: 'roar', name: '돌풍', first: 5, cd: 9, r: 260, push: 100 },
+              abText: '돌풍 · 9초마다 앞의 아군을 밀어냅니다 · 넉백 면역은 버팁니다' },
+  stormgriffin:{ name: '폭풍 그리폰 왕', body: '#c89850', accent: '#9fe8ff', tunic: '#7a5a2a', shape: 'stormgriffin',
+              hp: 30000, atk: 860, range: 140, speed: 30, interval: 2.0, kb: 1, gold: 1400,
+              area: true, areaRadius: 150, scale: 2.0, boss: true,
+              ab: { kbImmune: true, dodge: 0.12, summon: { id: 'harpy', n: 2 }, interval: 9 },
+              special: { t: 'meteor', name: '번개 강하', cd: 10, n: 3, dmg: 400, radius: 120, warn: 1.1, stun: 0.5, kind: 'storm' },
+              phases: [
+                { at: 0.65, t: 'roar',   name: '폭풍의 울음', r: 400, stun: 1.0, push: 100 },
+                { at: 0.35, t: 'summon', name: '하피 떼', id: 'harpy', n: 5 },
+                { at: 0.15, t: 'enrage', name: '폭풍왕의 분노', atk: 1.25, rate: 0.8, speed: 1.2 }
+              ] },
+  cloudking:{ name: '구름 왕', body: '#d8e0ec', accent: '#ffd76a', tunic: '#8aa0c8', shape: 'cloudking',
+              hp: 32000, atk: 900, range: 120, speed: 16, interval: 2.4, kb: 1, gold: 1600,
+              area: true, areaRadius: 170, scale: 2.2, boss: true,
+              ab: { kbImmune: true, armor: 0.2, regen: 80 },
+              special: { t: 'roar', name: '천둥 박수', cd: 11, r: 420, push: 120, stun: 0.6 },
+              phases: [
+                { at: 0.70, t: 'frost',  name: '구름 장막', r: 420, dur: 4 },
+                { at: 0.45, t: 'summon', name: '구름 거인', id: 'cloudgiant', n: 2 },
+                { at: 0.30, t: 'heal',   name: '비의 축복', ratio: 0.15 },
+                { at: 0.12, t: 'enrage', name: '왕의 노여움', atk: 1.25, rate: 0.8 }
+              ] },
+  skylord:  { name: '천공의 군주', body: '#3a3a5a', accent: '#ffe28a', tunic: '#1a1a3a', shape: 'skylord',
+              hp: 38000, atk: 1000, range: 240, speed: 14, interval: 2.6, kb: 1, gold: 2400,
+              area: true, areaRadius: 180, scale: 2.4, boss: true,
+              ab: { kbImmune: true, armor: 0.2 },
+              special: { t: 'meteor', name: '천벌', cd: 10, n: 4, dmg: 460, radius: 125, warn: 1.2, kind: 'lightning' },
+              phases: [
+                { at: 0.75, t: 'summon', name: '그리폰 기사단', id: 'griffinrider', n: 3 },
+                { at: 0.50, t: 'roar',   name: '하늘의 진노', r: 440, stun: 1.2, push: 110 },
+                { at: 0.30, t: 'swap',   name: '폭풍 개방',
+                            special: { t: 'meteor', name: '천벌', first: 3, cd: 7, n: 5, dmg: 500, radius: 125, warn: 1.1, kind: 'lightning' } },
+                { at: 0.12, t: 'enrage', name: '천공의 종말', atk: 1.25, rate: 0.8, speed: 1.2 }
+              ] },
   /* ---------- 3.2 이벤트 전장의 적: 타이밍을 맞춰야 잡히는 보스 다섯과 그 졸개들 ---------- */
   bloodthrall:{ name: '혈귀 노예', body: '#6b2a34', accent: '#e04b6a', tunic: '#3a1a22', shape: 'bloodthrall',
               hp: 2400, atk: 180, range: 64, speed: 46, interval: 1.1, kb: 1, gold: 60, noReinf: true,
@@ -1280,6 +1378,31 @@ STAGES.push(
 );
 
 
+/* 4막 '천공 요새' (4.0): 심연 너머 하늘에 떠오른 성채. 41~50전장. */
+const ACT4_FROM = 40;
+STAGES.push(
+  {name:'구름 다리',hint:'날쌘 하피 떼는 범위 공격과 둔화로',baseHp:80000,money:540,rate:68,reward:3400,enemyMul:22.0,waves:[
+    W(12,'harpy',6,.7),W(20,'griffinrider',2,2.5),W(40,'stormwisp',2,2.5),W(62,'harpy',8,.6),W(86,'griffinrider',3,2.2),W(112,'stormwisp',3,2),W(138,'harpy',10,.5),W(166,'cloudgiant',1),W(194,'griffinrider',4,1.8)]},
+  {name:'바람의 절벽',hint:'바람 주술사의 돌풍 · 넉백 면역 방패로 버티세요',baseHp:82000,money:545,rate:69,reward:3500,enemyMul:20.0,waves:[
+    W(12,'griffinrider',3,2),W(22,'windcaller',1),W(40,'harpy',8,.6),W(64,'stormwisp',3,2),W(88,'windcaller',2,4),W(114,'cloudgiant',2,4),W(142,'harpy',10,.5),W(170,'griffinrider',4,1.8),W(200,'stormwisp',4,1.8)]},
+  {name:'★ 폭풍 그리폰의 둥지',hint:'번개 강하 예고를 피하고, 그리폰 왕이 부르는 하피를 범위로',baseHp:85000,money:550,rate:70,reward:4000,boss:true,enemyMul:21.0,waves:[
+    W(12,'harpy',6,.7),W(24,'stormgriffin',1),W(48,'stormwisp',3,2),W(74,'griffinrider',4,1.8),W(102,'harpy',10,.5),W(130,'cloudgiant',2,4),W(160,'windcaller',2,4),W(190,'griffinrider',5,1.6)]},
+  {name:'천공 포대',hint:'멀리서 쏘는 포대 · 저격수와 매 조련사로 먼저 걷어 내세요',baseHp:86000,money:555,rate:70,reward:3700,enemyMul:28.0,waves:[
+    W(12,'griffinrider',3,2),W(18,'skycannon',2,3),W(40,'harpy',8,.6),W(64,'skycannon',2,3),W(90,'cloudgiant',2,4),W(116,'stormwisp',4,1.8),W(142,'skycannon',2,3),W(170,'harpy',12,.5),W(200,'griffinrider',5,1.6)]},
+  {name:'번개 첨탑',hint:'연쇄 번개는 흩어 세워 받으세요 · 정령을 원거리로 먼저',baseHp:88000,money:560,rate:71,reward:3800,enemyMul:26.0,waves:[
+    W(12,'stormwisp',3,2),W(22,'harpy',8,.6),W(44,'windcaller',2,4),W(68,'stormwisp',5,1.6),W(94,'griffinrider',4,1.8),W(120,'cloudgiant',2,4),W(148,'stormwisp',5,1.6),W(176,'harpy',12,.5),W(206,'skycannon',3,2.5)]},
+  {name:'★ 구름 왕의 옥좌',hint:'구름 거인의 재생은 화상으로 끊고, 구름 장막엔 왕명으로 버티세요',baseHp:90000,money:570,rate:72,reward:4400,boss:true,enemyMul:18.0,waves:[
+    W(12,'cloudgiant',2,4),W(26,'cloudking',1),W(50,'stormwisp',3,2),W(76,'harpy',10,.5),W(104,'windcaller',2,4),W(132,'griffinrider',5,1.6),W(162,'cloudgiant',3,3),W(194,'harpy',12,.5)]},
+  {name:'하늘 정원',hint:'단단한 거인 무리 · 파쇄와 화상으로',baseHp:92000,money:575,rate:72,reward:4000,enemyMul:32.0,waves:[
+    W(12,'cloudgiant',3,3),W(26,'harpy',10,.5),W(50,'skycannon',3,2.5),W(76,'cloudgiant',4,2.5),W(104,'stormwisp',5,1.6),W(132,'golem',2,5),W(160,'griffinrider',6,1.4),W(190,'cloudgiant',4,2.5),W(220,'harpy',14,.4)]},
+  {name:'폭풍의 눈',hint:'질주하는 하피와 그리폰 · 값싼 벽과 범위로',baseHp:94000,money:580,rate:73,reward:4100,enemyMul:20.0,waves:[
+    W(12,'harpy',14,.4),W(22,'griffinrider',5,1.6),W(46,'windcaller',2,4),W(70,'harpy',16,.4),W(96,'stormwisp',5,1.6),W(122,'hellhound',8,.7),W(150,'griffinrider',6,1.4),W(180,'harpy',18,.35),W(210,'cloudgiant',3,3)]},
+  {name:'천공 성채의 문',hint:'모든 천공 군단 · 둔화와 파쇄를 함께',baseHp:96000,money:590,rate:74,reward:4300,enemyMul:22.0,waves:[
+    W(12,'griffinrider',5,1.6),W(24,'skycannon',3,2.5),W(48,'cloudgiant',3,3),W(74,'windcaller',2,4),W(100,'stormwisp',5,1.6),W(126,'harpy',16,.4),W(154,'griffinrider',6,1.4),W(184,'skycannon',4,2),W(214,'cloudgiant',4,2.5),W(244,'harpy',18,.35)]},
+  {name:'★ 천공의 군주',hint:'천벌 예고를 피하고, 폭풍이 열리면 왕명과 필살을 몰아 쓰세요',baseHp:100000,money:600,rate:76,reward:5500,boss:true,enemyMul:21.0,waves:[
+    W(12,'griffinrider',5,1.6),W(26,'skylord',1),W(52,'stormwisp',5,1.6),W(80,'cloudgiant',3,3),W(110,'skycannon',3,2.5),W(140,'windcaller',3,4),W(170,'harpy',18,.35),W(200,'griffinrider',6,1.4),W(230,'cloudgiant',4,2.5),W(262,'stormwisp',6,1.4)]}
+);
+
 /* 전장 특성. 어려운 전장에는 특성이 붙어서, 스탯 높은 병종을 몰아 넣는 것만으로는
  * 풀리지 않고 그 특성을 받아칠 병종을 챙겨야 한다. */
 const STAGE_MODS = {
@@ -1368,7 +1491,9 @@ const HARD_STAGE_MODS = {
   21: ['horde'], 23: ['horde', 'giantslayer', 'curse'], 24: ['blitz'], 26: ['blitz', 'giantslayer', 'curse'],
   27: ['horde', 'ironclad'], 29: ['giantslayer', 'curse', 'horde', 'blitz'],
   // 3막
-  33: ['curse'], 36: ['ironclad', 'horde'], 37: ['blitz', 'giantslayer'], 38: ['ironclad', 'curse', 'blitz']
+  33: ['curse'], 36: ['ironclad', 'horde'], 37: ['blitz', 'giantslayer'], 38: ['ironclad', 'curse', 'blitz'],
+  // 4막 (4.0)
+  43: ['giantslayer'], 46: ['ironclad', 'horde'], 47: ['blitz', 'horde'], 48: ['ironclad', 'giantslayer', 'blitz']
 };
 STAGES.forEach((st, i) => { if (!st.mods && HARD_STAGE_MODS[i]) st.mods = HARD_STAGE_MODS[i]; });
 // 전설·신화 풀이 넓어질수록 몰아 넣기만 한 편성도 두루 갖춘다. 조합이 필요한
@@ -1457,19 +1582,24 @@ STAGES.forEach((st, i) => {
 });
 
 const BOSS_ROLE = { kraken: 'bruiser', tidequeen: 'caster', leviathan: 'bruiser',
+                    stormgriffin: 'flyer', cloudking: 'bruiser', skylord: 'caster',
                     troll: 'bruiser', frostgiant: 'bruiser', warlord: 'bruiser',
                     lich: 'caster', spiderqueen: 'caster', drake: 'flyer' };
 const BOSS_ESCORT = {
   bruiser: { back: ['ballista', 'slinger', 'shaman', 'hexer', 'plaguer', 'orccatapult'], front: ['wolf', 'assassin', 'hellhound', 'orcspear'], nb: 4, nf: 2,
-             sea: { back: ['siren', 'seahook'], front: ['nagaspear', 'eel'] } },
+             sea: { back: ['siren', 'seahook'], front: ['nagaspear', 'eel'] },
+             sky: { back: ['stormwisp', 'skycannon'], front: ['harpy', 'griffinrider'] } },
   caster:  { back: ['ballista', 'skelarcher', 'plaguer'], front: ['orcshield', 'boneguard', 'orcspear', 'orcberserk', 'chariot', 'dark'], nb: 2, nf: 4,
-             sea: { back: ['siren', 'tidecaller'], front: ['clawcrab', 'deepone', 'nagaspear'] } },
-  flyer:   { back: ['shaman', 'hexer', 'ballista'], front: ['orcshield', 'burrower', 'hellhound', 'boneguard', 'orcberserk', 'golem'], nb: 2, nf: 3 }
+             sea: { back: ['siren', 'tidecaller'], front: ['clawcrab', 'deepone', 'nagaspear'] },
+             sky: { back: ['stormwisp', 'windcaller'], front: ['cloudgiant', 'griffinrider', 'harpy'] } },
+  flyer:   { back: ['shaman', 'hexer', 'ballista'], front: ['orcshield', 'burrower', 'hellhound', 'boneguard', 'orcberserk', 'golem'], nb: 2, nf: 3,
+             sky: { back: ['stormwisp', 'windcaller'], front: ['cloudgiant', 'harpy'] } }
 };
 /* 전장 번호(0부터) → 그 전장의 보스 */
 const STAGE_BOSS = { 4: 'lich', 9: 'troll', 12: 'lich', 14: 'troll', 16: 'frostgiant', 17: 'drake',
                      18: 'spiderqueen', 19: 'warlord', 21: 'lich', 23: 'lich', 26: 'frostgiant',
-                     28: 'drake', 29: 'warlord', 32: 'kraken', 35: 'tidequeen', 39: 'leviathan' };
+                     28: 'drake', 29: 'warlord', 32: 'kraken', 35: 'tidequeen', 39: 'leviathan',
+                     42: 'stormgriffin', 45: 'cloudking', 49: 'skylord' };
 const ELITE_FOR = { troll: ['ogre', 1], lich: ['shaman', 2], frostgiant: ['golem', 1],
                     drake: ['hellhound', 3], spiderqueen: ['spider', 4], warlord: ['warchief', 1] };
 const BOSS_HP_MUL = 2.0;       // 하나뿐인 보스는 그만큼 단단하다
@@ -1489,7 +1619,8 @@ const BOSS_ATK_MUL = 1.2;
     if (sig) {
       const esc0 = BOSS_ESCORT[BOSS_ROLE[sig]];
       // 3막 보스는 바다 군단이 호위한다
-      const esc = i >= ACT3_FROM && esc0.sea ? Object.assign({}, esc0, esc0.sea) : esc0;
+      const esc = i >= ACT4_FROM && esc0.sky ? Object.assign({}, esc0, esc0.sky)        // 4막은 천공 군단이
+        : i >= ACT3_FROM && esc0.sea ? Object.assign({}, esc0, esc0.sea) : esc0;
       // 호위 규모: 앞 전장은 절반, 뒤로 갈수록 제 크기
       const grow = 0.5 + 0.5 * Math.min(1, i / 29);
       const nb = Math.max(2, Math.round(esc.nb * grow)), nf = Math.max(1, Math.round(esc.nf * grow));
@@ -1560,17 +1691,20 @@ STAGES.forEach((st, i) => {
 const STAGE_LOOKS = ['meadow', 'wheat', 'river', 'forest', 'graveyard', 'cave', 'hills', 'camp', 'canyon', 'fortress',
   'darkforest', 'ruins', 'graveyard', 'fortress', 'fortress', 'swamp', 'snow', 'volcano', 'warcamp', 'warcamp',
   'blackriver', 'underworld', 'thorns', 'underworld', 'blizzard', 'snow', 'snow', 'desert', 'eclipse', 'mythic',
-  'shore', 'reef', 'stormsea', 'lighthouse', 'reef', 'sunken', 'sunken', 'stormsea', 'abyss', 'abyss'];
+  'shore', 'reef', 'stormsea', 'lighthouse', 'reef', 'sunken', 'sunken', 'stormsea', 'abyss', 'abyss',
+  'skyisle', 'skyisle', 'stormspire', 'skyisle', 'stormspire', 'skyisle', 'skyisle', 'stormspire', 'stormspire', 'stormspire'];
 const STAGE_MUSIC = ['meadow', 'wheat', 'river', 'wolfwood', 'graveyard', 'cave', 'hills', 'camp', 'canyon', 'fortress',
   'darkwood', 'ruins', 'return', 'shieldwall', 'gate', 'swamp', 'snowpass', 'volcano', 'warcamp', 'throne',
   'blackriver', 'underworld', 'thorngate', 'seal', 'blizzard', 'siege', 'winterthrone', 'desert', 'eclipse', 'mythic',
-  'shore', 'coral', 'krakenbay', 'lighthouse', 'sirensong', 'tidetemple', 'sunken', 'strait', 'abyssgate', 'leviathan'];
+  'shore', 'coral', 'krakenbay', 'lighthouse', 'sirensong', 'tidetemple', 'sunken', 'strait', 'abyssgate', 'leviathan',
+  'cloudbridge', 'windcliff', 'griffinnest', 'skybattery', 'thunderspire', 'cloudthrone', 'skygarden', 'stormeye', 'citadelgate', 'skythrone'];
 STAGES.forEach((st, i) => {
   st.look = st.look || STAGE_LOOKS[i] || 'meadow';
   st.music = st.music || STAGE_MUSIC[i] || 'meadow';
 });
 STAGES[29].finale = true;                      // 2막의 끝: 세 신화의 종착지
-STAGES[STAGES.length - 1].bossMusic = 'finale2';   // 3막의 끝은 따로 한 곡 (3.3)
+STAGES[39].bossMusic = 'finale2';               // 3막의 끝은 따로 한 곡 (3.3)
+STAGES[STAGES.length - 1].bossMusic = 'finale3';   // 4막의 끝 (4.0)
 
 /* 전장 길이. 예전엔 모두 2000 이라 병사가 적과 부딪히기까지 40초 넘게 걸어야 했다.
  * 초반은 짧게 붙고, 뒤로 갈수록·보스 전장일수록 조금씩 길어진다. */
@@ -1578,7 +1712,8 @@ STAGES.forEach((st, i) => {
   if (st.len) return;
   // 레벨마다 조금씩 다르게: 뒤로 갈수록 길어지되, 사이사이 짧은 전장이 섞인다
   const wiggle = [0, -70, 50, -40, 80][i % 5];
-  const base = i < 20 ? 900 + 20 * i : i < 30 ? 1180 + 18 * (i - 20) : 1300 + 12 * (i - 30);   // 3막은 조금 짧게 다시 시작
+  const base = i < 20 ? 900 + 20 * i : i < 30 ? 1180 + 18 * (i - 20) : i < 40 ? 1300 + 12 * (i - 30)   // 3막은 조금 짧게 다시 시작
+    : 1340 + 12 * (i - 40);                                                                      // 4막도
   st.len = base + wiggle + (st.boss ? 120 : 0);
 });
 
@@ -1805,6 +1940,7 @@ const ACHIEVEMENTS = [
     test: s => Object.keys(s.levels || {}).some(k => s.levels[k] >= 15) },
   { id:'campaign30',name:'세 신화의 정복자',desc:'30전장 모두 돌파',gold:5000,stone:5,test:s=>s.cleared>=30 },
   { id:'campaign40',name:'심연을 건넌 자',desc:'40전장 모두 돌파',gold:12000,stone:10,test:s=>s.cleared>=40 },
+  { id:'campaign50',name:'하늘에 오른 자',desc:'50전장 모두 돌파 (4막 천공 요새)',gold:20000,stone:15,test:s=>s.cleared>=50 },
   { id: 'endless10',name: '끝없는 전장',  desc: '무한 전장 10웨이브 돌파',       gold: 2000, stone: 3,
     test: s => (s.endlessBest || 0) >= 10 },
   { id: 'endless25',name: '불굴의 성채',  desc: '무한 전장 25웨이브 돌파',       gold: 7000, stone: 8,
@@ -1815,8 +1951,10 @@ const ACHIEVEMENTS = [
     test: s => hardCount(s) >= 10 },
   { id: 'hard30',   name: '꺾이지 않는 왕국', desc: '하드코어 전장 30곳 돌파', gold: 15000, stone: 15,
     test: s => hardCount(s) >= 30 },
-  { id: 'hard40',   name: '심연도 꺾지 못한 왕국', desc: '하드코어 전장 40곳 모두 돌파', gold: 40000, stone: 30,
+  { id: 'hard40',   name: '심연도 꺾지 못한 왕국', desc: '하드코어 전장 40곳 돌파', gold: 40000, stone: 30,
     test: s => hardCount(s) >= 40 },
+  { id: 'hard50',   name: '하늘도 꺾지 못한 왕국', desc: '하드코어 전장 50곳 모두 돌파', gold: 60000, stone: 40,
+    test: s => hardCount(s) >= 50 },
   { id: 'event1',   name: '극악의 문턱', desc: '이벤트 전장 1곳 돌파',            gold: 3000, stone: 5,
     test: s => eventCount(s) >= 1 },
   { id: 'event5',   name: '마왕을 넘어선 자', desc: '이벤트 전장 5곳 모두 돌파',   gold: 30000, stone: 30,
@@ -1852,7 +1990,7 @@ const UPGRADES = {
   spoils:  { name: '전리품 수거', max: 10, base: 140, step: 1.5,
              desc: '적 처치 골드 +8%/레벨' },
   academy: { name: '사관학교', max: 5, base: 900, step: 1.9,
-             desc: '병종 레벨 상한 +1/레벨 (최대 20레벨까지)' },
+             desc: '병종 레벨 상한 +1/레벨 (최대 25레벨까지)' },
   command: { name: '왕의 명령', max: 5, base: 700, step: 1.8,
              desc: '왕명 재사용 -8초, 회복량 +8%/레벨' }
 };
@@ -1931,7 +2069,7 @@ const COMMAND = {
 };
 
 /* -------------------- 병종 레벨 -------------------- */
-const UNIT_LEVEL_HARD_CAP = 15;
+const UNIT_LEVEL_HARD_CAP = 20;   // 4.0: 15 → 20 (사관학교까지 25) — 4막에서 더 키울 자리
 const UNIT_LEVEL_BASE_CAP = 5;
 const UNIT_LEVEL_GAIN = 0.10;
 
@@ -2043,6 +2181,14 @@ const EVOLUTIONS = {
   lancer:  { name: '성기사단 창기병', short: '성창기병', plus: '돌격 3.4배 · 넉백 면역', ab: { charge: { mul: 3.4 }, kbImmune: true }, cost: { speed: 0.9 } },
   alchemist:{ name: '대연금술사', short: '대연금', plus: '부식 +75% · 범위 +20', add: { areaRadius: 20 }, mul: { 'sunmark.vuln': 1.75 }, cost: { 'ab.poison.dps': 0.6 } },
   monk:    { name: '금강 무승', short: '금강승', plus: '회피 20% · 흡혈 20%', ab: { dodge: 0.2, lifesteal: 0.2 }, cost: { atk: 0.9 } },
+  // 4.0 원탁의 기사
+  arthur:  { name: '영원한 왕', short: '영원왕', plus: '지휘 +40% · 엑스칼리버 강화', ab: { rally: { atk: 0.4, radius: 300 } }, active: { mul: 3.4 }, cost: { interval: 1.15 } },
+  merlin:  { name: '아발론의 현자', short: '현자', plus: '범위 +20 · 시간의 매듭 7초 둔화', add: { areaRadius: 20 }, active: { slow: 7 }, cost: { hp: 0.88 } },
+  lancelot:{ name: '무적의 기사', short: '무적기사', plus: '치명타 35% · 흡혈 25%', ab: { crit: { chance: 0.35, mul: 2.2 }, lifesteal: 0.25 }, cost: { hp: 0.9 } },
+  morgana: { name: '요정 여왕', short: '요정여왕', plus: '중독 +60% · 둔화 2초', mul: { 'poison.dps': 1.6 }, ab: { slow: 2 }, cost: { interval: 1.12 } },
+  tristan: { name: '음유 명궁', short: '음유명궁', plus: '사거리 +60 · 치명타 30%', add: { range: 60 }, ab: { crit: { chance: 0.3, mul: 2.4 } }, cost: { atk: 0.9 } },
+  galahad: { name: '성배의 수호자', short: '성배수호', plus: '갑주 40% · 초당 40 회복', ab: { armor: 0.4, regen: 40 }, cost: { speed: 0.85 } },
+  camelotguard:{ name: '카멜롯 근위대', short: '근위대', plus: '갑주 22% · 회피 15%', ab: { armor: 0.22, dodge: 0.15 }, cost: { atk: 0.9 } },
   // 3.0 서유기
   wukong:  { look: { shape: 'wukong_evo', tunic: '#c9a227', accent: '#ffd35a', grow: 1.1 }, name: '투전승불', plus: '분신 최대 6 · 여의봉 강타 강화', ab: { summon: { max: 6 } }, active: { mul: 2.9 }, cost: { atk: 0.85 } },
   nezha:   { name: '삼두육비 나타', short: '삼두육비', plus: '화상 +50% · 혼천릉 강화', mul: { 'burn.dps': 1.5 }, active: { pull: 130, slow: 4 }, cost: { hp: 0.9 } },
