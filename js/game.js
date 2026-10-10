@@ -439,13 +439,27 @@ class Battle {
   fieldCount() { let n = 0; for (const a of this.allies) if (!a.dead && !a.summoned) n++; return n; }
   fieldFull() { return this.fieldCount() >= FIELD_CAP; }
   roomForSummon() { return this.allies.length < FIELD_TOTAL_CAP; }
+  /* 4.2: 직접 낸 병사가 들어올 때 소환물까지 합쳐 FIELD_TOTAL_CAP 이면 가장 오래 선 소환물(해골·방벽 등)이
+   * 연기로 자리를 비켜 준다. 전엔 소환물이 먼저 60까지 차오른 뒤 직접 낸 병사가 40까지 더 들어와
+   * 77명까지 쌓였다(발열). 출진 자체는 막지 않는다. */
+  makeRoom() {
+    let alive = 0, oldest = null;
+    for (const a of this.allies) {
+      if (a.dead) continue;
+      alive++;
+      if (a.summoned && (!oldest || a.age > oldest.age)) oldest = a;
+    }
+    if (alive >= FIELD_TOTAL_CAP && oldest) { oldest.dead = true; oldest.vanish = true; }
+  }
 
   canDeploy(id) {
     const u = this.stats(id);
     return !!u && this.state === 'play' && this.roster.some(r => r.id === id) && !this.fieldFull() &&
       this.cooldowns[id] <= 0 && this.money >= u.cost &&
-      (!u.maxActive || this.allies.filter(a => !a.dead && a.s.id === id).length < u.maxActive);
+      (!u.maxActive || this.activeCount(id) < u.maxActive);
   }
+  // 4.2: HUD 가 매 프레임 카드마다 부른다 — 배열을 새로 만들지 않고 센다
+  activeCount(id) { let n = 0; for (const a of this.allies) if (!a.dead && a.s.id === id) n++; return n; }
 
   /* 3.12: 자동 출진이 낼 만한가. 제한 없는 값싼 병종은 예전 상한(stackCap)까지만 자동으로 낸다 —
    * 끝없이 사들이면 돈이 바닥나 비싼 주력을 영영 못 낸다. 손으로 누르면 공통 상한까지 얼마든지. */
@@ -496,6 +510,7 @@ class Battle {
       f.charmT = vb.s.special.charm;
       this.fx.push({ type: 'charm', x: f.x, row: f.row, t: 0.7, life: 0.7 });
     }
+    this.makeRoom();
     this.allies.push(f);
     // 3.5: 모습이 통째로 바뀐 진화 병종·영웅은 빛기둥과 함께 내려선다
     const grand = !!(f.s.bigEvo || f.s.gacha);
@@ -1745,8 +1760,9 @@ class Battle {
     }
     // 영웅 사냥꾼: 적이 비싼(비용 350 이상) 아군 — 영웅·전설·신화 — 을 골라 두 배로 친다
     // 3.9: 사냥꾼은 영웅을 잡는 데 이골이 나 있다 — 갑주를 꿰뚫고, 선봉의 보호도 통하지 않는다
+    // 4.2: 병종 본래 비용으로 본다 — 3진의 출진 비용 +30% 때문에 전차·레일건 같은 전장 병종이 '영웅' 으로 잡혀 4배로 맞았다
     const hunted = this.mods && this.mods.giantslayer && src && src.side === 'enemy' &&
-        !target.isCastle && target.side === 'ally' && (target.s.cost || 0) >= HUNT_COST;
+        !target.isCastle && target.side === 'ally' && ((target.s.base || target.s).cost || 0) >= HUNT_COST;
     if (hunted) { dmg *= HUNT_MUL; pierce = true; }
     // 3.9 선봉: 근접 영웅 곁의 아군은 적에게 덜 아프게 맞는다 (영웅 자신 포함)
     if (!hunted && src && src.side === 'enemy' && !target.isCastle && target.side === 'ally' && this.vanguards && this.vanguards.length) {

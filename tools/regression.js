@@ -1193,4 +1193,30 @@ test('Save forms: base / evolved / third, chosen per unit', () => {
   assert.equal(b.stats('catapult').shape, 'tank'); assert.ok(b.stats('catapult').cost > U.catapult.cost);
 });
 
+/* ---------------- 4.2 버그 수정 ---------------- */
+test('Deploying at the total field cap makes the oldest summon vanish instead of overfilling', () => {
+  const s = save(); s.loadout = ['spear']; const b = new Battle(0, s);
+  const sk = U.skeleton || U.monkeyclone;
+  for (let i = 0; i < FIELD_TOTAL_CAP; i++) { const m = b.makeAlly(sk, 300 + i, b.makeAlly(U.necro, 200)); m.summoned = true; m.age = i; b.allies.push(m); }
+  b.money = 1e6; b.cooldowns.spear = 0;
+  assert.ok(b.deploy('spear'), 'deploying is never blocked by summons');
+  const alive = b.allies.filter(a => !a.dead);
+  assert.equal(alive.length, FIELD_TOTAL_CAP, 'total stays at the cap');
+  assert.ok(b.allies.some(a => a.dead && a.vanish && a.age === FIELD_TOTAL_CAP - 1), 'the oldest summon made room');
+});
+test('Giantslayer judges a unit by its own price, not the third-form surcharge', () => {
+  const s = save(); s.loadout = ['catapult']; s.levels = { catapult: 20 }; s.evo = { catapult: true }; s.evo2 = { catapult: true };
+  const b = new Battle(0, s, { baseHp: 10000, money: 900, rate: 0, waves: [], reward: 0, mods: ['giantslayer'] });
+  const tank = b.makeAlly(b.stats('catapult'), 500);
+  assert.ok(tank.s.cost >= 350 && U.catapult.cost < 350, 'the tank costs more than 350 now'); assert.ok(b.mods.giantslayer, 'mod active');
+  const orc = b.spawnEnemy('goblin', 560); const undo = rnd(0);
+  const h0 = tank.hp; b.hitOne(100, tank, orc, false); undo();
+  assert.ok(h0 - tank.hp < 150, 'not treated as a hero: ' + (h0 - tank.hp));
+});
+test('English data pass covers the third-form table', () => {
+  const i18n = fs.readFileSync(path.join(__dirname, '../js/i18n.js'), 'utf8');
+  assert.ok(/EVOLUTIONS, EVOLUTIONS2,/.test(i18n), 'EVOLUTIONS2 is translated at start');
+  assert.ok(/'하드코어 전장 40곳 돌파'/.test(i18n));
+});
+
 console.log(count + ' regression checks passed');

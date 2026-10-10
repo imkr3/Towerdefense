@@ -1404,3 +1404,21 @@ body{background:var(--bg0);color:var(--tx)}
   .title-grid .btn{padding:5px 4px;font-size:11.5px}.title-grid .tg-i{font-size:14px}
   .title-btns{padding:11px}
 }
+
+/* 4.2: 장 탭이 8개(4막) — 좁은 폰 가로에서 '★ 0/30' 이 탭 밖으로 삐져나왔다.
+ * 이름 위 · 별 아래로 쌓고, 그래도 모자라면 탭 줄을 옆으로 민다. 진군도 아래 버튼 글자도 줄인다 */
+@media(max-width:780px){
+  .chapter-tabs{overflow-x:auto;scrollbar-width:none;padding-bottom:3px}
+  .chapter-tabs::-webkit-scrollbar{display:none}
+  .chapter-tab{min-width:max-content;grid-template-columns:1fr;justify-items:center;gap:0;padding:4px 8px}
+  .chapter-tab .ch-name{font-size:12px}.chapter-tab .ch-star{font-size:10px}
+  .sd-btns .btn{font-size:12px;padding:7px 4px;letter-spacing:0}
+}
+.sd-formation .fb-n{font-size:.82em;font-weight:800;opacity:.85}
+@media(max-width:860px){
+  .sd-formation .fb-n{display:block;font-size:10px;line-height:1.05}
+  .sd-btns .btn.ghost{font-size:11px;padding-left:3px;padding-right:3px}
+}
+.fs-evo .fe-hint.f3{color:#9ff6ff;flex-basis:100%}
+/* 4.2: 한글이 낱자로 끊기지 않게 ('범/위') */
+.fb-txt,.fb-role span,.evo-box .evo-info,.ab-text,.unit-desc,.sd-hint{word-break:keep-all;overflow-wrap:anywhere}

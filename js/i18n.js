@@ -743,7 +743,7 @@ const I18N_EN = {
   '병종 하나를 3진': 'Awaken one unit',
   '엉뚱한 군대': 'The Wacky Army',
   '병종 10종을 3진': 'Awaken 10 units',
-  '레벨 20에 3진': 'Awakens at Lv 20',
+  '레벨 20에 3진': 'Awakens at Lv 20', '훈련소에서 3진할 수 있습니다': 'can awaken at the Training Grounds',
   '✪ 3진 · 💰 ': '✪ Awaken · 💰 ',
   '✪ 3진': '✪ Awaken',
   '3진': 'Awaken',
@@ -867,6 +867,7 @@ const I18N_EN = {
   '40전장 모두 돌파': 'Clear all 40 stages',
   '심연도 꺾지 못한 왕국': 'Unbowed by the Abyss',
   '하드코어 전장 40곳 모두 돌파': 'Clear all 40 stages on Hardcore',
+  '하드코어 전장 40곳 돌파': 'Clear 40 stages on Hardcore',
   '하드코어 전장 30곳 돌파': 'Clear 30 stages on Hardcore',
   '왕국 방어선 · 전 50 전장': 'Realm Defense · 50 battlefields',
   '격앙': 'Fury', '끝없는 웨이브. 웨이브마다 적이 강해집니다.': 'Endless waves, each stronger than the last.',
@@ -1034,6 +1035,7 @@ const I18N_EN_PATTERNS = [
   [/지금 슬롯 (\d)을 저장하고 슬롯 (\d)\(으\)로 바꿉니다\./g, 'Saves slot $1 and switches to slot $2.'],
   [/슬롯 (\d)의 (진행도와 소환한 병종이 모두 삭제됩니다)/g, 'Slot $1: $2'],
   [/(\d+)시간 (\d+)분/g, '$1h $2m'],
+  [/(\d+)분 (\d+)초/g, '$1m $2s'],          // 4.2: 기록 탭의 총 전투 시간
   [/(\d+)\s*전장 돌파/g, 'Stage $1 cleared'],
   [/전장 (\d+)/g, 'Stage $1'],
   [/(\d+)\s*전장/g, 'Stage $1'],
@@ -1107,12 +1109,13 @@ function i18nNode(node) {
     return;
   }
   if (node.nodeType !== 1) return;
-  if (node.tagName === 'SCRIPT' || node.tagName === 'STYLE' || node.tagName === 'TEXTAREA') return;
+  if (node.tagName === 'SCRIPT' || node.tagName === 'STYLE') return;
   for (const a of I18N_ATTRS) {
     const v = node.getAttribute(a);
     // 같은 값을 다시 쓰면 그것도 변경으로 잡혀 끝없이 돈다
     if (v && I18N.hangul.test(v)) { const n = t(v); if (n !== v) node.setAttribute(a, n); }
   }
+  if (node.tagName === 'TEXTAREA') return;     // 4.2: 입력 내용은 두되 안내(placeholder · aria-label)는 번역한다
   if ((node.tagName === 'LI' || node.tagName === 'P') && I18N_EN_HTML[node.innerHTML.trim()]) {
     node.innerHTML = I18N_EN_HTML[node.innerHTML.trim()];
     return;
@@ -1138,7 +1141,8 @@ function i18nStart() {
 }
 
 if (I18N.lang === 'en') {
-  [UNITS, ENEMIES, STAGES, EVENT_STAGES, EXPEDITIONS, SEASONS, MISSION_DEFS, ACHIEVEMENTS, UPGRADES, COMMAND, RARITY, STAGE_MODS, OPENINGS, EVOLUTIONS, EVO_LABELS, STAT_LABELS]
+  // 4.2: 3진 표(EVOLUTIONS2)도 — 빠져 있어 3진 능력 글이 반쯤만 번역됐다
+  [UNITS, ENEMIES, STAGES, EVENT_STAGES, EXPEDITIONS, SEASONS, MISSION_DEFS, ACHIEVEMENTS, UPGRADES, COMMAND, RARITY, STAGE_MODS, OPENINGS, EVOLUTIONS, EVOLUTIONS2, EVO_LABELS, STAT_LABELS]
     .forEach(o => i18nData(o, 0));
   // 무한 전장은 부를 때마다 새로 만든다
   const makeEndlessKo = makeEndlessStage;

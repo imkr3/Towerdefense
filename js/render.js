@@ -2059,7 +2059,9 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
   S.ink = flash ? '#ffffff' : INK;
   // 병종마다 직접 칠하는 부위(짐승·기계·보스 몸통)에도 같은 잉크 테두리를 두른다
   const autoInk = MODEL.ink && !flash;
-  if (autoInk) { ctx.fill = inkedFill; ctx.stroke = inkedStroke; ctx._inkW = 0.95 * s; }
+  const depthOn = !flash && MODEL.depth;
+  const wrapped = autoInk || depthOn;                // 4.2: 잉크가 꺼져도 그림자를 다루려고 감싼다
+  if (wrapped) { ctx.fill = inkedFill; ctx.stroke = inkedStroke; ctx._inkW = 0.95 * s; ctx._noInk = !autoInk; ctx._depth = depthOn; }
   if (HUMANOID[st.shape]) armSwing(S);
   if (st.evo && !st.bigEvo) (NO_CAPE[st.shape] ? evoBanner : evoCape)(S);   // 진화: 등 뒤로 망토, 기계·짐승은 군기
 
@@ -5626,7 +5628,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
 
   if (st.evo) evoCrest(S);                        // 진화: 머리 위 금빛 문장
 
-  if (autoInk) { delete ctx.fill; delete ctx.stroke; }
+  if (wrapped) { delete ctx.fill; delete ctx.stroke; ctx._depth = false; ctx._noInk = false; }
 
   if (hurt) {
     ctx.strokeStyle = 'rgba(255,255,255,.8)';
@@ -5733,8 +5735,15 @@ const _fill0 = CanvasRenderingContext2D.prototype.fill;
 const _stroke0 = CanvasRenderingContext2D.prototype.stroke;
 /* 굵고 불투명한 선(팔다리·무기 자루·바퀴)은 잉크를 한 겹 밑에 깐다 */
 function inkedStroke(a) {
+  // 4.2: 반투명 빛·'lighter' 합성에는 그림자를 끈다 — 그림자 밑에 깔린 빛은 보이지도 않는데,
+  // 반투명 + 그림자는 브라우저가 따로 층을 만들어 합성해야 해서 모양 하나에 수 ms 씩 들었다
+  if (this._depth && (this.globalAlpha < 0.9 || this.globalCompositeOperation !== 'source-over')) {
+    const sc = this.shadowColor; this.shadowColor = 'transparent';
+    _stroke0.apply(this, arguments);
+    this.shadowColor = sc; return;
+  }
   const ss = this.strokeStyle, lw = this.lineWidth;
-  if (!this._skipInk && lw >= this._inkW * 2.3 && typeof ss === 'string' && ss.charCodeAt(0) === 35 &&
+  if (!this._noInk && !this._skipInk && lw >= this._inkW * 2.3 && typeof ss === 'string' && ss.charCodeAt(0) === 35 &&
       this.globalAlpha >= 0.9 && this.globalCompositeOperation === 'source-over') {
     this.strokeStyle = INK; this.lineWidth = lw + this._inkW * 1.6;
     if (a && typeof a === 'object') _stroke0.call(this, a); else _stroke0.call(this);
@@ -5743,8 +5752,13 @@ function inkedStroke(a) {
   return _stroke0.apply(this, arguments);
 }
 function inkedFill(a) {
+  if (this.globalAlpha < 0.9 || this.globalCompositeOperation !== 'source-over') {
+    if (this._depth) { const sc = this.shadowColor; this.shadowColor = 'transparent'; _fill0.apply(this, arguments); this.shadowColor = sc; }
+    else _fill0.apply(this, arguments);
+    return;
+  }
   _fill0.apply(this, arguments);
-  if (this._skipInk || this.globalAlpha < 0.9 || this.globalCompositeOperation !== 'source-over') return;
+  if (this._noInk || this._skipInk) return;
   const fs = this.fillStyle;
   if (typeof fs !== 'string' || fs.charCodeAt(0) !== 35) return;          // '#rrggbb' = 불투명
   const ss = this.strokeStyle, lw = this.lineWidth;

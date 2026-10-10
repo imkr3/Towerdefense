@@ -142,10 +142,11 @@ function renderFormationSlots() {
       slot.innerHTML = '<span class="fs-key">' + ((i + 1) % 10) + '</span><span class="fs-empty">＋</span>';
       slot.setAttribute('aria-label', (i + 1) + '번 칸 비어 있음');
     } else {
-      cost += u.cost;
+      const v = unitFor(save, u.id);                // 4.2: 지금 형태의 출진 비용 (3진은 +30%)
+      cost += v.cost;
       if (u.rarity === 'SSR' || u.rarity === 'UR') heroes++;
       if (u.ranged) ranged++;
-      slot.innerHTML = '<span class="fs-key">' + ((i + 1) % 10) + '</span>' + unitTileHTML(u, '💰' + u.cost);
+      slot.innerHTML = '<span class="fs-key">' + ((i + 1) % 10) + '</span>' + unitTileHTML(u, '💰' + v.cost);
       slot.setAttribute('aria-label', (i + 1) + '번 칸 ' + u.name);
       drawUnitIcon(slot.querySelector('canvas'), unitFor(save, u.id), 38);
       const x = document.createElement('button');
@@ -217,7 +218,7 @@ function renderFormationPool() {
     el.setAttribute('role', 'button');
     el.setAttribute('aria-pressed', String(inTeam));
     el.setAttribute('aria-label', u.name + (inTeam ? ' 편성됨' : ''));
-    el.innerHTML = unitTileHTML(u, '💰' + u.cost) + (inTeam ? '<span class="ft-check">✓</span>' : '');
+    el.innerHTML = unitTileHTML(u, '💰' + unitFor(save, u.id).cost) + (inTeam ? '<span class="ft-check">✓</span>' : '');
     drawUnitIcon(el.querySelector('canvas'), unitFor(save, u.id), 38);
     el.addEventListener('pointerdown', e => dragDown(e, { kind: 'pool', id: u.id }, el));
     el.addEventListener('keydown', e => {
@@ -246,7 +247,10 @@ function formationEvoRow(id) {
   const btn = (f, label, k) => '<button type="button" class="evo-form' + (k === 2 ? ' f3' : '') + (form === k ? ' sel' : '') + '" data-form="' + f + '" aria-pressed="' + (form === k) + '">' + label + '</button>';
   row.innerHTML = '<span class="fe-label">형태</span><div class="evo-seg" role="group" aria-label="형태 선택">' +
     btn('base', base.short || base.name, 0) + btn('evo', '✦ ' + (def.short || def.name), 1) +
-    (has2 ? btn('evo2', '✪ ' + (def2.short || def2.name), 2) : '') + '</div>';
+    (has2 ? btn('evo2', '✪ ' + (def2.short || def2.name), 2) : '') + '</div>' +
+    // 4.2: 3진을 아직 안 했으면 어디서 하는지 알려 준다
+    (def2 && !has2 ? '<span class="fe-hint f3">✪ ' + def2.name + ' · ' +
+      ((save.levels[id] || 1) >= EVO2_LEVEL ? '훈련소에서 3진할 수 있습니다' : '레벨 ' + EVO2_LEVEL + '에 3진') + '</span>' : '');
   row.querySelectorAll('.evo-form').forEach(b => b.addEventListener('click', () => {
     const want = b.dataset.form;
     if (['base', 'evo', 'evo2'][evoForm(save, id)] === want) return;

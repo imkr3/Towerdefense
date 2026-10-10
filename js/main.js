@@ -3,7 +3,7 @@
  * ======================================================================= */
 
 
-const APP_VERSION = '4.1.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
+const APP_VERSION = '4.2.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
 
 function defaultSave() {
   const lv = {};
@@ -405,6 +405,12 @@ function renderMap() {
     });
     tabs.appendChild(b);
   });
+  // 4.2: 좁은 화면에서 탭 줄이 밀리면 고른 탭이 보이게
+  if (tabs.scrollWidth > tabs.clientWidth + 1) {
+    const on = tabs.querySelector('.on');
+    if (on) { const x = on.getBoundingClientRect().left - tabs.getBoundingClientRect().left + tabs.scrollLeft;
+      tabs.scrollLeft = Math.max(0, x - (tabs.clientWidth - on.offsetWidth) / 2); }
+  }
 
   const ch = CHAPTERS[mapChapter];
   const list = $('#stage-list');
@@ -553,7 +559,7 @@ function renderStageDetail(i) {
   btns.className = 'sd-btns';
   const fb = document.createElement('button');
   fb.className = 'btn ghost sd-formation';
-  fb.textContent = '편성 (' + save.loadout.length + '/' + LOADOUT_MAX + ')';
+  fb.innerHTML = squadBtnLabel();
   const nWarn = deckAdvice(save, st).warns.length;           // 3.6: 편성 점검에 걸린 수
   if (nWarn) { const w = document.createElement('span'); w.className = 'warn-n'; w.textContent = '⚠' + nWarn; fb.appendChild(w); }
   fb.addEventListener('click', () => openFormation(i));
@@ -682,7 +688,7 @@ function renderExpDetail(k) {
   btns.className = 'sd-btns';
   const fb = document.createElement('button');
   fb.className = 'btn ghost sd-formation';
-  fb.textContent = '편성 (' + save.loadout.length + '/' + LOADOUT_MAX + ')';
+  fb.innerHTML = squadBtnLabel();
   fb.addEventListener('click', () => openFormation('exp:' + k));
   const go = document.createElement('button');
   go.className = 'btn primary sd-go';
@@ -767,7 +773,7 @@ function renderEventDetail(k) {
   });
   const fb = document.createElement('button');
   fb.className = 'btn ghost sd-formation';
-  fb.textContent = '편성 (' + save.loadout.length + '/' + LOADOUT_MAX + ')';
+  fb.innerHTML = squadBtnLabel();
   fb.addEventListener('click', () => openFormation('event:' + k));
   const go = document.createElement('button');
   go.className = 'btn primary sd-go';
@@ -827,6 +833,11 @@ function renderShop() {
   });
 }
 
+/* 4.2: 진군도 아래 '편성 (10/10)' 이 좁은 폰에서 글자가 넘쳤다 — 숫자를 작게 따로 둬 좁으면 아래로 내린다 */
+function squadBtnLabel() {
+  return '<span>편성</span> <small class="fb-n">' + save.loadout.length + '/' + LOADOUT_MAX + '</small>';
+}
+
 /* ------------------------------ 훈련소 ------------------------------ */
 let trainingFilter = 'ally';
 function renderTraining() {
@@ -860,7 +871,7 @@ function renderTraining() {
     // 다음 레벨에 무엇이 오르나 — 체력·공격만이 아니라 병종이 하는 일까지
     let grow = '';
     if (unlocked && !atCap) {
-      const r2 = resolveUnit(u, lv + 1, r.evo), mul2 = unitLevelMul(lv + 1);
+      const r2 = resolveUnit(u, lv + 1, r.evo2 ? 2 : r.evo), mul2 = unitLevelMul(lv + 1);   // 4.2: 3진은 3진끼리 비교 (전엔 2진과 비교해 깎이는 것처럼 보였다)
       const d = [['체력', Math.round(r.hp * mul * vit), Math.round(r2.hp * mul2 * vit)]];
       if (attacks) d.push(['공격', Math.round(r.atk * mul * pow), Math.round(r2.atk * mul2 * pow)]);
       if (r.ranged && r2.range !== r.range) d.push([STAT_LABELS.range, r.range, r2.range]);
