@@ -12,7 +12,8 @@ function byRowX(a, b) { return (a.row - b.row) || (a.x - b.x); }
 class Renderer {
   constructor(canvas) {
     this.cv = canvas;
-    this.ctx = canvas.getContext('2d');
+    // 3.16: 전장은 배경이 늘 화면을 다 덮는다 — 불투명 캔버스면 합성기가 뒤를 섞지 않는다 (GPU 부담↓)
+    this.ctx = canvas.getContext('2d', { alpha: false });
     this.cam = ALLY_SPAWN_X;
     this.camTarget = this.cam;
     this.dragUntil = 0;
@@ -274,25 +275,36 @@ class Renderer {
 
   }
 
+  /* 3.16: 땅 바탕(단색 · 어두운 띠 · 앞쪽 그늘 · 닳은 길)은 카메라와 상관없다. 예전엔 매 프레임 화면 너비로
+   * 네 번(그중 하나는 그라디언트) 칠했다 — 한 번 그려 두고 1:1 로 옮겨 붙인다. 화면 크기·전장이 바뀔 때만 다시. */
+  groundBase(look) {
+    const w = this.w, h = this.h, gy = this.groundY, dpr = this.cv.width / this.w;
+    const key = look + '|' + w + 'x' + h + '|' + gy + '|' + this.cv.width + '|' + this.cs;
+    if (this._gbKey !== key) {
+      const pal = FIELD_LOOKS[look] || FIELD_LOOKS.meadow;
+      const c = this._gb || (this._gb = document.createElement('canvas'));
+      const gh = h - gy - 2;
+      c.width = Math.max(1, Math.round(w * dpr)); c.height = Math.max(1, Math.round(gh * dpr));
+      const g = c.getContext('2d', { alpha: false });
+      g.setTransform(dpr, 0, 0, dpr, 0, -(gy + 2) * dpr);     // 땅 좌표 그대로 그린다
+      g.fillStyle = pal.ground; g.fillRect(0, gy + 2, w, h - gy);
+      g.fillStyle = pal.groundDark; g.fillRect(0, gy + 2, w, 4);
+      const grad = g.createLinearGradient(0, gy, 0, h);           // 앞쪽으로 갈수록 어둡게
+      grad.addColorStop(0, 'rgba(0,0,0,0)'); grad.addColorStop(1, 'rgba(0,0,0,.22)');
+      g.fillStyle = grad; g.fillRect(0, gy + 2, w, h - gy);
+      g.fillStyle = 'rgba(225,211,171,.12)';                       // 세 줄의 전열을 받치는 닳은 길
+      g.fillRect(0, gy + 9, w, 21 * this.cs);
+      this._gbKey = key;
+    }
+    return this._gb;
+  }
+
   paintGround(ctx, look, cam) {
     const w = this.w, h = this.h, gy = this.groundY;
     const pal = FIELD_LOOKS[look] || FIELD_LOOKS.meadow;
     const layers = pal.layers || [];
-    // 땅
-    ctx.fillStyle = pal.ground;
-    ctx.fillRect(0, gy + 2, w, h - gy);
-    ctx.fillStyle = pal.groundDark;
-    ctx.fillRect(0, gy + 2, w, 4);
-    if (this._groundKey !== gy + '|' + h) {                     // 앞쪽으로 갈수록 어둡게 (그라디언트는 한 번만)
-      this._groundGrad = ctx.createLinearGradient(0, gy, 0, h);
-      this._groundGrad.addColorStop(0, 'rgba(0,0,0,0)'); this._groundGrad.addColorStop(1, 'rgba(0,0,0,.22)');
-      this._groundKey = gy + '|' + h;
-    }
-    ctx.fillStyle = this._groundGrad; ctx.fillRect(0, gy + 2, w, h - gy);
-
-    // 세 줄의 전열을 받치는 닳은 길
-    ctx.fillStyle = 'rgba(225,211,171,.12)';
-    ctx.fillRect(0, gy + 9, w, 21 * this.cs);
+    // 땅 바탕 (미리 그려 둔 것)
+    ctx.drawImage(this.groundBase(look), 0, gy + 2, w, h - gy - 2);
     // 땅 무늬
     ctx.fillStyle = pal.speck;
     const step = 64;
@@ -750,7 +762,8 @@ class Renderer {
     drawBody(ctx, f.s, s, false, f.kbTimer > 0, f.bob, moving, atk, wind, won);
     if (veiled) ctx.globalAlpha = 1;
     MODEL.blink = false; MODEL.angry = false;
-    if (f.hitFlash > 0) {
+    // 맞은 순간의 흰 번쩍임은 몸을 한 번 더 그린다. 빽빽할 땐(자동 품질) 건너뛴다 — 움찔(recoil)과 피해 숫자로 충분하다
+    if (f.hitFlash > 0 && !this.crowded) {
       const a0 = ctx.globalAlpha;
       ctx.globalAlpha = a0 * Math.min(0.5, f.hitFlash * 3.2);
       drawBody(ctx, f.s, s, true, f.kbTimer > 0, f.bob, moving, atk, wind, won);

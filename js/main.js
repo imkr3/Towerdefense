@@ -1696,11 +1696,13 @@ let bossMusic = false, bossMusicT = 0;
  * 같은 장면을 두 배로 그리느라 뜨거워졌다. 60fps(절전은 30fps)로 묶는다. */
 const FRAME_MIN_MS = { auto: 14, high: 14, low: 30 };
 const IDLE_FRAME_MS = 48;      // 멈춤·결과 화면처럼 거의 움직이지 않을 때 (약 20fps)
+const OVER_FRAME_MS = 80;      // 3.16: 전투가 끝나 결과창을 읽는 동안 (약 12fps) — 뒤에선 승리한 병사만 뛴다
 const CROWD_FRAME_MS = 30;     // 3.12: 자동 품질에서 병사가 빽빽할 때 (약 30fps) — 발열이 가장 심한 순간
 const TITLE_FRAME_MS = 30;     // 타이틀 배경 행진 (약 30fps)
 let battleScr = null;
 // 3.10: 매 프레임 문서 전체를 선택자로 훑지 않는다. 살아 있는 목록이라 창이 열리고 닫히면 저절로 바뀐다.
 const openModals = document.getElementsByClassName('modal show');
+const resultEl = document.getElementById('result');
 function loop(ts) {
   requestAnimationFrame(loop);
   if (!lastTs) lastTs = ts;
@@ -1709,7 +1711,7 @@ function loop(ts) {
   const modal = inBattle && openModals.length > 0;
   const idle = inBattle && (paused || modal || battle.state !== 'play');
   const minMs = Math.max(FRAME_MIN_MS[Settings.get('quality')] || 14,
-                         titleAnim.on ? TITLE_FRAME_MS : (idle ? IDLE_FRAME_MS : (renderer && renderer.crowded ? CROWD_FRAME_MS : 0)));
+                         titleAnim.on ? TITLE_FRAME_MS : (idle ? (inBattle && battle.state !== 'play' && resultEl.classList.contains('show') ? OVER_FRAME_MS : IDLE_FRAME_MS) : (renderer && renderer.crowded ? CROWD_FRAME_MS : 0)));
   if (ts - lastTs < minMs) return;
   let dt = (ts - lastTs) / 1000;
   lastTs = ts;

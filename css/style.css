@@ -901,7 +901,7 @@ body{background:var(--bg0);color:var(--tx)}
   color:#2a1d08!important;border:1px solid #fff0c0!important;text-shadow:0 1px 0 #fff6!important;
   box-shadow:0 1px 0 #fff8 inset,0 3px 0 #6b4d1c,0 8px 22px #e2bf7240!important;position:relative;overflow:hidden}
 .btn.primary::after,#btn-start::after,.sd-go::after{content:'';position:absolute;top:0;bottom:0;width:40%;left:-60%;
-  background:linear-gradient(100deg,transparent,#ffffff70,transparent);transform:skewX(-20deg);animation:btnShine 3.6s ease-in-out infinite;will-change:transform}
+  background:linear-gradient(100deg,transparent,#ffffff70,transparent);transform:skewX(-20deg);animation:btnShine 3.6s ease-in-out 3}   /* 3.16: 세 번 반짝이고 멈춘다 (메뉴에 머무는 동안 GPU 가 쉬게) */
 @keyframes btnShine{0%,60%{transform:translateX(0) skewX(-20deg)}100%{transform:translateX(475%) skewX(-20deg)}}
 .btn.ghost{background:#ffffff0a;border-color:#9fb6c933;color:var(--tx)}
 .btn.danger{color:var(--ruby);border-color:#e0736a55;background:#e0736a12}
