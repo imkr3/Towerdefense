@@ -139,6 +139,14 @@ function bgmChord(name) {
   const root = bgmNote(m[1] + '3');
   return { root: root, iv: BGM_CHORD_Q[m[2]], minor: m[2] === 'm' || m[2] === 'm7' || m[2] === 'm6' || m[2] === 'dim' };
 }
+/* 일그러짐 곡선 (tanh). 세기마다 한 번만 만든다 */
+const _bgmDrive = {};
+function bgmDrive(k) {
+  if (_bgmDrive[k]) return _bgmDrive[k];
+  const n = 1024, c = new Float32Array(n), norm = Math.tanh(k);
+  for (let i = 0; i < n; i++) { const x = i / (n - 1) * 2 - 1; c[i] = Math.tanh(k * x) / norm; }
+  return (_bgmDrive[k] = c);
+}
 function bgmFreq(midi) { return 440 * Math.pow(2, (midi - 69) / 12); }
 /* 'D5*4 A4*2 .*2' → 16칸 ('*n' 은 그만큼 늘인다) */
 function bgmBar(str, steps) {
@@ -171,6 +179,11 @@ const BGM_INST = {
   lute:    { osc: [['triangle', 0], ['sawtooth', 1200]], cut: 2000, a: 0.004, d: 0.7, s: 0, r: 0.3, gain: 0.06, pluck: 1, mix: [1, 0.2] },
   bass:    { osc: [['sawtooth', 0]], cut: 480, a: 0.02, d: 0.2, s: 0.8, r: 0.14, gain: 0.08 },
   bell:    { bell: 1, gain: 0.05 },
+  // 3.20 배틀 록: 일그러진 기타(drive = 웨이브셰이퍼) · 밝은 신스 · 신스 베이스
+  gtr:     { osc: [['sawtooth', -6], ['sawtooth', 6], ['square', -1200]], drive: 7, cut: 4200, a: 0.005, d: 0.16, s: 0.75, r: 0.08, gain: 0.06, mix: [1, 1, 0.5] },
+  gtrlead: { osc: [['sawtooth', -5], ['sawtooth', 5]], drive: 4, cut: 5200, a: 0.01, d: 0.2, s: 0.85, r: 0.16, vib: 1, gain: 0.065 },
+  synlead: { osc: [['square', 0], ['sawtooth', 1200]], cut: 6400, a: 0.004, d: 0.12, s: 0.65, r: 0.1, vib: 0.6, gain: 0.042, mix: [1, 0.4] },
+  sbass:   { osc: [['sawtooth', 0], ['square', -1200]], cut: 650, fenv: 1400, a: 0.004, d: 0.16, s: 0.55, r: 0.06, gain: 0.05 },
   celesta: { bell: 2, gain: 0.04 }
 };
 
@@ -224,7 +237,7 @@ const BGM = {
   },
 
   /* ---------------- 녹음 ---------------- */
-  graph: function (ac, gain) {
+  graph: function (ac, gain, wetMix) {
     this.ac = ac;
     const out = ac.createDynamicsCompressor();
     out.threshold.value = -16; out.ratio.value = 3.5; out.attack.value = 0.01; out.release.value = 0.25;
@@ -236,7 +249,7 @@ const BGM = {
     const ir = ac.createBuffer(1, len, ac.sampleRate), d = ir.getChannelData(0);
     for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.4) * (i < 120 ? i / 120 : 1);
     const rev = ac.createConvolver(); rev.buffer = ir;
-    const wet = ac.createGain(); wet.gain.value = 0.42;
+    const wet = ac.createGain(); wet.gain.value = wetMix === undefined ? 0.42 : wetMix;   // 3.20: 록 곡은 잔향을 줄여 또렷하게
     this.bus.connect(rev); rev.connect(wet); wet.connect(out);
     const lfo = ac.createOscillator(); lfo.frequency.value = 5.2;
     this.vib = ac.createGain(); this.vib.gain.value = 9;
@@ -304,7 +317,7 @@ const BGM = {
       const ac = new AC(1, total, SR);
       const keep2 = { ac: this.ac, bus: this.bus, vib: this.vib, noise: this.noise };
       try {
-        this.graph(ac, (typeof BGM_GAIN !== 'undefined' && BGM_GAIN[name]) || 1);
+        this.graph(ac, (typeof BGM_GAIN !== 'undefined' && BGM_GAIN[name]) || 1, BGM_TRACKS[name].wet);
         const dbuf = ac.createBuffer(1, total, SR);
         dbuf.getChannelData(0).set(dry);
         const s = ac.createBufferSource(); s.buffer = dbuf; s.connect(this.bus); s.start(0);
@@ -312,6 +325,12 @@ const BGM = {
       } finally { Object.assign(this, keep2); }
       return ac.startRendering();
     }).then(buf => {
+        // 3.20: 부드러운 리미터 — 0.9 를 넘는 순간(록 곡의 킥이 겹칠 때)만 둥글게 눌러 1 을 넘지 않게 한다
+        const pk = buf.getChannelData(0);
+        for (let i = 0; i < pk.length; i++) {
+          const v = pk[i], a = v < 0 ? -v : v;
+          if (a > 0.9) pk[i] = (v < 0 ? -1 : 1) * (0.9 + 0.1 * Math.tanh((a - 0.9) / 0.1));
+        }
         if (tr.once) return buf;
         // 꼬리를 앞에 겹쳐 되풀이 이음매를 없앤다
         const d = buf.getChannelData(0), out = SFX.ctx.createBuffer(1, loopLen, BGM_RATE), o = out.getChannelData(0);
@@ -505,6 +524,10 @@ const BGM = {
         into.frequency.exponentialRampToValueAtTime(cut * 1.3, t + I.a * 1.6 + 0.35);
       } else into.frequency.value = cut;
     }
+    if (I.drive) {                                   // 일그러짐: 진동기 → 웨이브셰이퍼 → 필터
+      const ws = ctx.createWaveShaper(); ws.curve = bgmDrive(I.drive); ws.oversample = 'none';
+      ws.connect(into); into = ws;
+    }
     const oscs = [];
     I.osc.forEach((o, i) => {
       const osc = ctx.createOscillator();
@@ -591,6 +614,14 @@ const BGM = {
     this.noiseHit(t, 'bandpass', 2300, 0.8, 0.16 * (vel || 1), 0.15);
     this.thump(t, 210, 170, 0.07 * (vel || 1), 0.09);
   },
+  kick: function (t, vel) {                          // 3.20 록 킥: 짧고 단단한 저음 + 딸깍
+    this.thump(t, 160, 50, 0.48 * (vel || 1), 0.24);
+    this.noiseHit(t, 'highpass', 2800, 0, 0.07 * (vel || 1), 0.012);
+  },
+  clap: function (t, vel) {                          // 3.20 박수: 짧은 잡음 세 번 + 꼬리
+    for (let k = 0; k < 3; k++) this.noiseHit(t + k * 0.011, 'bandpass', 1350, 0.9, 0.12 * (vel || 1), 0.03);
+    this.noiseHit(t + 0.033, 'bandpass', 1300, 0.8, 0.1 * (vel || 1), 0.14);
+  },
   crash: function (t, vel) { this.noiseHit(t, 'highpass', 5200, 0, 0.09 * (vel || 1), 2.2); },
   hat: function (t, vel) { this.noiseHit(t, 'highpass', 8200, 0, 0.03 * (vel || 1), 0.045); },
   tamb: function (t, vel) {
@@ -622,7 +653,7 @@ const BGM = {
 
 /* 북 소리는 처음 한 번만 합성해 짧은 표본으로 두고, 곡을 녹음할 때는 그 표본을 튼다.
  * 타악기가 곡 녹음 시간의 절반 가까이를 먹던 것을 줄인다. */
-const BGM_DRUM_KEYS = ['timp', 'taiko', 'frame', 'snare', 'crash', 'hat', 'tamb', 'gong'];
+const BGM_DRUM_KEYS = ['timp', 'taiko', 'frame', 'snare', 'crash', 'hat', 'tamb', 'gong', 'kick', 'clap'];
 BGM.synth = {};
 BGM_DRUM_KEYS.forEach(k => {
   BGM.synth[k] = BGM[k];
@@ -639,7 +670,7 @@ BGM_DRUM_KEYS.forEach(k => {
 BGM.makeKit = function () {
   if (this.kitP) return this.kitP;
   const AC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
-  const jobs = [['taiko', 0.6], ['frame', 0.35], ['snare', 0.2], ['crash', 2.3], ['hat', 0.08], ['tamb', 0.15], ['gong', 4.3]];
+  const jobs = [['taiko', 0.6], ['frame', 0.35], ['snare', 0.2], ['crash', 2.3], ['hat', 0.08], ['tamb', 0.15], ['gong', 4.3], ['kick', 0.35], ['clap', 0.2]];
   for (let m = 28; m <= 64; m++) jobs.push(['timp' + m, 1.2, m]);
   const kit = {};
   const noiseAc = new AC(1, BGM_RATE, BGM_RATE), noise = noiseAc.createBuffer(1, BGM_RATE, BGM_RATE), nd = noise.getChannelData(0);
@@ -660,6 +691,45 @@ BGM.makeKit = function () {
  *  int 1 = 잔잔 · 2 = 본격 · 3 = 절정
  * ======================================================================= */
 const BGM_STYLES = {
+  /* 3.20 배틀 록: '왜 이렇게 차분하냐' — 관현악 위주를 갈아엎었다. 일그러진 기타 파워코드 8분 · 신스 베이스 ·
+   * 킥 4박 · 박수 스네어 · 하이햇 16분 · 신스 아르페지오 · 금관 찌르기. 팀파니 · 타이코 · 합창은 절정에만 얹어 웅장함을 남긴다. */
+  rock: function (B, x) {
+    const c = x.chord, r = c.root, d = x.dt, I = x.int;
+    const t3 = c.iv[1], t5 = c.iv[2];
+    const pw = [r - 12, r - 5, r];                               // 파워코드: 근음 · 5도 · 옥타브
+    if (x.s === 0) {
+      B.chordNotes(c, 12, true).forEach(n => B.note('pad', n, x.t, 16 * d, 0.3));
+      if (I >= 3) B.chordNotes(c, 12, false).forEach(n => B.note('choir', n + 12, x.t, 16 * d, 0.6));
+      if (x.first) { B.crash(x.t, 1); if (I >= 3) B.gong(x.t, 0.5); }
+      else if (I >= 3 || (I >= 2 && x.bar % 2 === 0)) B.crash(x.t, 0.75);
+    }
+    // 기타: 세기 1 은 길게 울리는 파워코드, 2~3 은 8분으로 몰아치는 뮤트 · 마디 머리는 크게 내려친다
+    if (I <= 1) { if (x.s === 0 || x.s === 8) pw.forEach(n => B.note('gtr', n, x.t, 7 * d, 0.8)); }
+    else {
+      const hit = B.pat('x.x.xxx.x.x.x.xx', x.s);
+      if (hit) {
+        const big = x.s === 0 || (I >= 3 && x.s === 8);
+        pw.forEach(n => B.note('gtr', n, x.t, (big ? 3 : 0.8) * d, big ? 1 : 0.75));
+      }
+    }
+    // 신스 베이스: 8분 옥타브 (절정은 16분)
+    if (I >= 3 || x.s % 2 === 0) B.note('sbass', r - 12 + ((x.s >> (I >= 3 ? 0 : 1)) % 2 ? 12 : 0), x.t, d * (I >= 3 ? 0.9 : 1.7), x.s % 4 === 0 ? 1 : 0.75);
+    // 신스 아르페지오: 16분으로 화음을 두 옥타브 오르내린다
+    if (I >= 2) B.note('synlead', r + 24 + [0, t3, t5, 12, t3 + 12, t5 + 12, 24, t5 + 12, 12, t5, t3, 0, t3, t5, 12, t5][x.s], x.t, d * 0.8, I >= 3 ? 0.55 : 0.42);
+    // 금관 찌르기
+    if (I >= 2 && B.pat('...x..x...x...x.', x.s)) {
+      B.chordNotes(c, 12, false).forEach(n => B.note('horn', n, x.t, d, 0.5));
+      B.note('trumpet', r + 24 + t5, x.t, d, 0.6);
+    }
+    // 북
+    if (B.pat(I >= 3 ? 'x..xx...x..xx.x.' : I >= 2 ? 'x...x...x...x.x.' : 'x...x...x...x...', x.s)) B.kick(x.t, x.s % 8 === 0 ? 1 : 0.85);
+    if (x.s === 4 || x.s === 12) { B.snare(x.t, 0.9); B.clap(x.t, 0.9); }
+    if (I >= 3 && (x.s === 14 || x.s === 15)) B.snare(x.t, 0.45);
+    B.hat(x.t, I >= 2 ? (x.s % 4 === 2 ? 1.1 : 0.55) : (x.s % 2 === 0 ? 0.6 : 0));
+    if (I >= 2 && (x.s === 0 || x.s === 8)) B.timp(x.t, r - 12 + (x.s === 8 ? 7 : 0), 0.8);
+    if (I >= 3 && (x.s === 0 || x.s === 8)) B.taiko(x.t, 0.8);
+    if (x.last) B.roll(x, I >= 3 ? 'snare' : 'timp', 12, 15, r - 12);
+  },
   /* 3.17 보스곡 리믹스: '장엄하고 짜릿하고 빠르게, 악기 많이'.
    * epic 위에 금관 엇박 찌르기 · 두 옥타브 현 16분 · 8분 저음 · 하프 상행 아르페지오 · 플루트 대선율 ·
    * 첼레스타 반짝임 · 스네어 장식음 · 하이햇 16분 · 탬버린을 더 얹는다. 세기(int)가 오를수록 겹이 늘어난다. */

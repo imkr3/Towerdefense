@@ -781,26 +781,38 @@ const BGM_GAIN = {
   canyon: 0.81, fortress: 1.07, darkwood: 0.96, ruins: 0.96, swamp: 1.54, snowpass: 1.41,
   blizzard: 0.91, winterthrone: 1.42, volcano: 0.77, warcamp: 0.7, blackriver: 1.77, underworld: 0.7,
   thorngate: 1.02, desert: 1.35, eclipse: 0.7, mythic: 0.7, endless: 0.88, return: 0.82,
-  shieldwall: 1.23, gate: 0.79, throne: 0.79, seal: 0.7, siege: 1.2, boss_lich: 0.84,
-  boss_troll: 0.86, boss_frostgiant: 0.85, boss_drake: 0.84, boss_spiderqueen: 0.98, boss_warlord: 0.82, finale: 0.95,
+  shieldwall: 1.23, gate: 0.79, throne: 0.79, seal: 0.7, siege: 1.2, boss_lich: 1.01,
+  boss_troll: 1.01, boss_frostgiant: 1.02, boss_drake: 0.99, boss_spiderqueen: 0.99, boss_warlord: 1.02, finale: 0.99,
   victory: 1.5, defeat: 1.32,
   // 3.3
   shore: 1.1, coral: 1.2, krakenbay: 0.9, lighthouse: 1.3, sirensong: 1.2, tidetemple: 1.1, sunken: 1.3,
   strait: 0.85, abyssgate: 0.95, leviathan: 0.85,
   // 3.18 새 보스곡 (렌더해 재서 맞춤)
-  boss_vampire: 0.83, boss_titan: 0.9, boss_ghostfleet: 0.8, boss_voidlord: 0.79, boss_demonking: 0.84, boss_goldwyrm: 0.82,
-  hc_iron: 0.82, hc_storm: 0.82, hc_abyss: 0.86, hc_boss: 0.8,
-  boss_kraken: 0.83, boss_tidequeen: 0.82, finale2: 0.91
+  boss_vampire: 0.96, boss_titan: 1.02, boss_ghostfleet: 0.92, boss_voidlord: 0.97, boss_demonking: 0.96, boss_goldwyrm: 0.97,
+  hc_iron: 0.98, hc_storm: 0.93, hc_abyss: 0.97, hc_boss: 0.9,
+  boss_kraken: 1.0, boss_tidequeen: 1.0, finale2: 1.0
 };
 
-/* 3.17 보스곡 리믹스: 보스곡 · 마지막 전장 곡은 grand 스타일로 15~20 BPM 빠르게 (선율은 그대로).
- * 겹침 악기가 없는 본격 구간엔 한 옥타브 아래 겹침을 붙여 악기 수를 늘린다 (현 ⇄ 호른). */
-['boss_lich', 'boss_troll', 'boss_frostgiant', 'boss_drake', 'boss_spiderqueen', 'boss_warlord',
- 'boss_kraken', 'boss_tidequeen', 'finale', 'finale2',
- 'boss_vampire', 'boss_titan', 'boss_ghostfleet', 'boss_voidlord', 'boss_demonking', 'boss_goldwyrm',
- 'hc_iron', 'hc_storm', 'hc_abyss', 'hc_boss'].forEach(k => {
-  for (const sec of BGM_TRACKS[k].sections) {
-    if (!sec.dbl && (sec.int || 1) >= 2) sec.dbl = sec.lead === 'strings' ? 'horn' : 'strings';
+/* 3.17 보스곡 리믹스 → 3.20 배틀 록 재편곡. 보스곡 · 마지막 전장 · 이벤트 보스 · 하드코어 곡 전부.
+ * 선율(주제)은 그대로, 반주를 rock 으로, 잔향을 줄이고(0.42 → 0.2), 선율 악기를 바꾼다:
+ *   도입(세기 1): 합창·호른 → 일그러진 기타 리드, 플루트 → 신스 리드, 낮은 금관 리프 → 기타 리프
+ *   본격(세기 2): 기타 리드 + 한 옥타브 아래 트럼펫
+ *   절정(세기 3): 신스 리드 + 한 옥타브 아래 기타 리드 (합창 대선율은 그대로) */
+const BGM_ROCK = ['boss_lich', 'boss_troll', 'boss_frostgiant', 'boss_drake', 'boss_spiderqueen', 'boss_warlord',
+  'boss_kraken', 'boss_tidequeen', 'finale', 'finale2',
+  'boss_vampire', 'boss_titan', 'boss_ghostfleet', 'boss_voidlord', 'boss_demonking', 'boss_goldwyrm',
+  'hc_iron', 'hc_storm', 'hc_abyss', 'hc_boss'];
+BGM_ROCK.forEach(k => {
+  const tr = BGM_TRACKS[k];
+  tr.style = 'rock'; tr.wet = 0.2;
+  for (const sec of tr.sections) {
+    delete sec.style;
+    const I = sec.int || 1;
+    if (I <= 1) {
+      sec.lead = sec.lead === 'lowbrass' ? 'gtr' : (sec.lead === 'flute' || sec.lead === 'celesta') ? 'synlead' : 'gtrlead';
+      delete sec.dbl;
+    } else if (I === 2) { sec.lead = 'gtrlead'; sec.dbl = 'trumpet'; }
+    else { sec.lead = 'synlead'; sec.dbl = 'gtrlead'; }
   }
 });
 
