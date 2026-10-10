@@ -47,7 +47,7 @@ function loadEngine(seed) {
     vm.runInContext(src, ctx, { filename: f });
   }
   return vm.runInContext(
-    '({Battle, STAGES, EVENT_STAGES, EXPEDITIONS, MOD_COUNTERS, recommendDeck, UNITS, UNIT_BY_ID, ROSTER_UNITS, LOADOUT_MAX, HERO_SLOT_MAX, unitLevelCap, unitTrainCost, UPGRADES, EVO_LEVEL, EVOLUTIONS})',
+    '({Battle, STAGES, EVENT_STAGES, EXPEDITIONS, MOD_COUNTERS, recommendDeck, UNITS, UNIT_BY_ID, ROSTER_UNITS, LOADOUT_MAX, HERO_SLOT_MAX, unitLevelCap, unitTrainCost, UPGRADES, EVO_LEVEL, EVOLUTIONS, EVOLUTIONS2})',
     ctx);
 }
 
@@ -187,8 +187,11 @@ function runStage(g, index, upLv, unitLv, trace, gacha, basic, opt) {
   // 레벨 10 을 넘긴 병종은 진화해 있다고 본다 (실제 플레이어도 그렇게 쓴다)
   const evo = {};
   if (!process.env.SIM_NOEVO && Math.min(unitLv, cap) >= g.EVO_LEVEL) g.UNITS.forEach(u => { if (g.EVOLUTIONS[u.id]) evo[u.id] = true; });
+  // 4.1: 레벨 20 을 넘긴 전장 병종은 3진까지 마쳤다고 본다
+  const evo2 = {};
+  if (!process.env.SIM_NOEVO && !process.env.SIM_NOEVO2 && Math.min(unitLv, cap) >= 20) g.UNITS.forEach(u => { if (g.EVOLUTIONS2 && g.EVOLUTIONS2[u.id]) evo2[u.id] = true; });
   const save = {
-    cleared: index, coins: 0, levels: levels, loadout: loadout, stars: {}, owned: owned, evo: evo,
+    cleared: index, coins: 0, levels: levels, loadout: loadout, stars: {}, owned: owned, evo: evo, evo2: evo2,
     upgrades: {
       wallet: upLv, income: upLv, power: upLv, vitality: upLv, castle: upLv,
       logistics: upLv, treasury: upLv, spoils: upLv,

@@ -1114,6 +1114,19 @@ body{background:var(--bg0);color:var(--tx)}
 .unit-card.evolved .unit-ico{border-color:var(--au);box-shadow:0 0 10px #f6d36555}
 .card.evo{border-color:#e2bf72;box-shadow:0 0 0 1px #e2bf7255,0 2px 8px #0006}
 .card.evo .c-name{color:var(--au-l)}
+/* 4.1 3진: 청록 */
+.evo-box.evo3{border-color:#7ff0ff55}
+.evo-box.evo3 b{color:#9ff6ff}
+.evo-box.evo3.ready{border-color:#7ff0ff;background:linear-gradient(100deg,#123a44cc,#172839cc);box-shadow:0 0 0 1px #7ff0ff33,0 0 16px #7ff0ff22}
+.evo-box.evo3.done{border-style:solid;border-color:#7ff0ff66}
+.evo-box.evo3.done.on{background:linear-gradient(100deg,#123a44aa,#172839aa)}
+.evo2-btn{padding:7px 12px;font-size:12px;white-space:nowrap;background:linear-gradient(180deg,#c8fbff,#4ac0d8)!important;color:#06242c!important;
+  border-color:#e8ffff!important;box-shadow:0 1px 0 #fff8 inset,0 3px 0 #1a5a6a,0 0 12px #7ff0ffaa!important}
+.evo-form.f3.sel{background:linear-gradient(180deg,#c8fbff,#4ac0d8);color:#06242c}
+.unit-card.evolved2{border-color:#7ff0ff88;box-shadow:0 0 0 1px #7ff0ff33,var(--panel-shadow)}
+.unit-card.evolved2 .unit-ico{border-color:#7ff0ff;box-shadow:0 0 10px #7ff0ff55}
+.card.evo2{border-color:#7ff0ff;box-shadow:0 0 0 1px #7ff0ff55,0 2px 8px #0006}
+.card.evo2 .c-name{color:#bff8ff}
 
 /* ---------- 3.0 하드코어 · 시간 주술사 ---------- */
 .sd-hard{border-left:3px solid #c0392b;background:#2a0e1299;border-radius:6px;padding:5px 8px;font-size:11.5px;line-height:1.35;color:var(--tx2,#d8d0c0)}

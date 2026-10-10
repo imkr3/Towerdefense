@@ -1940,6 +1940,10 @@ const ACHIEVEMENTS = [
     test: s => Object.keys(s.levels || {}).some(k => s.levels[k] >= 15) },
   { id:'campaign30',name:'세 신화의 정복자',desc:'30전장 모두 돌파',gold:5000,stone:5,test:s=>s.cleared>=30 },
   { id:'campaign40',name:'심연을 건넌 자',desc:'40전장 모두 돌파',gold:12000,stone:10,test:s=>s.cleared>=40 },
+  { id: 'awaken1',  name: '세 번째 모습', desc: '병종 하나를 3진',              gold: 5000, stone: 5,
+    test: s => Object.keys(s.evo2 || {}).length >= 1 },
+  { id: 'awaken10', name: '엉뚱한 군대',  desc: '병종 10종을 3진',               gold: 20000, stone: 15,
+    test: s => Object.keys(s.evo2 || {}).length >= 10 },
   { id:'campaign50',name:'하늘에 오른 자',desc:'50전장 모두 돌파 (4막 천공 요새)',gold:20000,stone:15,test:s=>s.cleared>=50 },
   { id: 'endless10',name: '끝없는 전장',  desc: '무한 전장 10웨이브 돌파',       gold: 2000, stone: 3,
     test: s => (s.endlessBest || 0) >= 10 },
@@ -2223,7 +2227,7 @@ function _getPath(o, path) { const k = path.split('.'); for (const p of k) { if 
 function _setPath(o, path, v) { const k = path.split('.'); for (let i = 0; i < k.length - 1; i++) o = o[k[i]]; o[k[k.length - 1]] = v; }
 function _r2(v) { return Math.round(v * 100) / 100; }
 
-function applyEvolution(r, e) {
+function applyEvolution(r, e, noCost) {
   r.evo = true;
   r.baseName = r.name;
   r.name = e.name;
@@ -2258,11 +2262,96 @@ function applyEvolution(r, e) {
     r.scale = _r2(r.scale * (e.look.grow || 1));
     r.bigEvo = true;
   }
-  if (e.cost) for (const k in e.cost) {
+  if (e.cost && !noCost) for (const k in e.cost) {
     if (k.indexOf('ab.') === 0) { const v = _getPath(r.ab, k.slice(3)); if (typeof v === 'number') _setPath(r.ab, k.slice(3), _r2(v * e.cost[k])); }
     else if (typeof r[k] === 'number') r[k] = k === 'interval' ? _r2(r[k] * e.cost[k]) : Math.round(r[k] * e.cost[k]);
   }
-  r.evoMinus = evoCostText(e);
+  r.evoMinus = noCost ? '' : evoCostText(e);
+}
+
+/* =======================================================================
+ *  4.1 3진 (각성). 진화를 마친 병종이 레벨 20 이 되면 한 번 더 바뀐다.
+ *  2진이 '특화(얻는 것 + 잃는 것)' 였다면 3진은 '완성': 2진의 대가가 사라지고, 체력·공격 ×1.35,
+ *  능력이 하나 더 붙고, 모습이 엉뚱하게(그러나 어울리게) 바뀐다 — 투석기가 전차가 되는 식.
+ *  대가는 출진 비용 +30% · 출진 쿨타임 +30% 뿐. 진화와 마찬가지로 언제든 기본·진화 형태로 되돌려 쓸 수 있다.
+ *  look.shape 는 render.js 의 그림, shot 이 있으면 투사체 모양도 바뀐다.
+ *  faster: 공격 간격 배율 (작을수록 빠름)
+ * ======================================================================= */
+const EVO2_LEVEL = 20;
+const EVO2_STAT = 1.35;
+const EVO2_PRICE = { cost: 1.3, cooldown: 1.3 };
+function evo2Cost(u) { return Math.round(5000 + (u.cost || 0) * 25); }
+const EVOLUTIONS2 = {
+  spear:   { look: { shape: 'drillspear', tunic: '#c9572a', accent: '#ffd35a' }, name: '드릴 창병', short: '드릴창', plus: '회전 드릴 창 · 파쇄 1.4배 · 더 세게 밀쳐 냄', add: { range: 10 }, ab: { breaker: 1.4, push: 40 } },
+  shield:  { look: { shape: 'bulldozer', tunic: '#e8b030', accent: '#3a3a40', grow: 1.05 }, name: '방패 불도저', short: '불도저', plus: '불도저 삽 · 갑주 30% · 반사 25% · 밀쳐 냄', ab: { kbImmune: true, armor: 0.3, thorns: 0.25, push: 30 } },
+  archer:  { look: { shape: 'gatlingbow', tunic: '#2f6a3a', accent: '#9fffb0' }, name: '연발 석궁수', short: '연발석궁', plus: '연발 석궁 · 쏠수록 빨라짐 (최대 2배) · 치명타 25%', ab: { spinup: { per: 0.12, max: 1.0 }, crit: { chance: 0.25, mul: 2.2 } }, shot: 'bolt' },
+  priest:  { look: { shape: 'ambulance', tunic: '#f4f1e8', accent: '#e8403a', grow: 1.05 }, name: '구급 마차', short: '구급마차', plus: '사이렌 · 회복 +40% · 범위 +60 · 정화 · 보호막 60', mul: { heal: 1.4 }, abAdd: { radius: 60 }, ab: { cleanse: true, barrier: 60 } },
+  berserk: { look: { shape: 'chainsaw', tunic: '#7a2a2a', accent: '#ff8a3c' }, name: '전기톱 광전사', short: '전기톱', plus: '전기톱 · 범위 공격 · 흡혈 25% · 다칠수록 빨라짐', set: { area: true, areaRadius: 60 }, ab: { enrage: 1.8, lifesteal: 0.25 } },
+  venom:   { look: { shape: 'gassprayer', tunic: '#3a5a2a', accent: '#a8ff5a' }, name: '독가스 분무병', short: '분무병', plus: '독안개 분무 · 범위 90 · 중독 +60%', set: { area: true, areaRadius: 90 }, mul: { 'poison.dps': 1.6 }, shot: 'gas' },
+  bomber:  { look: { shape: 'rocketbomber', tunic: '#8a3a2a', accent: '#ffb03c' }, name: '로켓 화약병', short: '로켓병', plus: '로켓 돌진 · 폭발 범위 +70 · 화상 · 매우 빠름', add: { areaRadius: 70, speed: 40 }, ab: { burn: { dps: 45, dur: 4 } } },
+  merchant:{ look: { shape: 'foodtruck', tunic: '#e8b030', accent: '#e8403a', grow: 1.05 }, name: '황금 푸드트럭', short: '푸드트럭', plus: '푸드트럭 · 군자금 +90% · 갑주 30%', mul: { gold: 1.9 }, ab: { armor: 0.3 } },
+  knight:  { look: { shape: 'mechknight', tunic: '#5a6a7a', accent: '#ffb03c', grow: 1.08 }, name: '증기 갑주 기사', short: '증기기사', plus: '증기 갑주 · 갑주 25% · 넉백 면역 · 범위 +30 · 흡혈 12%', add: { areaRadius: 30 }, ab: { armor: 0.25, kbImmune: true, lifesteal: 0.12 } },
+  frost:   { look: { shape: 'icecart', tunic: '#7ac8e8', accent: '#ff8ab0' }, name: '빙수 마도사', short: '빙수마도', plus: '눈덩이 폭격 · 범위 70 · 얼림 25% · 둔화 +30%', set: { area: true, areaRadius: 70 }, ab: { stun: { chance: 0.25, dur: 0.9 } }, mul: { slow: 1.3 }, shot: 'snowball' },
+  catapult:{ look: { shape: 'tank', tunic: '#5a6a3a', accent: '#ffb03c', grow: 1.05 }, name: '공성 전차', short: '전차', plus: '전차 포탑 · 갑주 30% · 넉백 면역 · 화상 · 범위 +30', add: { areaRadius: 30 }, ab: { armor: 0.3, kbImmune: true, burn: { dps: 45, dur: 4 } }, shot: 'shell' },
+  duelist: { look: { shape: 'lightsaber', tunic: '#2a2a3a', accent: '#5ad8ff' }, name: '광선검 검성', short: '광선검', plus: '광선검 · 체력 20% 이하 즉시 처치 · 치명타 35% ×2.8', ab: { execute: 0.2, crit: { chance: 0.35, mul: 2.8 } } },
+  sniper:  { look: { shape: 'railgun', tunic: '#2a3a4a', accent: '#5ae8ff' }, name: '레일건 저격수', short: '레일건', plus: '레일건 · 관통 · 보스·중장갑에게 2배', ab: { breaker: 2.0, pierce: true }, shot: 'rail' },
+  mage:    { look: { shape: 'ufo', tunic: '#2a2a6b', accent: '#9affb0', grow: 1.05 }, name: '비행접시 대현자', short: '비행접시', plus: '비행접시 광선 · 기절 35% · 화상 · 범위 +20', add: { areaRadius: 20 }, ab: { stun: { chance: 0.35, dur: 1.2 }, burn: { dps: 55, dur: 3 } } },
+  colossus:{ look: { shape: 'megabot', tunic: '#4a5a8a', accent: '#ffd35a', grow: 1.05 }, name: '거대 로봇', short: '거대로봇', plus: '로켓 주먹 · 보호막 +40% · 반사 25% · 범위 공격', mul: { barrier: 1.4 }, ab: { thorns: 0.25 }, set: { area: true, areaRadius: 70 } },
+  necro:   { look: { shape: 'bandmaster', tunic: '#1c1828', accent: '#7fffb0' }, name: '해골 악단장', short: '악단장', plus: '해골 악단 · 4기씩 소환 · 소환 주기 -15%', ab: { summon: { n: 4 } }, mul: { interval: 0.85 } },
+  herald:  { look: { shape: 'cheerleader', tunic: '#e8403a', accent: '#ffe28a' }, name: '응원 단장', short: '응원단장', plus: '확성기 응원 · 공격력 +18% · 범위 +60 · 가속', ab: { rally: { atk: 0.18, radius: 280 } }, abAdd: { radius: 60 } },
+  longbow: { look: { shape: 'ballistaarcher', tunic: '#4a5a3a', accent: '#e8c65a', grow: 1.05 }, name: '발리스타 궁수', short: '발리스타', plus: '등짐 발리스타 · 관통 · 파쇄 1.3배 · 사거리 +60', add: { range: 60 }, ab: { pierce: true, breaker: 1.3 }, shot: 'bigbolt' },
+  pyro:    { look: { shape: 'flamethrower', tunic: '#5a3a2a', accent: '#ff7a2a' }, name: '화염방사병', short: '화염방사', plus: '화염 방사기 · 화상 +60% · 범위 +30 · 공격 20% 빠름', add: { areaRadius: 30 }, mul: { 'burn.dps': 1.6 }, faster: 0.8, shot: 'flame' },
+  paladin: { look: { shape: 'firefighter', tunic: '#c8302a', accent: '#8ad8ff' }, name: '성수 소방관', short: '소방관', plus: '성수 호스 · 회복 +50% · 범위 +50 · 부활 100% · 보호막 100', mul: { heal: 1.5 }, abAdd: { radius: 50 }, ab: { revive: 1, barrier: 100 } },
+  engineer:{ look: { shape: 'excavator', tunic: '#e8b030', accent: '#3a3a40', grow: 1.05 }, name: '굴착기 공병', short: '굴착기', plus: '굴착기 · 방벽 3개씩 · 갑주 20%', ab: { summon: { n: 3 }, armor: 0.2 } },
+  rogue:   { look: { shape: 'ninja', tunic: '#1a1a24', accent: '#e8403a' }, name: '그림자 닌자', short: '닌자', plus: '닌자 · 회피 30% · 치명타 40% ×2.8 · 흡혈 20%', ab: { dodge: 0.3, crit: { chance: 0.4, mul: 2.8 }, lifesteal: 0.2 } },
+  runeguard:{ look: { shape: 'runetower', tunic: '#6a7a9a', accent: '#8affe8', grow: 1.05 }, name: '걸어 다니는 룬 탑', short: '룬탑', plus: '룬 탑 · 보호막 +50% · 범위 +40 · 넉백 면역', mul: { barrier: 1.5 }, abAdd: { radius: 40 }, ab: { kbImmune: true } },
+  musketeer:{ look: { shape: 'gatlinggun', tunic: '#2a4a8e', accent: '#ffd35a' }, name: '개틀링 총사', short: '개틀링', plus: '개틀링 · 쏠수록 빨라짐 (최대 2.2배) · 기절 20%', ab: { spinup: { per: 0.1, max: 1.2 }, stun: { chance: 0.2, dur: 0.7 } }, shot: 'bullet' },
+  purifier:{ look: { shape: 'bubblewasher', tunic: '#8ad8ff', accent: '#ffffff' }, name: '거품 세탁 정화사', short: '세탁정화', plus: '비눗방울 세탁 · 보호막 90 · 회복 +30% · 범위 +40', ab: { barrier: 90 }, mul: { heal: 1.3 }, abAdd: { radius: 40 } },
+  frostlancer:{ look: { shape: 'snowmobile', tunic: '#3a6a9a', accent: '#bfefff', grow: 1.05 }, name: '스노모빌 창기사', short: '스노모빌', plus: '스노모빌 돌격 2.4배 · 넉백 면역 · 밀쳐 냄 · 빠름', add: { speed: 20 }, ab: { kbImmune: true, push: 35, charge: { mul: 2.4, dist: 110, push: 50 } } },
+  javelin: { look: { shape: 'bazooka', tunic: '#5a6a3a', accent: '#ff8a3c' }, name: '바주카 투창병', short: '바주카', plus: '로켓 · 폭발 범위 70 · 파쇄 1.5배', set: { area: true, areaRadius: 70 }, ab: { breaker: 1.5 }, shot: 'rocket' },
+  falconer:{ look: { shape: 'dronepilot', tunic: '#3a4a5a', accent: '#5ad8ff' }, name: '드론 조종사', short: '드론', plus: '드론 편대 · 원거리 적에게 2.4배 · 사거리 +60', add: { range: 60 }, ab: { hunter: 2.4 }, shot: 'drone' },
+  bellringer:{ look: { shape: 'ampringer', tunic: '#2a2a3a', accent: '#ff5ad8' }, name: '앰프 종지기', short: '앰프', plus: '대형 앰프 · 기절 면역 5초 · 보호막 100 · 범위 +60', ab: { ward: { dur: 5 }, barrier: 100 }, abAdd: { radius: 60 } },
+  lancer:  { look: { shape: 'motorlancer', tunic: '#2a2a3a', accent: '#ffd35a', grow: 1.05 }, name: '오토바이 창기병', short: '오토바이', plus: '오토바이 · 돌격 4배 · 넉백 면역 · 빠름', add: { speed: 20 }, ab: { charge: { mul: 4 }, kbImmune: true } },
+  alchemist:{ look: { shape: 'madscientist', tunic: '#f0f0e8', accent: '#a8ff5a' }, name: '미치광이 과학자', short: '과학자', plus: '부식 2배 · 중독 +50% · 범위 +30', add: { areaRadius: 30 }, mul: { 'sunmark.vuln': 2, 'poison.dps': 1.5 }, shot: 'flask' },
+  monk:    { look: { shape: 'drunkenmonk', tunic: '#c8702a', accent: '#ffd35a' }, name: '취권 고수', short: '취권', plus: '취권 · 회피 35% · 흡혈 25% · 반사 15%', ab: { dodge: 0.35, lifesteal: 0.25, thorns: 0.15 } },
+  harpoon: { look: { shape: 'harpoonboat', tunic: '#3a5a7a', accent: '#e8e0c8', grow: 1.05 }, name: '작살포 보트', short: '작살포', plus: '바퀴 달린 포경선 · 관통 · 둔화 2.5초 · 파쇄 1.6배', ab: { slow: 2.5, breaker: 1.6, pierce: true }, shot: 'harpoon' },
+  corsair: { look: { shape: 'parrotcaptain', tunic: '#7a2a2a', accent: '#5ad85a' }, name: '앵무새 대포 선장', short: '앵무선장', plus: '앵무새 대포 · 범위 칼춤 · 회피 30% · 금화 40%', set: { area: true, areaRadius: 60 }, ab: { dodge: 0.3, bounty: { chance: 0.4, gold: 16 } } },
+  beacon:  { look: { shape: 'walkinglighthouse', tunic: '#e8e4d8', accent: '#ffe28a', grow: 1.08 }, name: '걸어 다니는 등대', short: '등대', plus: '등대 · 보호막 260 · 범위 +80 · 기절 면역 4초', ab: { barrier: 260, ward: { dur: 4 } }, abAdd: { radius: 80 } },
+  stormcaller:{ look: { shape: 'teslacoil', tunic: '#2a2a4a', accent: '#8ad8ff' }, name: '테슬라 코일 술사', short: '테슬라', plus: '테슬라 코일 · 번개 6번 튕김 · 기절 10%', ab: { chain: { n: 6, fall: 0.75, range: 150 }, stun: { chance: 0.1, dur: 0.5 } } },
+  anchorguard:{ look: { shape: 'diver', tunic: '#b8863a', accent: '#5ad8ff', grow: 1.05 }, name: '심해 잠수부', short: '잠수부', plus: '잠수 헬멧 · 갑주 40% · 반사 30% · 초당 60 회복', ab: { armor: 0.4, thorns: 0.3, regen: 60 } }
+};
+function _mergeAb(r, src) {
+  r.ab = r.ab || {};
+  for (const k in src) {
+    const v = src[k];
+    r.ab[k] = (v && typeof v === 'object' && r.ab[k] && typeof r.ab[k] === 'object')
+      ? Object.assign({}, r.ab[k], v) : (v && typeof v === 'object' ? Object.assign({}, v) : v);
+  }
+}
+function applyEvo2(r, e) {
+  r.evo2 = true;
+  r.name = e.name;
+  r.short = e.short || e.name;
+  r.hp = Math.round(r.hp * EVO2_STAT);
+  r.atk = Math.round(r.atk * EVO2_STAT);
+  r.cost = Math.round(r.cost * EVO2_PRICE.cost / 5) * 5;
+  if (r.cooldown) r.cooldown = _r2(r.cooldown * EVO2_PRICE.cooldown);
+  r.evoPlus = e.plus;
+  r.abText = (r.abText ? r.abText + ' · ' : '') + '✪ ' + e.plus;
+  if (e.add) for (const k in e.add) r[k] = (r[k] || 0) + e.add[k];
+  if (e.set) Object.assign(r, e.set);
+  if (e.faster) r.interval = _r2(r.interval * e.faster);
+  if (e.ab) _mergeAb(r, e.ab);
+  if (e.mul) for (const k in e.mul) { const v = _getPath(r.ab, k); if (typeof v === 'number') _setPath(r.ab, k, _r2(v * e.mul[k])); }
+  if (e.abAdd) for (const k in e.abAdd) { const v = _getPath(r.ab, k); if (typeof v === 'number') _setPath(r.ab, k, v + e.abAdd[k]); }
+  if (e.look) {
+    r.shape = e.look.shape;
+    for (const k of ['body', 'accent', 'tunic']) if (e.look[k]) r[k] = e.look[k];
+    r.scale = _r2((r.base && r.base.scale || 1) * 1.12 * (e.look.grow || 1));
+    r.bigEvo = true;
+  }
+  if (e.shot) r.shot = e.shot;
+  r.evoMinus = '출진 비용 +' + Math.round((EVO2_PRICE.cost - 1) * 100) + '% · 쿨타임 +' + Math.round((EVO2_PRICE.cooldown - 1) * 100) + '%';
 }
 
 /* 레벨이 오를 때 체력·공격 말고 좋아지는 것들. k = 레벨 - 1 */
@@ -2383,14 +2472,17 @@ function resolveUnit(u, lv, evo) {
   if (!u) return u;
   lv = Math.max(1, lv || 1);
   const ev = !!(evo && EVOLUTIONS[u.id] && lv >= EVO_LEVEL);
-  const key = u.id + '|' + lv + '|' + (ev ? 1 : 0);
+  // 4.1: evo === 2 면 3진 (2진을 대가 없이 얹은 위에 3진)
+  const ev2 = ev && evo === 2 && !!EVOLUTIONS2[u.id] && lv >= EVO2_LEVEL;
+  const key = u.id + '|' + lv + '|' + (ev2 ? 2 : ev ? 1 : 0);
   if (_resolved[key]) return _resolved[key];
   const r = Object.assign({}, u);
   r.base = u;
   r.level = lv;
   r.ab = u.ab ? JSON.parse(JSON.stringify(u.ab)) : null;
   if (u.active) r.active = Object.assign({}, u.active);
-  if (ev) applyEvolution(r, EVOLUTIONS[u.id]);
+  if (ev) applyEvolution(r, EVOLUTIONS[u.id], ev2);
+  if (ev2) applyEvo2(r, EVOLUTIONS2[u.id]);
   growUnit(r, lv);
   heroBuild(r);
   _resolved[key] = r;
@@ -2400,9 +2492,23 @@ function resolveUnit(u, lv, evo) {
 function usesEvo(save, id) {
   return !!(save && save.evo && save.evo[id] === true && (save.levels && save.levels[id] || 1) >= EVO_LEVEL);
 }
+/* 4.1 3진을 쓰는가: 2진을 마쳤고(save.evo 에 기록), 3진을 마쳤고 켜 두었고, 레벨 20 이상 */
+function usesEvo2(save, id) {
+  return !!(save && save.evo2 && save.evo2[id] === true && save.evo && save.evo[id] !== undefined &&
+            EVOLUTIONS2[id] && (save.levels && save.levels[id] || 1) >= EVO2_LEVEL);
+}
+/* 형태 고르기 (훈련소 · 편성 공용). form: 'base' | 'evo' | 'evo2' */
+function setEvoForm(save, id, form) {
+  if (!save.evo2) save.evo2 = {};
+  save.evo[id] = form !== 'base';
+  if (save.evo2[id] !== undefined) save.evo2[id] = form === 'evo2';
+}
+/* 지금 쓰는 형태: 0 기본 · 1 진화 · 2 3진 */
+function evoForm(save, id) { return usesEvo2(save, id) ? 2 : usesEvo(save, id) ? 1 : 0; }
 function unitFor(save, id) {
   const u = UNIT_BY_ID[id];
-  return resolveUnit(u, (save && save.levels && save.levels[id]) || 1, usesEvo(save, id));
+  const f = evoForm(save, id);
+  return resolveUnit(u, (save && save.levels && save.levels[id]) || 1, f === 2 ? 2 : f === 1);
 }
 
 /* =======================================================================

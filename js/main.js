@@ -3,7 +3,7 @@
  * ======================================================================= */
 
 
-const APP_VERSION = '4.0.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
+const APP_VERSION = '4.1.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
 
 function defaultSave() {
   const lv = {};
@@ -14,7 +14,7 @@ function defaultSave() {
     levels: lv, loadout: ['spear'], knownUnits: ['spear'],
     stars: {}, totalKills: 0, sound: true,
     owned: {}, stones: 3, pity: 0, mythPity: 0, season: 'olympus', pulls: 0, tutorial: false,
-    endlessBest: 0, achv: {}, daily: null, auto: false, evo: {}, hard: {}, events: {}, expeditions: {}, expRuns: 0,
+    endlessBest: 0, achv: {}, daily: null, auto: false, evo: {}, evo2: {}, hard: {}, events: {}, expeditions: {}, expRuns: 0,
     stats: { battles: 0, wins: 0, bossKills: 0, trains: 0, playSec: 0 }
   };
 }
@@ -65,6 +65,12 @@ function normalizeSave(raw) {
       for (const k in s.evo) if (EVOLUTIONS[k] && typeof s.evo[k] === 'boolean') evo[k] = s.evo[k];
     }
     s.evo = evo;
+    // 4.1 3진: 2진을 마친 병종만 (true 3진으로 출진 · false 마쳤지만 다른 형태)
+    const evo2 = {};
+    if (s.evo2 && typeof s.evo2 === 'object') {
+      for (const k in s.evo2) if (EVOLUTIONS2[k] && evo[k] !== undefined && typeof s.evo2[k] === 'boolean') evo2[k] = s.evo2[k];
+    }
+    s.evo2 = evo2;
     if (!Array.isArray(s.loadout)) s.loadout = [];
     if (!Array.isArray(s.knownUnits) || !Object.prototype.hasOwnProperty.call(raw, 'knownUnits')) {
       s.knownUnits = UNITS.filter(u => u.unlockStage <= s.cleared + 1 || (u.gacha && s.owned && s.owned[u.id])).map(u => u.id);
@@ -865,6 +871,10 @@ function renderTraining() {
     }
 
     // 진화: 레벨 10 이 되면 금화로 진화, 그 뒤로는 언제든 형태를 바꿔 쓴다
+    // 4.1 3진: 진화를 마치고 레벨 20 이 되면 한 번 더. 대가는 출진 비용·쿨타임뿐
+    const evo2Def = EVOLUTIONS2[u.id];
+    const evolved2 = !!(save.evo2 && save.evo2[u.id] !== undefined);
+    const form = evoForm(save, u.id);
     let evoHtml = '';
     if (unlocked && evoDef) {
       const minus = evoCostText(evoDef);
@@ -874,19 +884,26 @@ function renderTraining() {
           '<div class="evo-info">' + (lv >= EVO_LEVEL ? '' : '<small>레벨 10에 진화</small> ') + info + '</div>' +
           (lv >= EVO_LEVEL ? '<button class="btn evo-btn">✦ 진화 · 💰 ' + evoCost(u) + '</button>' : '') + '</div>';
       } else {
-        const on = save.evo[u.id] === true;
-        evoHtml = '<div class="evo-box done' + (on ? ' on' : '') + '">' +
+        evoHtml = '<div class="evo-box done' + (form ? ' on' : '') + '">' +
           '<div class="evo-info">' + info + '</div>' +
           '<div class="evo-seg" role="group" aria-label="형태 선택">' +
-            '<button class="evo-form' + (on ? '' : ' sel') + '" data-form="base">기본 형태</button>' +
-            '<button class="evo-form' + (on ? ' sel' : '') + '" data-form="evo">진화 형태</button>' +
+            '<button class="evo-form' + (form === 0 ? ' sel' : '') + '" data-form="base">기본 형태</button>' +
+            '<button class="evo-form' + (form === 1 ? ' sel' : '') + '" data-form="evo">진화 형태</button>' +
+            (evolved2 ? '<button class="evo-form f3' + (form === 2 ? ' sel' : '') + '" data-form="evo2">✪ 3진</button>' : '') +
           '</div></div>';
+        if (evo2Def) {
+          const info2 = '<b>✪ ' + evo2Def.name + '</b> ' + evo2Def.plus + ' <em>· 대가: 출진 비용 +30% · 쿨타임 +30% (진화의 대가는 사라짐)</em>';
+          if (!evolved2) evoHtml += '<div class="evo-box evo3' + (lv >= EVO2_LEVEL ? ' ready' : '') + '">' +
+            '<div class="evo-info">' + (lv >= EVO2_LEVEL ? '' : '<small>레벨 ' + EVO2_LEVEL + '에 3진</small> ') + info2 + '</div>' +
+            (lv >= EVO2_LEVEL ? '<button class="btn evo2-btn">✪ 3진 · 💰 ' + evo2Cost(u) + '</button>' : '') + '</div>';
+          else evoHtml += '<div class="evo-box evo3 done' + (form === 2 ? ' on' : '') + '"><div class="evo-info">' + info2 + '</div></div>';
+        }
       }
     }
 
     const el = document.createElement('div');
     el.className = 'unit-card' + (unlocked ? '' : ' dim') + (inTeam ? ' teamed' : '') +
-                   (u.gacha ? ' summoned r-' + rarityOf(u) : '') + (r.evo ? ' evolved' : '');
+                   (u.gacha ? ' summoned r-' + rarityOf(u) : '') + (r.evo ? ' evolved' : '') + (r.evo2 ? ' evolved2' : '');
     el.innerHTML =
       '<div class="unit-ico">' + (unlocked ? '<canvas></canvas>' : '<span>?</span>') + '</div>' +
       '<div class="unit-body">' +
@@ -939,6 +956,7 @@ function renderTraining() {
           SFX.levelUp();
           toast(u.name + ' 레벨 ' + (lv + 1) + ' 훈련 완료');
           if (lv + 1 === EVO_LEVEL && evoDef && !evolved) setTimeout(() => toast('✦ ' + u.name + ' 진화 가능!'), 900);
+          if (lv + 1 === EVO2_LEVEL && evo2Def && evolved && !evolved2) setTimeout(() => toast('✪ ' + u.name + ' 3진 가능!'), 900);
         });
       }
       const eb = el.querySelector('.evo-btn');
@@ -952,13 +970,26 @@ function renderTraining() {
         SFX.levelUp();
         toast('✦ ' + u.name + ' → ' + evoDef.name + ' 진화 완료!');
       });
-      el.querySelectorAll('.evo-form').forEach(b => b.addEventListener('click', () => {
-        const want = b.dataset.form === 'evo';
-        if (save.evo[u.id] === want) return;
-        save.evo[u.id] = want;
+      const eb2 = el.querySelector('.evo2-btn');
+      if (eb2) eb2.addEventListener('click', () => {
+        const price = evo2Cost(u);
+        if (save.coins < price) { toast('골드가 부족합니다'); return; }
+        save.coins -= price;
+        if (!save.evo2) save.evo2 = {};
+        save.evo2[u.id] = true; save.evo[u.id] = true;
         saveGame(save);
         renderTraining();
-        toast(want ? '✦ ' + evoDef.name + ' 형태로 출진합니다' : u.name + ' 기본 형태로 출진합니다');
+        SFX.levelUp();
+        toast('✪ ' + evoDef.name + ' → ' + evo2Def.name + ' 3진 완료!');
+      });
+      el.querySelectorAll('.evo-form').forEach(b => b.addEventListener('click', () => {
+        const want = b.dataset.form;
+        const now = ['base', 'evo', 'evo2'][evoForm(save, u.id)];
+        if (now === want) return;
+        setEvoForm(save, u.id, want);
+        saveGame(save);
+        renderTraining();
+        toast(want === 'evo2' ? '✪ ' + evo2Def.name + ' 형태로 출진합니다' : want === 'evo' ? '✦ ' + evoDef.name + ' 형태로 출진합니다' : u.name + ' 기본 형태로 출진합니다');
       }));
       const tb = el.querySelector('.team-btn');
       if (tb && !(!inTeam && teamFull)) {
@@ -1314,7 +1345,7 @@ function buildCards() {
   box.innerHTML = '';
   battle.roster.forEach((u, i) => {
     const b = document.createElement('button');
-    b.className = 'card' + (u.evo ? ' evo' : '');
+    b.className = 'card' + (u.evo ? ' evo' : '') + (u.evo2 ? ' evo2' : '');
     b.dataset.id = u.id;
     b.style.setProperty('--role', unitRoleColor(u));
     b.title = u.name + ' · ' + u.role + '\n' + (u.abText || u.desc) + '\n단축키 ' + ((i + 1) % 10);

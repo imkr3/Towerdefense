@@ -31,6 +31,7 @@ const SaveStore = {
     for (const k of ['stones','pity','mythPity','pulls','totalKills','endlessBest']) if (s[k] !== undefined && !num(s[k])) throw Error('저장 숫자 오류: ' + k);
     for (const k of ['levels','upgrades','stars','stats']) for (const v of Object.values(s[k] || {})) if (!num(v)) throw Error('저장 능력치 오류: ' + k);
     if (s.evo !== undefined && (!obj(s.evo) || Object.values(s.evo).some(v => typeof v !== 'boolean'))) throw Error('진화 데이터 오류');
+    if (s.evo2 !== undefined && (!obj(s.evo2) || Object.values(s.evo2).some(v => typeof v !== 'boolean'))) throw Error('3진 데이터 오류');
     if (s.loadout !== undefined && (!Array.isArray(s.loadout) || s.loadout.some(v => typeof v !== 'string'))) throw Error('편성 데이터 오류');
     if (s.daily != null && (!obj(s.daily) || !Array.isArray(s.daily.list) || s.daily.list.some(m => !obj(m) || !missionById(m.id) || !num(m.got)))) throw Error('일일 임무 데이터 오류');
     return s;

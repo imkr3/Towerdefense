@@ -125,7 +125,7 @@ function renderFormation() {
 function unitTileHTML(u, sub) {
   const lv = save.levels[u.id] || 1;
   const v = unitFor(save, u.id);                // 진화 형태면 그 이름으로
-  return '<canvas></canvas><span class="ft-name">' + (v.evo ? '✦' : '') + (v.short || v.name) + '</span>' +
+  return '<canvas></canvas><span class="ft-name">' + (v.evo2 ? '✪' : v.evo ? '✦' : '') + (v.short || v.name) + '</span>' +
     '<span class="ft-sub">' + sub + '</span><span class="ft-lv">' + lv + '</span>';
 }
 
@@ -190,7 +190,7 @@ function renderFormationPool() {
     .sort((a, b) => (a.gacha ? rank[a.rarity] : 9) - (b.gacha ? rank[b.rarity] : 9) || a.cost - b.cost);
   // 3.8: 목록이 그대로면(넣고 빼기·고르기만 했으면) 다시 만들지 않고 표시만 고친다.
   // 예전엔 누를 때마다 80여 칸을 통째로 다시 만들어 폰에서 눈에 띄게 끊겼다.
-  const sig = fmFilter + '|' + list.map(u => u.id + (save.evo[u.id] ? '+' : '')).join(',');
+  const sig = fmFilter + '|' + list.map(u => u.id + (save.evo[u.id] ? '+' : '') + (save.evo2 && save.evo2[u.id] ? '+' : '')).join(',');
   if (box._sig === sig && box.children.length === list.length) {
     for (const el of box.children) {
       const id = el.dataset.unit, inTeam = save.loadout.includes(id);
@@ -230,9 +230,9 @@ function renderFormationPool() {
   box.scrollTop = keep;
 }
 
-/* 편성에서도 진화 형태를 바꾼다. 진화를 마친 병종이면 기본 ⇄ 진화, 아직이면 안내만. */
+/* 편성에서도 진화 형태를 바꾼다. 진화를 마친 병종이면 기본 ⇄ 진화 (⇄ 4.1 3진), 아직이면 안내만. */
 function formationEvoRow(id) {
-  const def = EVOLUTIONS[id], base = UNIT_BY_ID[id];
+  const def = EVOLUTIONS[id], base = UNIT_BY_ID[id], def2 = EVOLUTIONS2[id];
   if (!def || !base) return null;
   const row = document.createElement('div');
   row.className = 'fs-evo';
@@ -242,16 +242,17 @@ function formationEvoRow(id) {
       (lv >= EVO_LEVEL ? '훈련소에서 진화할 수 있습니다' : '레벨 ' + EVO_LEVEL + '에 진화') + '</span>';
     return row;
   }
-  const on = save.evo[id] === true;
+  const form = evoForm(save, id), has2 = !!(def2 && save.evo2 && save.evo2[id] !== undefined);
+  const btn = (f, label, k) => '<button type="button" class="evo-form' + (k === 2 ? ' f3' : '') + (form === k ? ' sel' : '') + '" data-form="' + f + '" aria-pressed="' + (form === k) + '">' + label + '</button>';
   row.innerHTML = '<span class="fe-label">형태</span><div class="evo-seg" role="group" aria-label="형태 선택">' +
-    '<button type="button" class="evo-form' + (on ? '' : ' sel') + '" data-form="base" aria-pressed="' + !on + '">' + (base.short || base.name) + '</button>' +
-    '<button type="button" class="evo-form' + (on ? ' sel' : '') + '" data-form="evo" aria-pressed="' + on + '">✦ ' + (def.short || def.name) + '</button></div>';
+    btn('base', base.short || base.name, 0) + btn('evo', '✦ ' + (def.short || def.name), 1) +
+    (has2 ? btn('evo2', '✪ ' + (def2.short || def2.name), 2) : '') + '</div>';
   row.querySelectorAll('.evo-form').forEach(b => b.addEventListener('click', () => {
-    const want = b.dataset.form === 'evo';
-    if (save.evo[id] === want) return;
-    save.evo[id] = want;
+    const want = b.dataset.form;
+    if (['base', 'evo', 'evo2'][evoForm(save, id)] === want) return;
+    setEvoForm(save, id, want);
     SFX.ui(); buzz(8);
-    commitLoadout(want ? '✦ ' + def.name + ' 형태로 출진합니다' : base.name + ' 기본 형태로 출진합니다');
+    commitLoadout(want === 'evo2' ? '✪ ' + def2.name + ' 형태로 출진합니다' : want === 'evo' ? '✦ ' + def.name + ' 형태로 출진합니다' : base.name + ' 기본 형태로 출진합니다');
   }));
   return row;
 }
@@ -280,7 +281,7 @@ function fmStatBars(id) {
   if (c.role.length) html += '<div class="fb-role">' + c.role.map(([k, v]) => '<span>' + k + ' ' + v + '</span>').join('') + '</div>';
   return html + '</div>';
 }
-function fmStatSig() { return JSON.stringify([save.levels, save.upgrades, save.evo, save.owned, save.cleared]); }
+function fmStatSig() { return JSON.stringify([save.levels, save.upgrades, save.evo, save.evo2, save.owned, save.cleared]); }
 
 function renderFormationSide() {
   const side = $('#formation-side');

@@ -1150,4 +1150,47 @@ test('Arthur rallies others but not himself; cloud giants stop regenerating when
   assert.ok(g.hp > h1, 'regen resumes');
 });
 
+/* ---------------- 4.1 3진 (각성) ---------------- */
+test('Every campaign unit has a drawn, translated third form at Lv20', () => {
+  const X = vm.runInContext('({EVOLUTIONS2, EVO2_LEVEL, ROSTER_UNITS, evo2Cost})', ctx);
+  const render = fs.readFileSync(path.join(__dirname, '../js/render.js'), 'utf8');
+  const i18n = fs.readFileSync(path.join(__dirname, '../js/i18n.js'), 'utf8');
+  assert.equal(X.EVO2_LEVEL, 20);
+  for (const u of X.ROSTER_UNITS) {
+    const e = X.EVOLUTIONS2[u.id];
+    assert.ok(e && e.look && e.look.shape && e.plus, u.id + ' has a third form');
+    assert.ok(render.indexOf("case '" + e.look.shape + "':") >= 0, u.id + ' drawn');
+    for (const k of [e.name, e.short, e.plus]) if (k) assert.ok(i18n.indexOf("'" + k + "'") >= 0, u.id + ' translated: ' + k);
+    assert.ok(X.evo2Cost(u) > G.evoCost(u), 'costs more than the first evolution');
+  }
+  const shapes = X.ROSTER_UNITS.map(u => X.EVOLUTIONS2[u.id].look.shape);
+  assert.equal(new Set(shapes).size, shapes.length, 'every third form looks different');
+});
+test('Third form: big upgrade, only deploy cost and cooldown go up, evolution trade-off removed', () => {
+  for (const id of ['catapult', 'archer', 'priest', 'spear', 'mage']) {
+    const e1 = G.resolveUnit(U[id], 20, true), e2 = G.resolveUnit(U[id], 20, 2);
+    assert.equal(e2.evo2, true, id); assert.equal(e2.evo, true, id);
+    assert.ok(e2.hp > e1.hp * 1.3 && e2.atk >= e1.atk * 1.3 - 1, id + ' stronger');
+    assert.ok(e2.cost > e1.cost && e2.cooldown > e1.cooldown, id + ' costs more and cools down longer');
+    assert.ok(e2.interval <= U[id].interval + 1e-9, id + ' keeps the base attack speed (trade-off gone)');
+    assert.ok(e2.speed >= U[id].speed, id + ' not slowed');
+  }
+  assert.equal(G.resolveUnit(U.catapult, 20, 2).shape, 'tank', 'the catapult becomes a tank');
+  assert.equal(G.resolveUnit(U.catapult, 19, 2).evo2, undefined, 'no third form below Lv20');
+  assert.ok(G.resolveUnit(U.priest, 20, 2).ab.heal > G.resolveUnit(U.priest, 20, false).ab.heal, 'ambulance heals more than base priest');
+  assert.equal(U.catapult.shape, 'catapult', 'base data is never mutated');
+});
+test('Save forms: base / evolved / third, chosen per unit', () => {
+  const X = vm.runInContext('({evoForm, setEvoForm})', ctx);
+  const sv = { levels: { catapult: 20, archer: 12 }, evo: { catapult: true, archer: true }, evo2: { catapult: true } };
+  assert.equal(X.evoForm(sv, 'catapult'), 2); assert.equal(G.unitFor(sv, 'catapult').shape, 'tank');
+  X.setEvoForm(sv, 'catapult', 'evo'); assert.equal(X.evoForm(sv, 'catapult'), 1); assert.equal(sv.evo2.catapult, false);
+  X.setEvoForm(sv, 'catapult', 'base'); assert.equal(X.evoForm(sv, 'catapult'), 0);
+  X.setEvoForm(sv, 'catapult', 'evo2'); assert.equal(X.evoForm(sv, 'catapult'), 2);
+  X.setEvoForm(sv, 'archer', 'evo2'); assert.equal(sv.evo2.archer, undefined, 'cannot pick a third form not yet earned');
+  assert.equal(X.evoForm(sv, 'archer'), 1);
+  const b = new Battle(0, Object.assign(save(), { loadout: ['catapult'], levels: { catapult: 20 }, evo: { catapult: true }, evo2: { catapult: true } }));
+  assert.equal(b.stats('catapult').shape, 'tank'); assert.ok(b.stats('catapult').cost > U.catapult.cost);
+});
+
 console.log(count + ' regression checks passed');
