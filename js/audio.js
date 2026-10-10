@@ -660,6 +660,51 @@ BGM.makeKit = function () {
  *  int 1 = 잔잔 · 2 = 본격 · 3 = 절정
  * ======================================================================= */
 const BGM_STYLES = {
+  /* 3.17 보스곡 리믹스: '장엄하고 짜릿하고 빠르게, 악기 많이'.
+   * epic 위에 금관 엇박 찌르기 · 두 옥타브 현 16분 · 8분 저음 · 하프 상행 아르페지오 · 플루트 대선율 ·
+   * 첼레스타 반짝임 · 스네어 장식음 · 하이햇 16분 · 탬버린을 더 얹는다. 세기(int)가 오를수록 겹이 늘어난다. */
+  grand: function (B, x) {
+    const c = x.chord, r = c.root, d = x.dt, I = x.int;
+    const t3 = c.iv[1], t5 = c.iv[2];
+    if (x.s === 0) {
+      B.chordNotes(c, 12, true).forEach(n => B.note('pad', n, x.t, 16 * d, 1));
+      B.chordNotes(c, 12, false).forEach(n => B.note('choir', n + 12, x.t, 16 * d, I >= 3 ? 1 : (I >= 2 ? 0.8 : 0.5)));
+      B.note('lowbrass', r - 12, x.t, 6 * d, I >= 2 ? 1 : 0.7);
+      if (x.first) { B.crash(x.t, 1); if (I >= 2) B.gong(x.t, I >= 3 ? 0.8 : 0.5); }
+      else if (I >= 2 && x.bar % 2 === 0) B.crash(x.t, 0.7);
+    }
+    // 금관 찌르기: 엇박으로 몰아친다 (호른 화음 + 트럼펫 꼭대기)
+    if (I >= 2 && B.pat('x..x..x...x.x...', x.s)) {
+      const v = x.s === 0 ? 0.75 : 0.55;
+      B.chordNotes(c, 12, false).forEach(n => B.note('horn', n, x.t, 1.5 * d, v));
+      B.note('trumpet', r + 24 + t5, x.t, 1.5 * d, v * (I >= 3 ? 0.9 : 0.7));
+      B.note('lowbrass', r - 12 + (x.s === 6 ? 7 : 0), x.t, 1.5 * d, v);
+    }
+    // 현 16분 오스티나토: 낮은 현 + 한 옥타브 위 (세기 3 은 두 옥타브 위까지)
+    const ost = [0, t5, 12, t5];
+    B.note('lowstr', r + ost[x.s % 4], x.t, d * 0.9, x.s % 4 === 0 ? 1 : 0.7);
+    if (I >= 2) B.note('lowstr', r + 12 + [12, t5, t3, t5][x.s % 4], x.t, d * 0.9, 0.6);
+    if (I >= 3) B.note('lowstr', r + 24 + [t3, t5, 12, t5][x.s % 4], x.t, d * 0.9, 0.45);
+    // 8분 저음
+    if (x.s % 2 === 0) B.note('bass', r - 12 + (x.s % 4 === 2 ? 12 : 0), x.t, d * 1.8, x.s % 4 === 0 ? 1 : 0.75);
+    // 하프: 마디 뒤 절반에 화음을 두 옥타브 타고 오른다
+    if (I >= 2 && x.s >= 8) {
+      const up = [0, t3, t5, 12, 12 + t3, 12 + t5, 24, 24 + t3];
+      B.note('harp', r + 12 + up[x.s - 8], x.t, d, 0.55 + (x.s - 8) * 0.04);
+    }
+    // 플루트 대선율: 높은 화음음을 8분으로 (세기 3)
+    if (I >= 3 && x.s % 2 === 1) B.note('flute', r + 24 + [12, t5, t3 + 12, t5, 12, t5 + 12, t3 + 12, t5][(x.s - 1) / 2], x.t, d * 1.6, 0.5);
+    // 첼레스타 반짝임
+    if (I >= 2 && (x.s === 6 || x.s === 14)) B.note('celesta', r + 36 + (x.s === 6 ? t5 : 12), x.t, d, 0.55);
+    // 북: 팀파니 · 타이코 · 스네어(장식음) · 하이햇 · 탬버린
+    if (x.s === 0 || x.s === 8) B.timp(x.t, r - 12 + (x.s === 8 ? 7 : 0), 1);
+    if (B.pat('x..x..x.x.x...x.', x.s)) B.taiko(x.t, x.s === 0 ? 1 : (I >= 2 ? 0.7 : 0.5));
+    if (I >= 2 && (x.s === 4 || x.s === 12)) B.snare(x.t, 1);
+    if (I >= 3 && B.pat('.......x.....x.x', x.s)) B.snare(x.t, 0.45);
+    if (I >= 2) B.hat(x.t, x.s % 4 === 2 ? 1 : 0.55);
+    if (I >= 3 && x.s % 4 === 2) B.tamb(x.t, 0.7);
+    if (x.last) B.roll(x, I >= 3 ? 'snare' : 'timp', 10, 15, r - 12);
+  },
   /* 웅장한 보스곡: 16분 현 오스티나토 + 금관 + 합창 + 팀파니·타이코·심벌 */
   epic: function (B, x) {
     const c = x.chord, r = c.root, d = x.dt;

@@ -293,8 +293,8 @@ const BGM_TRACKS = {
       'Ab5*8 F5*8', 'G5*8 Eb5*8', 'F5*6 G5*2 Ab5*8', 'C6*16',
       'Db6*6 C6*2 Ab5*8', 'Bb5*6 Ab5*2 G5*8', 'E5*4 G5*4 C6*8', 'C6*16'] }] },
 
-  /* ---------------- 보스 (웅장한 관현악) ---------------- */
-  boss_lich: { bpm: 124, style: 'epic', sections: [
+  /* ---------------- 보스 (웅장한 관현악 · 3.17 grand 리믹스) ---------------- */
+  boss_lich: { bpm: 142, style: 'grand', sections: [
     { chords: 'Dm Dm Bb A', lead: 'choir', int: 1, mel: ['D5*16', 'F5*8 E5*8', 'D5*16', 'C#5*16'] },
     { chords: 'Dm Bb Gm A Dm Bb C A', lead: 'trumpet', dbl: 'horn', int: 2, mel: [
       'D5*4 F5*2 E5*2 D5*4 A4*4', 'Bb4*4 D5*4 F5*8', 'G5*4 F5*2 E5*2 D5*4 Bb4*4', 'A4*4 C#5*4 E5*8',
@@ -303,7 +303,7 @@ const BGM_TRACKS = {
       'G5*6 Bb5*2 D6*8', 'F6*4 E6*2 D6*2 A5*8', 'Bb5*6 D6*2 F6*8', 'F6*4 E6*2 C6*2 A5*8',
       'G5*4 Bb5*4 D6*8', 'F6*4 D6*4 A5*8', 'C#6*4 E6*4 A5*8', 'A5*8 E5*8'] }] },
 
-  boss_troll: { bpm: 116, style: 'epic', sections: [
+  boss_troll: { bpm: 136, style: 'grand', sections: [
     { chords: 'Cm Cm Ab G', lead: 'lowbrass', int: 1, mel: ['C3*4 .*4 C3*2 Eb3*2 G3*4', 'C3*16', 'Ab2*8 C3*8', 'G2*8 B2*8'] },
     { chords: 'Cm Ab Fm G Cm Ab Bb G', lead: 'horn', dbl: 'lowbrass', int: 2, mel: [
       'C4*4 Eb4*2 G4*2 C5*8', 'Ab4*4 G4*2 F4*2 Eb4*8', 'F4*4 Ab4*4 C5*8', 'B4*4 D5*4 G5*8',
@@ -312,7 +312,7 @@ const BGM_TRACKS = {
       'F5*4 Ab5*4 C6*8', 'Eb6*4 D6*2 C6*2 G5*8', 'Ab5*4 C6*4 Eb6*8', 'D6*4 Bb5*4 G5*8',
       'F5*4 Ab5*4 C6*8', 'G5*4 Eb5*4 C5*8', 'B4*4 D5*4 F5*4 G5*4', 'G5*16'] }] },
 
-  boss_frostgiant: { bpm: 108, style: 'epic', sections: [
+  boss_frostgiant: { bpm: 128, style: 'grand', sections: [
     { chords: 'Em C Am B', style: 'ice', lead: 'celesta', int: 1, mel: [
       'E6*4 B5*4 G5*4 E5*4', 'C6*4 G5*4 E5*8', 'A5*4 E5*4 C5*8', 'B5*4 F#5*4 D#5*8'] },
     { chords: 'Em C G D Am Em B B', lead: 'horn', dbl: 'strings', int: 2, mel: [
@@ -323,7 +323,7 @@ const BGM_TRACKS = {
       'G5*4 C6*4 E6*8', 'F#6*4 D6*4 A5*8', 'B5*6 A5*2 G5*8', 'E5*16',
       'E6*6 D6*2 C6*8', 'D6*6 C6*2 A5*8', 'B5*4 D#6*4 F#6*8', 'B5*16'] }] },
 
-  boss_drake: { bpm: 136, style: 'epic', sections: [
+  boss_drake: { bpm: 152, style: 'grand', sections: [
     { chords: 'Gm Gm Eb D', lead: 'trumpet', int: 1, mel: [
       'G4*2 .*2 G4*2 .*2 Bb4*2 .*2 D5*4', 'G4*2 .*2 G4*2 .*2 C5*2 .*2 Bb4*4', 'Eb5*8 D5*8', 'D5*8 F#5*8'] },
     { chords: 'Gm Eb Bb F Gm Eb D D', lead: 'trumpet', dbl: 'horn', int: 2, mel: [
@@ -333,7 +333,7 @@ const BGM_TRACKS = {
       'C6*6 Bb5*2 G5*8', 'D6*6 C6*2 Bb5*8', 'Eb6*4 D6*4 C6*4 Bb5*4', 'A5*16',
       'C6*4 Eb6*4 G5*8', 'F5*4 D5*4 Bb5*8', 'A5*4 C6*4 F#5*8', 'G5*16'] }] },
 
-  boss_spiderqueen: { bpm: 132, style: 'epic', sections: [
+  boss_spiderqueen: { bpm: 148, style: 'grand', sections: [
     { chords: 'F#m D F#m C#', style: 'eerie', lead: 'strings', int: 1, mel: [
       'F#4*2 A4*2 C#5*2 A4*2 F#4*2 A4*2 C#5*4', 'D5*2 F#5*2 A5*2 F#5*2 D5*8', 'F#5*2 E5*2 D5*2 C#5*2 A4*8', 'G#4*8 F4*8'] },
     { chords: 'F#m D E C# F#m Bm C# C#', lead: 'oboe', dbl: 'strings', int: 2, mel: [
@@ -343,7 +343,7 @@ const BGM_TRACKS = {
       'D5*4 F#5*4 B5*8', 'A5*4 F#5*4 C#5*8', 'F#5*4 A5*4 D6*8', 'C#6*16',
       'B5*4 D6*4 F#6*8', 'E6*4 C#6*4 A5*8', 'G#5*4 F5*4 C#5*8', 'F#5*16'] }] },
 
-  boss_warlord: { bpm: 122, style: 'epic', sections: [
+  boss_warlord: { bpm: 140, style: 'grand', sections: [
     { chords: 'Am Am F E', lead: 'lowbrass', int: 1, mel: ['A2*4 .*4 A2*2 C3*2 E3*4', 'A2*16', 'F2*8 A2*8', 'E2*8 G#2*8'] },
     { chords: 'Am F G E Am F Dm E', lead: 'horn', dbl: 'lowbrass', int: 2, mel: [
       'A4*4 C5*2 B4*2 A4*4 E4*4', 'F4*4 A4*4 C5*8', 'D5*4 B4*4 G4*8', 'G#4*4 B4*4 E5*8',
@@ -353,7 +353,7 @@ const BGM_TRACKS = {
       'F6*4 E6*4 C6*8', 'D6*4 B5*4 G5*8', 'G#5*4 B5*4 E6*8', 'E6*16'] }] },
 
   /* 마지막 전장: 네 악장처럼 쌓아 올려 장조로 끝난다 */
-  finale: { bpm: 118, style: 'epic', sections: [
+  finale: { bpm: 138, style: 'grand', sections: [
     { chords: 'Dm Bb F C Gm Dm A A', lead: 'choir', int: 1, mel: [
       'D5*16', 'D5*8 F5*8', 'C5*16', 'E5*16', 'G5*8 Bb5*8', 'A5*8 F5*8', 'E5*8 C#5*8', 'A4*16'] },
     { chords: 'Dm Bb Gm A Dm Bb C A', lead: 'horn', dbl: 'lowbrass', int: 2, mel: [
@@ -576,7 +576,7 @@ const BGM_TRACKS = {
       'D5*4 F5*2 A5*2 F5*8',
       'D5*12 .*4'] }] },
 
-  boss_kraken: { bpm: 128, style: 'epic', sections: [
+  boss_kraken: { bpm: 146, style: 'grand', sections: [
     { chords: 'Em Em C B', lead: 'lowbrass', int: 1, mel: [
       'E4*4 G4*2 D4*2 G4*8',
       'E4*3 F#4 E4*4 B3*4 G3*4',
@@ -601,7 +601,7 @@ const BGM_TRACKS = {
       'Eb5*4 B4*4 Eb5*4 F#5*4',
       'B4*12 .*4'] }] },
 
-  boss_tidequeen: { bpm: 116, style: 'epic', sections: [
+  boss_tidequeen: { bpm: 136, style: 'grand', sections: [
     { chords: 'Gm Gm Eb D', lead: 'choir', int: 1, mel: [
       'G5*4 D5*4 G5*8',
       'D5*2 F5*2 G5*2 A5*2 G5*4 D5*4',
@@ -626,7 +626,7 @@ const BGM_TRACKS = {
       'F#5*6 G5*2 A5*8',
       'D5*12 .*4'] }] },
 
-  finale2: { bpm: 116, style: 'epic', sections: [
+  finale2: { bpm: 136, style: 'grand', sections: [
     { chords: 'Cm Ab Eb Bb Fm Cm G G', lead: 'choir', int: 1, mel: [
       'Eb5*4 G5*4 Eb5*8',
       'C5*4 Eb5*4 Ab5*8',
@@ -673,13 +673,22 @@ const BGM_GAIN = {
   canyon: 0.81, fortress: 1.07, darkwood: 0.96, ruins: 0.96, swamp: 1.54, snowpass: 1.41,
   blizzard: 0.91, winterthrone: 1.42, volcano: 0.77, warcamp: 0.7, blackriver: 1.77, underworld: 0.7,
   thorngate: 1.02, desert: 1.35, eclipse: 0.7, mythic: 0.7, endless: 0.88, return: 0.82,
-  shieldwall: 1.23, gate: 0.79, throne: 0.79, seal: 0.7, siege: 1.2, boss_lich: 0.97,
-  boss_troll: 0.99, boss_frostgiant: 1.0, boss_drake: 0.94, boss_spiderqueen: 1.07, boss_warlord: 0.93, finale: 1.1,
+  shieldwall: 1.23, gate: 0.79, throne: 0.79, seal: 0.7, siege: 1.2, boss_lich: 0.84,
+  boss_troll: 0.86, boss_frostgiant: 0.85, boss_drake: 0.84, boss_spiderqueen: 0.98, boss_warlord: 0.82, finale: 0.95,
   victory: 1.5, defeat: 1.32,
   // 3.3
   shore: 1.1, coral: 1.2, krakenbay: 0.9, lighthouse: 1.3, sirensong: 1.2, tidetemple: 1.1, sunken: 1.3,
-  strait: 0.85, abyssgate: 0.95, leviathan: 0.85, boss_kraken: 0.95, boss_tidequeen: 1.0, finale2: 1.05
+  strait: 0.85, abyssgate: 0.95, leviathan: 0.85, boss_kraken: 0.83, boss_tidequeen: 0.82, finale2: 0.91
 };
+
+/* 3.17 보스곡 리믹스: 보스곡 · 마지막 전장 곡은 grand 스타일로 15~20 BPM 빠르게 (선율은 그대로).
+ * 겹침 악기가 없는 본격 구간엔 한 옥타브 아래 겹침을 붙여 악기 수를 늘린다 (현 ⇄ 호른). */
+['boss_lich', 'boss_troll', 'boss_frostgiant', 'boss_drake', 'boss_spiderqueen', 'boss_warlord',
+ 'boss_kraken', 'boss_tidequeen', 'finale', 'finale2'].forEach(k => {
+  for (const sec of BGM_TRACKS[k].sections) {
+    if (!sec.dbl && (sec.int || 1) >= 2) sec.dbl = sec.lead === 'strings' ? 'horn' : 'strings';
+  }
+});
 
 /* 전장 컨셉 → 전장 곡. 보스가 나오면 보스곡, 마지막 전장은 finale. */
 function stageMusic(stage) {
