@@ -204,8 +204,10 @@ class Fighter {
   get attackRange() { return this.s.range; }
 
   heal(amount) {
-    if (this.dead) return;
+    if (this.dead) return 0;
+    const before = this.hp;
     this.hp = Math.min(this.maxHp, this.hp + amount * this.healMul);
+    return this.hp - before;          // 3.15: 실제로 찬 만큼 (전투 기록의 회복량)
   }
 
   giveBarrier(amount) {
@@ -342,6 +344,7 @@ class Battle {
     this.kills = 0;
     this.bossKills = 0;
     this.dmgFxCount = 0;
+    this.meter = {};            // 3.15: 병종별 전투 기록 { id: { dmg, taken, n } }
     this.shake = 0;
     this.flash = 0;
     this.flashColor = '#ffffff';
@@ -468,8 +471,15 @@ class Battle {
     }
     const buff = { hp: this.buff.hp * lm, atk: this.buff.atk * lm };
     const f = new Fighter(st, 'ally', x, buff);
+    if (owner && owner.s) f.creditTo = owner.creditTo || owner.s.id;
     if (this.mods && this.mods.curse) f.healMul = CURSE_HEAL;
     return f;
+  }
+
+  /* 3.15 전투 기록: 소환물(해골·분신·포탑)이 넣은 딜은 부른 병종의 몫으로 센다 */
+  meterRow(f) {
+    const id = f.creditTo || f.s.id;
+    return this.meter[id] || (this.meter[id] = { dmg: 0, taken: 0, n: 0 });
   }
 
   deploy(id) {
@@ -478,6 +488,7 @@ class Battle {
     this.money -= u.cost;
     this.cooldowns[id] = u.cooldown * this.cdMul;
     const f = this.makeAlly(u, ALLY_SPAWN_X + Math.random() * 40);
+    this.meterRow(f).n++;
     f.giveBarrier(25 * Math.min(5, this.save.upgrades.deployment || 0));
     // 안개 속으로 들어온 병사는 백작에게 홀린다 (안개가 걷힌 뒤에 내보내야 한다)
     const vb = this.veiledBoss();
@@ -548,7 +559,7 @@ class Battle {
           if(a.charm&&!e.boss){e.charmT=Math.max(e.charmT,a.charm);this.fx.push({type:'charm',x:e.x,row:e.row,t:.7,life:.7});}
           if(a.execute)this.tryExecute(e,a.execute);
           if(a.push&&!e.ab.kbImmune&&!e.dead){e.x=Math.max(60,Math.min(WORLD-60,e.x+f.dir*a.push));e.kbTimer=Math.max(e.kbTimer,.3);}
-          if(a.burn){if(e.burnT<=0)e.burnDps=0;e.burnT=Math.max(e.burnT,a.burn);e.burnDps=Math.max(e.burnDps,24*f.abMul);}
+          if(a.burn){e.dotBy=f.creditTo||f.s.id;if(e.burnT<=0)e.burnDps=0;e.burnT=Math.max(e.burnT,a.burn);e.burnDps=Math.max(e.burnDps,24*f.abMul);}
           // 혼천릉: 붉은 비단으로 묶어 한곳에 끌어모은다 (보스·넉백 면역은 버틴다)
           if(a.pull&&!e.dead&&!e.ab.kbImmune&&!e.boss){const dx=target.x-e.x;e.x+=Math.sign(dx)*Math.min(Math.abs(dx),a.pull);e.kbTimer=Math.max(e.kbTimer,.2);}
         }
@@ -1049,6 +1060,7 @@ class Battle {
       if (f.burnT > 0) { dot += f.burnDps * Math.min(dt, f.burnT); f.burnT = Math.max(0, f.burnT - dt); }
       if (isAlly) dot *= 1 - 0.05 * Math.min(5, this.save.upgrades.resistance || 0);
       if (dot > 0) {
+        if (!isAlly && f.dotBy) { const m = this.meter[f.dotBy] || (this.meter[f.dotBy] = { dmg: 0, taken: 0, n: 0 }); m.dmg += Math.min(dot, Math.max(0, f.hp)); }
         f.hp -= dot;
         if (f.hp <= 0) {
           if (f.ab.revive && !f.usedRevive) {
@@ -1207,7 +1219,8 @@ class Battle {
         if (m.hp >= m.maxHp) continue;
         // 적의 치유는 겹치지 않는다: 주술사가 떼로 서도 한 적은 1.5초에 한 번만 낫는다 (끝없는 교착 방지)
         if (!isAlly) { if (m.healedAt !== undefined && this.time - m.healedAt < ENEMY_HEAL_GAP) continue; m.healedAt = this.time; }
-        m.heal(ab.heal * f.abMul * (isAlly ? 1 + .06 * Math.min(5, this.save.upgrades.medicine || 0) : (m.boss ? BOSS_HEAL_TAKEN : 1)));
+        const filled = m.heal(ab.heal * f.abMul * (isAlly ? 1 + .06 * Math.min(5, this.save.upgrades.medicine || 0) : (m.boss ? BOSS_HEAL_TAKEN : 1)));
+        if (isAlly && filled > 0) { const row = this.meterRow(f); row.heal = (row.heal || 0) + filled; }
         healed = true;
       }
       if (healed) {
@@ -1509,7 +1522,8 @@ class Battle {
     this.pending.push({
       t: o.warn, side: f.side, x: o.x, r: o.r, dmg: o.dmg,
       burn: o.burn, stun: o.stun, kind: o.kind, color: f.s.accent, row: f.row,
-      expose: o.expose, src: o.expose ? f : null, noCastle: !!o.noCastle
+      expose: o.expose, src: o.expose ? f : null, noCastle: !!o.noCastle,
+      by: f.side === 'ally' ? (f.creditTo || f.s.id) : null
     });
     this.fx.push({ type: 'warn', x: o.x, r: o.r, t: o.warn, life: o.warn,
                    color: f.side === 'ally' ? '#6fc0ff' : '#e0503c' });
@@ -1526,7 +1540,8 @@ class Battle {
       const castle = this.castleOf(s.side);
       for (const e of foes) {
         if (e.dead || Math.abs(e.x - s.x) > s.r + e.radius) continue;
-        e.takeDamage(s.dmg);
+        const got = e.takeDamage(s.dmg) || 0;
+        if (s.by && got > 0) (this.meter[s.by] || (this.meter[s.by] = { dmg: 0, taken: 0, n: 0 })).dmg += got;
         if (s.burn) {
           if (e.burnT <= 0) e.burnDps = 0;
           e.burnT = Math.max(e.burnT, s.burn.dur);
@@ -1535,7 +1550,8 @@ class Battle {
         if (s.stun) e.stun(s.stun);
       }
       if (!s.noCastle && !castle.dead && Math.abs(castle.x - s.x) <= s.r + castle.radius) {
-        castle.takeDamage(s.dmg);
+        const got = castle.takeDamage(s.dmg) || 0;
+        if (s.by && got > 0) (this.meter[s.by] || (this.meter[s.by] = { dmg: 0, taken: 0, n: 0 })).dmg += got;
       }
       this.fx.push({ type: 'cast', kind: s.kind, x: s.x, row: s.row,
                      color: s.color, r: s.r, big: true, dir: 1, t: 0.6, life: 0.6 });
@@ -1748,6 +1764,10 @@ class Battle {
       }
     }
     const dealt = target.takeDamage(dmg, pierce) || 0;
+    if (dealt > 0) {
+      if (src && src.side === 'ally' && src.s) this.meterRow(src).dmg += dealt;
+      if (target.side === 'ally' && !target.isCastle) this.meterRow(target).taken += dealt;
+    }
     if (mirror && dealt > 0 && !src.dead) {
       src.takeDamage(Math.min(120, dealt * mirror.reflect));
       this.fx.push({ type: 'mirror', x: target.x, x2: src.x, row: target.row, row2: src.row, t: 0.3, life: 0.3 });
@@ -1790,6 +1810,7 @@ class Battle {
       target.slowT = Math.max(target.slowT, ab.slow);
       this.fx.push({ type: 'chill', x: target.x, row: target.row, t: 0.4, life: 0.4 });
     }
+    if ((ab.poison || ab.burn) && src.side === 'ally') target.dotBy = src.creditTo || src.s.id;
     if (ab.poison) {
       if (target.poisonT <= 0) target.poisonDps = 0;
       target.poisonT = Math.max(target.poisonT, ab.poison.dur);

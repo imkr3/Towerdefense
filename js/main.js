@@ -748,7 +748,7 @@ function renderEventDetail(k) {
   btns.className = 'sd-btns ev-btns';
   const rec = document.createElement('button');
   rec.className = 'btn ghost sd-formation';
-  rec.textContent = '추천 편성 쓰기';
+  rec.textContent = '추천 편성';
   rec.addEventListener('click', () => {
     const d = eventDeck(k);
     if (!d.length) { toast('추천 병종을 아직 하나도 갖고 있지 않습니다'); return; }
@@ -1537,8 +1537,60 @@ function recordBattle(b) {
   checkAchievements();
 }
 
+/* 3.15 병종의 지금 전투 능력치 (레벨 · 병영 강화 · 진화 반영) — 훈련소와 같은 계산 */
+function unitCombatStats(id) {
+  const r = unitFor(save, id), lv = save.levels[id] || 1, mul = unitLevelMul(lv);
+  const vit = 1 + .08 * (save.upgrades.vitality || 0), pow = 1 + .06 * (save.upgrades.power || 0);
+  const attacks = r.atk > 0 && !(r.ab && r.ab.noAttack);
+  const hp = Math.round(r.hp * mul * vit), atk = attacks ? Math.round(r.atk * mul * pow) : 0;
+  const interval = r.interval || 1;
+  return { r: r, hp: hp, atk: atk, interval: interval, dps: attacks ? atk / interval : 0, range: r.range || 0,
+           speed: r.speed || 0, attacks: attacks, area: !!r.area, role: unitRoleStats(r, mul * pow) };
+}
+
+/* 3.15 전투 기록: 병종별로 넣은 피해 · 받은 피해 · 출진 수. 딜 순서로 막대를 그린다. */
+function fmtShort(n) {
+  n = Math.round(n || 0);
+  return n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e4 ? Math.round(n / 1e3) + 'k' : n >= 1e3 ? (n / 1e3).toFixed(1) + 'k' : String(n);
+}
+function renderMeter(b) {
+  const box = $('#result-meter');
+  const rows = Object.keys(b.meter || {}).map(id => Object.assign({ id: id }, b.meter[id]))
+    .filter(r => (r.dmg > 0 || r.taken > 0 || r.heal > 0 || r.n > 0) && UNIT_BY_ID[r.id]);
+  box.innerHTML = '';
+  if (!rows.length) { box.hidden = true; return; }
+  box.hidden = false;
+  rows.sort((a, c) => c.dmg - a.dmg || c.taken - a.taken);
+  const total = rows.reduce((t, r) => t + r.dmg, 0) || 1;
+  const top = rows[0].dmg || 1;
+  const tank = rows.reduce((m, r) => r.taken > m.taken ? r : m, rows[0]);
+  const head = document.createElement('div');
+  head.className = 'meter-head';
+  head.innerHTML = '<b>📊 전투 기록</b><span>딜 합계 ' + fmtShort(total) + '</span>';
+  box.appendChild(head);
+  const list = document.createElement('div');
+  list.className = 'meter-list';
+  rows.slice(0, 10).forEach((r, i) => {
+    const u = b.stats(r.id) || UNIT_BY_ID[r.id];
+    const el = document.createElement('div');
+    el.className = 'meter-row' + (i === 0 && r.dmg > 0 ? ' mvp' : '') + (r === tank && r.taken > 0 ? ' tank' : '');
+    el.style.setProperty('--w', Math.max(2, r.dmg / top * 100).toFixed(1) + '%');
+    el.style.setProperty('--c', u.accent || '#e8c65a');
+    el.innerHTML = '<canvas></canvas><div class="mr-main"><div class="mr-top"><span class="mr-name">' + (u.short || u.name) +
+      (i === 0 && r.dmg > 0 ? ' <i>MVP</i>' : '') + (r === tank && r.taken > 0 ? ' <i class="tk">🛡</i>' : '') + '</span>' +
+      '<span class="mr-v">' + fmtShort(r.dmg) + ' <small>' + Math.round(r.dmg / total * 100) + '%</small></span></div>' +
+      '<div class="mr-bar"><i></i></div>' +
+      '<div class="mr-sub">' + (r.heal ? '회복 ' + fmtShort(r.heal) + ' · ' : '') + '받은 피해 ' + fmtShort(r.taken) + (r.n ? ' · 출진 ' + r.n : '') + '</div></div>';
+    drawUnitIcon(el.querySelector('canvas'), u, 26);
+    list.appendChild(el);
+  });
+  box.appendChild(list);
+  if (rows.length > 10) { const more = document.createElement('div'); more.className = 'meter-more'; more.textContent = '외 ' + (rows.length - 10) + '종'; box.appendChild(more); }
+}
+
 function showResult() {
   recordBattle(battle);
+  renderMeter(battle);
 
   if (battle.endless) { showEndlessResult(); return; }
   if (battle.event) { showEventResult(); return; }

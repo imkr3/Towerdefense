@@ -256,6 +256,32 @@ function formationEvoRow(id) {
   return row;
 }
 
+/* 3.15 편성에서도 체력 · 공격 · 초당 피해 · 사거리 · 속도를 본다. 막대는 지금 쓸 수 있는 병종 가운데 최고를 꽉 찬 칸으로 */
+function fmStatBars(id) {
+  const c = unitCombatStats(id);
+  if (!fmStatBars.max || fmStatBars.sig !== fmStatSig()) {
+    const m = { hp: 1, dps: 1, range: 1, speed: 1 };
+    for (const u of availableUnits(save)) {
+      const o = unitCombatStats(u.id);
+      m.hp = Math.max(m.hp, o.hp); m.dps = Math.max(m.dps, o.dps); m.range = Math.max(m.range, o.range); m.speed = Math.max(m.speed, o.speed);
+    }
+    fmStatBars.max = m; fmStatBars.sig = fmStatSig();
+  }
+  const m = fmStatBars.max;
+  const bar = (k, label, v, txt, color) => '<div class="fb-row"><span class="fb-k">' + label + '</span><span class="fb-bar"><i style="width:' +
+    Math.max(3, Math.min(100, v / m[k] * 100)).toFixed(0) + '%;background:' + color + '"></i></span><b>' + txt + '</b></div>';
+  let html = '<div class="fi-bars">' + bar('hp', '체력', c.hp, fmtNum(c.hp), '#58e07a');
+  if (c.attacks) {
+    html += '<div class="fb-row"><span class="fb-k">공격</span><span class="fb-txt">' + fmtNum(c.atk) + ' · ' + c.interval + '초마다' + (c.area ? ' · 범위' : '') + '</span></div>';
+    html += bar('dps', '초당 피해', c.dps, fmtNum(Math.round(c.dps)), '#ff9f43');
+  }
+  if (c.range) html += bar('range', '사거리', c.range, String(c.range), '#6fc0ff');
+  html += bar('speed', '이동 속도', c.speed, String(c.speed), '#c39bff');
+  if (c.role.length) html += '<div class="fb-role">' + c.role.map(([k, v]) => '<span>' + k + ' ' + v + '</span>').join('') + '</div>';
+  return html + '</div>';
+}
+function fmStatSig() { return JSON.stringify([save.levels, save.upgrades, save.evo, save.owned, save.cleared]); }
+
 function renderFormationSide() {
   const side = $('#formation-side');
   side.innerHTML = '';
@@ -270,6 +296,7 @@ function renderFormationSide() {
       '<div class="fi-stats"><span>💰' + u.cost + '</span><span>쿨타임 ' + u.cooldown + '초</span>' +
       (u.range ? '<span>사거리 ' + u.range + '</span>' : '') +
       (u.maxActive ? '<span>동시 ' + u.maxActive + '명</span>' : u.noStackCap ? '<span class="free">동시 제한 없음</span>' : '') + '</div>' +
+      fmStatBars(fmFocus) +
       (u.abText ? '<div class="fi-ab">◆ ' + u.abText + '</div>' : '') +
       (u.active ? '<div class="fi-ab act">액티브 · ' + u.active.name + '</div>' : '');
     drawUnitIcon(info.querySelector('canvas'), u, 40);

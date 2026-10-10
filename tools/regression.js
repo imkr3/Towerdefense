@@ -142,6 +142,17 @@ test('3.14: stats are cached per battle, a cast names itself, auto holds actives
   assert.equal(b.autoActiveOk('thor'),false,'core shut: save it');boss.exposedT=3;assert.equal(b.autoActiveOk('thor'),true);
   assert.equal(b.useHeroActive('thor'),true);const call=b.fx.find(e=>e.type==='herocall');assert.ok(call&&call.name&&call.stack===0);
 });
+test('3.15 battle report: damage dealt/taken per unit, summons and poison count for their owner, heals too',()=>{
+  const s=save();s.loadout=['spear','venom','priest'];const b=new Battle(0,s,{baseHp:1e6,money:1e6,rate:0,waves:[],reward:0});
+  b.deploy('spear');const sp=b.allies[0];sp.x=600;const e=b.spawnEnemy('ogre',640);
+  b.hitOne(100,e,sp,false);assert.ok(b.meter.spear.dmg>0&&b.meter.spear.n===1);
+  b.hitOne(50,sp,e,false);assert.ok(b.meter.spear.taken>0,'damage taken by the spear');
+  const sk=b.makeAlly(U.skeleton,610,sp);b.hitOne(80,e,sk,false);assert.ok(!b.meter.skeleton,'summon credits its owner');
+  b.money=1e6;b.deploy('venom');const v=b.allies.find(a=>a.s.id==='venom');const d0=b.meter.venom.dmg;
+  b.hitOne(10,e,v,false);const after=b.meter.venom.dmg;for(let i=0;i<30;i++)b.tick(1/30);assert.ok(b.meter.venom.dmg>after&&after>d0,'poison ticks count for the venom archer');
+  b.money=1e6;b.deploy('priest');const pr=b.allies.find(a=>a.s.id==='priest');pr.x=600;sp.hp=sp.maxHp*0.3;pr.abCd=0;b.supportTick(pr,b.allies,0.01,true);
+  assert.ok((b.meter.priest.heal||0)>0,'healing is recorded');
+});
 test('Own cooldown and stun block skill spam',()=>{
   const b=heroBattle('odin');b.heroCooldowns.odin=0;b.allies[0].stunT=1;assert.equal(b.canHeroActive('odin'),false);
 });
