@@ -126,6 +126,17 @@ Object.keys(shapes).forEach(sh => {
 });
 ok('그리기 코드 ' + Object.keys(shapes).length + '종 확인');
 
+/* 3.18: 버전이 여러 곳에 적혀 있다 — 하나라도 어긋나면 화면 · APK · 캐시가 서로 다른 판을 말한다 */
+{
+  const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')).version;
+  const main = /const APP_VERSION = '([^']+)'/.exec(fs.readFileSync(path.join(ROOT, 'js/main.js'), 'utf8'));
+  const gradle = /versionName "([^"]+)"/.exec(fs.readFileSync(path.join(ROOT, 'android/app/build.gradle'), 'utf8'));
+  for (const [k, v] of [['js/main.js APP_VERSION', main && main[1]], ['build.gradle versionName', gradle && gradle[1]]]) {
+    if (v !== pkg) bad('버전 불일치: ' + k + ' ' + v + ' ≠ package.json ' + pkg);
+  }
+  ok('버전 ' + pkg + ' (package.json · main.js · build.gradle)');
+}
+
 if (problems.length) {
   console.error('\n정적 점검 실패 (' + problems.length + '건)\n');
   process.exit(1);

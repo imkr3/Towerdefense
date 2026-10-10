@@ -576,6 +576,70 @@ const BGM_TRACKS = {
       'D5*4 F5*2 A5*2 F5*8',
       'D5*12 .*4'] }] },
 
+  /* ---------------- 3.18 새 보스곡 (grand): 이벤트 보스 · 황금룡 — 다른 보스곡을 빌려 쓰지 않게 ---------------- */
+  boss_vampire: { bpm: 150, style: 'grand', sections: [            // E1 흡혈 백작: 고딕 · 라단조
+    { chords: 'Dm Dm Bb A', lead: 'choir', int: 1, mel: [
+      'D5*8 F5*4 E5*4', 'D5*4 C#5*4 D5*8', 'Bb4*8 D5*4 F5*4', 'E5*8 C#5*8'] },
+    { chords: 'Dm Gm A Dm Bb Gm A A', lead: 'trumpet', dbl: 'strings', int: 2, mel: [
+      'D5*2 E5*2 F5*2 A5*2 D6*4 A5*4', 'Bb5*4 A5*2 G5*2 F5*4 D5*4', 'E5*2 F5*2 G5*2 A5*2 C#6*8', 'D6*6 C6*2 A5*8',
+      'F5*2 G5*2 A5*2 Bb5*2 D6*4 Bb5*4', 'G5*4 Bb5*4 D6*4 G5*4', 'A5*2 Bb5*2 C#6*2 E6*2 A5*8', 'E6*4 D6*2 C#6*2 A5*8'] },
+    { chords: 'Bb C Dm Dm Gm A Dm Dm', lead: 'trumpet', dbl: 'horn', int: 3,
+      cm: ['D5*16', 'E5*16', 'F5*16', 'F5*16', 'D5*16', 'C#5*16', 'D5*16', 'D5*16'], cmi: 'choir', mel: [
+      'F5*4 Bb5*4 D6*8', 'E6*4 C6*4 G5*8', 'A5*2 D6*2 F6*4 E6*4 D6*4', 'A5*6 D6*2 F6*8',
+      'G5*4 Bb5*4 D6*4 G6*4', 'A5*4 C#6*4 E6*4 G6*4', 'F6*4 E6*2 D6*2 C#6*4 E6*4', 'D6*12 .*4'] }] },
+
+  boss_titan: { bpm: 136, style: 'grand', sections: [              // E2 거신: 무거운 다단조
+    { chords: 'Cm Cm Ab G', lead: 'lowbrass', int: 1, mel: [
+      'C3*4 C3*2 C3*2 Eb3*4 G3*4', 'C3*2 .*2 C3*2 .*2 Bb2*8', 'Ab2*8 C3*4 Eb3*4', 'G2*8 B2*8'] },
+    { chords: 'Cm Fm Ab G Cm Fm Bb G', lead: 'horn', dbl: 'lowbrass', int: 2, mel: [
+      'C5*4 G4*2 C5*2 Eb5*4 D5*4', 'F5*4 Eb5*2 D5*2 C5*8', 'Ab4*2 C5*2 Eb5*4 Ab5*8', 'G5*4 F5*2 Eb5*2 D5*8',
+      'C5*2 D5*2 Eb5*2 G5*2 C6*8', 'Ab5*4 G5*2 F5*2 C5*8', 'Bb4*2 D5*2 F5*4 Bb5*8', 'B4*4 D5*4 G5*8'] },
+    { chords: 'Ab Bb Cm Cm Fm G Cm Cm', lead: 'trumpet', dbl: 'horn', int: 3, mel: [
+      'Eb5*4 Ab5*4 C6*8', 'D6*4 Bb5*4 F5*8', 'G5*2 C6*2 Eb6*4 D6*4 C6*4', 'C6*16',
+      'Ab5*4 C6*4 F6*8', 'G5*4 B5*4 D6*4 F6*4', 'Eb6*4 D6*2 C6*2 B5*4 D6*4', 'C6*12 .*4'] }] },
+
+  boss_ghostfleet: { bpm: 154, style: 'grand', sections: [         // E3 망령 함대: 질주하는 뱃노래 · 마단조
+    { chords: 'Em Em C B', lead: 'flute', int: 1, mel: [
+      'E5*2 .*2 E5*2 G5*2 B5*4 G5*4', 'A5*2 G5*2 F#5*2 E5*2 B4*8', 'C5*2 E5*2 G5*2 E5*2 C5*8', 'B4*4 D#5*4 F#5*8'] },
+    { chords: 'Em D C B Em G Am B', lead: 'horn', dbl: 'strings', int: 2, mel: [
+      'E5*2 F#5*2 G5*2 E5*2 B5*4 G5*4', 'A5*2 F#5*2 D5*2 F#5*2 A5*8', 'G5*2 E5*2 C5*2 E5*2 G5*8', 'F#5*4 D#5*4 B4*8',
+      'E5*2 G5*2 B5*2 G5*2 E6*8', 'D6*4 B5*2 G5*2 D5*8', 'C6*2 B5*2 A5*2 G5*2 E5*8', 'F#5*4 A5*4 D#6*8'] },
+    { chords: 'C D Em Em Am B Em Em', lead: 'trumpet', dbl: 'horn', int: 3,
+      cm: ['E4*16', 'D4*16', 'E4*16', 'B3*16', 'C4*16', 'B3*16', 'E4*16', 'E4*16'], cmi: 'choir', mel: [
+      'G4*4 C5*4 E5*8', 'F#5*4 D5*4 A4*8', 'B4*2 E5*2 G5*4 F#5*4 E5*4', 'E5*16',
+      'C5*4 E5*4 A5*8', 'B4*4 D#5*4 F#5*8', 'G5*4 F#5*2 E5*2 D#5*4 F#5*4', 'E5*12 .*4'] }] },
+
+  boss_voidlord: { bpm: 146, style: 'grand', sections: [           // E4 공허 군주: 감7 화음이 섞인 올림바단조
+    { chords: 'F#m F#dim D C#', lead: 'choir', int: 1, mel: [
+      'F#5*8 A5*4 G#5*4', 'F#5*4 C5*4 F#5*8', 'D5*8 F#5*4 A5*4', 'G#5*8 F5*8'] },
+    { chords: 'F#m D Bm C# F#m D E C#', lead: 'oboe', dbl: 'strings', int: 2, mel: [
+      'F#5*2 G#5*2 A5*2 C#6*2 F#6*4 C#6*4', 'D6*4 C#6*2 B5*2 A5*8', 'B5*2 A5*2 F#5*2 D5*2 B4*8', 'C#5*4 F5*4 G#5*8',
+      'A5*2 G#5*2 F#5*2 C#5*2 F#5*8', 'F#5*2 A5*2 D6*4 C#6*4 A5*4', 'B5*4 G#5*4 E5*8', 'F5*4 G#5*4 C#6*8'] },
+    { chords: 'D E F#m F#m Bm C# F#m F#m', lead: 'trumpet', dbl: 'horn', int: 3, mel: [
+      'A4*4 D5*4 F#5*8', 'G#5*4 E5*4 B4*8', 'C#5*2 F#5*2 A5*4 G#5*4 F#5*4', 'F#5*16',
+      'D5*4 F#5*4 B5*8', 'C#5*4 F5*4 G#5*8', 'A5*4 G#5*2 F#5*2 F5*4 G#5*4', 'F#5*12 .*4'] }] },
+
+  boss_demonking: { bpm: 156, style: 'grand', sections: [          // E5 마왕: 가장 빠르고 사나운 나단조
+    { chords: 'Bm Bm G F#', lead: 'lowbrass', int: 1, mel: [
+      'B2*4 B2*2 D3*2 F#3*4 B3*4', 'A3*4 F#3*4 D3*8', 'G2*8 B2*4 D3*4', 'F#2*8 A#2*8'] },
+    { chords: 'Bm G D F# Bm Em F# F#', lead: 'trumpet', dbl: 'horn', int: 2, mel: [
+      'B4*2 C#5*2 D5*2 F#5*2 B5*4 F#5*4', 'G5*4 F#5*2 E5*2 D5*8', 'A5*2 F#5*2 D5*2 F#5*2 A5*8', 'A#5*4 C#6*4 F#6*8',
+      'B5*2 A5*2 F#5*2 D5*2 B4*8', 'E5*2 G5*2 B5*4 A5*4 G5*4', 'F#5*4 A#5*4 C#6*4 E6*4', 'F#6*8 C#6*8'] },
+    { chords: 'G A Bm Bm Em F# Bm Bm', lead: 'strings', dbl: 'trumpet', int: 3,
+      cm: ['B4*16', 'C#5*16', 'D5*16', 'D5*16', 'E5*16', 'C#5*16', 'D5*16', 'B4*16'], cmi: 'choir', mel: [
+      'D5*4 G5*4 B5*8', 'C#5*4 E5*4 A5*8', 'B5*4 A5*2 F#5*2 D5*8', 'B4*16',
+      'E5*4 G5*4 B5*8', 'F#5*4 A#5*4 C#6*8', 'B5*4 A5*2 F#5*2 D5*4 F#5*4', 'B5*12 .*4'] }] },
+
+  boss_goldwyrm: { bpm: 150, style: 'grand', sections: [           // G3 황금룡: 보물산의 승부 · 가단조에서 밝게
+    { chords: 'Am Am F E', lead: 'horn', int: 1, mel: [
+      'A4*4 C5*4 E5*8', 'D5*4 C5*2 B4*2 A4*8', 'F4*4 A4*4 C5*8', 'B4*8 G#4*8'] },
+    { chords: 'Am F C G Am F E E', lead: 'trumpet', dbl: 'strings', int: 2, mel: [
+      'A4*2 B4*2 C5*2 E5*2 A5*4 E5*4', 'F5*4 E5*2 D5*2 C5*8', 'E5*2 D5*2 C5*2 G4*2 C5*8', 'B4*4 D5*4 G5*8',
+      'A5*2 G5*2 E5*2 C5*2 A4*8', 'C5*2 F5*2 A5*4 G5*4 F5*4', 'E5*4 G#5*4 B5*8', 'G#5*8 E5*8'] },
+    { chords: 'F G Am Am F G E E', lead: 'trumpet', dbl: 'horn', int: 3, mel: [
+      'C5*4 F5*4 A5*8', 'B5*4 G5*4 D5*8', 'E5*2 A5*2 C6*4 B5*4 A5*4', 'A5*16',
+      'A5*4 C6*4 F5*8', 'G5*4 B5*4 D6*8', 'E6*4 D6*2 C6*2 B5*4 G#5*4', 'A5*12 .*4'] }] },
+
   boss_kraken: { bpm: 146, style: 'grand', sections: [
     { chords: 'Em Em C B', lead: 'lowbrass', int: 1, mel: [
       'E4*4 G4*2 D4*2 G4*8',
@@ -678,13 +742,17 @@ const BGM_GAIN = {
   victory: 1.5, defeat: 1.32,
   // 3.3
   shore: 1.1, coral: 1.2, krakenbay: 0.9, lighthouse: 1.3, sirensong: 1.2, tidetemple: 1.1, sunken: 1.3,
-  strait: 0.85, abyssgate: 0.95, leviathan: 0.85, boss_kraken: 0.83, boss_tidequeen: 0.82, finale2: 0.91
+  strait: 0.85, abyssgate: 0.95, leviathan: 0.85,
+  // 3.18 새 보스곡 (렌더해 재서 맞춤)
+  boss_vampire: 0.83, boss_titan: 0.9, boss_ghostfleet: 0.8, boss_voidlord: 0.79, boss_demonking: 0.84, boss_goldwyrm: 0.82,
+  boss_kraken: 0.83, boss_tidequeen: 0.82, finale2: 0.91
 };
 
 /* 3.17 보스곡 리믹스: 보스곡 · 마지막 전장 곡은 grand 스타일로 15~20 BPM 빠르게 (선율은 그대로).
  * 겹침 악기가 없는 본격 구간엔 한 옥타브 아래 겹침을 붙여 악기 수를 늘린다 (현 ⇄ 호른). */
 ['boss_lich', 'boss_troll', 'boss_frostgiant', 'boss_drake', 'boss_spiderqueen', 'boss_warlord',
- 'boss_kraken', 'boss_tidequeen', 'finale', 'finale2'].forEach(k => {
+ 'boss_kraken', 'boss_tidequeen', 'finale', 'finale2',
+ 'boss_vampire', 'boss_titan', 'boss_ghostfleet', 'boss_voidlord', 'boss_demonking', 'boss_goldwyrm'].forEach(k => {
   for (const sec of BGM_TRACKS[k].sections) {
     if (!sec.dbl && (sec.int || 1) >= 2) sec.dbl = sec.lead === 'strings' ? 'horn' : 'strings';
   }

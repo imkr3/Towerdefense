@@ -3,6 +3,8 @@
  * ======================================================================= */
 
 
+const APP_VERSION = '3.18.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
+
 function defaultSave() {
   const lv = {};
   UNITS.forEach(u => { lv[u.id] = 1; });
@@ -2027,6 +2029,7 @@ function init() {
 
   initSaveManager();
   initDevMode();
+  $('#ver-n').textContent = 'v' + APP_VERSION;
   $('#btn-start').addEventListener('click', () => {
     if (SaveStore.blocked) { $('#modal-save').classList.add('show'); return; }
     show('scr-map');

@@ -644,6 +644,7 @@ const I18N_EN = {
   '자동일 때 필살도 자동': 'Auto also fires actives', '지금은 출진할 수 없습니다': 'Cannot deploy right now',
   '📊 전투 기록': '📊 Battle report', '받은 피해': 'Taken', '딜 합계': 'Total damage',
   '초당 피해': 'DPS', '이동 속도': 'Speed', ' · 범위': ' · area',
+  '전체화면': 'Fullscreen',
   '🛠 개발자 모드': '🛠 Developer mode', '원하는 만큼 넣고 지급을 누르세요. 지금 슬롯에 바로 저장됩니다.': 'Enter any amount and press Give. It is saved to this slot right away.',
   '💰 골드': '💰 Gold', '🔮 소환석': '🔮 Stones', '지급': 'Give', '+1만': '+10K', '+10만': '+100K', '+100만': '+1M',
   '전장 모두 열기': 'Unlock all stages', '1 이상의 숫자를 넣어 주세요': 'Enter a number of 1 or more',
