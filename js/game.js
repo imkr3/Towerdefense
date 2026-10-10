@@ -32,7 +32,8 @@ const KILL_GOLD_RATE = 0.20; // 처치 보상 배율
 
 /* 효과음 헬퍼: 브라우저에서만 동작하고, 같은 소리가 몰릴 때는 솎아낸다 */
 const _sfxAt = {};
-const _sfxGap = { slash: 90, hit: 90, arrow: 110, boom: 140, die: 120, deploy: 40, gold: 200, rally: 250 };
+const _sfxGap = { slash: 90, hit: 90, arrow: 110, boom: 140, die: 120, deploy: 40, gold: 200, rally: 250,
+                  cannon: 160, zap: 140, rocket: 160, drill: 120, drone: 140, siren: 900 };
 function sfx(name) {
   if (typeof SFX === 'undefined' || !SFX.ready || !SFX.on) return;
   const now = (typeof performance !== 'undefined') ? performance.now() : Date.now();
@@ -44,6 +45,7 @@ function sfx(name) {
 }
 
 const FX_LIMIT = 200;        // 이펙트가 무한정 쌓이지 않게
+const X3_FX_LIMIT = 12;      // 4.3 3진 연출(포연·광선·사이렌)이 한꺼번에 떠 있을 수 있는 수
 const REINFORCE_FIRST = 10;  // 대본 웨이브가 끝나고 첫 증원까지
 const REINFORCE_MIN = 3.0;   // 증원 간격 하한
 const REINFORCE_STEP = 0.06; // 증원 한 번마다 적이 세지는 폭
@@ -514,9 +516,65 @@ class Battle {
     this.allies.push(f);
     // 3.5: 모습이 통째로 바뀐 진화 병종·영웅은 빛기둥과 함께 내려선다
     const grand = !!(f.s.bigEvo || f.s.gacha);
-    this.fx.push({ type: 'spawn', x: f.x, row: f.row, t: grand ? 0.75 : 0.4, life: grand ? 0.75 : 0.4, grand: grand, color: f.s.accent });
+    if (f.s.arrive) this.x3Arrive(f);                 // 4.3 3진은 저마다의 방식으로 등장한다
+    else this.fx.push({ type: 'spawn', x: f.x, row: f.row, t: grand ? 0.75 : 0.4, life: grand ? 0.75 : 0.4, grand: grand, color: f.s.accent });
     sfx('deploy');
     return true;
+  }
+
+  /* ---- 4.3 3진 여섯의 전용 연출 ----
+   * 전차는 흙먼지를 일으키며 들어오고, 거대 로봇은 쿵 내려앉고, 비행접시는 빛을 타고 내려온다.
+   * 연출은 모두 'x3' 효과 하나로 모아 그린다 (밝은 부분은 WebGL, 어두운 연기·흙은 Canvas). */
+  x3Live() {
+    let n = 0;
+    for (const e of this.fx) if (e.type === 'x3') n++;
+    return n;
+  }
+  x3Arrive(f) {
+    const sub = f.s.arrive;
+    this.fx.push({ type: 'x3', kind: 'arrive', sub: sub, x: f.x, row: f.row, dir: f.dir, scale: f.scale,
+                   color: f.s.accent, t: 1.1, life: 1.1 });
+    if (sub === 'robot') { this.shake = Math.max(this.shake, 8); sfx('boom'); }
+    else if (sub === 'tank') this.shake = Math.max(this.shake, 4);
+    else if (sub === 'siren') sfx('siren');
+  }
+  /* 공격하는 순간: 전차 포구의 섬광·연기 고리, 비행접시가 내리쏘는 광선 */
+  x3AttackFx(f, target) {
+    const kind = f.s.atkFx, sc = f.scale || 1;
+    if (kind === 'muzzle') sfx('cannon');
+    else if (kind === 'ufobeam') sfx('zap');
+    if (this.x3Live() >= X3_FX_LIMIT) return;
+    if (kind === 'muzzle') {
+      // 포구 자리는 몸 단위(ox·h)로 넘긴다: 화면 확대와 몸 크기는 따로 움직인다
+      this.fx.push({ type: 'x3', kind: 'muzzle', x: f.x, ox: 71 * sc, h: 38 * sc, row: f.row, dir: f.dir, scale: sc,
+                     t: 0.9, life: 0.9 });
+    } else if (kind === 'ufobeam') {
+      const tx = target && target.x !== undefined ? target.x : f.x + f.dir * f.attackRange;
+      this.fx.push({ type: 'x3', kind: 'ufobeam', x: f.x, x2: tx, row: f.row, row2: target && target.row !== undefined ? target.row : f.row,
+                     h: 30 * sc, dir: f.dir, scale: sc, color: f.s.accent, t: 0.55, life: 0.55 });
+    }
+  }
+  /* 맞는 자리: 포탄은 흙기둥과 검은 연기, 로켓 주먹은 땅이 갈라지는 충격 */
+  x3Impact(f, kind, x, row) {
+    if (kind === 'shellblast') { this.shake = Math.max(this.shake, 5); sfx('boom'); }
+    else if (kind === 'rocketpunch') { this.shake = Math.max(this.shake, 6); sfx('rocket'); }
+    else if (kind === 'drillspark') sfx('drill');
+    else if (kind === 'dronestrike') sfx('drone');
+    if (kind !== 'shellblast' && kind !== 'rocketpunch' && kind !== 'dronestrike') return;
+    if (this.x3Live() >= X3_FX_LIMIT) return;
+    this.fx.push({ type: 'x3', kind: kind === 'shellblast' ? 'boom' : kind === 'rocketpunch' ? 'quake' : 'smoke',
+                   x: x, row: row || 0, r: f.s.areaRadius || 70, dir: f.dir, scale: f.scale || 1,
+                   t: kind === 'dronestrike' ? 0.8 : 1.2, life: kind === 'dronestrike' ? 0.8 : 1.2 });
+  }
+  /* 구급 마차: 사이렌이 울리면 빨강·파랑 고리가 퍼지고, 나은 아군 머리 위로 붉은 십자가 떠오른다 */
+  x3Siren(f, radius, healed) {
+    if (healed.length) sfx('siren');
+    if (this.x3Live() >= X3_FX_LIMIT) return;
+    this.fx.push({ type: 'x3', kind: 'siren', x: f.x, row: f.row, r: radius, scale: f.scale || 1, t: 0.9, life: 0.9 });
+    for (let i = 0; i < healed.length && i < 5; i++) {
+      const m = healed[i];
+      this.fx.push({ type: 'x3', kind: 'medic', x: m.x, row: m.row, scale: m.scale || 1, t: 0.9 + i * 0.06, life: 0.9 + i * 0.06 });
+    }
   }
 
   /* 왕의 명령: 전군 회복 + 가속 */
@@ -1225,10 +1283,11 @@ class Battle {
       for (const m of mates) if (!m.dead && Math.abs(m.x - f.x) <= ab.radius) {
         m.poisonT = 0; m.poisonDps = 0; m.burnT = 0; m.burnDps = 0; m.slowT = 0;
       }
-      this.fx.push({type:'aura',x:f.x,row:f.row,r:ab.radius,color:'#a4f6cc',t:.5,life:.5});
+      if (!f.s.healFx) this.fx.push({type:'aura',x:f.x,row:f.row,r:ab.radius,color:'#a4f6cc',t:.5,life:.5});
     }
     if (ab.heal) {
       let healed = false;
+      const siren = isAlly && f.s.healFx === 'siren' ? [] : null;
       for (const m of mates) {
         if (m.dead || m === f) continue;
         if (Math.abs(m.x - f.x) > ab.radius) continue;
@@ -1237,9 +1296,11 @@ class Battle {
         if (!isAlly) { if (m.healedAt !== undefined && this.time - m.healedAt < ENEMY_HEAL_GAP) continue; m.healedAt = this.time; }
         const filled = m.heal(ab.heal * f.abMul * (isAlly ? 1 + .06 * Math.min(5, this.save.upgrades.medicine || 0) : (m.boss ? BOSS_HEAL_TAKEN : 1)));
         if (isAlly && filled > 0) { const row = this.meterRow(f); row.heal = (row.heal || 0) + filled; }
+        if (siren && filled > 0) siren.push(m);
         healed = true;
       }
-      if (healed) {
+      if (siren) { f.auraPulse = 0.5; this.x3Siren(f, ab.radius, siren); }
+      else if (healed) {
         f.auraPulse = 0.5;
         this.fx.push({ type: 'aura', x: f.x, row: f.row, r: ab.radius,
                        t: 0.5, life: 0.5, color: '#7fe08e' });
@@ -1252,8 +1313,8 @@ class Battle {
         m.giveBarrier(ab.barrier * f.abMul);
       }
       f.auraPulse = 0.5;
-      this.fx.push({ type: 'aura', x: f.x, row: f.row, r: ab.radius,
-                     t: 0.5, life: 0.5, color: '#8fd8ff' });
+      if (!f.s.healFx) this.fx.push({ type: 'aura', x: f.x, row: f.row, r: ab.radius,
+                                      t: 0.5, life: 0.5, color: '#8fd8ff' });
     }
     if (ab.haste) {
       for (const m of mates) {
@@ -1631,10 +1692,13 @@ class Battle {
     const kind = f.s.castFx;
     if (!kind) return;
     const big = f.s.rarity === 'SSR';
+    // 4.3 3진의 연출은 따로 센다: 보통 병사들의 연출에 밀려 전용 연출이 사라지면 안 된다
+    const x3 = !!f.s.evo2;
+    if (x3) this.x3Impact(f, kind, x, row);
     // 같은 순간에 연출이 몰리면 프레임이 무너진다. 살아 있는 수를 세어 막는다.
     let live = 0, liveBig = 0;
     for (const e of this.fx) {
-      if (e.type !== 'cast') continue;
+      if (e.type !== 'cast' || !e.x3 !== !x3) continue;
       live++;
       if (e.big) liveBig++;
     }
@@ -1642,7 +1706,7 @@ class Battle {
     if (big && liveBig >= CAST_BIG_LIMIT) return;
     this.fx.push({
       type: 'cast', kind: kind, x: x, row: row || 0,
-      color: f.s.accent, r: f.s.areaRadius || 90, big: big, dir: f.dir,
+      color: f.s.accent, r: f.s.areaRadius || 90, big: big, dir: f.dir, x3: x3,
       t: big ? 0.7 : 0.45, life: big ? 0.7 : 0.45
     });
     if (big) {
@@ -1659,6 +1723,7 @@ class Battle {
 
   attack(f, target, foes, foeCastle) {
     if (f.ab.sapper) { this.sapperBlast(f, foes, foeCastle); return; }
+    if (f.s.atkFx) this.x3AttackFx(f, target);
     const r = this.rollDamage(f);
     if (f.side === 'ally' && f.exposed) {
       r.dmg *= EXPOSED_MUL;                                      // 엄호 없는 원거리
@@ -1682,7 +1747,7 @@ class Battle {
       this.shake = Math.max(this.shake, 6);
     }
     if (f.s.ranged) {
-      sfx('arrow');
+      if (!f.s.atkFx) sfx('arrow');                       // 전차는 포성이 따로 울린다
       this.shots.push({
         x: f.x, y0: f.row, tx: target.x, side: f.side, t: 0,
         dur: Math.max(0.18, Math.abs(target.x - f.x) / 900),

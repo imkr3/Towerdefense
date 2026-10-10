@@ -108,7 +108,15 @@ const SFX = {
                 setTimeout(() => this.tone(f, 0.2, 'square', 0.22), i * 130)); },
   lose:     function () { if (typeof BGM !== 'undefined' && BGM.vol > 0 && BGM.out) return; [440, 370, 294, 196].forEach((f, i) =>
                 setTimeout(() => this.tone(f, 0.24, 'sawtooth', 0.18), i * 150)); },
-  gold:     function () { this.tone(880, 0.06, 'square', 0.12, 1320); }
+  gold:     function () { this.tone(880, 0.06, 'square', 0.12, 1320); },
+  // 4.3 3진 여섯의 소리: 전차 포성, 비행접시 광선, 로켓 주먹, 드릴, 드론, 사이렌
+  cannon:   function () { this.noise(0.42, 520, 0.36); this.tone(72, 0.34, 'sine', 0.26, 34); },
+  zap:      function () { this.tone(1500, 0.24, 'sine', 0.11, 240); this.tone(740, 0.2, 'triangle', 0.07, 1900); },
+  rocket:   function () { this.noise(0.24, 2400, 0.2, 2); this.tone(170, 0.22, 'sawtooth', 0.13, 55); },
+  drill:    function () { this.tone(210, 0.12, 'sawtooth', 0.07, 250); this.noise(0.08, 3400, 0.09, 6); },
+  drone:    function () { this.tone(980, 0.1, 'square', 0.06, 1600); this.noise(0.2, 900, 0.18); },
+  siren:    function () { this.tone(960, 0.15, 'triangle', 0.09);
+                setTimeout(() => this.tone(720, 0.15, 'triangle', 0.09), 170); }
 };
 
 /* 동시에 울릴 수 있는 효과음 수 (같은 소리 솎아내기는 game.js 의 sfx 가 한다) */

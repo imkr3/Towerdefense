@@ -1151,23 +1151,40 @@ test('Arthur rallies others but not himself; cloud giants stop regenerating when
 });
 
 /* ---------------- 4.1 3진 (각성) ---------------- */
-test('Every campaign unit has a drawn, translated third form at Lv20', () => {
-  const X = vm.runInContext('({EVOLUTIONS2, EVO2_LEVEL, ROSTER_UNITS, evo2Cost})', ctx);
-  const render = fs.readFileSync(path.join(__dirname, '../js/render.js'), 'utf8');
-  const i18n = fs.readFileSync(path.join(__dirname, '../js/i18n.js'), 'utf8');
+test('4.3: only six units awaken — each drawn, translated and given its own effects', () => {
+  const X = vm.runInContext('({EVOLUTIONS, EVOLUTIONS2, EVO2_LEVEL, ROSTER_UNITS, evo2Cost})', ctx);
+  const read = f => fs.readFileSync(path.join(__dirname, '../js/' + f), 'utf8');
+  const render = read('render.js'), i18n = read('i18n.js'), gl = read('gl-fx.js');
   assert.equal(X.EVO2_LEVEL, 20);
-  for (const u of X.ROSTER_UNITS) {
-    const e = X.EVOLUTIONS2[u.id];
-    assert.ok(e && e.look && e.look.shape && e.plus, u.id + ' has a third form');
-    assert.ok(render.indexOf("case '" + e.look.shape + "':") >= 0, u.id + ' drawn');
-    for (const k of [e.name, e.short, e.plus]) if (k) assert.ok(i18n.indexOf("'" + k + "'") >= 0, u.id + ' translated: ' + k);
+  const ids = Object.keys(X.EVOLUTIONS2).sort();
+  assert.deepEqual(ids, ['catapult', 'colossus', 'falconer', 'mage', 'priest', 'spear']);
+  for (const id of ids) {
+    const e = X.EVOLUTIONS2[id], u = U[id];
+    assert.ok(u && X.EVOLUTIONS[id] && X.ROSTER_UNITS.includes(u), id + ' is a campaign unit with a first evolution');
+    assert.ok(e.look && e.look.shape && e.plus && e.arrive && (e.castFx || e.healFx), id + ' has a look, text, an arrival and a signature effect');
+    assert.ok(render.indexOf("case '" + e.look.shape + "':") >= 0, id + ' drawn');
+    for (const k of [e.name, e.short, e.plus]) assert.ok(i18n.indexOf("'" + k + "'") >= 0, id + ' translated: ' + k);
+    if (e.castFx) {
+      assert.ok(gl.indexOf("case '" + e.castFx + "':") >= 0, id + ' impact has a WebGL version');
+      assert.ok(render.indexOf("case '" + e.castFx + "':") >= 0, id + ' impact has a Canvas fallback');
+    }
     assert.ok(X.evo2Cost(u) > G.evoCost(u), 'costs more than the first evolution');
+    const r = G.resolveUnit(u, 20, 2);
+    for (const k of ['castFx', 'arrive', 'atkFx', 'healFx', 'shot']) if (e[k]) assert.equal(r[k], e[k], id + ' carries ' + k);
   }
-  const shapes = X.ROSTER_UNITS.map(u => X.EVOLUTIONS2[u.id].look.shape);
+  const shapes = ids.map(id => X.EVOLUTIONS2[id].look.shape);
   assert.equal(new Set(shapes).size, shapes.length, 'every third form looks different');
+  for (const u of X.ROSTER_UNITS) if (!X.EVOLUTIONS2[u.id] && X.EVOLUTIONS[u.id]) {
+    const r = G.resolveUnit(u, 20, 2);
+    assert.ok(r.evo && !r.evo2, u.id + ' stops at the first evolution');
+  }
+  const ach = vm.runInContext('ACHIEVEMENTS', ctx).find(a => a.id === 'awakenAll');
+  const all = {}; ids.forEach(id => all[id] = true);
+  assert.ok(ach.test({ evo2: all }) && !ach.test({ evo2: { catapult: true } }), 'the achievement asks for all six');
+  assert.ok(ach.test({ evo2: Object.assign({}, all, { mage: false }) }), 'a finished but unused third form still counts');
 });
 test('Third form: big upgrade, only deploy cost and cooldown go up, evolution trade-off removed', () => {
-  for (const id of ['catapult', 'archer', 'priest', 'spear', 'mage']) {
+  for (const id of ['catapult', 'priest', 'spear', 'mage', 'colossus', 'falconer']) {
     const e1 = G.resolveUnit(U[id], 20, true), e2 = G.resolveUnit(U[id], 20, 2);
     assert.equal(e2.evo2, true, id); assert.equal(e2.evo, true, id);
     assert.ok(e2.hp > e1.hp * 1.3 && e2.atk >= e1.atk * 1.3 - 1, id + ' stronger');
@@ -1187,8 +1204,10 @@ test('Save forms: base / evolved / third, chosen per unit', () => {
   X.setEvoForm(sv, 'catapult', 'evo'); assert.equal(X.evoForm(sv, 'catapult'), 1); assert.equal(sv.evo2.catapult, false);
   X.setEvoForm(sv, 'catapult', 'base'); assert.equal(X.evoForm(sv, 'catapult'), 0);
   X.setEvoForm(sv, 'catapult', 'evo2'); assert.equal(X.evoForm(sv, 'catapult'), 2);
-  X.setEvoForm(sv, 'archer', 'evo2'); assert.equal(sv.evo2.archer, undefined, 'cannot pick a third form not yet earned');
+  X.setEvoForm(sv, 'archer', 'evo2'); assert.equal(sv.evo2.archer, undefined, 'archers have no third form');
   assert.equal(X.evoForm(sv, 'archer'), 1);
+  sv.levels.spear = 12; sv.evo.spear = true;
+  X.setEvoForm(sv, 'spear', 'evo2'); assert.equal(sv.evo2.spear, undefined, 'cannot pick a third form not yet earned');
   const b = new Battle(0, Object.assign(save(), { loadout: ['catapult'], levels: { catapult: 20 }, evo: { catapult: true }, evo2: { catapult: true } }));
   assert.equal(b.stats('catapult').shape, 'tank'); assert.ok(b.stats('catapult').cost > U.catapult.cost);
 });
@@ -1217,6 +1236,65 @@ test('English data pass covers the third-form table', () => {
   const i18n = fs.readFileSync(path.join(__dirname, '../js/i18n.js'), 'utf8');
   assert.ok(/EVOLUTIONS, EVOLUTIONS2,/.test(i18n), 'EVOLUTIONS2 is translated at start');
   assert.ok(/'하드코어 전장 40곳 돌파'/.test(i18n));
+});
+
+/* ---------------- 4.3 3진 여섯의 연출 ---------------- */
+function x3Battle(ids) {
+  const s = save(); s.loadout = ids; s.levels = {}; s.evo = {}; s.evo2 = {};
+  for (const id of ids) { s.levels[id] = 20; s.evo[id] = true; s.evo2[id] = true; }
+  const b = new Battle(0, s); b.money = 1e6; return b;
+}
+test('4.3: each third form arrives its own way instead of the light pillar', () => {
+  const b = x3Battle(['catapult', 'colossus', 'mage', 'priest', 'falconer', 'spear']);
+  const subs = [];
+  for (const id of b.roster.map(u => u.id)) {
+    b.cooldowns[id] = 0; b.fx.length = 0; assert.ok(b.deploy(id), id);
+    assert.ok(!b.fx.some(e => e.type === 'spawn'), id + ' skips the generic pillar');
+    const a = b.fx.find(e => e.type === 'x3' && e.kind === 'arrive'); assert.ok(a, id + ' arrival'); subs.push(a.sub);
+  }
+  assert.deepEqual(subs.sort(), ['drill', 'drone', 'robot', 'siren', 'tank', 'ufo']);
+  const plain = battle(); plain.money = 1e6; plain.deploy('spear');
+  assert.ok(plain.fx.some(e => e.type === 'spawn') && !plain.fx.some(e => e.type === 'x3'), 'ordinary units are unchanged');
+});
+test('4.3: tank fires with a muzzle blast, the saucer beams down, the robot quakes the ground', () => {
+  const b = x3Battle(['catapult', 'mage', 'colossus']);
+  const tank = b.makeAlly(b.stats('catapult'), 400), ufo = b.makeAlly(b.stats('mage'), 420), bot = b.makeAlly(b.stats('colossus'), 440);
+  const e = b.spawnEnemy('goblin', 520);
+  b.attack(tank, e, b.enemies, b.enemyCastle);
+  const mz = b.fx.find(f => f.type === 'x3' && f.kind === 'muzzle');
+  assert.ok(mz && mz.x === tank.x && mz.ox > 0 && mz.h > 0, 'muzzle offset kept in body units');
+  assert.equal(b.shots[b.shots.length - 1].src, tank);
+  b.fx.length = 0; b.attack(ufo, e, b.enemies, b.enemyCastle);
+  const beam = b.fx.find(f => f.type === 'x3' && f.kind === 'ufobeam');
+  assert.ok(beam && beam.x === ufo.x && beam.x2 === e.x, 'beam runs from the saucer to the target');
+  assert.ok(b.fx.some(f => f.type === 'cast' && f.kind === 'ufoburst' && f.x3), 'saucer impact');
+  b.fx.length = 0; const shake = b.shake; b.attack(bot, e, b.enemies, b.enemyCastle);
+  assert.ok(b.fx.some(f => f.type === 'x3' && f.kind === 'quake'), 'rocket punch cracks the ground');
+  assert.ok(b.shake >= Math.max(shake, 6), 'and shakes the screen');
+});
+test('4.3: shell impact leaves smoke and scorch; third-form impacts are never starved by other casts', () => {
+  const b = x3Battle(['catapult']); const tank = b.makeAlly(b.stats('catapult'), 400);
+  for (let i = 0; i < 12; i++) b.fx.push({ type: 'cast', kind: 'holy', x: 600, row: 0, t: 1, life: 1 });   // 보통 병사의 연출이 가득
+  b.castFx(tank, 700, 0, false);
+  assert.ok(b.fx.some(f => f.type === 'cast' && f.kind === 'shellblast'), 'tank impact still shows');
+  assert.ok(b.fx.some(f => f.type === 'x3' && f.kind === 'boom'), 'smoke and scorch');
+  for (let i = 0; i < 40; i++) b.castFx(tank, 700, 0, false);
+  assert.ok(b.fx.filter(f => f.type === 'x3').length <= 12, 'x3 effects are capped');
+  assert.ok(b.fx.filter(f => f.type === 'cast' && f.x3).length <= 8, 'x3 casts are capped too');
+});
+test('4.3: the ambulance siren replaces the plain auras and marks healed allies', () => {
+  const b = x3Battle(['priest']); const amb = b.makeAlly(b.stats('priest'), 400);
+  const hurt = [b.makeAlly(U.spear, 420), b.makeAlly(U.spear, 440)]; hurt.forEach(m => { m.hp = 1; });
+  const full = b.makeAlly(U.spear, 460);
+  b.allies.push(amb, ...hurt, full); amb.abCd = 0;
+  b.supportTick(amb, b.allies, 0.1, true);
+  assert.ok(hurt.every(m => m.hp > 1), 'heals');
+  assert.ok(b.fx.some(f => f.type === 'x3' && f.kind === 'siren'), 'siren rings');
+  assert.equal(b.fx.filter(f => f.type === 'x3' && f.kind === 'medic').length, 2, 'a red cross over each healed ally');
+  assert.ok(!b.fx.some(f => f.type === 'aura'), 'no stacked heal / cleanse / barrier auras');
+  const p = battle(); const pr = p.makeAlly(U.priest, 400), m = p.makeAlly(U.spear, 420); m.hp = 1; p.allies.push(pr, m); pr.abCd = 0;
+  p.supportTick(pr, p.allies, 0.1, true);
+  assert.ok(p.fx.some(f => f.type === 'aura') && !p.fx.some(f => f.type === 'x3'), 'the base priest keeps its aura');
 });
 
 console.log(count + ' regression checks passed');

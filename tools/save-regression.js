@@ -87,4 +87,21 @@ test('Damaged number fields are repaired when a save is loaded',()=>{
   ctx.raw=old;const ok=vm.runInContext('normalizeSave(raw)',ctx);
   assert.equal(ok.coins,60000);assert.equal(ok.stones,30);assert.equal(ok.levels.spear,20);
 });
+test('4.3: third forms that no longer exist are refunded once and fall back to the evolved form',()=>{
+  const src=fs.readFileSync('js/main.js','utf8');
+  const grab=name=>{const i=src.indexOf('function '+name+'(');const j=src.indexOf('\n}\n',i);return src.slice(i,j+3);};
+  const ctx=vm.createContext({console});vm.runInContext(fs.readFileSync('js/data.js','utf8'),ctx);
+  vm.runInContext(grab('defaultSave')+grab('normalizeSave'),ctx);
+  const cost=id=>vm.runInContext('evo2Cost(UNIT_BY_ID["'+id+'"])',ctx);
+  ctx.raw={...old,coins:100,levels:{spear:20,archer:20,catapult:20,knight:20},evo:{archer:true,catapult:true,knight:false},evo2:{archer:true,catapult:true,knight:false,nobody:true}};
+  const s=vm.runInContext('normalizeSave(raw)',ctx);
+  assert.deepEqual(Object.keys(s.evo2),['catapult'],'only the six keep a third form');
+  assert.equal(s.evo.archer,true,'the archer keeps its evolved form');
+  const gold=cost('archer')+cost('knight');
+  assert.equal(s.coins,100+gold,'both earned third forms are refunded, used or not');
+  assert.equal(s._refund.n,2);assert.equal(s._refund.gold,gold);
+  assert.ok(!JSON.stringify(s).includes('_refund'),'the refund note is never written to the save');
+  ctx.raw=JSON.parse(JSON.stringify(s));const again=vm.runInContext('normalizeSave(raw)',ctx);
+  assert.equal(again.coins,s.coins,'refunded only once');assert.equal(again._refund,undefined);
+});
 console.log(n+' save protection checks passed');

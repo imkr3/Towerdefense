@@ -764,6 +764,80 @@ class GLFx {
       }
 
       /* 교차 참격 */
+      /* ---- 4.3 3진 여섯의 연출 ---- */
+      /* 공성 전차 포탄: 섬광 · 불덩이 · 바닥을 쓰는 충격 고리 · 불티 (어두운 흙·연기는 Canvas 가 맡는다) */
+      case 'shellblast': {
+        const fire = [1, 0.6, 0.18], hot = [1, 0.92, 0.62];
+        this.add(x, y - 12 * sc, 0, -20 * sc, 0.3, 34 * sc * big, 120 * sc * big, hot, 0.9, 1, 0, 0, 0, 1.3);
+        for (let i = 0, n = N(26); i < n; i++) {
+          const a = rnd(-Math.PI, 0), sp = rnd(50, 210) * sc;
+          this.add(x + rnd(-10, 10) * sc, y - 10 * sc, Math.cos(a) * sp, Math.sin(a) * sp * 0.8, rnd(0.35, 0.7),
+                   rnd(18, 30) * sc * big, rnd(30, 54) * sc, i % 3 ? fire : hot, 0.85, 1, 0, 0, -70, 1.6);
+        }
+        for (let i = 0, n = N(40); i < n; i++) {
+          const a = i / n * TAU, sp = R * 2.8;
+          this.add(x, y - 3 * sc, Math.cos(a) * sp, Math.sin(a) * sp * 0.22, 0.28, 11 * sc, 3 * sc, hot, 0.75, 3.2, a, 0, 0, 1.2);
+        }
+        for (let i = 0, n = N(26); i < n; i++) {
+          const a = rnd(-Math.PI * 0.95, -Math.PI * 0.05), sp = rnd(240, 560) * sc;
+          this.add(x, y - 10 * sc, Math.cos(a) * sp, Math.sin(a) * sp, rnd(0.3, 0.6), rnd(3, 5) * sc, 1, hot, 1, 2.8, a, 0, 760, 2);
+        }
+        break;
+      }
+      /* 비행접시: 초록 고리 셋 · 위로 빨려 올라가는 빛 알갱이 */
+      case 'ufoburst': {
+        const lite = [0.75, 1, 0.85];
+        for (let ring = 0; ring < 3; ring++) {
+          const n = N(30), sp = (120 + ring * 90) * sc;
+          for (let i = 0; i < n; i++) {
+            const a = i / n * TAU;
+            this.add(x, y - 4 * sc - ring * 10 * sc, Math.cos(a) * sp, Math.sin(a) * sp * 0.24, 0.32 + ring * 0.08,
+                     (12 - ring * 2) * sc, 3 * sc, ring === 1 ? lite : col, 0.85, 2.2, a, 0, 0, 1.3);
+          }
+        }
+        for (let i = 0, n = N(34); i < n; i++) {
+          this.add(x + rnd(-R, R) * 0.5, y - rnd(0, 20) * sc, rnd(-12, 12) * sc, rnd(-260, -120) * sc, rnd(0.5, 0.9),
+                   rnd(5, 10) * sc, 1, i % 2 ? col : lite, 0.95, 1.6, -Math.PI / 2, 0, -60, 1.6);
+        }
+        this.add(x, y - 10 * sc, 0, 0, 0.35, 26 * sc, 120 * sc * big, col, 0.7, 1, 0, 0, 0, 1.4);
+        break;
+      }
+      /* 로켓 주먹: 흰 섬광 · 금빛 충격 고리 · 쇳조각 불티 */
+      case 'rocketpunch': {
+        const gold = [1, 0.84, 0.3], hot = [1, 0.95, 0.8];
+        this.add(x, y - 30 * sc, 0, 0, 0.22, 26 * sc, 110 * sc * big, hot, 1, 1, 0, 0, 0, 1.2);
+        for (let i = 0, n = N(44); i < n; i++) {
+          const a = i / n * TAU, sp = R * 3;
+          this.add(x, y - 30 * sc, Math.cos(a) * sp, Math.sin(a) * sp * 0.6, 0.26, 12 * sc, 3 * sc, gold, 0.9, 3, a, 0, 0, 1.2);
+        }
+        for (let i = 0, n = N(30); i < n; i++) {
+          const a = rnd(-Math.PI * 0.9, Math.PI * 0.2) * (i % 2 ? 1 : -1) - Math.PI / 2 * 0.2, sp = rnd(260, 620) * sc;
+          this.add(x, y - 30 * sc, Math.cos(a) * sp, Math.sin(a) * sp, rnd(0.25, 0.5), rnd(3, 5) * sc, 1, i % 3 ? gold : hot, 1, 3, a, 0, 600, 2);
+        }
+        break;
+      }
+      /* 드릴: 앞으로 튀는 불꽃 다발 */
+      case 'drillspark': {
+        const spark = [1, 0.8, 0.35], hot = [1, 0.96, 0.8];
+        const dir = opt.dir || 1;
+        for (let i = 0, n = N(30); i < n; i++) {
+          const a = (dir > 0 ? Math.PI : 0) + rnd(-0.9, 0.9) - 0.25 * dir, sp = rnd(160, 420) * sc;
+          this.add(x, y - 24 * sc, Math.cos(a) * sp, Math.sin(a) * sp, rnd(0.2, 0.45), rnd(3, 5) * sc, 1, i % 3 ? spark : hot, 1, 3.2, a, 0, 700, 2);
+        }
+        this.add(x, y - 24 * sc, 0, 0, 0.18, 14 * sc, 50 * sc, hot, 0.8, 1, 0, 0, 0, 1.2);
+        break;
+      }
+      /* 드론 타격: 작은 폭발 · 파란 전기 불티 */
+      case 'dronestrike': {
+        const fire = [1, 0.62, 0.22], elec = [0.55, 0.88, 1];
+        this.add(x, y - 14 * sc, 0, 0, 0.26, 18 * sc, 70 * sc, fire, 0.9, 1, 0, 0, 0, 1.3);
+        for (let i = 0, n = N(22); i < n; i++) {
+          const a = rnd(0, TAU), sp = rnd(120, 340) * sc;
+          this.add(x, y - 14 * sc, Math.cos(a) * sp, Math.sin(a) * sp, rnd(0.18, 0.4), rnd(3, 5) * sc, 1, i % 2 ? elec : fire, 1, 2.6, a, 0, 400, 2);
+        }
+        break;
+      }
+
       case 'slash': {
         const cy = y - 34 * sc;
         for (let s = 0; s < 2; s++) {

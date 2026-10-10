@@ -3,7 +3,7 @@
  * ======================================================================= */
 
 
-const APP_VERSION = '4.2.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
+const APP_VERSION = '4.3.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
 
 function defaultSave() {
   const lv = {};
@@ -66,11 +66,21 @@ function normalizeSave(raw) {
     }
     s.evo = evo;
     // 4.1 3진: 2진을 마친 병종만 (true 3진으로 출진 · false 마쳤지만 다른 형태)
+    // 4.3: 3진이 여섯 병종만 남았다. 없어진 3진을 했던 병종은 그 금화를 돌려준다 (형태는 진화 형태로 남는다)
     const evo2 = {};
+    let refund = 0, refundN = 0;
     if (s.evo2 && typeof s.evo2 === 'object') {
-      for (const k in s.evo2) if (EVOLUTIONS2[k] && evo[k] !== undefined && typeof s.evo2[k] === 'boolean') evo2[k] = s.evo2[k];
+      for (const k in s.evo2) {
+        if (typeof s.evo2[k] !== 'boolean') continue;
+        if (EVOLUTIONS2[k]) { if (evo[k] !== undefined) evo2[k] = s.evo2[k]; }
+        else if (UNIT_BY_ID[k]) { refund += evo2Cost(UNIT_BY_ID[k]); refundN++; }
+      }
     }
     s.evo2 = evo2;
+    if (refund) {
+      s.coins = (Number(s.coins) || 0) + refund;
+      Object.defineProperty(s, '_refund', { value: { n: refundN, gold: refund }, enumerable: false });   // 저장 파일엔 남지 않는다
+    }
     if (!Array.isArray(s.loadout)) s.loadout = [];
     if (!Array.isArray(s.knownUnits) || !Object.prototype.hasOwnProperty.call(raw, 'knownUnits')) {
       s.knownUnits = UNITS.filter(u => u.unlockStage <= s.cleared + 1 || (u.gacha && s.owned && s.owned[u.id])).map(u => u.id);
@@ -2073,6 +2083,12 @@ function init() {
   initSaveManager();
   initDevMode();
   $('#ver-n').textContent = 'v' + APP_VERSION;
+  // 4.3: 없어진 3진의 금화를 돌려줬으면 저장하고 알린다
+  if (save._refund) {
+    const rf = save._refund;
+    saveGame(save);
+    setTimeout(() => toast('3진이 여섯 병종으로 정리됐습니다 · ' + rf.n + '종 금화 ' + rf.gold + ' 환불'), 900);
+  }
   $('#btn-start').addEventListener('click', () => {
     if (SaveStore.blocked) { $('#modal-save').classList.add('show'); return; }
     show('scr-map');
@@ -2443,7 +2459,7 @@ window.receiveSaveBackup = function(raw) {
       if (!SaveStore.write(candidate, true)) { toast(SaveStore.error); return; }
       save=candidate;
       $('#modal-save').classList.remove('show'); $('#save-warning').hidden=true;
-      show('scr-title'); toast('진행도를 복원했습니다.');
+      show('scr-title'); toast('진행도를 복원했습니다.' + (candidate._refund ? ' (3진 금화 ' + candidate._refund.gold + ' 환불)' : ''));
     });
   } catch(e) { toast('복원하지 않았습니다: ' + e.message); }
 };
