@@ -671,8 +671,8 @@ class Battle {
     }
     for (const a of this.allies) {
       a.heal(a.maxHp * this.cmdHeal);
+      a.hasteMul = a.hasteT > 0 ? Math.min(a.hasteMul, COMMAND.hasteMul) : COMMAND.hasteMul;
       a.hasteT = Math.max(a.hasteT, COMMAND.hasteDur);
-      a.hasteMul = COMMAND.hasteMul;
       a.stunT = 0;
       a.slowT = 0;
       this.fx.push({ type: 'rally', x: a.x, row: a.row, t: 0.6, life: 0.6 });
@@ -1133,6 +1133,9 @@ class Battle {
       if (f.poisonT > 0) { dot += f.poisonDps * Math.min(dt, f.poisonT); f.poisonT = Math.max(0, f.poisonT - dt); }
       if (f.burnT > 0) { dot += f.burnDps * Math.min(dt, f.burnT); f.burnT = Math.max(0, f.burnT - dt); }
       if (isAlly) dot *= 1 - 0.05 * Math.min(5, this.save.upgrades.resistance || 0);
+      // 4.4: 지속 피해도 안개화(무적)와 핵(평소엔 막고 노출 때 몇 배)을 따른다 — 갑주는 꿰뚫는다
+      if (f.veilT > 0) dot = 0;
+      else if (dot > 0 && f.ab.core) dot *= f.exposedT > 0 ? f.ab.core.mul : 1 - f.ab.core.armor;
       if (dot > 0) {
         if (!isAlly && f.dotBy) { const m = this.meter[f.dotBy] || (this.meter[f.dotBy] = { dmg: 0, taken: 0, n: 0 }); m.dmg += Math.min(dot, Math.max(0, f.hp)); }
         f.hp -= dot;
@@ -1320,8 +1323,9 @@ class Battle {
       for (const m of mates) {
         if (m.dead || m === f) continue;
         if (Math.abs(m.x - f.x) > ab.radius) continue;
+        // 4.4: 더 약한 가속이 아직 남은 강한 가속(왕명·과부하)을 덮어쓰지 않는다
+        m.hasteMul = m.hasteT > 0 ? Math.min(m.hasteMul, ab.haste.mul) : ab.haste.mul;
         m.hasteT = Math.max(m.hasteT, ab.haste.dur);
-        m.hasteMul = ab.haste.mul;
       }
       f.auraPulse = 0.5;
       this.fx.push({ type: 'aura', x: f.x, row: f.row, r: ab.radius,
@@ -1520,8 +1524,7 @@ class Battle {
         for (const e of foes) {
           if (e.dead || Math.abs(e.x - f.x) > r) continue;
           const d = a.dmg || 120;
-          e.takeDamage(d);
-          sum += d;
+          sum += e.takeDamage(d) || 0;      // 4.4: 보호막에 막힌 만큼은 빨지 못한다
         }
         f.heal(sum * (a.ratio || 0.6));
         this.fx.push({ type: 'cast', kind: 'runes', x: f.x, row: f.row,
@@ -1535,7 +1538,7 @@ class Battle {
           let sum = 0;
           for (const e of foes) {
             if (e.dead || Math.abs(e.x - f.x) > r) continue;
-            e.takeDamage(a.dmg); sum += a.dmg;
+            sum += e.takeDamage(a.dmg) || 0;
           }
           f.heal(Math.min(sum * (a.ratio || 0.5), f.maxHp * 0.05));   // 머릿수만큼 끝없이 차오르지 않게
         }
@@ -1596,14 +1599,18 @@ class Battle {
   /* 예고 표시를 띄우고, 시간이 되면 그 자리에 내리꽂는다.
    * 무작정 터지지 않으니 피할 틈이 있다. */
   queueStrike(f, o) {
+    // 4.4: 예고 원은 내리꽂는 그 순간과 같은 시계(전투 시간)로 줄어든다.
+    // 예전엔 화면 시간으로 따로 흘러 3배속에선 착탄 뒤까지 남고, 일시정지 중엔 사라져 버렸다.
+    const warn = { type: 'warn', x: o.x, r: o.r, t: o.warn, life: o.warn, held: true,
+                   color: f.side === 'ally' ? '#6fc0ff' : '#e0503c' };
     this.pending.push({
+      warnFx: warn,
       t: o.warn, side: f.side, x: o.x, r: o.r, dmg: o.dmg,
       burn: o.burn, stun: o.stun, kind: o.kind, color: f.s.accent, row: f.row,
       expose: o.expose, src: o.expose ? f : null, noCastle: !!o.noCastle,
       by: f.side === 'ally' ? (f.creditTo || f.s.id) : null
     });
-    this.fx.push({ type: 'warn', x: o.x, r: o.r, t: o.warn, life: o.warn,
-                   color: f.side === 'ally' ? '#6fc0ff' : '#e0503c' });
+    this.fx.push(warn);
   }
 
   updatePending(dt) {
@@ -1611,8 +1618,10 @@ class Battle {
     let landed = false;
     for (const s of this.pending) {
       s.t -= dt;
+      if (s.warnFx) s.warnFx.t = Math.max(0, s.t);
       if (s.t > 0) continue;
       s.done = landed = true;
+      if (s.warnFx) s.warnFx.held = false;
       const foes = this.foesOf(s.side);
       const castle = this.castleOf(s.side);
       for (const e of foes) {
@@ -2043,8 +2052,10 @@ class Battle {
   }
 
   updateFx(dt) {
-    for (const e of this.fx) e.t -= dt;
-    this.fx = this.fx.filter(e => e.t > 0);
+    // held: 착탄 예고 — 전투 중에는 updatePending 이 시간을 맞춘다 (끝나면 그냥 사라진다)
+    const live = this.state === 'play';
+    for (const e of this.fx) if (!e.held || !live) e.t -= dt;
+    this.fx = this.fx.filter(e => e.t > 0 || (e.held && live));
     if (this.fx.length > FX_LIMIT) this.fx.splice(0, this.fx.length - FX_LIMIT);
     this.dmgFxCount = 0;
     for (const e of this.fx) if (e.type === 'dmg') this.dmgFxCount++;

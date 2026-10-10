@@ -1297,4 +1297,31 @@ test('4.3: the ambulance siren replaces the plain auras and marks healed allies'
   assert.ok(p.fx.some(f => f.type === 'aura') && !p.fx.some(f => f.type === 'x3'), 'the base priest keeps its aura');
 });
 
+test('4.4: strike warnings run on battle time and land together with the strike', () => {
+  const b = battle(), src = b.makeAlly(U.spear, 400);
+  b.queueStrike(src, { x: 900, r: 60, dmg: 10, warn: 1, kind: 'shockwave' });
+  const w = b.fx.find(f => f.type === 'warn');
+  for (let i = 0; i < 20; i++) b.updateFx(0.4);              // 일시정지 중 흐르는 화면 시간
+  assert.ok(b.fx.includes(w) && w.t === 1, 'paused: the warning stays');
+  b.updatePending(0.5); assert.ok(Math.abs(w.t - 0.5) < 1e-9, 'shrinks with the strike timer');
+  b.updatePending(0.6); b.updateFx(0);
+  assert.ok(!b.fx.includes(w) && !b.pending.length, 'gone exactly when the strike lands');
+});
+test('4.4: poison and burn respect the veil and the core', () => {
+  const b = battle();
+  const veiled = new Fighter(E.goblin, 'enemy', 1800); veiled.veilT = 2; veiled.poisonT = 1; veiled.poisonDps = 300;
+  const cored = new Fighter({ ...E.goblin, ab: { core: { armor: 0.95, mul: 3 } } }, 'enemy', 1800); cored.burnT = 1; cored.burnDps = 100;
+  b.step([veiled, cored], [], b.allyCastle, 0.1, false);
+  assert.equal(veiled.hp, veiled.maxHp);
+  assert.ok(Math.abs(cored.maxHp - cored.hp - 0.5) < 1e-6, 'closed core blocks 95%');
+});
+test('4.4: a weaker haste does not overwrite a stronger one still running', () => {
+  const b = battle(), a = b.makeAlly(U.spear, 400); b.allies.push(a);
+  b.cmdCd = 0; b.useCommand();
+  const strong = a.hasteMul; assert.ok(strong < 0.7);
+  const herald = new Fighter({ ...U.spear, ab: { radius: 200, haste: { mul: 0.78, dur: 3 } } }, 'ally', 410);
+  herald.abCd = 0; b.supportTick(herald, [a, herald], 0.1, true);
+  assert.equal(a.hasteMul, strong);
+});
+
 console.log(count + ' regression checks passed');

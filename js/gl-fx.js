@@ -79,6 +79,13 @@ function glfxDowngrade(src) {
     .replace(/\boutColor\b/g, 'gl_FragColor');
 }
 
+const GLFX_ALIAS = {
+  thunderseal: ['lightning', 'runes'],
+  underworld: ['runes', 'shockwave'],
+  sunfall: ['pillar', 'firestorm'],
+  runeveil: ['runes', 'holy']
+};
+
 class GLFx {
   constructor(canvas, max) {
     this.cv = canvas;
@@ -97,6 +104,17 @@ class GLFx {
     // 합성식이 포화형이어서 1 을 넘겨도 흰 덩어리로 터지지는 않는다.
     this.gain = 1.15;
     this.ok = this._init();
+    // 4.4: 앱이 뒤로 가거나 GPU 가 초기화되면 컨텍스트를 잃는다. 그동안은 ok 를 내려
+    // 렌더러가 캔버스 대체 연출을 그리게 하고, 돌아오면 다시 만든다.
+    // (preventDefault 가 없으면 브라우저가 컨텍스트를 영영 돌려주지 않는다)
+    canvas.addEventListener('webglcontextlost', e => {
+      e.preventDefault();
+      this.ok = false; this.count = 0;
+    });
+    canvas.addEventListener('webglcontextrestored', () => {
+      this.ok = this._init();
+      if (this.ok) this.resize(this.w, this.h, this.dpr);
+    });
   }
 
   _init() {
@@ -326,6 +344,11 @@ class GLFx {
     const rnd = (a, b) => a + Math.random() * (b - a);
     const N = n => Math.max(1, Math.round(n * q));
     const TAU = Math.PI * 2;
+
+    // 4.4: 자기 파티클이 따로 없는 신화 필살은 비슷한 연출을 겹쳐 쓴다
+    // (예전엔 switch 에 걸리지 않아 GL 쪽에서 아무것도 터지지 않았다)
+    const alias = GLFX_ALIAS[kind];
+    if (alias) { for (const k of alias) this.emit(k, x, y, opt); return; }
 
     switch (kind) {
       /* 하늘에서 내리꽂는 번개 */
