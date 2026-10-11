@@ -33,7 +33,8 @@ const KILL_GOLD_RATE = 0.20; // 처치 보상 배율
 /* 효과음 헬퍼: 브라우저에서만 동작하고, 같은 소리가 몰릴 때는 솎아낸다 */
 const _sfxAt = {};
 const _sfxGap = { slash: 90, hit: 90, arrow: 110, boom: 140, die: 120, deploy: 40, gold: 200, rally: 250,
-                  cannon: 160, zap: 140, rocket: 160, drill: 120, drone: 140, siren: 900 };
+                  cannon: 160, zap: 140, rocket: 160, drill: 120, drone: 140, siren: 900,
+                  dozer: 200, freeze: 140, saber: 110, rail: 200 };
 function sfx(name) {
   if (typeof SFX === 'undefined' || !SFX.ready || !SFX.on) return;
   const now = (typeof performance !== 'undefined') ? performance.now() : Date.now();
@@ -46,6 +47,8 @@ function sfx(name) {
 
 const FX_LIMIT = 200;        // 이펙트가 무한정 쌓이지 않게
 const X3_FX_LIMIT = 12;      // 4.3 3진 연출(포연·광선·사이렌)이 한꺼번에 떠 있을 수 있는 수
+// 3진의 타격 연출 → 땅에 남는 Canvas 연출 (연기 · 흙 · 갈라진 땅 · 눈더미 · 그을린 자국)
+const X3_GROUND = { shellblast: 'boom', rocketpunch: 'quake', dronestrike: 'smoke', dozerpush: 'dirtwave', snowburst: 'frost', railhit: 'railscar' };
 const REINFORCE_FIRST = 10;  // 대본 웨이브가 끝나고 첫 증원까지
 const REINFORCE_MIN = 3.0;   // 증원 간격 하한
 const REINFORCE_STEP = 0.06; // 증원 한 번마다 적이 세지는 폭
@@ -408,6 +411,10 @@ class Battle {
 
     this.roster = this.battleUnits();
     this.roster.forEach(u => { this.cooldowns[u.id] = 0; if(u.active) this.heroCooldowns[u.id]=20; });
+    // 4.4 각성 경계: 도전 전장은 편성한 3진 수만큼 적이 억세진다
+    this.awakenN = (this.hard || this.event) ? this.roster.filter(u => u.evo2).length : 0;
+    this.awakenMul = 1 + AWAKEN_TAX * this.awakenN;
+    this.enemyMulBase *= this.awakenMul;
   }
 
   /* 해금된 병종 */
@@ -535,16 +542,23 @@ class Battle {
     this.fx.push({ type: 'x3', kind: 'arrive', sub: sub, x: f.x, row: f.row, dir: f.dir, scale: f.scale,
                    color: f.s.accent, t: 1.1, life: 1.1 });
     if (sub === 'robot') { this.shake = Math.max(this.shake, 8); sfx('boom'); }
-    else if (sub === 'tank') this.shake = Math.max(this.shake, 4);
+    else if (sub === 'tank' || sub === 'dozer') { this.shake = Math.max(this.shake, 4); if (sub === 'dozer') sfx('dozer'); }
     else if (sub === 'siren') sfx('siren');
+    else if (sub === 'saber') sfx('saber');
+    else if (sub === 'rail') sfx('rail');
+    else if (sub === 'snow') sfx('freeze');
   }
   /* 공격하는 순간: 전차 포구의 섬광·연기 고리, 비행접시가 내리쏘는 광선 */
   x3AttackFx(f, target) {
     const kind = f.s.atkFx, sc = f.scale || 1;
     if (kind === 'muzzle') sfx('cannon');
     else if (kind === 'ufobeam') sfx('zap');
+    else if (kind === 'railflash') sfx('rail');
     if (this.x3Live() >= X3_FX_LIMIT) return;
-    if (kind === 'muzzle') {
+    if (kind === 'railflash') {                         // 4.4 레일건 총구: 푸른 고리 · 빛줄기 (몸 단위)
+      this.fx.push({ type: 'x3', kind: 'railflash', x: f.x, ox: 80 * sc, h: 34 * sc, row: f.row, dir: f.dir, scale: sc,
+                     color: f.s.accent, t: 0.6, life: 0.6 });
+    } else if (kind === 'muzzle') {
       // 포구 자리는 몸 단위(ox·h)로 넘긴다: 화면 확대와 몸 크기는 따로 움직인다
       this.fx.push({ type: 'x3', kind: 'muzzle', x: f.x, ox: 71 * sc, h: 38 * sc, row: f.row, dir: f.dir, scale: sc,
                      t: 0.9, life: 0.9 });
@@ -560,11 +574,14 @@ class Battle {
     else if (kind === 'rocketpunch') { this.shake = Math.max(this.shake, 6); sfx('rocket'); }
     else if (kind === 'drillspark') sfx('drill');
     else if (kind === 'dronestrike') sfx('drone');
-    if (kind !== 'shellblast' && kind !== 'rocketpunch' && kind !== 'dronestrike') return;
+    else if (kind === 'dozerpush') { this.shake = Math.max(this.shake, 3); sfx('dozer'); }
+    else if (kind === 'snowburst') sfx('freeze');
+    else if (kind === 'sabercut') sfx('saber');
+    const ground = X3_GROUND[kind];
+    if (!ground) return;
     if (this.x3Live() >= X3_FX_LIMIT) return;
-    this.fx.push({ type: 'x3', kind: kind === 'shellblast' ? 'boom' : kind === 'rocketpunch' ? 'quake' : 'smoke',
-                   x: x, row: row || 0, r: f.s.areaRadius || 70, dir: f.dir, scale: f.scale || 1,
-                   t: kind === 'dronestrike' ? 0.8 : 1.2, life: kind === 'dronestrike' ? 0.8 : 1.2 });
+    this.fx.push({ type: 'x3', kind: ground, x: x, row: row || 0, r: f.s.areaRadius || 70, dir: f.dir, scale: f.scale || 1,
+                   color: f.s.accent, t: kind === 'dronestrike' ? 0.8 : 1.2, life: kind === 'dronestrike' ? 0.8 : 1.2 });
   }
   /* 구급 마차: 사이렌이 울리면 빨강·파랑 고리가 퍼지고, 나은 아군 머리 위로 붉은 십자가 떠오른다 */
   x3Siren(f, radius, healed) {
@@ -997,6 +1014,7 @@ class Battle {
     this.resultTime = 0;
     this.stars = 0;
     sfx(result === 'win' ? 'win' : 'lose');
+    this.recordTrials(result);
 
     if (this.endless) {
       this.wavesCleared = this.wavesDone();
@@ -1096,6 +1114,28 @@ class Battle {
       this.save.coins += this.coins;
       this.save.totalKills = (this.save.totalKills || 0) + this.kills;
       saveGame(this.save);
+    }
+  }
+
+  /* 4.4 3진 시련 기록: 병종별 누적 피해·치유, 전장 최단 돌파 시간, 성채 100% 돌파 */
+  recordTrials(result) {
+    const s = this.save;
+    if (!s.life || typeof s.life !== 'object') s.life = {};
+    for (const id in this.meter) {
+      if (!UNIT_BY_ID[id]) continue;
+      const m = this.meter[id], L = s.life[id] || (s.life[id] = { d: 0, h: 0 });
+      L.d = Math.round((L.d || 0) + (m.dmg || 0));
+      L.h = Math.round((L.h || 0) + (m.heal || 0));
+    }
+    if (result !== 'win' || this.hard || this.event || this.endless || this.expedition) return;
+    if (this.stageIndex >= STAGES.length || this.stage !== STAGES[this.stageIndex]) return;
+    if (!s.best || typeof s.best !== 'object') s.best = {};
+    this.clearTime = Math.round(this.time * 10) / 10;
+    this.prevBest = s.best[this.stageIndex];
+    if (this.prevBest === undefined || this.clearTime < this.prevBest) s.best[this.stageIndex] = this.clearTime;
+    if (this.allyCastle.hp >= this.allyCastle.maxHp) {
+      if (!s.perfect || typeof s.perfect !== 'object') s.perfect = {};
+      s.perfect[this.stageIndex] = true;
     }
   }
 

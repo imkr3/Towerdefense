@@ -1942,7 +1942,7 @@ const ACHIEVEMENTS = [
   { id:'campaign40',name:'심연을 건넌 자',desc:'40전장 모두 돌파',gold:12000,stone:10,test:s=>s.cleared>=40 },
   { id: 'awaken1',  name: '세 번째 모습', desc: '병종 하나를 3진',              gold: 5000, stone: 5,
     test: s => Object.keys(s.evo2 || {}).length >= 1 },
-  { id: 'awakenAll', name: '엉뚱한 군대', desc: '3진 여섯 모두',                 gold: 20000, stone: 15,
+  { id: 'awakenAll', name: '엉뚱한 군대', desc: '3진 10종 모두',                gold: 20000, stone: 15,
     test: s => Object.keys(EVOLUTIONS2).every(id => s.evo2 && s.evo2[id] !== undefined) },
   { id:'campaign50',name:'하늘에 오른 자',desc:'50전장 모두 돌파 (4막 천공 요새)',gold:20000,stone:15,test:s=>s.cleared>=50 },
   { id: 'endless10',name: '끝없는 전장',  desc: '무한 전장 10웨이브 돌파',       gold: 2000, stone: 3,
@@ -2301,8 +2301,82 @@ const EVOLUTIONS2 = {
              castFx: 'rocketpunch', arrive: 'robot' },
   falconer:{ look: { shape: 'dronepilot', tunic: '#34424f', accent: '#5ad8ff' }, name: '드론 조종사', short: '드론',
              plus: '드론 편대 · 원거리 적에게 2.4배 · 사거리 +60', add: { range: 60 }, ab: { hunter: 2.4 },
-             shot: 'drone', castFx: 'dronestrike', arrive: 'drone' }
+             shot: 'drone', castFx: 'dronestrike', arrive: 'drone' },
+  // 4.4: 넷 더 — 불도저 · 빙수 수레 · 광선검 · 레일건
+  shield:  { look: { shape: 'bulldozer', tunic: '#f0b42a', accent: '#ff8a2a' }, name: '방패 불도저', short: '불도저',
+             plus: '불도저 삽 · 갑주 30% · 반사 25% · 밀쳐 냄', ab: { kbImmune: true, armor: 0.3, thorns: 0.25, push: 30 },
+             castFx: 'dozerpush', arrive: 'dozer' },
+  frost:   { look: { shape: 'icecart', tunic: '#7ac8e8', accent: '#ff8ab0' }, name: '빙수 마도사', short: '빙수마도',
+             plus: '눈덩이 폭격 · 범위 70 · 얼림 25% · 둔화 +30%', set: { area: true, areaRadius: 70 },
+             ab: { stun: { chance: 0.25, dur: 0.9 } }, mul: { slow: 1.3 }, shot: 'snowball', castFx: 'snowburst', arrive: 'snow' },
+  duelist: { look: { shape: 'lightsaber', tunic: '#2a2a3a', accent: '#5ad8ff' }, name: '광선검 검성', short: '광선검',
+             plus: '광선검 · 체력 20% 이하 즉시 처치 · 치명타 35% ×2.8', ab: { execute: 0.2, crit: { chance: 0.35, mul: 2.8 } },
+             castFx: 'sabercut', arrive: 'saber' },
+  sniper:  { look: { shape: 'railgun', tunic: '#2a3a4a', accent: '#5ae8ff' }, name: '레일건 저격수', short: '레일건',
+             plus: '레일건 · 관통 · 보스·중장갑에게 2배', ab: { breaker: 2.0 }, shot: 'rail', castFx: 'railhit', atkFx: 'railflash', arrive: 'rail' }
 };
+
+/* 4.4 3진의 시련: 레벨 20 · 금화에 더해 병종마다 다른 조건 둘을 채워야 3진할 수 있다.
+ *  speed: 전장(stage 번째, 0부터)을 sec 초 안에 돌파 (전투 시간 기준 — 배속과 상관없다)
+ *  series: 계열 병종(ids) 모두 lv 이상 · perfect: 성채 피해 없이 돌파 · stars: 전장 from~to-1 모두 ★3
+ *  dmg / heal: 그 병종의 누적 피해 / 치유 · hard: 하드코어 돌파 수 · event: 이벤트 돌파 수 · endless: 무한 전장 최고 웨이브
+ *  4.4 이전에 이미 3진한 병종은 그대로 쓴다. */
+const EVO2_TRIALS = {
+  spear:    [{ t: 'speed', stage: 4, sec: 35 }, { t: 'series', name: '창 계열', ids: ['spear', 'javelin', 'frostlancer', 'lancer'], lv: 18 }],
+  priest:   [{ t: 'heal', id: 'priest', n: 1200000 }, { t: 'series', name: '수호 계열', ids: ['priest', 'purifier', 'runeguard', 'bellringer'], lv: 18 }],
+  catapult: [{ t: 'speed', stage: 19, sec: 75 }, { t: 'series', name: '화약 계열', ids: ['catapult', 'bomber', 'musketeer', 'engineer'], lv: 18 }],
+  mage:     [{ t: 'dmg', id: 'mage', n: 1500000 }, { t: 'series', name: '마법 계열', ids: ['mage', 'frost', 'pyro', 'necro'], lv: 18 }],
+  colossus: [{ t: 'hard', n: 5 }, { t: 'perfect', stage: 14 }],
+  falconer: [{ t: 'stars', from: 0, to: 20 }, { t: 'series', name: '사냥 계열', ids: ['falconer', 'archer', 'longbow', 'venom'], lv: 18 }],
+  shield:   [{ t: 'perfect', stage: 9 }, { t: 'series', name: '철벽 계열', ids: ['shield', 'paladin', 'colossus', 'monk'], lv: 18 }],
+  frost:    [{ t: 'speed', stage: 24, sec: 38 }, { t: 'event', n: 1 }],
+  duelist:  [{ t: 'speed', stage: 11, sec: 22 }, { t: 'endless', n: 12 }],
+  sniper:   [{ t: 'dmg', id: 'sniper', n: 1500000 }, { t: 'speed', stage: 32, sec: 170 }]
+};
+function _trialNum(n) { return n >= 1e6 ? (Math.round(n / 1e5) / 10) + 'M' : n >= 1e4 ? Math.round(n / 1e3) + 'k' : String(Math.round(n)); }
+/* 시련 하나의 진행: { done, text(조건), prog(지금 상태) } */
+function trialState(s, c) {
+  s = s || {};
+  const lv = id => (s.levels && s.levels[id]) || 1;
+  const life = id => (s.life && s.life[id]) || {};
+  switch (c.t) {
+    case 'speed': {
+      const b = s.best && s.best[c.stage];
+      return { done: b !== undefined && b <= c.sec, text: '전장 ' + (c.stage + 1) + ' ' + c.sec + '초 안에 돌파', prog: b !== undefined ? '최고 ' + Math.ceil(b) + '초' : '기록 없음' };
+    }
+    case 'series': {
+      const k = c.ids.filter(id => lv(id) >= c.lv).length;
+      return { done: k === c.ids.length, text: c.name + ' (' + c.ids.map(id => UNIT_BY_ID[id].name).join(' · ') + ') 모두 Lv ' + c.lv, prog: k + ' / ' + c.ids.length };
+    }
+    case 'perfect': {
+      const ok = !!(s.perfect && s.perfect[c.stage]);
+      return { done: ok, text: '전장 ' + (c.stage + 1) + ' 성채 100%로 돌파', prog: ok ? '완료' : '아직' };
+    }
+    case 'stars': {
+      let k = 0; for (let i = c.from; i < c.to; i++) if (s.stars && s.stars[i] >= 3) k++;
+      return { done: k === c.to - c.from, text: '전장 ' + (c.from + 1) + '~' + c.to + ' 모두 ★3', prog: k + ' / ' + (c.to - c.from) };
+    }
+    case 'dmg': case 'heal': {
+      const v = life(c.id)[c.t === 'dmg' ? 'd' : 'h'] || 0;
+      return { done: v >= c.n, text: UNIT_BY_ID[c.id].name + (c.t === 'dmg' ? ' 누적 피해 ' : ' 누적 치유 ') + _trialNum(c.n), prog: _trialNum(Math.min(v, c.n)) + ' / ' + _trialNum(c.n) };
+    }
+    case 'hard': {
+      const k = s.hard ? Object.keys(s.hard).filter(i => s.hard[i]).length : 0;
+      return { done: k >= c.n, text: '하드코어 ' + c.n + '곳 돌파', prog: Math.min(k, c.n) + ' / ' + c.n };
+    }
+    case 'event': {
+      const k = s.events ? Object.keys(s.events).filter(i => s.events[i] > 0).length : 0;
+      return { done: k >= c.n, text: '이벤트 전장 ' + c.n + '곳 돌파', prog: Math.min(k, c.n) + ' / ' + c.n };
+    }
+    case 'endless': {
+      const b = s.endlessBest || 0;
+      return { done: b >= c.n, text: '무한 전장 ' + c.n + '웨이브', prog: '최고 ' + b + '웨이브' };
+    }
+  }
+  return { done: true, text: '', prog: '' };
+}
+function evo2Trials(s, id) { return (EVO2_TRIALS[id] || []).map(c => Object.assign({ c: c }, trialState(s, c))); }
+function evo2TrialsDone(s, id) { return evo2Trials(s, id).every(x => x.done); }
 function _mergeAb(r, src) {
   r.ab = r.ab || {};
   for (const k in src) {
@@ -2506,13 +2580,16 @@ function unitFor(save, id) {
  *   - 이기면 보상 골드 3배, 처음 이기면 소환석 5개와 왕관 기록
  *   다 키운 공략 편성으로도 30곳 중 절반 남짓만 넘는다 (`npm run balance` 가 검사).
  * ======================================================================= */
-const HARDCORE = { enemyMul: 3.5, fortMul: 2, castleMul: 0.6, cmdMul: 1.5, reward: 3, stones: 5, stunResist: 0.3,
+// 4.4: 3진이 생긴 뒤로 도전이 쉬워졌다 — 적 ×3.5 → 4.1 (바닥 5 → 6.2), 요새 ×2 → 2.2, 보스 체력 ×2.6 → 2.9
+const HARDCORE = { enemyMul: 4.1, fortMul: 2.2, castleMul: 0.6, cmdMul: 1.5, reward: 3, stones: 5, stunResist: 0.3,
                    // 3.19: 하드코어 보스는 따로 더 억세다. 다 키운 영웅 편성이 필살을 몰아 쓰면 10~20초 만에 녹았다
-                   boss: { hp: 2.6, atk: 1.1 },
+                   boss: { hp: 2.9, atk: 1.15 },
                    fury: { per30: 0.15, max: 1.5 },   // 3.1: 오래 끌수록 새로 나오는 적이 억세진다 (최대 2.5배)
                    // 앞쪽 전장도 모질게: 적 배율과 요새 체력에 바닥을 깐다 (2막 초입 수준)
-                   mulFloor: 5, fortFloor: 40000,
+                   mulFloor: 6.2, fortFloor: 50000,
                    twists: ['blitz', 'horde', 'ironclad', 'curse'] };
+/* 4.4 각성 경계: 도전(하드코어 · 이벤트)에서는 편성한 3진 하나마다 적이 6%씩 억세진다 (3진은 체력·공격 ×1.35) */
+const AWAKEN_TAX = 0.06;
 function hardcoreEnemyMul(st) { return Math.max((st.enemyMul || 1) * HARDCORE.enemyMul, HARDCORE.mulFloor); }
 function hardcoreFortHp(st) { return Math.max(Math.round(st.baseHp * HARDCORE.fortMul), HARDCORE.fortFloor); }
 function hardcoreMods(st, i) {

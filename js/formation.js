@@ -250,7 +250,9 @@ function formationEvoRow(id) {
     (has2 ? btn('evo2', '✪ ' + (def2.short || def2.name), 2) : '') + '</div>' +
     // 4.2: 3진을 아직 안 했으면 어디서 하는지 알려 준다
     (def2 && !has2 ? '<span class="fe-hint f3">✪ ' + def2.name + ' · ' +
-      ((save.levels[id] || 1) >= EVO2_LEVEL ? '훈련소에서 3진할 수 있습니다' : '레벨 ' + EVO2_LEVEL + '에 3진') + '</span>' : '');
+      ((save.levels[id] || 1) < EVO2_LEVEL ? '레벨 ' + EVO2_LEVEL + '에 3진'
+        : evo2TrialsDone(save, id) ? '훈련소에서 3진할 수 있습니다'
+        : '3진 시련 ' + evo2Trials(save, id).filter(x => x.done).length + ' / ' + evo2Trials(save, id).length + ' · 훈련소에서 확인') + '</span>' : '');
   row.querySelectorAll('.evo-form').forEach(b => b.addEventListener('click', () => {
     const want = b.dataset.form;
     if (['base', 'evo', 'evo2'][evoForm(save, id)] === want) return;

@@ -1151,13 +1151,13 @@ test('Arthur rallies others but not himself; cloud giants stop regenerating when
 });
 
 /* ---------------- 4.1 3진 (각성) ---------------- */
-test('4.3: only six units awaken — each drawn, translated and given its own effects', () => {
+test('4.4: ten units awaken — each drawn, translated and given its own effects', () => {
   const X = vm.runInContext('({EVOLUTIONS, EVOLUTIONS2, EVO2_LEVEL, ROSTER_UNITS, evo2Cost})', ctx);
   const read = f => fs.readFileSync(path.join(__dirname, '../js/' + f), 'utf8');
   const render = read('render.js'), i18n = read('i18n.js'), gl = read('gl-fx.js');
   assert.equal(X.EVO2_LEVEL, 20);
   const ids = Object.keys(X.EVOLUTIONS2).sort();
-  assert.deepEqual(ids, ['catapult', 'colossus', 'falconer', 'mage', 'priest', 'spear']);
+  assert.deepEqual(ids, ['catapult', 'colossus', 'duelist', 'falconer', 'frost', 'mage', 'priest', 'shield', 'sniper', 'spear']);
   for (const id of ids) {
     const e = X.EVOLUTIONS2[id], u = U[id];
     assert.ok(u && X.EVOLUTIONS[id] && X.ROSTER_UNITS.includes(u), id + ' is a campaign unit with a first evolution');
@@ -1180,11 +1180,11 @@ test('4.3: only six units awaken — each drawn, translated and given its own ef
   }
   const ach = vm.runInContext('ACHIEVEMENTS', ctx).find(a => a.id === 'awakenAll');
   const all = {}; ids.forEach(id => all[id] = true);
-  assert.ok(ach.test({ evo2: all }) && !ach.test({ evo2: { catapult: true } }), 'the achievement asks for all six');
+  assert.ok(ach.test({ evo2: all }) && !ach.test({ evo2: { catapult: true } }), 'the achievement asks for all ten');
   assert.ok(ach.test({ evo2: Object.assign({}, all, { mage: false }) }), 'a finished but unused third form still counts');
 });
 test('Third form: big upgrade, only deploy cost and cooldown go up, evolution trade-off removed', () => {
-  for (const id of ['catapult', 'priest', 'spear', 'mage', 'colossus', 'falconer']) {
+  for (const id of ['catapult', 'priest', 'spear', 'mage', 'colossus', 'falconer', 'shield', 'frost', 'duelist', 'sniper']) {
     const e1 = G.resolveUnit(U[id], 20, true), e2 = G.resolveUnit(U[id], 20, 2);
     assert.equal(e2.evo2, true, id); assert.equal(e2.evo, true, id);
     assert.ok(e2.hp > e1.hp * 1.3 && e2.atk >= e1.atk * 1.3 - 1, id + ' stronger');
@@ -1245,14 +1245,14 @@ function x3Battle(ids) {
   const b = new Battle(0, s); b.money = 1e6; return b;
 }
 test('4.3: each third form arrives its own way instead of the light pillar', () => {
-  const b = x3Battle(['catapult', 'colossus', 'mage', 'priest', 'falconer', 'spear']);
+  const b = x3Battle(['catapult', 'colossus', 'mage', 'priest', 'falconer', 'spear', 'shield', 'frost', 'duelist', 'sniper']);
   const subs = [];
   for (const id of b.roster.map(u => u.id)) {
     b.cooldowns[id] = 0; b.fx.length = 0; assert.ok(b.deploy(id), id);
     assert.ok(!b.fx.some(e => e.type === 'spawn'), id + ' skips the generic pillar');
     const a = b.fx.find(e => e.type === 'x3' && e.kind === 'arrive'); assert.ok(a, id + ' arrival'); subs.push(a.sub);
   }
-  assert.deepEqual(subs.sort(), ['drill', 'drone', 'robot', 'siren', 'tank', 'ufo']);
+  assert.deepEqual(subs.sort(), ['dozer', 'drill', 'drone', 'rail', 'robot', 'saber', 'siren', 'snow', 'tank', 'ufo']);
   const plain = battle(); plain.money = 1e6; plain.deploy('spear');
   assert.ok(plain.fx.some(e => e.type === 'spawn') && !plain.fx.some(e => e.type === 'x3'), 'ordinary units are unchanged');
 });
@@ -1295,6 +1295,48 @@ test('4.3: the ambulance siren replaces the plain auras and marks healed allies'
   const p = battle(); const pr = p.makeAlly(U.priest, 400), m = p.makeAlly(U.spear, 420); m.hp = 1; p.allies.push(pr, m); pr.abCd = 0;
   p.supportTick(pr, p.allies, 0.1, true);
   assert.ok(p.fx.some(f => f.type === 'aura') && !p.fx.some(f => f.type === 'x3'), 'the base priest keeps its aura');
+});
+
+/* ---------------- 4.4 3진의 시련 · 도전 난이도 ---------------- */
+test('4.4: every third form has two varied trials that read the save', () => {
+  const X = vm.runInContext('({EVO2_TRIALS, EVOLUTIONS2, evo2Trials, evo2TrialsDone, STAGES})', ctx);
+  const types = new Set();
+  for (const id in X.EVOLUTIONS2) {
+    const tr = X.EVO2_TRIALS[id];
+    assert.ok(tr && tr.length === 2, id + ' has two trials');
+    tr.forEach(c => { types.add(c.t); if (c.stage !== undefined) assert.ok(c.stage >= 0 && c.stage < X.STAGES.length, id + ' stage'); if (c.ids) c.ids.forEach(u => assert.ok(U[u], u)); });
+    assert.equal(X.evo2TrialsDone({}, id), false, id + ' not done on a fresh save');
+    X.evo2Trials({}, id).forEach(x => assert.ok(x.text && x.prog !== undefined, id + ' has text'));
+  }
+  assert.ok(types.size >= 7, 'many kinds of trials: ' + [...types].join(','));
+  const full = { levels: {}, best: {}, perfect: {}, stars: {}, hard: {}, events: { a: 1 }, endlessBest: 99, life: {} };
+  for (const u of vm.runInContext('UNITS', ctx)) { full.levels[u.id] = 20; full.life[u.id] = { d: 9e9, h: 9e9 }; }
+  X.STAGES.forEach((s0, i) => { full.best[i] = 1; full.perfect[i] = true; full.stars[i] = 3; full.hard[i] = true; });
+  for (const id in X.EVOLUTIONS2) assert.ok(X.evo2TrialsDone(full, id), id + ' completes');
+  const sv = { best: { 4: 36 } };
+  assert.equal(X.evo2Trials(sv, 'spear')[0].done, false, '36s is not under 35s');
+  sv.best[4] = 34.9; assert.equal(X.evo2Trials(sv, 'spear')[0].done, true);
+});
+test('4.4: battles record best clear time, 100% castle clears and lifetime damage / healing', () => {
+  const s = save(); s.loadout = ['spear']; const b = new Battle(0, s, null);
+  b.money = 1e6; b.deploy('spear'); const sp = b.allies[0]; b.meterRow(sp).dmg = 1234; b.meterRow(sp).heal = 50;
+  b.time = 40.04; b.finish('win');
+  assert.equal(s.best[0], 40); assert.equal(s.perfect[0], true); assert.equal(s.life.spear.d, 1234); assert.equal(s.life.spear.h, 50);
+  const b2 = new Battle(0, s, null); b2.time = 55; b2.allyCastle.hp -= 10; b2.finish('win');
+  assert.equal(s.best[0], 40, 'a slower clear keeps the record'); assert.equal(b2.prevBest, 40); assert.equal(b2.clearTime, 55);
+  const h = new Battle(0, s, null, { hard: true }); h.time = 5; h.finish('win');
+  assert.equal(s.best[0], 40, 'hardcore does not count as a campaign clear time');
+  const b3 = new Battle(0, s, null); b3.time = 30; b3.finish('lose'); assert.equal(s.best[0], 40, 'losses never count');
+});
+test('4.4: challenges are tougher and each awakened card makes foes stronger there', () => {
+  const H = vm.runInContext('({HARDCORE, AWAKEN_TAX, hardcoreEnemyMul})', ctx);
+  assert.ok(H.HARDCORE.enemyMul >= 4 && H.HARDCORE.mulFloor >= 6, 'hardcore multipliers raised');
+  const mk = (ids, hard) => { const s = save(); s.cleared = 40; s.loadout = ids; s.levels = {}; s.evo = {}; s.evo2 = {};
+    for (const id of ids) { s.levels[id] = 20; s.evo[id] = true; s.evo2[id] = true; } return new Battle(10, s, null, { hard }); };
+  const none = mk(['knight', 'archer'], true), three = mk(['catapult', 'spear', 'mage'], true), plain = mk(['catapult', 'spear', 'mage'], false);
+  assert.equal(none.awakenN, 0); assert.equal(three.awakenN, 3);
+  assert.ok(Math.abs(three.enemyMulBase / H.hardcoreEnemyMul(STAGES[10]) - (1 + 3 * H.AWAKEN_TAX)) < 1e-9, 'three cards → +' + 3 * H.AWAKEN_TAX);
+  assert.equal(plain.awakenN, 0, 'normal stages are not taxed');
 });
 
 console.log(count + ' regression checks passed');

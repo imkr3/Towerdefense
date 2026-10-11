@@ -104,4 +104,17 @@ test('4.3: third forms that no longer exist are refunded once and fall back to t
   ctx.raw=JSON.parse(JSON.stringify(s));const again=vm.runInContext('normalizeSave(raw)',ctx);
   assert.equal(again.coins,s.coins,'refunded only once');assert.equal(again._refund,undefined);
 });
+test('4.4: trial records are cleaned when a save is loaded',()=>{
+  const src=fs.readFileSync('js/main.js','utf8');
+  const grab=name=>{const i=src.indexOf('function '+name+'(');const j=src.indexOf('\n}\n',i);return src.slice(i,j+3);};
+  const ctx=vm.createContext({console});vm.runInContext(fs.readFileSync('js/data.js','utf8'),ctx);
+  vm.runInContext(grab('defaultSave')+grab('normalizeSave'),ctx);
+  ctx.raw={...old,best:{4:33.5,999:5,7:'x',8:-3},perfect:{9:true,10:'yes',500:true},life:{mage:{d:'1200',h:-5},ghost:{d:5},spear:7}};
+  const s=vm.runInContext('normalizeSave(raw)',ctx);
+  assert.deepEqual(JSON.parse(JSON.stringify(s.best)),{4:33.5});
+  assert.deepEqual(JSON.parse(JSON.stringify(s.perfect)),{9:true});
+  assert.deepEqual(JSON.parse(JSON.stringify(s.life)),{mage:{d:1200,h:0}});
+  ctx.raw=old;const fresh=vm.runInContext('normalizeSave(raw)',ctx);
+  assert.deepEqual(JSON.parse(JSON.stringify([fresh.best,fresh.perfect,fresh.life])),[{},{},{}],'old saves start empty');
+});
 console.log(n+' save protection checks passed');

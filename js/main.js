@@ -3,7 +3,7 @@
  * ======================================================================= */
 
 
-const APP_VERSION = '4.3.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
+const APP_VERSION = '4.4.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
 
 function defaultSave() {
   const lv = {};
@@ -81,6 +81,16 @@ function normalizeSave(raw) {
       s.coins = (Number(s.coins) || 0) + refund;
       Object.defineProperty(s, '_refund', { value: { n: refundN, gold: refund }, enumerable: false });   // 저장 파일엔 남지 않는다
     }
+    // 4.4 3진 시련 기록: 최단 돌파 시간(초) · 성채 100% 돌파 · 병종별 누적 피해/치유
+    const best = {}, perfect = {}, life = {};
+    if (s.best && typeof s.best === 'object') for (const k in s.best) { const v = Number(s.best[k]); if (+k >= 0 && +k < STAGES.length && v > 0 && isFinite(v)) best[k] = v; }
+    if (s.perfect && typeof s.perfect === 'object') for (const k in s.perfect) if (s.perfect[k] === true && +k >= 0 && +k < STAGES.length) perfect[k] = true;
+    if (s.life && typeof s.life === 'object') for (const k in s.life) {
+      const L = s.life[k];
+      if (!UNIT_BY_ID[k] || !L || typeof L !== 'object') continue;
+      life[k] = { d: Math.max(0, Number(L.d) || 0), h: Math.max(0, Number(L.h) || 0) };
+    }
+    s.best = best; s.perfect = perfect; s.life = life;
     if (!Array.isArray(s.loadout)) s.loadout = [];
     if (!Array.isArray(s.knownUnits) || !Object.prototype.hasOwnProperty.call(raw, 'knownUnits')) {
       s.knownUnits = UNITS.filter(u => u.unlockStage <= s.cleared + 1 || (u.gacha && s.owned && s.owned[u.id])).map(u => u.id);
@@ -541,7 +551,8 @@ function renderStageDetail(i) {
       '<span>' + w('적 체력·공격') + ' ×' + (hardcoreEnemyMul(st) / (st.enemyMul || 1)).toFixed(1) +
       ' · ' + w('요새') + ' ' + fmtNum(hardcoreFortHp(st)) +
       ' · ' + w('성채') + ' ' + Math.round(HARDCORE.castleMul * 100) + '% · ' + w('왕명 느림') + ' · ' + w('격앙') +
-      (extra.length ? ' · ' + w('특성 +') + extra.map(w).join('·') : '') + '</span>' +
+      (extra.length ? ' · ' + w('특성 +') + extra.map(w).join('·') : '') +
+      ' · ' + w('각성 경계') + ' ' + w('3진 하나마다 적') + ' +' + Math.round(AWAKEN_TAX * 100) + '%</span>' +
       '<small>' + w('보상 골드') + ' ×' + HARDCORE.reward + (save.hard[i] ? '' : ' · ' + w('첫 돌파') + ' 🔮 +' + HARDCORE.stones) + '</small></div>';
     const hb = document.createElement('button');
     hb.className = 'btn sd-hardgo';
@@ -914,9 +925,15 @@ function renderTraining() {
           '</div></div>';
         if (evo2Def) {
           const info2 = '<b>✪ ' + evo2Def.name + '</b> ' + evo2Def.plus + ' <em>· 대가: 출진 비용 +30% · 쿨타임 +30% (진화의 대가는 사라짐)</em>';
-          if (!evolved2) evoHtml += '<div class="evo-box evo3' + (lv >= EVO2_LEVEL ? ' ready' : '') + '">' +
-            '<div class="evo-info">' + (lv >= EVO2_LEVEL ? '' : '<small>레벨 ' + EVO2_LEVEL + '에 3진</small> ') + info2 + '</div>' +
-            (lv >= EVO2_LEVEL ? '<button class="btn evo2-btn">✪ 3진 · 💰 ' + evo2Cost(u) + '</button>' : '') + '</div>';
+          // 4.4 시련: 레벨 20 과 금화에 더해 병종마다 다른 조건 둘
+          const trials = evo2Trials(save, u.id), tDone = trials.filter(x => x.done).length, ready = lv >= EVO2_LEVEL && tDone === trials.length;
+          const tHtml = trials.length ? '<ul class="evo-trials"><li class="tt">✪ 3진 시련 ' + tDone + ' / ' + trials.length + '</li>' +
+            trials.map(x => '<li class="' + (x.done ? 'ok' : '') + '"><span class="tm">' + (x.done ? '✓' : '○') + '</span><span class="tx">' + x.text +
+              '</span><small>' + x.prog + '</small></li>').join('') + '</ul>' : '';
+          if (!evolved2) evoHtml += '<div class="evo-box evo3' + (ready ? ' ready' : '') + '">' +
+            '<div class="evo-info">' + (lv >= EVO2_LEVEL ? '' : '<small>레벨 ' + EVO2_LEVEL + '에 3진</small> ') + info2 + '</div>' + tHtml +
+            (lv >= EVO2_LEVEL ? (ready ? '<button class="btn evo2-btn">✪ 3진 · 💰 ' + evo2Cost(u) + '</button>'
+                                       : '<button class="btn evo2-btn locked" disabled>✪ 시련 ' + tDone + ' / ' + trials.length + '</button>') : '') + '</div>';
           else evoHtml += '<div class="evo-box evo3 done' + (form === 2 ? ' on' : '') + '"><div class="evo-info">' + info2 + '</div></div>';
         }
       }
@@ -977,7 +994,7 @@ function renderTraining() {
           SFX.levelUp();
           toast(u.name + ' 레벨 ' + (lv + 1) + ' 훈련 완료');
           if (lv + 1 === EVO_LEVEL && evoDef && !evolved) setTimeout(() => toast('✦ ' + u.name + ' 진화 가능!'), 900);
-          if (lv + 1 === EVO2_LEVEL && evo2Def && evolved && !evolved2) setTimeout(() => toast('✪ ' + u.name + ' 3진 가능!'), 900);
+          if (lv + 1 === EVO2_LEVEL && evo2Def && evolved && !evolved2) setTimeout(() => toast(evo2TrialsDone(save, u.id) ? '✪ ' + u.name + ' 3진 가능!' : '✪ ' + u.name + ' 3진 시련을 마치면 3진할 수 있습니다'), 900);
         });
       }
       const eb = el.querySelector('.evo-btn');
@@ -992,7 +1009,8 @@ function renderTraining() {
         toast('✦ ' + u.name + ' → ' + evoDef.name + ' 진화 완료!');
       });
       const eb2 = el.querySelector('.evo2-btn');
-      if (eb2) eb2.addEventListener('click', () => {
+      if (eb2 && !eb2.disabled) eb2.addEventListener('click', () => {
+        if (!evo2TrialsDone(save, u.id)) { toast('3진 시련을 먼저 마치세요'); return; }
         const price = evo2Cost(u);
         if (save.coins < price) { toast('골드가 부족합니다'); return; }
         save.coins -= price;
@@ -1315,7 +1333,12 @@ function startEvent(k) {
   $('#scr-battle').classList.add('hardcore');
   $('#battle-stage').textContent = '✦ E' + (k + 1) + '. ' + st.name;
   beginBattle();
-  battle.announce('이벤트 · ' + st.event.mech, 4);
+  battle.announce('이벤트 · ' + st.event.mech + awakenNote(), 4);
+}
+
+/* 4.4 각성 경계 알림: 도전 전장에 3진을 데려가면 적이 억세진다 */
+function awakenNote() {
+  return battle && battle.awakenN ? ' · 각성 경계: 적 +' + Math.round((battle.awakenMul - 1) * 100) + '%' : '';
 }
 
 function startBattle(index, hard) {
@@ -1325,7 +1348,7 @@ function startBattle(index, hard) {
   beginBattle();
   // 특성 전장은 시작하자마자 무엇이 다른지 크게 알린다
   const mods = Object.keys(battle.mods);
-  if (hard) battle.announce('하드코어 · ' + (mods.length ? mods.map(m => STAGE_MODS[m].name).join(' · ') : '적이 훨씬 모질다'), 3.4);
+  if (hard) battle.announce('하드코어 · ' + (mods.length ? mods.map(m => STAGE_MODS[m].name).join(' · ') : '적이 훨씬 모질다') + awakenNote(), 3.6);
   else if (mods.length) battle.announce('전장 특성 · ' + mods.map(m => STAGE_MODS[m].name).join(' · '), 3.2);
   else if (battle.stage.opening === 'calm') battle.announce('폭풍 전야 · 적이 곧 몰려옵니다', 3);
   else if (battle.stage.opening === 'sally') battle.announce('요새 반격 · 요새를 치면 수비대가 나옵니다', 3);
@@ -1348,6 +1371,7 @@ function beginBattle() {
   autoTimer = 0;
   refreshAutoBtn();
   save.stats.battles++;
+  trialSnap = trialSnapshot();
   buildCards();
   show('scr-battle');
   if (!save.tutorial) {
@@ -1643,6 +1667,26 @@ function renderMeter(b) {
   if (rows.length > 10) { const more = document.createElement('div'); more.className = 'meter-more'; more.textContent = '외 ' + (rows.length - 10) + '종'; box.appendChild(more); }
 }
 
+/* 4.4 3진 시련: 전투 전후로 비교해 이번 판에 새로 마친 시련을 결과창에 알린다 */
+let trialSnap = null;
+function trialSnapshot() {
+  const m = {};
+  for (const id in EVO2_TRIALS) if (!(save.evo2 && save.evo2[id] !== undefined)) evo2Trials(save, id).forEach((x, i) => { m[id + ':' + i] = x.done; });
+  return m;
+}
+function appendTrialNews(lines) {
+  if (!trialSnap) return;
+  const before = trialSnap; trialSnap = null;
+  for (const id in EVO2_TRIALS) {
+    if (save.evo2 && save.evo2[id] !== undefined) continue;
+    const list = evo2Trials(save, id);
+    list.forEach((x, i) => {
+      if (x.done && before[id + ':' + i] === false) lines.push('✪ 3진 시련 달성 · ' + EVOLUTIONS2[id].name + ': ' + x.text);
+    });
+    if (list.length && list.every(x => x.done) && list.some((x, i) => before[id + ':' + i] === false)) lines.push('✪ ' + EVOLUTIONS2[id].name + ' 시련 완료! 레벨 20 이면 훈련소에서 3진');
+  }
+}
+
 function showResult() {
   recordBattle(battle);
   renderMeter(battle);
@@ -1667,6 +1711,10 @@ function showResult() {
     if (battle.stoneGain) lines.push('소환석 🔮 +' + battle.stoneGain);
     lines.push('하드코어 ' + hardCount(save) + ' / ' + STAGES.length + ' 돌파');
   } else if (win) {
+    if (battle.clearTime !== undefined) {
+      const rec = battle.prevBest === undefined || battle.clearTime < battle.prevBest;
+      lines.push('돌파 시간 ' + Math.ceil(battle.clearTime) + '초' + (rec ? (battle.prevBest === undefined ? '' : ' · 최고 기록!') : ' · 최고 ' + Math.ceil(battle.prevBest) + '초'));
+    }
     const nextUnit = ROSTER_UNITS.find(u => u.unlockStage === battle.stageIndex + 2);
     if (nextUnit) lines.push('새 병종 해금: ' + nextUnit.name);
     if (battle.stars < 3) lines.push('성채를 더 지켜내면 ★3을 받을 수 있습니다.');
@@ -1682,6 +1730,7 @@ function showResult() {
     else lines.push(battle.hard ? '하드코어는 강화와 편성을 끝까지 다듬어야 넘을 수 있습니다.'
                                 : '강화를 올리거나 편성을 바꿔 다시 도전하세요!');
   }
+  appendTrialNews(lines);
   $('#result-desc').textContent = lines.join('\n');
   // 하드코어의 다음 전장은 이미 돌파한 곳일 때만
   const hasNext = win && battle.stageIndex + 1 < STAGES.length && (!battle.hard || battle.stageIndex + 1 < save.cleared);
@@ -1704,6 +1753,7 @@ function showEventResult() {
   } else {
     lines.push('공략 · ' + ev.mech);
   }
+  appendTrialNews(lines);
   $('#result-desc').textContent = lines.join('\n');
   $('#btn-next').style.display = 'none';
   $('#btn-fix').style.display = 'none';
@@ -1721,6 +1771,7 @@ function showExpResult() {
   lines.push('처치 ' + battle.kills + '  ·  남은 성채 ' + Math.round(battle.allyCastle.hp / battle.allyCastle.maxHp * 100) + '%');
   if (!win) defeatTips(save, battle.stage, { foePct: battle.enemyCastle.hp / battle.enemyCastle.maxHp * 100, time: battle.time, bossAlive: !!battle.aliveBoss() })
     .forEach(tip => lines.push('💡 ' + tip));
+  appendTrialNews(lines);
   $('#result-desc').textContent = lines.join('\n');
   $('#btn-next').style.display = 'none';
   $('#btn-fix').style.display = win ? 'none' : '';
@@ -1738,6 +1789,7 @@ function showEndlessResult() {
   lines.push('획득 골드 💰 ' + battle.coins +
              (battle.stoneGain ? '  ·  소환석 🔮 ' + battle.stoneGain : ''));
   lines.push('처치 ' + battle.kills);
+  appendTrialNews(lines);
   $('#result-desc').textContent = lines.join('\n');
   $('#btn-fix').style.display = 'none';
   $('#btn-next').style.display = 'none';

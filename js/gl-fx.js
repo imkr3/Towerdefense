@@ -838,6 +838,62 @@ class GLFx {
         break;
       }
 
+      /* ---- 4.4 3진 넷 ---- */
+      /* 불도저 삽: 앞으로 튀는 흙덩이 · 먼지 (흙빛은 어두워 Canvas 가 맡고, 여기선 불티 같은 돌 조각만) */
+      case 'dozerpush': {
+        const dir = opt.dir || 1, dirt = [0.95, 0.82, 0.6], hot = [1, 0.95, 0.8];
+        for (let i = 0, n = N(24); i < n; i++) {
+          const a = dir > 0 ? -rnd(0.15, 1.1) : Math.PI + rnd(0.15, 1.1), sp = rnd(160, 380) * sc;   // 앞쪽 위로
+          this.add(x, y - 8 * sc, Math.cos(a) * sp, Math.sin(a) * sp, rnd(0.3, 0.6), rnd(3, 6) * sc, 1, i % 4 ? dirt : hot, 0.9, 1.6, a, rnd(-8, 8), 820, 2);
+        }
+        this.add(x, y - 12 * sc, 0, 0, 0.22, 16 * sc, 60 * sc, dirt, 0.45, 1, 0, 0, 0, 1.4);
+        break;
+      }
+      /* 빙수 눈덩이: 흰 눈가루 고리 · 퍼지는 얼음 결정 · 분홍 시럽 방울 */
+      case 'snowburst': {
+        const snow = [0.92, 0.98, 1], ice = [0.6, 0.88, 1], pink = [1, 0.6, 0.75];
+        for (let i = 0, n = N(34); i < n; i++) {
+          const a = i / n * TAU, sp = R * 2.6;
+          this.add(x, y - 6 * sc, Math.cos(a) * sp, Math.sin(a) * sp * 0.28, 0.4, 9 * sc, 3 * sc, i % 2 ? snow : ice, 0.8, 2, a, 0, 0, 1.3);
+        }
+        for (let i = 0, n = N(30); i < n; i++) {
+          const a = rnd(-Math.PI, 0), sp = rnd(80, 300) * sc;
+          this.add(x, y - 14 * sc, Math.cos(a) * sp, Math.sin(a) * sp, rnd(0.4, 0.9), rnd(3, 7) * sc, 1, i % 5 === 0 ? pink : snow, 0.95, 1, 0, rnd(-6, 6), 420, 1.6);
+        }
+        this.add(x, y - 14 * sc, 0, 0, 0.3, 20 * sc, 90 * sc, snow, 0.6, 1, 0, 0, 0, 1.4);
+        break;
+      }
+      /* 광선검: 엇갈린 두 줄기 빛 · 튀는 푸른 불티 */
+      case 'sabercut': {
+        const dir = opt.dir || 1, hot = [0.9, 1, 1];
+        for (let k = 0; k < 2; k++) {
+          const tilt = (k ? 0.7 : -0.7) * dir;
+          for (let i = 0, n = N(16); i < n; i++) {
+            const u = (i / (n - 1) - 0.5) * 70 * sc;
+            this.add(x + Math.cos(tilt) * u, y - 34 * sc + Math.sin(tilt) * u, 0, 0, 0.22 + k * 0.05, 7 * sc, 2 * sc, i % 3 ? col : hot, 1, 1.2, tilt, 0, 0, 1.2);
+          }
+        }
+        for (let i = 0, n = N(22); i < n; i++) {
+          const a = rnd(0, TAU), sp = rnd(160, 420) * sc;
+          this.add(x, y - 34 * sc, Math.cos(a) * sp, Math.sin(a) * sp, rnd(0.15, 0.35), rnd(3, 5) * sc, 1, i % 2 ? col : hot, 1, 3, a, 0, 500, 2);
+        }
+        break;
+      }
+      /* 레일건 착탄: 하얀 섬광 · 도는 푸른 나선 · 사방 불티 */
+      case 'railhit': {
+        const hot = [0.92, 1, 1];
+        this.add(x, y - 30 * sc, 0, 0, 0.2, 18 * sc, 90 * sc * big, hot, 1, 1, 0, 0, 0, 1.2);
+        for (let i = 0, n = N(36); i < n; i++) {
+          const a = i / n * TAU * 2, sp = (60 + i * 6) * sc;
+          this.add(x, y - 30 * sc, Math.cos(a) * sp, Math.sin(a) * sp * 0.6, 0.35, 6 * sc, 2 * sc, i % 3 ? col : hot, 0.9, 1.4, a, 4, 0, 1.3);
+        }
+        for (let i = 0, n = N(24); i < n; i++) {
+          const a = rnd(0, TAU), sp = rnd(240, 560) * sc;
+          this.add(x, y - 30 * sc, Math.cos(a) * sp, Math.sin(a) * sp, rnd(0.2, 0.4), rnd(3, 5) * sc, 1, hot, 1, 3, a, 0, 300, 2);
+        }
+        break;
+      }
+
       case 'slash': {
         const cy = y - 34 * sc;
         for (let s = 0; s < 2; s++) {

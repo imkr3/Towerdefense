@@ -116,7 +116,12 @@ const SFX = {
   drill:    function () { this.tone(210, 0.12, 'sawtooth', 0.07, 250); this.noise(0.08, 3400, 0.09, 6); },
   drone:    function () { this.tone(980, 0.1, 'square', 0.06, 1600); this.noise(0.2, 900, 0.18); },
   siren:    function () { this.tone(960, 0.15, 'triangle', 0.09);
-                setTimeout(() => this.tone(720, 0.15, 'triangle', 0.09), 170); }
+                setTimeout(() => this.tone(720, 0.15, 'triangle', 0.09), 170); },
+  // 4.4 넷 더: 불도저 엔진 · 얼음 · 광선검 웅웅 · 레일건 충전과 발사
+  dozer:    function () { this.noise(0.3, 380, 0.26); this.tone(58, 0.28, 'sawtooth', 0.12, 44); },
+  freeze:   function () { this.noise(0.14, 4200, 0.1, 3); this.tone(1760, 0.16, 'sine', 0.07, 2640); },
+  saber:    function () { this.tone(110, 0.2, 'sawtooth', 0.09, 160); this.tone(880, 0.12, 'sine', 0.05, 330); },
+  rail:     function () { this.tone(300, 0.12, 'sine', 0.08, 2400); setTimeout(() => { this.tone(2200, 0.18, 'square', 0.06, 160); this.noise(0.16, 3000, 0.16); }, 110); }
 };
 
 /* 동시에 울릴 수 있는 효과음 수 (같은 소리 솎아내기는 game.js 의 sfx 가 한다) */
