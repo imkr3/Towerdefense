@@ -2742,13 +2742,14 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
     ctx.shadowOffsetX = px * 0.9;
     ctx.shadowOffsetY = px * 1.1;
     ctx.shadowBlur = 0;
-  }
+  } else if (ctx.shadowColor !== 'rgba(0, 0, 0, 0)') ctx.shadowColor = 'transparent';   // 4.5: 남은 그림자 설정이 새지 않게
   S.ink = flash ? '#ffffff' : INK;
   // 병종마다 직접 칠하는 부위(짐승·기계·보스 몸통)에도 같은 잉크 테두리를 두른다
   const autoInk = MODEL.ink && !flash;
   const depthOn = !flash && MODEL.depth;
   const wrapped = autoInk || depthOn;                // 4.2: 잉크가 꺼져도 그림자를 다루려고 감싼다
   if (wrapped) { ctx.fill = inkedFill; ctx.stroke = inkedStroke; ctx._inkW = 0.95 * s; ctx._noInk = !autoInk; ctx._depth = depthOn; }
+  if (depthOn) ctx.fillRect = shadedFillRect;        // 4.5: 사각형도 같은 그림자 규칙으로
   if (HUMANOID[st.shape]) armSwing(S);
   if (st.evo && !st.bigEvo) (NO_CAPE[st.shape] ? evoBanner : evoCape)(S);   // 진화: 등 뒤로 망토, 기계·짐승은 군기
 
@@ -6486,6 +6487,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
   if (st.evo) evoCrest(S);                        // 진화: 머리 위 금빛 문장
 
   if (wrapped) { delete ctx.fill; delete ctx.stroke; ctx._depth = false; ctx._noInk = false; }
+  if (depthOn) delete ctx.fillRect;
 
   if (hurt) {
     ctx.strokeStyle = 'rgba(255,255,255,.8)';
@@ -6613,7 +6615,23 @@ function inkedStroke(a) {
   }
   return _stroke0.apply(this, arguments);
 }
+/* 4.5: 반투명('rgba(')·가산 합성 사각형도 그림자를 끈다. 4.2 에선 fill 만 챙겨서, fillRect 로 그린
+ * 빛줄기(레일건 레일의 전기 · 궤도 마디 등)가 그림자를 단 채 합성돼 모양 하나에 100ms 가 넘게 걸렸다. */
+const _fillRect0 = CanvasRenderingContext2D.prototype.fillRect;
+function shadowless(ctx) {
+  if (ctx.globalAlpha < 0.9 || ctx.globalCompositeOperation !== 'source-over') return true;
+  const fs = ctx.fillStyle;
+  return typeof fs !== 'string' || fs.charCodeAt(0) === 114 && fs.charCodeAt(3) === 97;   // 'rgba(' · 그라디언트
+}
+function shadedFillRect(x, y, w, h) {
+  if (shadowless(this)) { const sc = this.shadowColor; this.shadowColor = 'transparent'; _fillRect0.call(this, x, y, w, h); this.shadowColor = sc; return; }
+  _fillRect0.call(this, x, y, w, h);
+}
 function inkedFill(a) {
+  if (this._depth && shadowless(this)) {
+    const sc = this.shadowColor; this.shadowColor = 'transparent'; _fill0.apply(this, arguments); this.shadowColor = sc;
+    return;                                          // 반투명·그라디언트에는 잉크 테두리도 없다
+  }
   if (this.globalAlpha < 0.9 || this.globalCompositeOperation !== 'source-over') {
     if (this._depth) { const sc = this.shadowColor; this.shadowColor = 'transparent'; _fill0.apply(this, arguments); this.shadowColor = sc; }
     else _fill0.apply(this, arguments);

@@ -1313,9 +1313,9 @@ test('4.4: every third form has two varied trials that read the save', () => {
   for (const u of vm.runInContext('UNITS', ctx)) { full.levels[u.id] = 20; full.life[u.id] = { d: 9e9, h: 9e9 }; }
   X.STAGES.forEach((s0, i) => { full.best[i] = 1; full.perfect[i] = true; full.stars[i] = 3; full.hard[i] = true; });
   for (const id in X.EVOLUTIONS2) assert.ok(X.evo2TrialsDone(full, id), id + ' completes');
-  const sv = { best: { 4: 36 } };
-  assert.equal(X.evo2Trials(sv, 'spear')[0].done, false, '36s is not under 35s');
-  sv.best[4] = 34.9; assert.equal(X.evo2Trials(sv, 'spear')[0].done, true);
+  const sv = { best: { 4: 39 } };
+  assert.equal(X.evo2Trials(sv, 'spear')[0].done, false, '39s is not under 38s');
+  sv.best[4] = 37.9; assert.equal(X.evo2Trials(sv, 'spear')[0].done, true);
 });
 test('4.4: battles record best clear time, 100% castle clears and lifetime damage / healing', () => {
   const s = save(); s.loadout = ['spear']; const b = new Battle(0, s, null);

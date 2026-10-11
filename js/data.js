@@ -2285,7 +2285,7 @@ const EVOLUTIONS2 = {
   // 4.3: 전장 병종 모두가 아니라 여섯만 — 대신 모습·움직임·연출을 공들여 만든다.
   //  castFx: 맞힌 자리의 연출 · atkFx: 치는 순간의 연출 · healFx: 치유 연출 · arrive: 출진 연출 · shot: 투사체 모양
   spear:   { look: { shape: 'drillspear', tunic: '#d8742a', accent: '#ffd35a' }, name: '드릴 창병', short: '드릴창',
-             plus: '회전 드릴 창 · 파쇄 1.4배 · 더 세게 밀쳐 냄', add: { range: 10 }, ab: { breaker: 1.4, push: 40 },
+             plus: '회전 드릴 창 · 파쇄 1.4배 · 공격 15% 빠름 · 갑주 15% · 더 세게 밀쳐 냄', add: { range: 10 }, faster: 0.85, ab: { breaker: 1.4, push: 40, armor: 0.15 },
              castFx: 'drillspark', arrive: 'drill' },
   priest:  { look: { shape: 'ambulance', tunic: '#f6f3ea', accent: '#e8403a', grow: 1.05 }, name: '구급 마차', short: '구급마차',
              plus: '사이렌 · 회복 +40% · 범위 +60 · 정화 · 보호막 60', mul: { heal: 1.4 }, abAdd: { radius: 60 }, ab: { cleanse: true, barrier: 60 },
@@ -2310,7 +2310,7 @@ const EVOLUTIONS2 = {
              plus: '눈덩이 폭격 · 범위 70 · 얼림 25% · 둔화 +30%', set: { area: true, areaRadius: 70 },
              ab: { stun: { chance: 0.25, dur: 0.9 } }, mul: { slow: 1.3 }, shot: 'snowball', castFx: 'snowburst', arrive: 'snow' },
   duelist: { look: { shape: 'lightsaber', tunic: '#2a2a3a', accent: '#5ad8ff' }, name: '광선검 검성', short: '광선검',
-             plus: '광선검 · 체력 20% 이하 즉시 처치 · 치명타 35% ×2.8', ab: { execute: 0.2, crit: { chance: 0.35, mul: 2.8 } },
+             plus: '광선검 범위 베기 · 체력 20% 이하 즉시 처치 · 치명타 35% ×2.8', set: { area: true, areaRadius: 55 }, ab: { execute: 0.2, crit: { chance: 0.35, mul: 2.8 } },
              castFx: 'sabercut', arrive: 'saber' },
   sniper:  { look: { shape: 'railgun', tunic: '#2a3a4a', accent: '#5ae8ff' }, name: '레일건 저격수', short: '레일건',
              plus: '레일건 · 관통 · 보스·중장갑에게 2배', ab: { breaker: 2.0 }, shot: 'rail', castFx: 'railhit', atkFx: 'railflash', arrive: 'rail' }
@@ -2322,7 +2322,7 @@ const EVOLUTIONS2 = {
  *  dmg / heal: 그 병종의 누적 피해 / 치유 · hard: 하드코어 돌파 수 · event: 이벤트 돌파 수 · endless: 무한 전장 최고 웨이브
  *  4.4 이전에 이미 3진한 병종은 그대로 쓴다. */
 const EVO2_TRIALS = {
-  spear:    [{ t: 'speed', stage: 4, sec: 35 }, { t: 'series', name: '창 계열', ids: ['spear', 'javelin', 'frostlancer', 'lancer'], lv: 18 }],
+  spear:    [{ t: 'speed', stage: 4, sec: 38 }, { t: 'series', name: '창 계열', ids: ['spear', 'javelin', 'frostlancer', 'lancer'], lv: 18 }],
   priest:   [{ t: 'heal', id: 'priest', n: 1200000 }, { t: 'series', name: '수호 계열', ids: ['priest', 'purifier', 'runeguard', 'bellringer'], lv: 18 }],
   catapult: [{ t: 'speed', stage: 19, sec: 75 }, { t: 'series', name: '화약 계열', ids: ['catapult', 'bomber', 'musketeer', 'engineer'], lv: 18 }],
   mage:     [{ t: 'dmg', id: 'mage', n: 1500000 }, { t: 'series', name: '마법 계열', ids: ['mage', 'frost', 'pyro', 'necro'], lv: 18 }],
@@ -2330,7 +2330,7 @@ const EVO2_TRIALS = {
   falconer: [{ t: 'stars', from: 0, to: 20 }, { t: 'series', name: '사냥 계열', ids: ['falconer', 'archer', 'longbow', 'venom'], lv: 18 }],
   shield:   [{ t: 'perfect', stage: 9 }, { t: 'series', name: '철벽 계열', ids: ['shield', 'paladin', 'colossus', 'monk'], lv: 18 }],
   frost:    [{ t: 'speed', stage: 24, sec: 38 }, { t: 'event', n: 1 }],
-  duelist:  [{ t: 'speed', stage: 11, sec: 22 }, { t: 'endless', n: 12 }],
+  duelist:  [{ t: 'speed', stage: 11, sec: 25 }, { t: 'endless', n: 12 }],
   sniper:   [{ t: 'dmg', id: 'sniper', n: 1500000 }, { t: 'speed', stage: 32, sec: 170 }]
 };
 function _trialNum(n) { return n >= 1e6 ? (Math.round(n / 1e5) / 10) + 'M' : n >= 1e4 ? Math.round(n / 1e3) + 'k' : String(Math.round(n)); }
@@ -2342,7 +2342,7 @@ function trialState(s, c) {
   switch (c.t) {
     case 'speed': {
       const b = s.best && s.best[c.stage];
-      return { done: b !== undefined && b <= c.sec, text: '전장 ' + (c.stage + 1) + ' ' + c.sec + '초 안에 돌파', prog: b !== undefined ? '최고 ' + Math.ceil(b) + '초' : '기록 없음' };
+      return { done: b !== undefined && b <= c.sec, text: '전장 ' + (c.stage + 1) + ' 돌파 · ' + c.sec + '초 안에', prog: b !== undefined ? '최고 ' + Math.ceil(b) + '초' : '기록 없음' };
     }
     case 'series': {
       const k = c.ids.filter(id => lv(id) >= c.lv).length;
@@ -2350,7 +2350,7 @@ function trialState(s, c) {
     }
     case 'perfect': {
       const ok = !!(s.perfect && s.perfect[c.stage]);
-      return { done: ok, text: '전장 ' + (c.stage + 1) + ' 성채 100%로 돌파', prog: ok ? '완료' : '아직' };
+      return { done: ok, text: '전장 ' + (c.stage + 1) + ' 돌파 · 성채 100%', prog: ok ? '완료' : '아직' };
     }
     case 'stars': {
       let k = 0; for (let i = c.from; i < c.to; i++) if (s.stars && s.stars[i] >= 3) k++;
