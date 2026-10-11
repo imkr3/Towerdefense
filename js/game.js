@@ -361,7 +361,9 @@ class Battle {
     this.speed = 1;
 
     // 보스는 반드시 쓰러뜨려야 한다. 원거리로 요새만 두드려 보스를 건너뛰던 것을 막는다.
-    this.bossWard = !!(this.stage.bossId && !this.endless);
+    // 4.6 폭주 기관차처럼 요새만 부수면 끝나는 전장은 결계가 없다 (noWard)
+    this.bossWard = !!(this.stage.bossId && !this.endless && !this.stage.noWard);
+    this.sealed = {};           // 4.6 가면 군주가 봉인한 카드: id → 남은 초
     this.bossSpawned = false;
     this.bossDown = false;
     this.chronoOn = false;
@@ -464,7 +466,7 @@ class Battle {
   canDeploy(id) {
     const u = this.stats(id);
     return !!u && this.state === 'play' && this.roster.some(r => r.id === id) && !this.fieldFull() &&
-      this.cooldowns[id] <= 0 && this.money >= u.cost &&
+      this.cooldowns[id] <= 0 && this.money >= u.cost && !(this.sealed[id] > 0) &&
       (!u.maxActive || this.activeCount(id) < u.maxActive);
   }
   // 4.2: HUD 가 매 프레임 카드마다 부른다 — 배열을 새로 만들지 않고 센다
@@ -735,6 +737,7 @@ class Battle {
     for (const k in this.cooldowns) {
       if (this.cooldowns[k] > 0) this.cooldowns[k] = Math.max(0, this.cooldowns[k] - cdStep);
     }
+    for (const k in this.sealed) if (this.sealed[k] > 0) this.sealed[k] = Math.max(0, this.sealed[k] - dt);
 
     // 보스의 결계: 보스를 쓰러뜨릴 때까지 요새는 끝까지 무너지지 않는다.
     // 보스가 나오기 전에 요새를 결계까지 깎으면 보스가 먼저 뛰쳐나온다.
@@ -1139,6 +1142,88 @@ class Battle {
     }
   }
 
+  /* ---- 4.6 도전: 폭주 기관차 ----
+   * 기관차는 싸우지 않고 아군 성채로 달린다. 닿으면 성채가 그대로 무너진다(패배).
+   * 둔화되면 느려지고 기절하면 선다(기절 뒤엔 잠깐 면역). every 초마다 경적을 울리고 warn 초 뒤 dur 초 동안 mul 배로 돌진한다.
+   * 닿은 아군은 ram 초마다 치여서 피해를 입는다(돌진 중엔 두 배 + 잠깐 기절). 막을 수는 없고 넘고 지나간다.
+   * 요새를 먼저 부수면 이긴다. */
+  trainTick(f, foes, dt) {
+    const tr = f.ab.train;
+    if (f.trainCd === undefined) f.trainCd = tr.first || tr.every;
+    f.trainCd -= dt;
+    if (!f.horn && f.trainCd <= tr.warn) {
+      f.horn = true;
+      this.announce('경적! 기관차가 돌진합니다', tr.warn);
+      this.fx.push({ type: 'warn', x: f.x - (tr.warn + tr.dur) * f.s.speed * tr.mul * 0.5, r: 160, t: tr.warn, life: tr.warn, color: '#ffb03c' });
+      sfx('siren');
+    }
+    if (f.trainCd <= 0) { f.trainCd = tr.every; f.horn = false; f.chargeT = tr.dur; this.shake = Math.max(this.shake, 6); sfx('cannon'); }
+    if (f.chargeT > 0) f.chargeT -= dt;
+    const charging = f.chargeT > 0;
+    const sp = f.speedNow * (charging ? tr.mul : 1);
+    f.moving = sp > 0; f.engaged = false;
+    f.x = Math.max(60, f.x + f.dir * sp * dt);
+    // 치기: 앞(성채 쪽)에 닿은 아군
+    f.ramCd = (f.ramCd || 0) - dt;
+    if (f.ramCd <= 0) {
+      let hit = false;
+      for (const a of foes) {
+        if (a.dead || a.burrowed) continue;
+        const gap = (f.x - a.x) * -f.dir;              // 앞쪽이면 0 이상
+        if (gap < -a.radius - 10 || gap > f.radius + a.radius + 6) continue;
+        this.hitOne(f.atk * (charging ? 2 : 1), a, f, false);
+        if (charging) a.stun && a.stun(0.6);              // 돌진에 치이면 잠깐 넘어진다 (밀려나진 않는다 — 기관차는 넘고 지나간다)
+        hit = true;
+      }
+      f.ramCd = tr.ram;
+      if (hit) { f.swing = 0.22; this.fx.push({ type: 'hit', x: f.x + f.dir * f.radius, row: f.row, dir: f.dir, t: 0.22, life: 0.22 }); }
+    }
+    if (f.x <= this.allyCastle.x + 40 + f.radius && !this.allyCastle.dead) {
+      this.allyCastle.takeDamage(this.allyCastle.hp + 1);
+      this.announce('기관차가 성채를 들이받았습니다', 2.4);
+      this.shake = 16; sfx('boom');
+    }
+  }
+
+  /* ---- 4.6 도전: 그림자 가면무도회 ----
+   * 가면 군주는 every 초마다 전장에 가장 많이 선 아군 병종(같으면 비싼 쪽)을 골라
+   * 그 카드를 seal 초 동안 봉인하고, 그 병종의 그림자를 n 명까지 적으로 보낸다(원본 힘 × mul).
+   * 같은 병종만 쏟아부으면 제 칼에 베인다 — 고르게 섞어 내야 한다. */
+  maskTick(f, dt) {
+    const m = f.ab.mask;
+    if (f.maskCd === undefined) f.maskCd = m.first || m.every;
+    if (f.stunT > 0) return;
+    f.maskCd -= dt;
+    if (f.maskCd > 0) return;
+    f.maskCd = m.every;
+    const cnt = {};
+    for (const a of this.allies) if (!a.dead && !a.summoned && a.s.id && UNIT_BY_ID[a.s.id]) cnt[a.s.id] = (cnt[a.s.id] || 0) + 1;
+    // 가장 많이 선 병종 (같으면 비싼 쪽). 고르게 섞어 냈다면 하나만 베껴 간다.
+    let best = null, bn = 0;
+    for (const id in cnt) if (cnt[id] > bn || (cnt[id] === bn && UNIT_BY_ID[id].cost > UNIT_BY_ID[best].cost)) { best = id; bn = cnt[id]; }
+    if (!best) return;
+    this.sealed[best] = m.seal;
+    const st = this.stats(best);
+    const name = st.name;
+    this.announce('그림자 가면: ' + name + ' 봉인', 2.2);
+    sfx('zap');
+    const n = Math.min(m.n, bn);
+    for (let i = 0; i < n; i++) this.spawnShadow(st, f.x + f.dir * (30 + i * 26), m.mul || 1);
+    this.fx.push({ type: 'aura', x: f.x, row: f.row, r: 220, t: 0.7, life: 0.7, color: '#c06aff' });
+  }
+  /* 아군 병종의 그림자: 같은 모습 · 같은 힘의 적. 소환 · 금화 같은 아군 전용 능력은 뗀다. */
+  spawnShadow(st, x, mul) {
+    const ab = Object.assign({}, st.ab || {});
+    for (const k of ['summon', 'gold', 'reanimate', 'sapper', 'hook', 'rally', 'ward', 'vanguard']) delete ab[k];
+    const sh = Object.assign({}, st, { ab: ab, shadow: true, active: null, arrive: null, healFx: null, gold: 0,
+                                       body: '#2a2238', tunic: '#3a2a52', accent: '#c06aff' });
+    const e = new Fighter(sh, 'enemy', Math.max(80, Math.min(WORLD - 80, x)), mul !== 1 ? { hp: mul, atk: mul } : null);
+    e.gold = 0; e.kind = 'shadow'; e.summoned = true; e.shadow = true;
+    this.enemies.push(e);
+    this.fx.push({ type: 'spawn', x: e.x, row: e.row, t: 0.5, life: 0.5, grand: true, color: '#c06aff' });
+    return e;
+  }
+
   /* ------------------- 한 진영의 행동 ------------------- */
   step(list, foes, foeCastle, dt, isAlly) {
     for (const f of list) {
@@ -1198,6 +1283,7 @@ class Battle {
 
       // 보스 패턴
       if (f.s.phases || f.s.special) this.bossTick(f, dt);
+      if (f.ab.mask && !isAlly) this.maskTick(f, dt);       // 4.6 가면 군주
 
       // 기절
       if (f.stunT > 0) { f.stunT -= dt; continue; }
@@ -1223,6 +1309,8 @@ class Battle {
       // 지원 능력 (표적과 무관하게 주기적으로 발동)
       this.supportTick(f, list, dt, isAlly);
 
+      // 4.6 폭주 기관차: 멈추지 않고 성채로 달린다 · 앞을 막은 병사는 치여 밀려난다
+      if (f.ab.train && !isAlly) { this.trainTick(f, foes, dt); continue; }
       // 3.7 황금 수레: 싸우지 않고 아군 성채 쪽으로 계속 굴러간다 (앞을 막아도 비집고 지나간다)
       if (f.ab.flee && !isAlly) {
         f.engaged = false; f.moving = true;

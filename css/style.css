@@ -1432,3 +1432,6 @@ body{background:var(--bg0);color:var(--tx)}
 .fs-evo .fe-hint.f3{color:#9ff6ff;flex-basis:100%}
 /* 4.2: 한글이 낱자로 끊기지 않게 ('범/위') */
 .fb-txt,.fb-role span,.evo-box .evo-info,.ab-text,.unit-desc,.sd-hint{word-break:keep-all;overflow-wrap:anywhere}
+/* 4.6 가면 군주가 봉인한 카드: 보랏빛 자물쇠 */
+.card.sealed{filter:saturate(.25);border-color:#c06aff!important;box-shadow:0 0 0 1px #c06aff88,0 0 12px #c06aff55!important}
+.card.sealed .cool{background:rgba(60,20,90,.78)!important;color:#e8c8ff;font-size:13px}

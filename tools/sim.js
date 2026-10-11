@@ -324,10 +324,13 @@ const EVENT_EXPECT = { up: 10, lv: 15, naiveMax: 4, timedMin: 6 };   // 이벤�
 /* 3.9: E3(망령 함대)는 '포격 뒤에 출진' 이 시뮬레이터에서 거의 차이를 못 낸다 — 포탄이 갓 나온 병사보다
  * 이미 선 뒷줄에 떨어지기 때문. 근접 영웅이 단단해진 뒤로는 판마다 운에 갈려, 타이밍 기준만 5/10 으로 둔다. */
 const EVENT_TIMED_MIN = { 2: 5 };
+const EVENT_HARD46 = { 5: { up: 10, lv: 24, min: 2, max: 8 }, 6: { up: 10, lv: 24, min: 2, max: 8 } };   // 4.6 폭주 기관차 · 그림자 가면무도회
 const ACT3_ENTRY = { up: 10, lv: 14, min: 2, max: 5 };   // 3.3
 const SMART_ACT3 = { up: 10, lv: 18 };
 const ACT4_ENTRY = { up: 10, lv: 18, min: 2, max: 5 };   // 4.0: 3막을 끝낸 수준으론 앞 몇 곳만
 const SMART_ACT4 = { up: 10, lv: 24 };                   // 4.0: 레벨 상한 20(+사관학교 5)까지 키우면 전부
+const ACT5_ENTRY = { up: 10, lv: 20, min: 2, max: 6 };   // 4.6: 4막을 끝낸 수준
+const SMART_ACT5 = { up: 10, lv: 24, slower: 1.25 };     // 4.6: 다 키우면 전부, 4막보다 1.25배 넘게 오래
 const HARD_MODE = { up: 10, lv: 15, min: 12, max: 20, bossMax: 6 };   // 하드코어 기대치 (3.1)
 const LEGEND_PROOF_MAX = 1;      // 전설만 편성이 이길 수 있는 최대 판 수
 const COUNTER_MIN = 4;           // 공략 편성이 이겨야 하는 최소 판 수
@@ -496,6 +499,23 @@ function check() {
     if (rows.some(r => !r.win || r.seconds > 400)) { console.error('  ✗ 4막: 끝까지 키운 공략 편성은 400초 안에 전부 넘어야 한다 (seed ' + seed + ')'); failed++; }
     else console.log('  ✓ 4막 공략 편성 완주 (seed ' + seed + ')');
   }
+  // 4.6 5막: 4막을 끝낸 수준으론 앞 몇 곳만, 끝까지 키우면 전부 — 다만 4막보다 확실히 오래 걸린다
+  {
+    const g = loadEngine(12345); let w = 0;
+    for (let i = 50; i < 60; i++) w += runStage(g, i, ACT5_ENTRY.up, ACT5_ENTRY.lv, false, 'smart').win ? 1 : 0;
+    const tag = `5막 진입 (강화 ${ACT5_ENTRY.up}/Lv${ACT5_ENTRY.lv} 공략 편성) ${w}/10 (기대 ${ACT5_ENTRY.min}~${ACT5_ENTRY.max})`;
+    if (w < ACT5_ENTRY.min || w > ACT5_ENTRY.max) { console.error('  ✗ ' + tag); failed++; } else console.log('  ✓ ' + tag);
+  }
+  for (const seed of [12345, 98765]) {
+    const g = loadEngine(seed), rows = [], rows4 = [];
+    for (let i = 50; i < 60; i++) rows.push(runStage(g, i, SMART_ACT5.up, SMART_ACT5.lv, false, 'smart'));
+    for (let i = 40; i < 50; i++) rows4.push(runStage(g, i, SMART_ACT5.up, SMART_ACT5.lv, false, 'smart'));
+    printTable(rows, SMART_ACT5.up, SMART_ACT5.lv);
+    const t5 = rows.reduce((a, r) => a + r.seconds, 0), t4 = rows4.reduce((a, r) => a + r.seconds, 0);
+    if (rows.some(r => !r.win || r.seconds > 400)) { console.error('  ✗ 5막: 끝까지 키운 공략 편성은 400초 안에 전부 넘어야 한다 (seed ' + seed + ')'); failed++; }
+    else if (t5 < t4 * SMART_ACT5.slower) { console.error(`  ✗ 5막이 4막보다 어렵지 않다: ${Math.round(t5)}초 vs ${Math.round(t4)}초 (seed ${seed})`); failed++; }
+    else console.log(`  ✓ 5막 공략 편성 완주 · 4막의 ${(t5 / t4).toFixed(2)}배 걸림 (seed ${seed})`);
+  }
   // 3.1: 하드코어는 확실히 어렵다. 다 키운 공략 편성으로도 절반 남짓, 보스 전장은 대부분 막힌다.
   {
     SIM_HARD = true;
@@ -516,6 +536,15 @@ function check() {
     const tag = `이벤트 E${k + 1} (강화 ${EVENT_EXPECT.up}/Lv${EVENT_EXPECT.lv}) 공략 ${r.naive}/${EVENT_SEEDS.length} · 타이밍 ${r.timed}/${EVENT_SEEDS.length} · 전설만 ${r.legend}/${EVENT_SEEDS.length}`;
     if (r.naive > EVENT_EXPECT.naiveMax) { console.error(`  ✗ ${tag} — 공략 편성을 막 내도 넘는다 (최대 ${EVENT_EXPECT.naiveMax})`); failed++; }
     else if (r.timed < (EVENT_TIMED_MIN[k] || EVENT_EXPECT.timedMin)) { console.error(`  ✗ ${tag} — 타이밍을 맞춰도 못 넘는다 (최소 ${EVENT_TIMED_MIN[k] || EVENT_EXPECT.timedMin})`); failed++; }
+    else console.log(`  ✓ ${tag}`);
+  }
+  // 4.6 도전 둘: 끝까지 키운 공략 편성으로도 반타작 언저리 — 넘을 수는 있되 쉽지 않다
+  for (const k in EVENT_HARD46) {
+    const X = EVENT_HARD46[k], r = runEvent(+k, X.up, X.lv);
+    const tag = `도전 E${+k + 1} (강화 ${X.up}/Lv${X.lv}) 공략 ${r.naive}/${EVENT_SEEDS.length} · 타이밍 ${r.timed}/${EVENT_SEEDS.length} · 전설만 ${r.legend}/${EVENT_SEEDS.length} (기대 ${X.min}~${X.max})`;
+    if (r.timed < X.min) { console.error(`  ✗ ${tag} — 다 키워도 못 넘는다`); failed++; }
+    else if (Math.max(r.naive, r.timed) > X.max) { console.error(`  ✗ ${tag} — 공략 편성으로 너무 쉽게 넘는다`); failed++; }
+    else if (r.legend > X.max) { console.error(`  ✗ ${tag} — 전설만으로 넘는다`); failed++; }
     else console.log(`  ✓ ${tag}`);
   }
   // 3.7 금화 원정: 열리는 무렵 전력이면 거의 늘 이기고, 금화는 그 무렵 전장을 다시 도는 것보다 낫되 지나치지 않게
@@ -578,8 +607,8 @@ function runEvent(k, upLv, unitLv, seeds, tweak) {
 const args = process.argv.slice(2);
 if (args[0] === '--event') {
   // node tools/sim.js --event [강화] [Lv] [번호,...]   이벤트 전장 승수 (공략·타이밍·전설만)
-  const upLv = +(args[1] || 10), unitLv = +(args[2] || 15);
-  const ks = args[3] ? args[3].split(',').map(Number) : [0, 1, 2, 3, 4];
+  const upLv = +(args[1] || 10), unitLv = +(args[2] || 15), g0 = loadEngine(12345);
+  const ks = args[3] ? args[3].split(',').map(Number) : g0.EVENT_STAGES.map((e, i) => i);
   const g = loadEngine(12345);
   for (const k of ks) {
     const r = runEvent(k, upLv, unitLv);

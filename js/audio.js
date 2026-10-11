@@ -197,7 +197,9 @@ const BGM_INST = {
   gtrlead: { osc: [['sawtooth', -5], ['sawtooth', 5]], drive: 4, cut: 5200, a: 0.01, d: 0.2, s: 0.85, r: 0.16, vib: 1, gain: 0.065 },
   synlead: { osc: [['square', 0], ['sawtooth', 1200]], cut: 6400, a: 0.004, d: 0.12, s: 0.65, r: 0.1, vib: 0.6, gain: 0.042, mix: [1, 0.4] },
   sbass:   { osc: [['sawtooth', 0], ['square', -1200]], cut: 650, fenv: 1400, a: 0.004, d: 0.16, s: 0.55, r: 0.06, gain: 0.05 },
-  celesta: { bell: 2, gain: 0.04 }
+  celesta: { bell: 2, gain: 0.04 },
+  // 4.6 밀림: 나무 건반 (두 옥타브 위 배음이 '똑' 하는 소리를 낸다)
+  marimba: { osc: [['sine', 0], ['sine', 2400]], cut: 3600, a: 0.003, d: 0.45, s: 0, r: 0.2, gain: 0.075, pluck: 1, mix: [1, 0.22] }
 };
 
 /* 2.9.1: 곡을 실시간으로 연주하지 않는다. 처음 부를 때 한 번만 OfflineAudioContext 로
@@ -959,6 +961,83 @@ const BGM_STYLES = {
       B.note('bass', r - 12, x.t, 16 * d, 0.8);
       B.timp(x.t, r - 12, 0.6);
     }
+  },
+  /* 4.6 밀림: 3+3+2 로 끊어 치는 마림바 · 통나무 북(프레임) · 16분 셰이커 · 통통 튀는 베이스 · 세기 2부터 호른 엇박 */
+  jungle: function (B, x) {
+    const c = x.chord, r = c.root, d = x.dt, I = x.int, t3 = c.iv[1], t5 = c.iv[2];
+    if (x.s === 0) {
+      B.chordNotes(c, 12, true).forEach(n => B.note('pad', n, x.t, 16 * d, I >= 2 ? 0.7 : 0.5));
+      if (I >= 3) B.chordNotes(c, 12, false).forEach(n => B.note('choir', n + 12, x.t, 16 * d, 0.55));
+      if (x.first && I >= 2) B.crash(x.t, 0.6);
+    }
+    if (B.pat('x.xx.xx.x.xx.x.x', x.s))
+      B.note('marimba', r + 12 + [0, t5, 12, t3 + 12, t5, 12, t3, t5 + 12, 0, t5, 12, t3 + 12, t5 + 12, 12, t3, 24][x.s], x.t, d, x.s % 8 === 0 ? 1 : 0.75);
+    if (I >= 2 && x.s % 4 === 3) B.note('marimba', r + 24 + [t3, t5, 12, t5][x.s >> 2], x.t, d, 0.55);
+    if (B.pat('x..x..x...x.x...', x.s)) B.note('bass', r - 12 + (x.s === 6 || x.s === 12 ? t5 : 0), x.t, d * 1.6, x.s === 0 ? 1 : 0.8);
+    if (I >= 2 && B.pat('...x..x...x...x.', x.s)) B.chordNotes(c, 12, false).forEach(n => B.note('horn', n, x.t, d * 1.2, 0.42));
+    if (I >= 3 && x.s % 2 === 0) B.note('lowstr', r + [0, t5, 12, t5][(x.s >> 1) % 4], x.t, d * 1.6, 0.6);
+    if (B.pat('x..x..x.x.x..x.x', x.s)) B.frame(x.t, x.s % 8 === 0 ? 1 : 0.65);
+    if (x.s === 0 || (I >= 2 && x.s === 8)) B.taiko(x.t, I >= 2 ? 0.8 : 0.6);
+    if (I >= 3 && (x.s === 4 || x.s === 12)) B.snare(x.t, 0.7);
+    B.hat(x.t, x.s % 2 ? 0.9 : 0.45);
+    if (I >= 2 && x.s % 4 === 2) B.tamb(x.t, 0.55);
+    if (x.last) B.roll(x, I >= 3 ? 'snare' : 'timp', 12, 15, r - 12);
+  },
+  /* 4.6 폭주 기관차: 네 박 킥 · 칙칙폭폭 하이햇 · 16분 질주 베이스 · 기타 뮤트 · 신스 아르페지오 · 금관 찌르기 · 구간 머리의 기적 소리 */
+  rush: function (B, x) {
+    const c = x.chord, r = c.root, d = x.dt, I = x.int, t3 = c.iv[1], t5 = c.iv[2];
+    const pw = [r - 12, r - 5, r];
+    if (x.s === 0) {
+      B.chordNotes(c, 12, true).forEach(n => B.note('pad', n, x.t, 16 * d, 0.35));
+      if (I >= 3) B.chordNotes(c, 12, false).forEach(n => B.note('choir', n + 12, x.t, 16 * d, 0.5));
+      if (x.first) {
+        B.crash(x.t, 1);
+        B.note('flute', r + 24 + t5, x.t, 5 * d, 0.9); B.note('oboe', r + 24 + t3, x.t, 5 * d, 0.6); B.note('flute', r + 36, x.t, 5 * d, 0.7);
+      } else if (I >= 2 && x.bar % 2 === 0) B.crash(x.t, 0.7);
+    }
+    if (x.s % 4 === 0 || (I >= 3 && x.s === 14)) B.kick(x.t, x.s === 0 ? 1 : 0.9);
+    if (x.s === 4 || x.s === 12) { B.snare(x.t, 0.95); if (I >= 2) B.clap(x.t, 0.8); }
+    if (I >= 3 && (x.s === 15 || x.s === 7)) B.snare(x.t, 0.4);
+    B.hat(x.t, x.s % 4 === 2 ? 1.15 : x.s % 4 === 0 ? 0.5 : 0.75);
+    if (I >= 2 && x.s % 4 === 2) B.tamb(x.t, 0.6);
+    B.note('sbass', r - 12 + [0, 0, 12, 0][x.s % 4], x.t, d * 0.9, x.s % 4 === 0 ? 1 : 0.7);
+    if (I <= 1) { if (x.s === 0 || x.s === 6 || x.s === 8) pw.forEach(n => B.note('gtr', n, x.t, (x.s === 6 ? 2 : 5) * d, 0.8)); }
+    else if (B.pat('x.xxx.xxx.xxx.xx', x.s)) {
+      const big = x.s === 0 || x.s === 8;
+      pw.forEach(n => B.note('gtr', n, x.t, (big ? 2 : 0.7) * d, big ? 1 : 0.7));
+    }
+    if (I >= 2) B.note('synlead', r + 24 + [0, t3, t5, 12, t5, t3, 0, t3, 12, t5 + 12, 24, t5 + 12, 12, t5, t3, t5][x.s], x.t, d * 0.8, I >= 3 ? 0.5 : 0.38);
+    if (I >= 2 && B.pat('..x...x...x..x..', x.s)) {
+      B.chordNotes(c, 12, false).forEach(n => B.note('horn', n, x.t, d, 0.5));
+      B.note('trumpet', r + 24 + t5, x.t, d, 0.6);
+    }
+    if (x.last) B.roll(x, 'snare', 12, 15);
+  },
+  /* 4.6 가면무도회: 하바네라 베이스 · 끊어 치는 피치카토 화음 · 캐스터네츠 · 세기 2부터 네 박 킥과 금관 엇박 · 첼레스타 */
+  masque: function (B, x) {
+    const c = x.chord, r = c.root, d = x.dt, I = x.int, t3 = c.iv[1], t5 = c.iv[2];
+    if (x.s === 0) {
+      B.chordNotes(c, 12, true).forEach(n => B.note('pad', n, x.t, 16 * d, 0.55));
+      if (I >= 3) B.chordNotes(c, 12, false).forEach(n => B.note('choir', n + 12, x.t, 16 * d, 0.55));
+      if (x.first) { B.crash(x.t, 0.9); if (I >= 3) B.gong(x.t, 0.4); }
+      else if (I >= 3 && x.bar % 2 === 0) B.crash(x.t, 0.6);
+    }
+    const h = x.s % 8;
+    if (h === 0 || h === 3 || h === 4 || h === 6)
+      B.note(I >= 2 ? 'sbass' : 'bass', r - 12 + (h === 0 ? 0 : h === 4 ? 12 : t5), x.t, d * (h === 0 ? 2.6 : 1.2), h === 0 ? 1 : 0.8);
+    if (x.s % 2 === 0) B.chordNotes(c, 12, false).forEach(n => B.note('pizz', n + 12, x.t, d, x.s % 8 === 0 ? 0.9 : (x.s % 8 === 6 ? 0.75 : 0.45)));
+    if (B.pat('x.xxx.x.x.xxx.xx', x.s)) B.clap(x.t, x.s % 4 === 0 ? 0.35 : 0.22);
+    if (I >= 2 ? x.s % 4 === 0 : (x.s === 0 || x.s === 8)) B.kick(x.t, x.s === 0 ? 1 : 0.85);
+    if (x.s === 4 || x.s === 12) B.snare(x.t, I >= 2 ? 0.9 : 0.6);
+    if (I >= 2) B.hat(x.t, x.s % 4 === 2 ? 1 : 0.45);
+    if (I >= 2 && B.pat('...x..x....x..x.', x.s)) {
+      B.chordNotes(c, 12, false).forEach(n => B.note('horn', n, x.t, d, 0.5));
+      B.note('trumpet', r + 24 + t3, x.t, d, 0.6);
+    }
+    if (I >= 2 && (x.s === 6 || x.s === 14)) B.note('celesta', r + 36 + (x.s === 6 ? t5 : t3 + 12), x.t, d, 0.6);
+    if (I >= 3) B.note('lowstr', r + 12 + [0, t5, 12, t5][x.s % 4], x.t, d * 0.9, x.s % 4 === 0 ? 0.8 : 0.55);
+    if (I >= 3 && x.s % 4 === 2) B.tamb(x.t, 0.6);
+    if (x.last) B.roll(x, 'snare', 12, 15);
   }
 };
 

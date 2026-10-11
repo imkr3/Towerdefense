@@ -165,7 +165,7 @@ test('Several heroes can fire their actives back to back (no shared cooldown)',(
 });
 test('Forty stages retain the existing endless unlock threshold',()=>{
   const {STAGES,ENDLESS_UNLOCK_STAGE}=vm.runInContext('({STAGES,ENDLESS_UNLOCK_STAGE})',ctx);
-  assert.equal(STAGES.length,50);assert.equal(ENDLESS_UNLOCK_STAGE,20);
+  assert.equal(STAGES.length,60);assert.equal(ENDLESS_UNLOCK_STAGE,20);
   assert.ok(STAGES.slice(20).every(s=>s.waves.length>=8&&s.reward>900));
 });
 test('First expansion victory advances from 20 to 21 and retains old stars',()=>{
@@ -736,8 +736,8 @@ test('Fury: in hardcore and act 2, foes arriving later are tougher', () => {
 /* ---------------- 3.2 이벤트 전장 ---------------- */
 const EV = vm.runInContext('({EVENT_STAGES, eventOpen, eventCount})', ctx);
 function evBattle(k, s) { return new Battle(STAGES.length + k, s || save(), EV.EVENT_STAGES[k]); }
-test('Five event stages, each with its own new boss, locked behind campaign progress', () => {
-  assert.equal(EV.EVENT_STAGES.length, 5);
+test('Seven event stages (4.6: +2), each with its own new boss, locked behind campaign progress', () => {
+  assert.equal(EV.EVENT_STAGES.length, 7);
   const bosses = new Set();
   EV.EVENT_STAGES.forEach((st, k) => {
     assert.ok(E[st.bossId] && E[st.bossId].boss, st.name); bosses.add(st.bossId);
@@ -746,7 +746,7 @@ test('Five event stages, each with its own new boss, locked behind campaign prog
     assert.ok(st.event.deck.length === 10 && st.event.deck.every(id => U[id]), 'recommended deck');
     assert.equal(EV.eventOpen({ cleared: st.event.unlock - 1 }, k), false); assert.equal(EV.eventOpen({ cleared: st.event.unlock }, k), true);
   });
-  assert.equal(bosses.size, 5);
+  assert.equal(bosses.size, 7);
 });
 test('Event battles are not campaign progress: they record stars and pay stones once', () => {
   const s = save(); s.stones = 0; s.cleared = 30; const b = evBattle(0, s);
@@ -873,7 +873,7 @@ test('Act 3: ten sea stages with their own bosses, looks and music', () => {
   const A = STAGES.slice(30, 40);
   assert.equal(A.length, 10);
   assert.equal(A.filter(s => s.bossId).map(s => s.bossId).join(','), 'kraken,tidequeen,leviathan');
-  const seen = new Set(STAGES.map(s => s.music)); assert.equal(seen.size, 50, 'every stage has its own track');
+  const seen = new Set(STAGES.map(s => s.music)); assert.equal(seen.size, STAGES.length, 'every stage has its own track');
   const mus = fs.readFileSync(path.join(__dirname, '../js/music.js'), 'utf8');
   for (const st of A) assert.ok(mus.indexOf('  ' + st.music + ': {') >= 0, st.music);
   for (const t of ['boss_kraken', 'boss_tidequeen', 'finale2']) assert.ok(mus.indexOf('  ' + t + ': {') >= 0, t);
@@ -1337,6 +1337,101 @@ test('4.4: challenges are tougher and each awakened card makes foes stronger the
   assert.equal(none.awakenN, 0); assert.equal(three.awakenN, 3);
   assert.ok(Math.abs(three.enemyMulBase / H.hardcoreEnemyMul(STAGES[10]) - (1 + 3 * H.AWAKEN_TAX)) < 1e-9, 'three cards → +' + 3 * H.AWAKEN_TAX);
   assert.equal(plain.awakenN, 0, 'normal stages are not taxed');
+});
+
+/* ---------------- 4.6 5막 '잊힌 밀림' · 도전 둘 ---------------- */
+test('4.6: Act 5 adds ten jungle stages with three bosses, new looks and new music', () => {
+  const A = STAGES.slice(50, 60), A4 = STAGES.slice(40, 50);
+  assert.equal(STAGES.length, 60); assert.equal(A.length, 10);
+  assert.equal(A.filter(s => s.bossId).map(s => s.bossId).join(','), 'raptorqueen,quetzal,jungletyrant');
+  assert.ok(A4.length === 10 && Math.max(...A.map(s => s.baseHp)) > Math.max(...A4.map(s => s.baseHp)), 'tougher forts than act 4 (fight length is checked by sim --check)');
+  const mus = fs.readFileSync(path.join(__dirname, '../js/music.js'), 'utf8'), render = fs.readFileSync(path.join(__dirname, '../js/render.js'), 'utf8');
+  for (const st of A) assert.ok(mus.indexOf('  ' + st.music + ': {') >= 0, st.music);
+  for (const t of ['boss_raptorqueen', 'boss_quetzal', 'boss_jungletyrant', 'finale4', 'hc_jungle', 'railrush', 'boss_train', 'masquerade', 'boss_masklord'])
+    assert.ok(mus.indexOf('  ' + t + ': {') >= 0, t);
+  for (const look of ['jungle', 'temple', 'lavajungle', 'railway', 'ballroom']) assert.ok(render.indexOf('  ' + look + ':') >= 0, look);
+  assert.equal(STAGES[49].bossMusic, 'finale3'); assert.equal(STAGES[59].bossMusic, 'finale4');
+  const M = vm.runInContext('({EVENT_STAGES, ACHIEVEMENTS})', ctx);
+  assert.ok(M.ACHIEVEMENTS.some(a => a.id === 'campaign60' && a.test({ cleared: 60 }) && !a.test({ cleared: 59 })));
+});
+test('4.6: new jungle and challenge foes are drawn and translated', () => {
+  const render = fs.readFileSync(path.join(__dirname, '../js/render.js'), 'utf8');
+  const i18n = fs.readFileSync(path.join(__dirname, '../js/i18n.js'), 'utf8');
+  for (const id of ['lizardman', 'raptor', 'poisontoad', 'vineshaman', 'stoneidol', 'triceratops', 'raptorqueen', 'quetzal', 'jungletyrant',
+                    'irontrain', 'coalstoker', 'handcar', 'masklord', 'dancer', 'jester']) {
+    assert.ok(E[id], id); assert.ok(render.indexOf("case '" + E[id].shape + "'") >= 0, id + ' drawn');
+    assert.ok(i18n.indexOf("'" + E[id].name + "'") >= 0, id + ' name');
+    if (E[id].abText) assert.ok(i18n.indexOf("'" + E[id].abText + "'") >= 0, id + ' abText');
+    for (const ph of E[id].phases || []) if (ph.name) assert.ok(i18n.indexOf("'" + ph.name + "'") >= 0, id + ' phase ' + ph.name);
+  }
+});
+function trainBattle() {
+  const s = save(); s.cleared = 60; s.loadout = ['frost', 'knight']; s.levels = { frost: 10, knight: 10 };
+  const b = evBattle(5, s); b.waves = []; b.money = 1e6;
+  const tr = b.spawnEnemy('irontrain', 1200); tr.stunImm = 0;
+  return { b, tr };
+}
+test('4.6 locomotive: it never fights, rams through troops and wins the moment it reaches the castle', () => {
+  const { b, tr } = trainBattle();
+  assert.equal(b.bossWard, false, 'no fort ward: the fort can fall while the engine lives');
+  const k = b.makeAlly(b.stats('knight'), tr.x - 30); b.allies.push(k);
+  const x0 = tr.x, kx = k.x, h0 = k.hp;
+  for (let i = 0; i < 30 * 3; i++) b.update(1 / 30);
+  assert.ok(tr.x < x0, 'kept rolling through the knight'); assert.ok(k.hp < h0, 'the knight got run over');
+  assert.ok(Math.abs(k.x - kx) < 60, 'not shoved back across the field');
+  tr.x = b.allyCastle.x + 60 + tr.radius; tr.trainCd = 99;
+  for (let i = 0; i < 30 * 4 && b.state === 'play'; i++) b.update(1 / 30);
+  assert.equal(b.state, 'lose', 'castle rammed');
+});
+test('4.6 locomotive: whistle, then a charge; slows and stuns hold it back', () => {
+  const a = trainBattle(), c = trainBattle();
+  const step = (b, n) => { for (let i = 0; i < n; i++) b.update(1 / 30); };
+  c.tr.slowT = 999;
+  step(a.b, 30 * 6); step(c.b, 30 * 6);
+  assert.ok(a.b.enemies.includes(a.tr) && c.tr.x > a.tr.x + 5, 'slowed engine is behind: ' + Math.round(c.tr.x) + ' vs ' + Math.round(a.tr.x));
+  const s = trainBattle(); assert.ok(s.tr.stun(2)); const sx = s.tr.x; step(s.b, 15); assert.ok(Math.abs(s.tr.x - sx) < 1, 'stunned engine stands still');
+  const h = trainBattle(); h.tr.trainCd = h.tr.ab.train.warn + 0.05;
+  step(h.b, 3); assert.ok(h.tr.horn, 'whistle before the charge');
+  step(h.b, 30 * 3); assert.ok(h.tr.chargeT > 0 || h.tr.trainCd > h.tr.ab.train.every - 1, 'then it charges');
+});
+test('4.6 locomotive: breaking the fort wins even with the engine alive', () => {
+  const { b, tr } = trainBattle();
+  b.enemyCastle.takeDamage(b.enemyCastle.hp + 1); b.update(1 / 30);
+  assert.equal(b.state, 'win'); assert.ok(!tr.dead, 'the engine was still running');
+});
+function maskBattle(ids) {
+  const s = save(); s.cleared = 60; s.loadout = ids; s.levels = {}; ids.forEach(id => { s.levels[id] = 10; });
+  const b = evBattle(6, s); b.waves = []; b.money = 1e6;
+  const m = b.spawnEnemy('masklord', 1300); m.maskCd = 0.01;
+  return { b, m };
+}
+test('4.6 masquerade: the Mask Lord seals your most-fielded card and sends its shadows', () => {
+  const { b, m } = maskBattle(['spear', 'knight', 'archer']);
+  for (let i = 0; i < 4; i++) b.allies.push(b.makeAlly(b.stats('spear'), 300 + i * 10));
+  b.allies.push(b.makeAlly(b.stats('knight'), 320));
+  const before = b.enemies.length;
+  b.maskTick(m, 0.05);
+  assert.ok(b.sealed.spear > 0, 'spear sealed'); assert.ok(!b.sealed.knight, 'knight free');
+  assert.equal(b.canDeploy('spear'), false, 'sealed card cannot deploy'); assert.equal(b.canDeploy('knight'), true);
+  const sh = b.enemies.slice(before);
+  assert.equal(sh.length, Math.min(m.ab.mask.n, 4)); assert.ok(sh.every(e => e.shadow && e.s.id === 'spear' && e.gold === 0 && e.side === 'enemy'));
+  for (let i = 0; i < 30 * (m.ab.mask.seal + 0.5); i++) b.update(1 / 30);
+  assert.ok(!(b.sealed.spear > 0), 'seal wears off');
+});
+test('4.6 masquerade: a tie goes to the dearer card, and a single unit still gets copied once', () => {
+  const { b, m } = maskBattle(['spear', 'knight']);
+  b.allies.push(b.makeAlly(b.stats('spear'), 300), b.makeAlly(b.stats('knight'), 320));
+  const before = b.enemies.length; b.maskTick(m, 0.05);
+  assert.ok(b.sealed.knight > 0 && !b.sealed.spear, 'knight costs more'); assert.equal(b.enemies.length - before, 1, 'one shadow for one knight');
+  const e = maskBattle(['spear']); e.b.maskTick(e.m, 0.05); assert.deepEqual(Object.keys(e.b.sealed), [], 'empty field: nothing to seal');
+});
+test('4.6: hardcore act 5 and challenge bosses get their own tracks', () => {
+  const ctxm = vm.createContext({ console, Math, JSON, setTimeout, setInterval, clearInterval });
+  for (const f of ['data', 'audio', 'music']) vm.runInContext(fs.readFileSync(path.join(__dirname, '../js/' + f + '.js'), 'utf8'), ctxm);
+  const M = vm.runInContext('({stageMusic, bossTrack, STAGES, EVENT_STAGES})', ctxm);
+  assert.equal(M.stageMusic(M.STAGES[55], true), 'hc_jungle'); assert.equal(M.stageMusic(M.STAGES[45], true), 'hc_sky');
+  assert.equal(M.bossTrack(M.EVENT_STAGES[5], 'irontrain', false), 'boss_train'); assert.equal(M.bossTrack(M.EVENT_STAGES[6], 'masklord', false), 'boss_masklord');
+  assert.equal(M.stageMusic(M.EVENT_STAGES[5], false), 'railrush'); assert.equal(M.stageMusic(M.EVENT_STAGES[6], false), 'masquerade');
 });
 
 console.log(count + ' regression checks passed');

@@ -1161,6 +1161,91 @@ const ENEMIES = {
                             special: { t: 'meteor', name: '천벌', first: 3, cd: 7, n: 5, dmg: 500, radius: 125, warn: 1.1, kind: 'lightning' } },
                 { at: 0.12, t: 'enrage', name: '천공의 종말', atk: 1.25, rate: 0.8, speed: 1.2 }
               ] },
+  /* ---------- 4.6 5막 '잊힌 밀림': 비늘과 뿔의 군단 ---------- */
+  lizardman:{ name: '도마뱀 전사', body: '#5a8a3a', accent: '#e8c84a', tunic: '#7a4a2a', shape: 'lizardman',
+              hp: 2100, atk: 200, range: 66, speed: 54, interval: 1.0, kb: 2, gold: 60,
+              ab: { dodge: 0.15, lifesteal: 0.15 }, abText: '비늘 방패 · 15% 회피 · 흡혈 15%' },
+  raptor:   { name: '랩터', body: '#8a6a3a', accent: '#e8603a', tunic: '#5a3a1a', shape: 'raptor',
+              hp: 1150, atk: 160, range: 56, speed: 132, interval: .7, kb: 3, gold: 30, scale: .9,
+              ab: { leap: { trigger: 170, range: 300 } }, abText: '무리 사냥 · 아주 빠름 · 전열을 뛰어넘어 원거리 병사를 덮칩니다' },
+  poisontoad:{ name: '독두꺼비', body: '#6a9a3a', accent: '#c84ae8', tunic: '#3a5a2a', shape: 'poisontoad',
+              hp: 1600, atk: 95, range: 210, speed: 26, interval: 1.7, kb: 1, gold: 55, ranged: true, scale: 1.05,
+              area: true, areaRadius: 75, ab: { poison: { dps: 70, dur: 4 } }, abText: '독 침 · 범위 중독 70/초 · 정화로 해제' },
+  vineshaman:{ name: '덩굴 주술사', body: '#4a6a3a', accent: '#9fe86a', tunic: '#2a4a2a', shape: 'vineshaman',
+              hp: 1800, atk: 70, range: 230, speed: 24, interval: 2.0, kb: 1, gold: 75, ranged: true, noReinf: true,
+              ab: { heal: 170, radius: 220, interval: 4 },
+              special: { t: 'frost', name: '휘감는 덩굴', first: 5, cd: 10, r: 260, dur: 3 },
+              abText: '치유 · 4초마다 주변 적 회복 · 10초마다 덩굴로 아군을 묶어 느리게' },
+  stoneidol:{ name: '석상 수호자', body: '#8a8a6a', accent: '#4ae8c8', tunic: '#6a6a4a', shape: 'stoneidol',
+              hp: 4400, atk: 210, range: 82, speed: 20, interval: 2.0, kb: 1, gold: 140, scale: 1.35, noReinf: true,
+              ab: { kbImmune: true, armor: 0.35, thorns: 0.2 }, abText: '돌 몸 · 갑주 35% · 근접 피해 20% 반사 · 넉백 면역' },
+  triceratops:{ name: '뿔 공룡', body: '#7a8a5a', accent: '#e8d8a8', tunic: '#5a6a3a', shape: 'triceratops',
+              hp: 5400, atk: 270, range: 90, speed: 30, interval: 1.8, kb: 1, gold: 170, scale: 1.5, noReinf: true,
+              ab: { kbImmune: true, armor: 0.2, charge: { dist: 150, mul: 2.2, push: 130 } },
+              abText: '뿔 돌진 · 달려와 첫 일격 2.2배로 밀쳐 냄 · 갑주 20% · 넉백 면역' },
+  raptorqueen:{ name: '랩터 여왕', body: '#9a6a2a', accent: '#ff5a3a', tunic: '#6a3a1a', shape: 'raptorqueen',
+              hp: 34000, atk: 900, range: 96, speed: 52, interval: 1.4, kb: 1, gold: 1600,
+              area: true, areaRadius: 130, scale: 1.9, boss: true,
+              ab: { kbImmune: true, dodge: 0.15, summon: { id: 'raptor', n: 3 }, interval: 8 },
+              special: { t: 'roar', name: '사냥의 포효', cd: 10, r: 380, stun: 0.8, push: 90 },
+              phases: [
+                { at: 0.65, t: 'summon', name: '사냥 무리', id: 'raptor', n: 6 },
+                { at: 0.40, t: 'roar',   name: '피 냄새', r: 460, stun: 1.2, push: 120 },
+                { at: 0.15, t: 'enrage', name: '여왕의 광란', atk: 1.3, rate: 0.75, speed: 1.3 }
+              ] },
+  quetzal:  { name: '깃털 뱀', body: '#3aa87a', accent: '#ffd23a', tunic: '#e84a3a', shape: 'quetzal',
+              hp: 36000, atk: 940, range: 230, speed: 18, interval: 2.4, kb: 1, gold: 1800, ranged: true,
+              area: true, areaRadius: 160, scale: 2.1, boss: true,
+              ab: { kbImmune: true, dodge: 0.1 },
+              special: { t: 'meteor', name: '태양 깃털', cd: 9, n: 4, dmg: 500, radius: 120, warn: 1.1, burn: { dps: 60, dur: 3 }, kind: 'firestorm' },
+              phases: [
+                { at: 0.75, t: 'summon', name: '도마뱀 전사단', id: 'lizardman', n: 4 },
+                { at: 0.50, t: 'roar',   name: '깃털 폭풍', r: 440, stun: 1.0, push: 120 },
+                { at: 0.30, t: 'swap',   name: '일식의 날개',
+                            special: { t: 'meteor', name: '태양 깃털', first: 3, cd: 6, n: 5, dmg: 520, radius: 125, warn: 1.0, burn: { dps: 70, dur: 3 }, kind: 'firestorm' } },
+                { at: 0.12, t: 'enrage', name: '신의 분노', atk: 1.25, rate: 0.8, speed: 1.2 }
+              ] },
+  jungletyrant:{ name: '밀림의 폭군', body: '#5a4a3a', accent: '#ff7a2a', tunic: '#3a2a1a', shape: 'jungletyrant',
+              hp: 44000, atk: 1150, range: 132, speed: 22, interval: 2.2, kb: 1, gold: 2800,
+              area: true, areaRadius: 185, scale: 2.5, boss: true,
+              ab: { kbImmune: true, armor: 0.2 },
+              special: { t: 'roar', name: '폭군의 포효', cd: 11, r: 460, stun: 1.2, push: 130 },
+              phases: [
+                { at: 0.75, t: 'summon', name: '뿔 공룡 떼', id: 'triceratops', n: 2 },
+                { at: 0.55, t: 'swap',   name: '화산 분화',
+                            special: { t: 'meteor', name: '불타는 바위', first: 2, cd: 7, n: 5, dmg: 540, radius: 130, warn: 1.1, burn: { dps: 70, dur: 3 }, kind: 'firestorm' } },
+                { at: 0.35, t: 'summon', name: '랩터 떼', id: 'raptor', n: 8 },
+                { at: 0.12, t: 'enrage', name: '멸종의 분노', atk: 1.3, rate: 0.75, speed: 1.25 }
+              ] },
+  /* ---------- 4.6 도전 '폭주 기관차' · '그림자 가면무도회' ---------- */
+  irontrain:{ name: '폭주 기관차', body: '#3a3c44', accent: '#ff7a2a', tunic: '#8a2a2a', shape: 'irontrain',
+              hp: 60000, atk: 420, range: 60, speed: 9, interval: 1, kb: 1, gold: 3000, scale: 2.1, boss: true,
+              ab: { kbImmune: true, armor: 0.3, train: { first: 14, every: 16, warn: 2.6, dur: 2.6, mul: 3, ram: 0.5 },
+                    summon: { id: 'coalstoker', n: 2 }, interval: 9 },
+              abText: '멈추지 않는 기관차 · 성채에 닿으면 패배 · 둔화·기절로만 늦출 수 있다 · 경적 뒤 돌진' },
+  coalstoker:{ name: '화부', body: '#4a3a32', accent: '#ff9a3a', tunic: '#2a2a2e', shape: 'coalstoker',
+              hp: 2600, atk: 230, range: 62, speed: 58, interval: 1.0, kb: 2, gold: 50, noReinf: false,
+              ab: { burn: { dps: 60, dur: 3 } }, abText: '석탄 삽 · 화상 60/초' },
+  handcar:  { name: '수동차 포대', body: '#5a4a3a', accent: '#ffd23a', tunic: '#3a3a42', shape: 'handcar',
+              hp: 2400, atk: 260, range: 320, speed: 40, interval: 2.6, kb: 1, gold: 80, ranged: true, noReinf: true,
+              area: true, areaRadius: 95, scale: 1.15, abText: '레일 위의 대포 · 멀리서 범위 포격' },
+  masklord: { name: '가면 군주', body: '#2a1a3a', accent: '#c06aff', tunic: '#5a1a4a', shape: 'masklord',
+              hp: 46000, atk: 820, range: 260, speed: 16, interval: 2.2, kb: 1, gold: 3200, ranged: true,
+              area: true, areaRadius: 140, scale: 2.0, boss: true,
+              ab: { kbImmune: true, dodge: 0.1, mask: { first: 6, every: 13, seal: 13, n: 4, mul: 1 } },
+              special: { t: 'meteor', name: '떨어지는 가면', cd: 11, n: 3, dmg: 440, radius: 110, warn: 1.2, kind: 'lightning' },
+              phases: [
+                { at: 0.65, t: 'summon', name: '무희 입장', id: 'dancer', n: 5 },
+                { at: 0.40, t: 'summon', name: '광대 행렬', id: 'jester', n: 3 },
+                { at: 0.15, t: 'enrage', name: '마지막 춤', atk: 1.3, rate: 0.7, speed: 1.3 }
+              ],
+              abText: '그림자 가면 · 가장 많이 낸 병종을 봉인하고 그 그림자를 보냅니다 · 고르게 섞어 내세요' },
+  dancer:   { name: '가면 무희', body: '#e8d8f0', accent: '#ff5aa8', tunic: '#6a2a7a', shape: 'dancer',
+              hp: 1700, atk: 210, range: 60, speed: 112, interval: .75, kb: 2, gold: 40, scale: .95,
+              ab: { dodge: 0.4 }, abText: '춤추는 칼 · 40% 회피 · 아주 빠름' },
+  jester:   { name: '광대 폭탄꾼', body: '#f0e0c8', accent: '#ffd23a', tunic: '#c8303a', shape: 'jester',
+              hp: 2000, atk: 200, range: 240, speed: 30, interval: 2.0, kb: 1, gold: 60, ranged: true,
+              area: true, areaRadius: 90, ab: { deathBomb: { dmg: 260, radius: 110 } }, abText: '폭죽 공 · 범위 공격 · 쓰러지며 터짐' },
   /* ---------- 3.2 이벤트 전장의 적: 타이밍을 맞춰야 잡히는 보스 다섯과 그 졸개들 ---------- */
   bloodthrall:{ name: '혈귀 노예', body: '#6b2a34', accent: '#e04b6a', tunic: '#3a1a22', shape: 'bloodthrall',
               hp: 2400, atk: 180, range: 64, speed: 46, interval: 1.1, kb: 1, gold: 60, noReinf: true,
@@ -1403,6 +1488,32 @@ STAGES.push(
     W(12,'griffinrider',5,1.6),W(26,'skylord',1),W(52,'stormwisp',5,1.6),W(80,'cloudgiant',3,3),W(110,'skycannon',3,2.5),W(140,'windcaller',3,4),W(170,'harpy',18,.35),W(200,'griffinrider',6,1.4),W(230,'cloudgiant',4,2.5),W(262,'stormwisp',6,1.4)]}
 );
 
+/* 5막 '잊힌 밀림' (4.6): 하늘 성채가 무너진 뒤 떨어진 남쪽 밀림 — 비늘과 뿔의 군단, 잊힌 신전. 51~60전장.
+ * 4막보다 한 단계 억세다: 적 배율이 높고, 처음부터 특성이 붙은 전장이 섞인다. */
+const ACT5_FROM = 50;
+STAGES.push(
+  {name:'덩굴 오솔길',hint:'날쌘 랩터는 넉백 면역 방패와 범위로 · 원거리는 전열 뒤에',baseHp:104000,money:610,rate:77,reward:4600,enemyMul:20.5,waves:[
+    W(12,'lizardman',5,1),W(22,'raptor',6,.6),W(44,'poisontoad',2,2.5),W(66,'lizardman',7,.9),W(90,'raptor',8,.5),W(116,'vineshaman',1),W(140,'lizardman',8,.8),W(168,'raptor',10,.45),W(198,'poisontoad',3,2.2)]},
+  {name:'독안개 늪',hint:'독두꺼비의 범위 중독 · 정화사로 풀고 저격으로 먼저',baseHp:106000,money:615,rate:78,reward:4700,enemyMul:19.5,mods:['curse'],waves:[
+    W(12,'poisontoad',3,2.2),W(22,'lizardman',6,.9),W(44,'vineshaman',1),W(64,'poisontoad',4,2),W(88,'raptor',8,.5),W(112,'lizardman',8,.8),W(138,'poisontoad',5,1.8),W(166,'vineshaman',2,4),W(196,'raptor',12,.4)]},
+  {name:'★ 랩터 여왕의 둥지',hint:'사냥 무리는 범위 공격으로 한꺼번에 · 포효엔 기절 면역으로',baseHp:110000,money:625,rate:79,reward:5200,boss:true,enemyMul:18.0,waves:[
+    W(12,'raptor',8,.5),W(24,'raptorqueen',1),W(48,'lizardman',6,.9),W(74,'poisontoad',3,2.2),W(100,'raptor',12,.4),W(128,'vineshaman',2,4),W(156,'lizardman',8,.8),W(186,'raptor',14,.35)]},
+  {name:'잊힌 신전의 계단',hint:'석상 수호자는 반사 · 원거리와 파쇄로 깎으세요',baseHp:112000,money:630,rate:80,reward:4900,enemyMul:18.5,waves:[
+    W(12,'lizardman',6,.9),W(20,'stoneidol',1),W(42,'poisontoad',3,2.2),W(66,'stoneidol',2,4),W(92,'raptor',10,.45),W(118,'vineshaman',2,4),W(146,'stoneidol',2,4),W(176,'lizardman',10,.7),W(206,'poisontoad',4,2)]},
+  {name:'뿔 공룡 평원',hint:'뿔 돌진의 첫 일격 · 값싼 벽을 앞에 두고 화상과 파쇄로',baseHp:114000,money:635,rate:81,reward:5000,enemyMul:24.0,mods:['ironclad'],waves:[
+    W(12,'raptor',8,.5),W(22,'triceratops',1),W(46,'lizardman',8,.8),W(72,'triceratops',2,4),W(98,'poisontoad',4,2),W(124,'raptor',12,.4),W(150,'triceratops',2,4),W(178,'vineshaman',2,4),W(208,'lizardman',10,.7)]},
+  {name:'★ 깃털 뱀의 제단',hint:'태양 깃털 예고를 피하고, 일식이 오면 왕명으로 버티세요',baseHp:118000,money:645,rate:82,reward:5600,boss:true,enemyMul:19.0,waves:[
+    W(12,'lizardman',6,.9),W(26,'quetzal',1),W(50,'poisontoad',4,2),W(76,'raptor',12,.4),W(104,'stoneidol',2,4),W(132,'vineshaman',2,4),W(162,'lizardman',10,.7),W(194,'triceratops',2,4)]},
+  {name:'안개 폭포',hint:'몰려오는 랩터와 주술사의 치유 · 주술사를 먼저 끊으세요',baseHp:120000,money:650,rate:83,reward:5300,enemyMul:18.5,mods:['blitz'],waves:[
+    W(12,'raptor',12,.4),W(22,'vineshaman',2,3),W(44,'lizardman',8,.8),W(68,'raptor',14,.35),W(94,'poisontoad',4,2),W(120,'vineshaman',2,4),W(146,'raptor',16,.35),W(174,'stoneidol',2,4),W(204,'lizardman',12,.6)]},
+  {name:'화산 정글',hint:'단단한 무리 · 화상과 파쇄를 함께',baseHp:122000,money:655,rate:84,reward:5400,enemyMul:28.0,waves:[
+    W(12,'stoneidol',2,4),W(22,'triceratops',2,4),W(46,'poisontoad',4,2),W(72,'lizardman',10,.7),W(98,'triceratops',2,4),W(124,'stoneidol',3,3),W(152,'raptor',14,.35),W(180,'triceratops',3,3),W(210,'vineshaman',3,3)]},
+  {name:'신전의 심장',hint:'밀림의 모든 군단 · 둔화와 범위, 파쇄를 함께',baseHp:126000,money:665,rate:85,reward:5700,enemyMul:22.0,mods:['horde','curse'],waves:[
+    W(12,'lizardman',8,.8),W(22,'poisontoad',3,2.2),W(44,'raptor',12,.4),W(68,'stoneidol',2,4),W(92,'vineshaman',2,4),W(118,'triceratops',2,4),W(144,'raptor',16,.35),W(172,'poisontoad',5,1.8),W(202,'lizardman',12,.6),W(232,'triceratops',3,3)]},
+  {name:'★ 밀림의 폭군',hint:'화산이 터지면 바위 예고를 피하고, 폭군의 포효엔 왕명과 필살을 몰아 쓰세요',baseHp:132000,money:680,rate:87,reward:7000,boss:true,enemyMul:17.0,waves:[
+    W(12,'triceratops',2,4),W(26,'jungletyrant',1),W(52,'raptor',12,.4),W(80,'stoneidol',3,3),W(110,'poisontoad',5,1.8),W(140,'vineshaman',3,3),W(170,'lizardman',12,.6),W(200,'triceratops',3,3),W(232,'raptor',16,.35),W(262,'stoneidol',3,3)]}
+);
+
 /* 전장 특성. 어려운 전장에는 특성이 붙어서, 스탯 높은 병종을 몰아 넣는 것만으로는
  * 풀리지 않고 그 특성을 받아칠 병종을 챙겨야 한다. */
 const STAGE_MODS = {
@@ -1493,7 +1604,9 @@ const HARD_STAGE_MODS = {
   // 3막
   33: ['curse'], 36: ['ironclad', 'horde'], 37: ['blitz', 'giantslayer'], 38: ['ironclad', 'curse', 'blitz'],
   // 4막 (4.0)
-  43: ['giantslayer'], 46: ['ironclad', 'horde'], 47: ['blitz', 'horde'], 48: ['ironclad', 'giantslayer', 'blitz']
+  43: ['giantslayer'], 46: ['ironclad', 'horde'], 47: ['blitz', 'horde'], 48: ['ironclad', 'giantslayer', 'blitz'],
+  // 5막 (4.6): 캠페인에서도 특성이 붙은 곳이 있다 (위의 st.mods 가 먼저)
+  53: ['giantslayer'], 56: ['ironclad', 'horde'], 57: ['blitz', 'giantslayer'], 59: ['ironclad', 'curse']
 };
 STAGES.forEach((st, i) => { if (!st.mods && HARD_STAGE_MODS[i]) st.mods = HARD_STAGE_MODS[i]; });
 // 전설·신화 풀이 넓어질수록 몰아 넣기만 한 편성도 두루 갖춘다. 조합이 필요한
@@ -1582,24 +1695,29 @@ STAGES.forEach((st, i) => {
 });
 
 const BOSS_ROLE = { kraken: 'bruiser', tidequeen: 'caster', leviathan: 'bruiser',
+                    raptorqueen: 'bruiser', quetzal: 'flyer', jungletyrant: 'bruiser',
                     stormgriffin: 'flyer', cloudking: 'bruiser', skylord: 'caster',
                     troll: 'bruiser', frostgiant: 'bruiser', warlord: 'bruiser',
                     lich: 'caster', spiderqueen: 'caster', drake: 'flyer' };
 const BOSS_ESCORT = {
   bruiser: { back: ['ballista', 'slinger', 'shaman', 'hexer', 'plaguer', 'orccatapult'], front: ['wolf', 'assassin', 'hellhound', 'orcspear'], nb: 4, nf: 2,
              sea: { back: ['siren', 'seahook'], front: ['nagaspear', 'eel'] },
-             sky: { back: ['stormwisp', 'skycannon'], front: ['harpy', 'griffinrider'] } },
+             sky: { back: ['stormwisp', 'skycannon'], front: ['harpy', 'griffinrider'] },
+             jungle: { back: ['poisontoad', 'vineshaman'], front: ['raptor', 'lizardman', 'triceratops'] } },
   caster:  { back: ['ballista', 'skelarcher', 'plaguer'], front: ['orcshield', 'boneguard', 'orcspear', 'orcberserk', 'chariot', 'dark'], nb: 2, nf: 4,
              sea: { back: ['siren', 'tidecaller'], front: ['clawcrab', 'deepone', 'nagaspear'] },
-             sky: { back: ['stormwisp', 'windcaller'], front: ['cloudgiant', 'griffinrider', 'harpy'] } },
+             sky: { back: ['stormwisp', 'windcaller'], front: ['cloudgiant', 'griffinrider', 'harpy'] },
+             jungle: { back: ['vineshaman', 'poisontoad'], front: ['stoneidol', 'lizardman', 'raptor'] } },
   flyer:   { back: ['shaman', 'hexer', 'ballista'], front: ['orcshield', 'burrower', 'hellhound', 'boneguard', 'orcberserk', 'golem'], nb: 2, nf: 3,
-             sky: { back: ['stormwisp', 'windcaller'], front: ['cloudgiant', 'harpy'] } }
+             sky: { back: ['stormwisp', 'windcaller'], front: ['cloudgiant', 'harpy'] },
+             jungle: { back: ['poisontoad', 'vineshaman'], front: ['lizardman', 'raptor'] } }
 };
 /* 전장 번호(0부터) → 그 전장의 보스 */
 const STAGE_BOSS = { 4: 'lich', 9: 'troll', 12: 'lich', 14: 'troll', 16: 'frostgiant', 17: 'drake',
                      18: 'spiderqueen', 19: 'warlord', 21: 'lich', 23: 'lich', 26: 'frostgiant',
                      28: 'drake', 29: 'warlord', 32: 'kraken', 35: 'tidequeen', 39: 'leviathan',
-                     42: 'stormgriffin', 45: 'cloudking', 49: 'skylord' };
+                     42: 'stormgriffin', 45: 'cloudking', 49: 'skylord',
+                     52: 'raptorqueen', 55: 'quetzal', 59: 'jungletyrant' };
 const ELITE_FOR = { troll: ['ogre', 1], lich: ['shaman', 2], frostgiant: ['golem', 1],
                     drake: ['hellhound', 3], spiderqueen: ['spider', 4], warlord: ['warchief', 1] };
 const BOSS_HP_MUL = 2.0;       // 하나뿐인 보스는 그만큼 단단하다
@@ -1619,7 +1737,8 @@ const BOSS_ATK_MUL = 1.2;
     if (sig) {
       const esc0 = BOSS_ESCORT[BOSS_ROLE[sig]];
       // 3막 보스는 바다 군단이 호위한다
-      const esc = i >= ACT4_FROM && esc0.sky ? Object.assign({}, esc0, esc0.sky)        // 4막은 천공 군단이
+      const esc = i >= ACT5_FROM && esc0.jungle ? Object.assign({}, esc0, esc0.jungle)   // 5막은 밀림 군단이
+        : i >= ACT4_FROM && esc0.sky ? Object.assign({}, esc0, esc0.sky)        // 4막은 천공 군단이
         : i >= ACT3_FROM && esc0.sea ? Object.assign({}, esc0, esc0.sea) : esc0;
       // 호위 규모: 앞 전장은 절반, 뒤로 갈수록 제 크기
       const grow = 0.5 + 0.5 * Math.min(1, i / 29);
@@ -1692,19 +1811,22 @@ const STAGE_LOOKS = ['meadow', 'wheat', 'river', 'forest', 'graveyard', 'cave', 
   'darkforest', 'ruins', 'graveyard', 'fortress', 'fortress', 'swamp', 'snow', 'volcano', 'warcamp', 'warcamp',
   'blackriver', 'underworld', 'thorns', 'underworld', 'blizzard', 'snow', 'snow', 'desert', 'eclipse', 'mythic',
   'shore', 'reef', 'stormsea', 'lighthouse', 'reef', 'sunken', 'sunken', 'stormsea', 'abyss', 'abyss',
-  'skyisle', 'skyisle', 'stormspire', 'skyisle', 'stormspire', 'skyisle', 'skyisle', 'stormspire', 'stormspire', 'stormspire'];
+  'skyisle', 'skyisle', 'stormspire', 'skyisle', 'stormspire', 'skyisle', 'skyisle', 'stormspire', 'stormspire', 'stormspire',
+  'jungle', 'jungle', 'jungle', 'temple', 'jungle', 'temple', 'jungle', 'lavajungle', 'temple', 'lavajungle'];
 const STAGE_MUSIC = ['meadow', 'wheat', 'river', 'wolfwood', 'graveyard', 'cave', 'hills', 'camp', 'canyon', 'fortress',
   'darkwood', 'ruins', 'return', 'shieldwall', 'gate', 'swamp', 'snowpass', 'volcano', 'warcamp', 'throne',
   'blackriver', 'underworld', 'thorngate', 'seal', 'blizzard', 'siege', 'winterthrone', 'desert', 'eclipse', 'mythic',
   'shore', 'coral', 'krakenbay', 'lighthouse', 'sirensong', 'tidetemple', 'sunken', 'strait', 'abyssgate', 'leviathan',
-  'cloudbridge', 'windcliff', 'griffinnest', 'skybattery', 'thunderspire', 'cloudthrone', 'skygarden', 'stormeye', 'citadelgate', 'skythrone'];
+  'cloudbridge', 'windcliff', 'griffinnest', 'skybattery', 'thunderspire', 'cloudthrone', 'skygarden', 'stormeye', 'citadelgate', 'skythrone',
+  'vinepath', 'toadmarsh', 'raptornest', 'templesteps', 'hornplain', 'serpentaltar', 'mistfalls', 'lavajungle', 'templeheart', 'tyrant'];
 STAGES.forEach((st, i) => {
   st.look = st.look || STAGE_LOOKS[i] || 'meadow';
   st.music = st.music || STAGE_MUSIC[i] || 'meadow';
 });
 STAGES[29].finale = true;                      // 2막의 끝: 세 신화의 종착지
 STAGES[39].bossMusic = 'finale2';               // 3막의 끝은 따로 한 곡 (3.3)
-STAGES[STAGES.length - 1].bossMusic = 'finale3';   // 4막의 끝 (4.0)
+STAGES[ACT5_FROM - 1].bossMusic = 'finale3';      // 4막의 끝 (4.0)
+STAGES[STAGES.length - 1].bossMusic = 'finale4';   // 5막의 끝 (4.6)
 
 /* 전장 길이. 예전엔 모두 2000 이라 병사가 적과 부딪히기까지 40초 넘게 걸어야 했다.
  * 초반은 짧게 붙고, 뒤로 갈수록·보스 전장일수록 조금씩 길어진다. */
@@ -1713,7 +1835,8 @@ STAGES.forEach((st, i) => {
   // 레벨마다 조금씩 다르게: 뒤로 갈수록 길어지되, 사이사이 짧은 전장이 섞인다
   const wiggle = [0, -70, 50, -40, 80][i % 5];
   const base = i < 20 ? 900 + 20 * i : i < 30 ? 1180 + 18 * (i - 20) : i < 40 ? 1300 + 12 * (i - 30)   // 3막은 조금 짧게 다시 시작
-    : 1340 + 12 * (i - 40);                                                                      // 4막도
+    : i < 50 ? 1340 + 12 * (i - 40)                                                              // 4막도
+    : 1380 + 12 * (i - 50);                                                                      // 5막 (4.6)
   st.len = base + wiggle + (st.boss ? 120 : 0);
 });
 
@@ -1776,6 +1899,28 @@ const EVENT_STAGES = [
             W(70,'demonknight',2,4), W(96,'warchief',2,4), W(122,'imp',12,.5), W(150,'demonknight',2,4),
             W(180,'hellhound',10,.6), W(212,'demonknight',3,3)] }
 ];
+/* 4.6 도전 둘: '공략 편성을 그대로 들고 가도 힘든' 급. 기믹이 새롭고, 곡이 빠르고 신난다.
+ * 기관차 전장은 영웅 사냥꾼: 전설만 몰아 넣고 필살 기절을 이어 걸어 기관차를 세워 두는 길을 막는다. */
+EVENT_STAGES.push(
+  { name: '폭주 기관차', bossId: 'irontrain', bossRole: 'bruiser', boss: true, noWard: true, look: 'railway', music: 'railrush',
+    bossMusic: 'boss_train', mods: ['giantslayer'], baseHp: 150000, money: 640, rate: 82, reward: 0, enemyMul: 6.9, bossMul: { hp: 3, atk: 1.2 },
+    fury: { per30: 0.12, max: 1.5 }, len: 1700,
+    event: { id: 'train', deck: ['frost','frostlancer','stormcaller','bellringer','thor','zeus','catapult','sniper','knight','shield'],
+             unlock: 45, reward: 30000, stones: 35,
+             mech: '기관차가 성채에 닿으면 패배 · 둔화·기절로 늦추며 요새를 먼저 부수세요 · 경적이 울리면 돌진' },
+    waves: [W(1,'irontrain',1), W(4,'coalstoker',4,1), W(16,'handcar',2,3), W(30,'coalstoker',6,.8), W(46,'golem',2,4),
+            W(62,'handcar',3,2.5), W(78,'coalstoker',8,.7), W(96,'hellhound',8,.6), W(114,'handcar',3,2.5), W(132,'coalstoker',10,.6),
+            W(152,'golem',3,3), W(172,'coalstoker',12,.5)] },
+  { name: '그림자 가면무도회', bossId: 'masklord', bossRole: 'caster', boss: true, look: 'ballroom', music: 'masquerade',
+    bossMusic: 'boss_masklord', mods: ['horde'], baseHp: 160000, money: 660, rate: 84, reward: 0, enemyMul: 10.5, bossMul: { hp: 3.2, atk: 1.3 },
+    fury: { per30: 0.12, max: 1.5 }, len: 1650,
+    event: { id: 'masque', deck: ['knight','shield','spear','archer','priest','mage','catapult','sniper','odin','ra'],
+             unlock: 55, reward: 40000, stones: 40,
+             mech: '가장 많이 낸 병종을 봉인하고 그 그림자를 보냅니다 · 한 병종만 쏟지 말고 고르게 섞어 내기' },
+    waves: [W(2,'dancer',6,.6), W(14,'jester',2,2.5), W(28,'dancer',6,.6), W(40,'masklord',1), W(46,'jester',3,2.2),
+            W(70,'dancer',10,.5), W(96,'jester',4,2), W(122,'dancer',12,.45), W(150,'jester',4,2), W(180,'dancer',14,.4),
+            W(210,'jester',5,1.8)] }
+);
 EVENT_STAGES.forEach((st, k) => { st.eventIndex = k; st.opening = 'rush'; });
 function eventOpen(s, k) { return !!EVENT_STAGES[k] && (s.cleared || 0) >= EVENT_STAGES[k].event.unlock; }
 function eventCount(s) { let n = 0; for (const st of EVENT_STAGES) if (s.events && s.events[st.event.id]) n++; return n; }
@@ -1945,6 +2090,9 @@ const ACHIEVEMENTS = [
   { id: 'awakenAll', name: '엉뚱한 군대', desc: '3진 10종 모두',                gold: 20000, stone: 15,
     test: s => Object.keys(EVOLUTIONS2).every(id => s.evo2 && s.evo2[id] !== undefined) },
   { id:'campaign50',name:'하늘에 오른 자',desc:'50전장 모두 돌파 (4막 천공 요새)',gold:20000,stone:15,test:s=>s.cleared>=50 },
+  { id:'campaign60',name:'밀림의 왕',desc:'60전장 모두 돌파 (5막 잊힌 밀림)',gold:30000,stone:20,test:s=>s.cleared>=60 },
+  { id:'trainStop',name:'기관차를 멈춘 자',desc:'도전 \'폭주 기관차\' 돌파',gold:15000,stone:15,test:s=>!!(s.events && s.events.train) },
+  { id:'unmasked',name:'가면을 벗긴 자',desc:'도전 \'그림자 가면무도회\' 돌파',gold:15000,stone:15,test:s=>!!(s.events && s.events.masque) },
   { id: 'endless10',name: '끝없는 전장',  desc: '무한 전장 10웨이브 돌파',       gold: 2000, stone: 3,
     test: s => (s.endlessBest || 0) >= 10 },
   { id: 'endless25',name: '불굴의 성채',  desc: '무한 전장 25웨이브 돌파',       gold: 7000, stone: 8,

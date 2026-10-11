@@ -3,7 +3,7 @@
  * ======================================================================= */
 
 
-const APP_VERSION = '4.5.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
+const APP_VERSION = '4.6.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
 
 function defaultSave() {
   const lv = {};
@@ -352,6 +352,7 @@ const CHAPTERS = [
   { name: '2막', sub: '신화의 끝', from: 20, to: 30 },
   { name: '3막', sub: '심연의 바다', from: 30, to: 40 },
   { name: '4막', sub: '천공 요새', from: 40, to: 50 },
+  { name: '5막', sub: '잊힌 밀림', from: 50, to: 60 },
   { name: '무한', sub: '끝없는 웨이브', endless: true },
   { name: '원정', sub: '금화 원정', expedition: true },
   { name: '이벤트', sub: '극악 도전', event: true }
@@ -1428,6 +1429,7 @@ function onCardTap(u) {
     toast(cd > 0 ? u.active.name + ' · ' + cd + '초 남음' : u.active.name + ' · 대상 없음');
     return;
   }
+  if (battle.sealed[u.id] > 0) { toast('가면 군주가 봉인한 카드입니다 · ' + Math.ceil(battle.sealed[u.id]) + '초'); return; }
   if (battle.cooldowns[u.id] > 0) { toast('재사용 대기 중입니다'); return; }
   if (battle.money < u.cost) { toast('군자금이 부족합니다'); return; }
   if (!battle.deploy(u.id)) {
@@ -1578,7 +1580,11 @@ function updateHud() {
         hudAttr(el, 'aria-label', u.name + ' 출진, 비용 ' + u.cost);
       }
     }
-    if (cd > 0 && !alive) { hudClass(cool, 'hide', false); hudText(cool, cd.toFixed(1)); }
+    // 4.6 가면 군주가 봉인한 카드: 자물쇠와 남은 초
+    const seal = battle.sealed[id] > 0 ? battle.sealed[id] : 0;
+    hudClass(el, 'sealed', seal > 0);
+    if (seal > 0 && !alive) { hudClass(cool, 'hide', false); hudText(cool, '🔒' + Math.ceil(seal)); }
+    else if (cd > 0 && !alive) { hudClass(cool, 'hide', false); hudText(cool, cd.toFixed(1)); }
     else hudClass(cool, 'hide', true);
     const canDeploy = battle.canDeploy(id), canAct = !!(u.active && battle.canHeroActive(id));
     hudClass(el, 'poor', !alive && money < u.cost);
