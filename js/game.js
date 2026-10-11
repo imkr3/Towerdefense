@@ -48,7 +48,8 @@ function sfx(name) {
 const FX_LIMIT = 200;        // 이펙트가 무한정 쌓이지 않게
 const X3_FX_LIMIT = 12;      // 4.3 3진 연출(포연·광선·사이렌)이 한꺼번에 떠 있을 수 있는 수
 // 3진의 타격 연출 → 땅에 남는 Canvas 연출 (연기 · 흙 · 갈라진 땅 · 눈더미 · 그을린 자국)
-const X3_GROUND = { shellblast: 'boom', rocketpunch: 'quake', dronestrike: 'smoke', dozerpush: 'dirtwave', snowburst: 'frost', railhit: 'railscar' };
+const X3_GROUND = { shellblast: 'boom', rocketpunch: 'quake', dronestrike: 'smoke', dozerpush: 'dirtwave', snowburst: 'frost', railhit: 'railscar',
+                    mechstaff: 'quake', boltstrike: 'railscar', solarburn: 'sunscar' };   // 4.7
 const REINFORCE_FIRST = 10;  // 대본 웨이브가 끝나고 첫 증원까지
 const REINFORCE_MIN = 3.0;   // 증원 간격 하한
 const REINFORCE_STEP = 0.06; // 증원 한 번마다 적이 세지는 폭
@@ -549,6 +550,13 @@ class Battle {
     else if (sub === 'saber') sfx('saber');
     else if (sub === 'rail') sfx('rail');
     else if (sub === 'snow') sfx('freeze');
+    // 4.7 소환 영웅의 3진
+    else if (sub === 'cloudjet' || sub === 'jetdive') sfx('jet');
+    else if (sub === 'orbit') sfx('solar');
+    else if (sub === 'bike') { this.shake = Math.max(this.shake, 5); sfx('thunder'); }
+    else if (sub === 'holo') sfx('holo');
+    else if (sub === 'moon') sfx('laser');
+    if (sub === 'jetdive' || sub === 'cloudjet') this.shake = Math.max(this.shake, 4);
   }
   /* 공격하는 순간: 전차 포구의 섬광·연기 고리, 비행접시가 내리쏘는 광선 */
   x3AttackFx(f, target) {
@@ -556,7 +564,20 @@ class Battle {
     if (kind === 'muzzle') sfx('cannon');
     else if (kind === 'ufobeam') sfx('zap');
     else if (kind === 'railflash') sfx('rail');
+    else if (kind === 'solarray') sfx('solar');
+    else if (kind === 'moonflash') sfx('laser');
     if (this.x3Live() >= X3_FX_LIMIT) return;
+    if (kind === 'solarray') {                          // 4.7 태양 위성: 하늘에서 과녁으로 내리꽂는 빛기둥 (과녁 자리)
+      const tx = target && target.x !== undefined ? target.x : f.x + f.dir * f.attackRange;
+      this.fx.push({ type: 'x3', kind: 'solarray', x: tx, row: target && target.row !== undefined ? target.row : f.row, r: f.s.areaRadius || 90,
+                     dir: f.dir, scale: sc, color: f.s.accent, t: 0.6, life: 0.6 });
+      return;
+    }
+    if (kind === 'moonflash') {                         // 4.7 레이저 활: 시위 자리의 초승달 섬광 (몸 단위)
+      this.fx.push({ type: 'x3', kind: 'moonflash', x: f.x, ox: 22 * sc, h: 38 * sc, row: f.row, dir: f.dir, scale: sc,
+                     color: f.s.accent, t: 0.4, life: 0.4 });
+      return;
+    }
     if (kind === 'railflash') {                         // 4.4 레일건 총구: 푸른 고리 · 빛줄기 (몸 단위)
       this.fx.push({ type: 'x3', kind: 'railflash', x: f.x, ox: 80 * sc, h: 34 * sc, row: f.row, dir: f.dir, scale: sc,
                      color: f.s.accent, t: 0.6, life: 0.6 });
@@ -579,6 +600,10 @@ class Battle {
     else if (kind === 'dozerpush') { this.shake = Math.max(this.shake, 3); sfx('dozer'); }
     else if (kind === 'snowburst') sfx('freeze');
     else if (kind === 'sabercut') sfx('saber');
+    else if (kind === 'mechstaff') { this.shake = Math.max(this.shake, 5); sfx('rocket'); }
+    else if (kind === 'boltstrike') { this.shake = Math.max(this.shake, 5); sfx('thunder'); }
+    else if (kind === 'divestrike') { this.shake = Math.max(this.shake, 3); sfx('jet'); }
+    else if (kind === 'holoburst') sfx('holo');
     const ground = X3_GROUND[kind];
     if (!ground) return;
     if (this.x3Live() >= X3_FX_LIMIT) return;

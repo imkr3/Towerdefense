@@ -1903,9 +1903,9 @@ const EVENT_STAGES = [
  * 기관차 전장은 영웅 사냥꾼: 전설만 몰아 넣고 필살 기절을 이어 걸어 기관차를 세워 두는 길을 막는다. */
 EVENT_STAGES.push(
   { name: '폭주 기관차', bossId: 'irontrain', bossRole: 'bruiser', boss: true, noWard: true, look: 'railway', music: 'railrush',
-    bossMusic: 'boss_train', mods: ['giantslayer'], baseHp: 150000, money: 640, rate: 82, reward: 0, enemyMul: 6.9, bossMul: { hp: 3, atk: 1.2 },
+    bossMusic: 'boss_train', mods: ['giantslayer'], baseHp: 150000, money: 640, rate: 82, reward: 0, enemyMul: 7.6, bossMul: { hp: 3, atk: 1.2 },
     fury: { per30: 0.12, max: 1.5 }, len: 1700,
-    event: { id: 'train', deck: ['frost','frostlancer','stormcaller','bellringer','thor','zeus','catapult','sniper','knight','shield'],
+    event: { id: 'train', deck: ['frost','frostlancer','stormcaller','bellringer','musketeer','zeus','catapult','sniper','knight','shield'],
              unlock: 45, reward: 30000, stones: 35,
              mech: '기관차가 성채에 닿으면 패배 · 둔화·기절로 늦추며 요새를 먼저 부수세요 · 경적이 울리면 돌진' },
     waves: [W(1,'irontrain',1), W(4,'coalstoker',4,1), W(16,'handcar',2,3), W(30,'coalstoker',6,.8), W(46,'golem',2,4),
@@ -2088,7 +2088,9 @@ const ACHIEVEMENTS = [
   { id: 'awaken1',  name: '세 번째 모습', desc: '병종 하나를 3진',              gold: 5000, stone: 5,
     test: s => Object.keys(s.evo2 || {}).length >= 1 },
   { id: 'awakenAll', name: '엉뚱한 군대', desc: '3진 10종 모두',                gold: 20000, stone: 15,
-    test: s => Object.keys(EVOLUTIONS2).every(id => s.evo2 && s.evo2[id] !== undefined) },
+    test: s => Object.keys(EVOLUTIONS2).filter(id => !UNIT_BY_ID[id].gacha).every(id => s.evo2 && s.evo2[id] !== undefined) },   // 4.7: 전장 병종 열 (소환 영웅은 따로)
+  { id: 'awakenHero', name: '신들의 신형 장비', desc: '소환 영웅 하나를 3진',      gold: 12000, stone: 10,
+    test: s => Object.keys(EVOLUTIONS2).some(id => UNIT_BY_ID[id].gacha && s.evo2 && s.evo2[id] !== undefined) },
   { id:'campaign50',name:'하늘에 오른 자',desc:'50전장 모두 돌파 (4막 천공 요새)',gold:20000,stone:15,test:s=>s.cleared>=50 },
   { id:'campaign60',name:'밀림의 왕',desc:'60전장 모두 돌파 (5막 잊힌 밀림)',gold:30000,stone:20,test:s=>s.cleared>=60 },
   { id:'trainStop',name:'기관차를 멈춘 자',desc:'도전 \'폭주 기관차\' 돌파',gold:15000,stone:15,test:s=>!!(s.events && s.events.train) },
@@ -2427,6 +2429,7 @@ function applyEvolution(r, e, noCost) {
  * ======================================================================= */
 const EVO2_LEVEL = 20;
 const EVO2_STAT = 1.35;
+const EVO2_STAT_HERO = 1.1;   // 4.7 소환 영웅은 원래 세다 — 3진은 체력·공격보다 능력·필살이 크게 오른다 (전설만 편성이 도전을 쉽게 넘던 것을 막는다)
 const EVO2_PRICE = { cost: 1.3, cooldown: 1.3 };
 function evo2Cost(u) { return Math.round(5000 + (u.cost || 0) * 25); }
 const EVOLUTIONS2 = {
@@ -2461,7 +2464,32 @@ const EVOLUTIONS2 = {
              plus: '광선검 범위 베기 · 체력 20% 이하 즉시 처치 · 치명타 35% ×2.8', set: { area: true, areaRadius: 55 }, ab: { execute: 0.2, crit: { chance: 0.35, mul: 2.8 } },
              castFx: 'sabercut', arrive: 'saber' },
   sniper:  { look: { shape: 'railgun', tunic: '#2a3a4a', accent: '#5ae8ff' }, name: '레일건 저격수', short: '레일건',
-             plus: '레일건 · 관통 · 보스·중장갑에게 2배', ab: { breaker: 2.0 }, shot: 'rail', castFx: 'railhit', atkFx: 'railflash', arrive: 'rail' }
+             plus: '레일건 · 관통 · 보스·중장갑에게 2배', ab: { breaker: 2.0 }, shot: 'rail', castFx: 'railhit', atkFx: 'railflash', arrive: 'rail' },
+  // 4.7: 소환 영웅도 — 신화 둘 · 전설 둘 · 영웅 둘. 필살(active)도 3진에 맞게 세진다.
+  wukong:  { look: { shape: 'mechwukong', tunic: '#c83a2a', accent: '#ffd23a' }, name: '메카 대성', short: '메카대성',
+             plus: '근두운 제트 · 확장 여의봉 범위 +35 · 분신 최대 6 · 여의봉 강타 3.1배 · 기절 1.5초 · 분신 3기',
+             add: { areaRadius: 35, range: 20 }, ab: { summon: { max: 6 } }, active: { mul: 3.1, stun: 1.5, clones: 3, desc: '가장 가까운 적 주변 피해·1.5초 기절, 분신 3기를 곧바로 부름.' },
+             castFx: 'mechstaff', arrive: 'cloudjet' },
+  ra:      { look: { shape: 'solarsat', tunic: '#f0e0ae', accent: '#ffca3a' }, name: '태양 위성 라', short: '태양위성',
+             plus: '궤도 위성 태양광선 · 낙인 피해 +50% · 화상 2배 · 범위 +25 · 태양의 심판 3.6배',
+             add: { areaRadius: 25 }, ab: { sunmark: { vuln: 0.5 } }, mul: { 'burn.dps': 2 }, active: { mul: 3.6, radius: 250 },
+             shot: 'solar', castFx: 'solarburn', atkFx: 'solarray', arrive: 'orbit' },
+  thor:    { look: { shape: 'thunderbike', tunic: '#8e2f3a', accent: '#7ad8ff', grow: 0.95 }, name: '천둥 라이더', short: '천둥바이크',
+             plus: '번개 바이크 돌진 · 달려온 첫 일격 2배 · 번개 4번 튕김 · 묠니르 강타 3.1배',
+             ab: { charge: { dist: 140, mul: 2, push: 50 }, chain: { n: 4, fall: 0.6, range: 140 } }, active: { mul: 3.1, stun: 0.9, desc: '가장 가까운 적 주변 충격파 피해·0.9초 기절.' },
+             castFx: 'boltstrike', arrive: 'bike' },
+  merlin:  { look: { shape: 'holomage', tunic: '#2a2e6b', accent: '#5af0ff' }, name: '홀로그램 대마도사', short: '홀로마도',
+             plus: '홀로그램 룬 포격 · 범위 +30 · 둔화 2배 · 기절 20% · 시간의 매듭 2.2초 정지',
+             add: { areaRadius: 30 }, mul: { slow: 2 }, ab: { stun: { chance: 0.2, dur: 0.8 } }, active: { stun: 2.2, slow: 8, mul: 2.3, desc: '가장 가까운 적 주변 피해 · 2.2초 정지 · 8초 둔화.' },
+             shot: 'holo', castFx: 'holoburst', arrive: 'holo' },
+  valkyrie:{ look: { shape: 'jetvalk', tunic: '#3f6bb5', accent: '#ffe48a' }, name: '제트팩 발키리', short: '제트발키리',
+             plus: '제트팩 급강하 · 달려온 첫 일격 2.2배 · 이동 +25% · 부활 체력 100% · 주변 보호막 120',
+             add: { speed: 14 }, ab: { charge: { dist: 110, mul: 2.2, push: 40 }, revive: 1.0, barrier: 120 },
+             castFx: 'divestrike', arrive: 'jetdive' },
+  artemis: { look: { shape: 'moonbow', body: '#3a4a5a', tunic: '#3a7a8e', accent: '#a8f0ff' }, name: '달빛 레이저 궁수', short: '레이저궁',
+             plus: '초승달 레이저 활 · 관통 · 치명타 25% ×2.4 · 사거리 +40 · 공격 15% 빠름',
+             add: { range: 40 }, faster: 0.85, ab: { crit: { chance: 0.25, mul: 2.4 } },
+             shot: 'laser', castFx: 'laserhit', atkFx: 'moonflash', arrive: 'moon' }
 };
 
 /* 4.4 3진의 시련: 레벨 20 · 금화에 더해 병종마다 다른 조건 둘을 채워야 3진할 수 있다.
@@ -2479,7 +2507,14 @@ const EVO2_TRIALS = {
   shield:   [{ t: 'perfect', stage: 9 }, { t: 'series', name: '철벽 계열', ids: ['shield', 'paladin', 'colossus', 'monk'], lv: 18 }],
   frost:    [{ t: 'speed', stage: 24, sec: 38 }, { t: 'event', n: 1 }],
   duelist:  [{ t: 'speed', stage: 11, sec: 25 }, { t: 'endless', n: 12 }],
-  sniper:   [{ t: 'dmg', id: 'sniper', n: 1500000 }, { t: 'speed', stage: 32, sec: 170 }]
+  sniper:   [{ t: 'dmg', id: 'sniper', n: 1500000 }, { t: 'speed', stage: 32, sec: 170 }],
+  // 4.7 소환 영웅: 등급이 높을수록 조건이 무겁다 (신화 · 전설 · 영웅)
+  wukong:   [{ t: 'endless', n: 20 }, { t: 'dmg', id: 'wukong', n: 3000000 }],
+  ra:       [{ t: 'hard', n: 25 }, { t: 'stars', from: 40, to: 50 }],
+  thor:     [{ t: 'speed', stage: 42, sec: 95 }, { t: 'dmg', id: 'thor', n: 2000000 }],
+  merlin:   [{ t: 'perfect', stage: 45 }, { t: 'event', n: 4 }],
+  valkyrie: [{ t: 'speed', stage: 27, sec: 64 }, { t: 'perfect', stage: 29 }],
+  artemis:  [{ t: 'series', name: '활 계열', ids: ['artemis', 'archer', 'longbow', 'venom'], lv: 20 }, { t: 'dmg', id: 'artemis', n: 1500000 }]
 };
 function _trialNum(n) { return n >= 1e6 ? (Math.round(n / 1e5) / 10) + 'M' : n >= 1e4 ? Math.round(n / 1e3) + 'k' : String(Math.round(n)); }
 /* 시련 하나의 진행: { done, text(조건), prog(지금 상태) } */
@@ -2537,8 +2572,9 @@ function applyEvo2(r, e) {
   r.evo2 = true;
   r.name = e.name;
   r.short = e.short || e.name;
-  r.hp = Math.round(r.hp * EVO2_STAT);
-  r.atk = Math.round(r.atk * EVO2_STAT);
+  const st = r.gacha ? EVO2_STAT_HERO : EVO2_STAT;
+  r.hp = Math.round(r.hp * st);
+  r.atk = Math.round(r.atk * st);
   r.cost = Math.round(r.cost * EVO2_PRICE.cost / 5) * 5;
   if (r.cooldown) r.cooldown = _r2(r.cooldown * EVO2_PRICE.cooldown);
   r.evoPlus = e.plus;
@@ -2560,6 +2596,7 @@ function applyEvo2(r, e) {
   if (e.atkFx) r.atkFx = e.atkFx;
   if (e.healFx) r.healFx = e.healFx;
   if (e.arrive) r.arrive = e.arrive;
+  if (e.active && r.active) Object.assign(r.active, e.active);   // 4.7 소환 영웅의 필살도 세진다
   r.evoMinus = '출진 비용 +' + Math.round((EVO2_PRICE.cost - 1) * 100) + '% · 쿨타임 +' + Math.round((EVO2_PRICE.cooldown - 1) * 100) + '%';
 }
 

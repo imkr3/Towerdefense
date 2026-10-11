@@ -121,7 +121,13 @@ const SFX = {
   dozer:    function () { this.noise(0.3, 380, 0.26); this.tone(58, 0.28, 'sawtooth', 0.12, 44); },
   freeze:   function () { this.noise(0.14, 4200, 0.1, 3); this.tone(1760, 0.16, 'sine', 0.07, 2640); },
   saber:    function () { this.tone(110, 0.2, 'sawtooth', 0.09, 160); this.tone(880, 0.12, 'sine', 0.05, 330); },
-  rail:     function () { this.tone(300, 0.12, 'sine', 0.08, 2400); setTimeout(() => { this.tone(2200, 0.18, 'square', 0.06, 160); this.noise(0.16, 3000, 0.16); }, 110); }
+  rail:     function () { this.tone(300, 0.12, 'sine', 0.08, 2400); setTimeout(() => { this.tone(2200, 0.18, 'square', 0.06, 160); this.noise(0.16, 3000, 0.16); }, 110); },
+  // 4.7 소환 영웅 3진: 제트 · 태양광선 · 천둥 바이크 · 홀로그램 · 레이저 활
+  jet:      function () { this.noise(0.32, 1800, 0.18, 1.5); this.tone(240, 0.3, 'sawtooth', 0.07, 90); },
+  solar:    function () { this.tone(660, 0.3, 'sine', 0.08, 1320); this.tone(990, 0.26, 'triangle', 0.05, 1980); },
+  thunder:  function () { this.noise(0.38, 900, 0.3); this.tone(70, 0.3, 'sawtooth', 0.14, 140); setTimeout(() => this.noise(0.12, 4200, 0.14, 3), 60); },
+  holo:     function () { [1320, 1760, 2200].forEach((f, i) => setTimeout(() => this.tone(f, 0.05, 'square', 0.04), i * 45)); },
+  laser:    function () { this.tone(2400, 0.12, 'square', 0.05, 600); this.tone(1200, 0.1, 'sine', 0.05, 300); }
 };
 
 /* 동시에 울릴 수 있는 효과음 수 (같은 소리 솎아내기는 game.js 의 sfx 가 한다) */

@@ -894,6 +894,89 @@ class GLFx {
         break;
       }
 
+      /* 4.7 메카 대성: 금빛 충격 고리 · 위로 튀는 바위 조각 · 하늘색 불꽃 */
+      case 'mechstaff': {
+        const gold = [1, 0.84, 0.32], hot = [1, 0.97, 0.8], cy = [0.5, 0.94, 1];
+        this.add(x, y - 10 * sc, 0, 0, 0.25, 20 * sc, 110 * sc * big, hot, 0.9, 1, 0, 0, 0, 1.3);
+        for (let i = 0, n = N(30); i < n; i++) {
+          const a = i / n * TAU, sp = R * 2.4;
+          this.add(x, y - 4 * sc, Math.cos(a) * sp, Math.sin(a) * sp * 0.25, 0.45, 8 * sc, 3 * sc, i % 3 ? gold : hot, 0.85, 1.6, a, 0, 0, 1.3);
+        }
+        for (let i = 0, n = N(18); i < n; i++) {
+          const a = rnd(-Math.PI * 0.85, -Math.PI * 0.15), sp = rnd(160, 380) * sc;
+          this.add(x + rnd(-20, 20) * sc, y - 6 * sc, Math.cos(a) * sp, Math.sin(a) * sp, rnd(0.4, 0.7), rnd(4, 7) * sc, 2 * sc, i % 4 ? [0.6, 0.48, 0.32] : cy, 1, 1, rnd(0, TAU), rnd(-8, 8), 900, 1.5);
+        }
+        break;
+      }
+      /* 태양 위성: 위에서 내리꽂힌 빛이 땅에 번지는 태양 고리 · 피어오르는 불씨 */
+      case 'solarburn': {
+        const sun = [1, 0.8, 0.25], hot = [1, 0.98, 0.85];
+        this.add(x, y - 16 * sc, 0, 0, 0.3, 24 * sc, R * 1.1 * big, hot, 0.85, 1, 0, 0, 0, 1.2);
+        for (let i = 0, n = N(28); i < n; i++) {
+          const a = i / n * TAU, sp = R * 2;
+          this.add(x, y - 4 * sc, Math.cos(a) * sp, Math.sin(a) * sp * 0.22, 0.5, 9 * sc, 2 * sc, i % 2 ? sun : hot, 0.8, 1.4, a, 0, 0, 1.4);
+        }
+        for (let i = 0, n = N(26); i < n; i++)
+          this.add(x + rnd(-1, 1) * R * 0.6, y - 4 * sc, rnd(-20, 20) * sc, -rnd(60, 180) * sc, rnd(0.5, 1), rnd(3, 5) * sc, 1, i % 3 ? sun : [1, 0.5, 0.2], 0.9, 1, 0, 0, -60, 1.6);
+        break;
+      }
+      /* 천둥 라이더: 하늘에서 떨어지는 번개 기둥 · 푸른 고리 · 사방 불티 */
+      case 'boltstrike': {
+        const hot = [0.9, 0.98, 1];
+        for (let i = 0, n = N(14); i < n; i++) {
+          const yy = y - 30 * sc - i * 22 * sc, xx = x + Math.sin(i * 2.7) * 9 * sc;
+          this.add(xx, yy, 0, 0, 0.18 + i * 0.006, 10 * sc, 4 * sc, i % 2 ? col : hot, 1, 3, Math.PI / 2 + Math.sin(i * 1.9) * 0.4, 0, 0, 1.2);
+        }
+        this.add(x, y - 20 * sc, 0, 0, 0.22, 22 * sc, 100 * sc * big, hot, 1, 1, 0, 0, 0, 1.2);
+        for (let i = 0, n = N(30); i < n; i++) {
+          const a = rnd(0, TAU), sp = rnd(180, 460) * sc;
+          this.add(x, y - 20 * sc, Math.cos(a) * sp, Math.sin(a) * sp * 0.7, rnd(0.18, 0.4), rnd(3, 6) * sc, 1, i % 2 ? col : hot, 1, 3, a, 0, 300, 2);
+        }
+        break;
+      }
+      /* 홀로그램 대마도사: 퍼지는 육각 격자 · 위로 흩어지는 룬 조각 */
+      case 'holoburst': {
+        const cy = [0.45, 0.95, 1], hot = [0.9, 1, 1];
+        for (let k = 0; k < 6; k++) {
+          const a0 = k / 6 * TAU, a1 = (k + 1) / 6 * TAU;
+          for (let i = 0, n = N(6); i < n; i++) {
+            const u = i / n, a = a0 + (a1 - a0) * u;
+            this.add(x, y - 22 * sc, Math.cos(a) * R * 1.8, Math.sin(a) * R * 1.8 * 0.5, 0.42, 6 * sc, 2 * sc, k % 2 ? cy : hot, 0.85, 1.2, a, 0, 0, 1.3);
+          }
+        }
+        for (let i = 0, n = N(20); i < n; i++)
+          this.add(x + rnd(-1, 1) * R * 0.5, y - rnd(10, 40) * sc, rnd(-30, 30) * sc, -rnd(40, 140) * sc, rnd(0.5, 0.9), rnd(3, 6) * sc, 2 * sc, cy, 0.9, 1, Math.PI / 4, 0, -40, 1.5);
+        this.add(x, y - 22 * sc, 0, 0, 0.25, 16 * sc, 80 * sc * big, cy, 0.7, 1, 0, 0, 0, 1.3);
+        break;
+      }
+      /* 제트팩 발키리: 내리꽂힌 자리의 금빛 깃털 · 흰 충격 고리 */
+      case 'divestrike': {
+        const gold = [1, 0.9, 0.55], hot = [1, 1, 0.92];
+        this.add(x, y - 14 * sc, 0, 0, 0.22, 16 * sc, 90 * sc * big, hot, 0.85, 1, 0, 0, 0, 1.3);
+        for (let i = 0, n = N(24); i < n; i++) {
+          const a = i / n * TAU, sp = R * 2.2;
+          this.add(x, y - 4 * sc, Math.cos(a) * sp, Math.sin(a) * sp * 0.25, 0.4, 7 * sc, 2 * sc, hot, 0.8, 1.4, a, 0, 0, 1.3);
+        }
+        for (let i = 0, n = N(16); i < n; i++) {
+          const a = rnd(-Math.PI, 0), sp = rnd(80, 240) * sc;
+          this.add(x, y - 20 * sc, Math.cos(a) * sp, Math.sin(a) * sp, rnd(0.6, 1.1), rnd(5, 8) * sc, 3 * sc, gold, 0.9, 2.4, a, rnd(-4, 4), 160, 1.6);
+        }
+        break;
+      }
+      /* 달빛 레이저 궁수: 초승달 섬광 · 꿰뚫고 가는 빛 조각 */
+      case 'laserhit': {
+        const hot = [0.92, 1, 1], dir = opt.dir || 1;
+        for (let i = 0, n = N(14); i < n; i++) {
+          const a = -1.1 + i / (n - 1) * 2.2;
+          this.add(x + Math.cos(a) * 18 * sc * dir, y - 30 * sc + Math.sin(a) * 18 * sc, 0, 0, 0.3, 6 * sc, 2 * sc, i % 2 ? col : hot, 1, 1, 0, 0, 0, 1.3);
+        }
+        for (let i = 0, n = N(14); i < n; i++) {
+          const sp = rnd(240, 520) * sc;
+          this.add(x, y - 30 * sc, sp * dir, rnd(-40, 40) * sc, rnd(0.15, 0.3), rnd(3, 5) * sc, 1, i % 2 ? col : hot, 1, 4, 0, 0, 0, 2);
+        }
+        break;
+      }
+
       case 'slash': {
         const cy = y - 34 * sc;
         for (let s = 0; s < 2; s++) {

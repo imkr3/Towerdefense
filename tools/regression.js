@@ -1156,7 +1156,7 @@ test('4.4: ten units awaken — each drawn, translated and given its own effects
   const read = f => fs.readFileSync(path.join(__dirname, '../js/' + f), 'utf8');
   const render = read('render.js'), i18n = read('i18n.js'), gl = read('gl-fx.js');
   assert.equal(X.EVO2_LEVEL, 20);
-  const ids = Object.keys(X.EVOLUTIONS2).sort();
+  const ids = Object.keys(X.EVOLUTIONS2).filter(id => !U[id].gacha).sort();   // 4.7: 소환 영웅 여섯은 따로 본다
   assert.deepEqual(ids, ['catapult', 'colossus', 'duelist', 'falconer', 'frost', 'mage', 'priest', 'shield', 'sniper', 'spear']);
   for (const id of ids) {
     const e = X.EVOLUTIONS2[id], u = U[id];
@@ -1309,7 +1309,7 @@ test('4.4: every third form has two varied trials that read the save', () => {
     X.evo2Trials({}, id).forEach(x => assert.ok(x.text && x.prog !== undefined, id + ' has text'));
   }
   assert.ok(types.size >= 7, 'many kinds of trials: ' + [...types].join(','));
-  const full = { levels: {}, best: {}, perfect: {}, stars: {}, hard: {}, events: { a: 1 }, endlessBest: 99, life: {} };
+  const full = { levels: {}, best: {}, perfect: {}, stars: {}, hard: {}, events: { a: 1, b: 1, c: 1, d: 1, e: 1, f: 1, g: 1 }, endlessBest: 99, life: {} };
   for (const u of vm.runInContext('UNITS', ctx)) { full.levels[u.id] = 20; full.life[u.id] = { d: 9e9, h: 9e9 }; }
   X.STAGES.forEach((s0, i) => { full.best[i] = 1; full.perfect[i] = true; full.stars[i] = 3; full.hard[i] = true; });
   for (const id in X.EVOLUTIONS2) assert.ok(X.evo2TrialsDone(full, id), id + ' completes');
@@ -1432,6 +1432,59 @@ test('4.6: hardcore act 5 and challenge bosses get their own tracks', () => {
   assert.equal(M.stageMusic(M.STAGES[55], true), 'hc_jungle'); assert.equal(M.stageMusic(M.STAGES[45], true), 'hc_sky');
   assert.equal(M.bossTrack(M.EVENT_STAGES[5], 'irontrain', false), 'boss_train'); assert.equal(M.bossTrack(M.EVENT_STAGES[6], 'masklord', false), 'boss_masklord');
   assert.equal(M.stageMusic(M.EVENT_STAGES[5], false), 'railrush'); assert.equal(M.stageMusic(M.EVENT_STAGES[6], false), 'masquerade');
+});
+
+/* ---------------- 4.7 소환 영웅의 3진 ---------------- */
+const H47 = ['wukong', 'ra', 'thor', 'merlin', 'valkyrie', 'artemis'];
+test('4.7: two mythic, two legendary and two hero summons awaken — drawn, translated, with their own effects', () => {
+  const X = vm.runInContext('({EVOLUTIONS, EVOLUTIONS2, EVO2_TRIALS, evo2Cost})', ctx);
+  const read = f => fs.readFileSync(path.join(__dirname, '../js/' + f), 'utf8');
+  const render = read('render.js'), i18n = read('i18n.js'), gl = read('gl-fx.js');
+  const gacha = Object.keys(X.EVOLUTIONS2).filter(id => U[id].gacha).sort();
+  assert.deepEqual(gacha, H47.slice().sort());
+  const rar = {}; gacha.forEach(id => { rar[U[id].rarity] = (rar[U[id].rarity] || 0) + 1; });
+  assert.deepEqual(rar, { UR: 2, SSR: 2, SR: 2 }, 'mythic · legendary · hero, two each');
+  const shapes = new Set(Object.values(X.EVOLUTIONS2).map(e => e.look.shape)); assert.equal(shapes.size, Object.keys(X.EVOLUTIONS2).length, 'all third forms look different');
+  for (const id of gacha) {
+    const e = X.EVOLUTIONS2[id];
+    assert.ok(X.EVOLUTIONS[id], id + ' has a first evolution');
+    assert.ok(render.indexOf("case '" + e.look.shape + "':") >= 0, id + ' drawn');
+    assert.ok(render.indexOf("case '" + e.arrive + "'") >= 0, id + ' arrival drawn');
+    for (const k of [e.name, e.short, e.plus]) assert.ok(i18n.indexOf("'" + k + "'") >= 0, id + ' translated: ' + k);
+    if (e.active && e.active.desc) assert.ok(i18n.indexOf("'" + e.active.desc + "'") >= 0, id + ' active text translated');
+    assert.ok(gl.indexOf("case '" + e.castFx + "':") >= 0 && render.indexOf("case '" + e.castFx + "':") >= 0, id + ' impact in WebGL and Canvas');
+    if (e.shot) assert.ok(render.indexOf("shot === '" + e.shot + "'") >= 0, id + ' projectile drawn');
+    if (e.atkFx) assert.ok(render.indexOf("case '" + e.atkFx + "':") >= 0, id + ' attack effect drawn');
+    assert.equal(X.EVO2_TRIALS[id].length, 2, id + ' has two trials');
+    const a = G.resolveUnit(U[id], 20, true), b = G.resolveUnit(U[id], 20, 2);
+    assert.ok(b.evo2 && b.hp > a.hp && b.atk > a.atk && b.cost > a.cost, id + ' stronger and pricier');
+    if (a.active) assert.ok(b.active.mul >= a.active.mul && b.active !== U[id].active, id + ' active is stronger and not shared');
+  }
+  assert.equal(U.wukong.active.mul, 2.4, 'base active untouched');
+});
+test('4.7: summoned third forms charge, beam and dive in battle', () => {
+  const mk = ids => { const s = save(); s.loadout = ids; s.owned = {}; s.levels = {}; s.evo = {}; s.evo2 = {};
+    for (const id of ids) { s.owned[id] = 1; s.levels[id] = 20; s.evo[id] = true; s.evo2[id] = true; } const b = new Battle(0, s); b.money = 1e6; return b; };
+  const b = mk(['thor', 'ra', 'artemis', 'valkyrie', 'wukong', 'merlin']);
+  const subs = [];
+  for (const id of b.roster.map(u => u.id)) { b.cooldowns[id] = 0; b.fx.length = 0; assert.ok(b.deploy(id), id); subs.push(b.fx.find(e => e.type === 'x3' && e.kind === 'arrive').sub); }
+  assert.deepEqual(subs.sort(), ['bike', 'cloudjet', 'holo', 'jetdive', 'moon', 'orbit']);
+  const ra = b.allies.find(a => a.s.id === 'ra'), ar = b.allies.find(a => a.s.id === 'artemis'), th = b.allies.find(a => a.s.id === 'thor');
+  const e = b.spawnEnemy('goblin', ra.x + 200); e.hp = e.maxHp = 1e7;
+  b.fx.length = 0; b.attack(ra, e, b.enemies, b.enemyCastle);
+  const ray = b.fx.find(f => f.type === 'x3' && f.kind === 'solarray'); assert.ok(ray && ray.x === e.x, 'sun ray lands on the target');
+  b.fx.length = 0; b.attack(ar, e, b.enemies, b.enemyCastle); assert.ok(b.fx.some(f => f.type === 'x3' && f.kind === 'moonflash'), 'laser bow flash');
+  assert.ok(th.ab.charge && th.ab.chain.n >= 4, 'thunder bike charges and chains');
+  th.chargeDist = 999; const h0 = e.hp; b.attack(th, e, b.enemies, b.enemyCastle); const big = h0 - e.hp;
+  th.chargeDist = 0; const h1 = e.hp; b.attack(th, e, b.enemies, b.enemyCastle); const small = h1 - e.hp;
+  assert.ok(big > small * 1.5, 'the first hit after a run lands harder: ' + Math.round(big) + ' vs ' + Math.round(small));
+});
+test('4.7: the "all ten" achievement still means the campaign ten; a summoned awakening has its own', () => {
+  const A = vm.runInContext('ACHIEVEMENTS', ctx);
+  const all = A.find(a => a.id === 'awakenAll'), hero = A.find(a => a.id === 'awakenHero');
+  const ten = {}; for (const id of ['catapult', 'colossus', 'duelist', 'falconer', 'frost', 'mage', 'priest', 'shield', 'sniper', 'spear']) ten[id] = true;
+  assert.ok(all.test({ evo2: ten }), 'no summons needed');
+  assert.ok(!hero.test({ evo2: ten }) && hero.test({ evo2: { ra: true } }));
 });
 
 console.log(count + ' regression checks passed');
