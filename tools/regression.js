@@ -1502,4 +1502,28 @@ test('4.8: result-screen trial news only watches units the player has', () => {
   assert.ok(/for \(const id in EVO2_TRIALS\) if \(trialWatched\(id\)\)/.test(main) && /if \(!trialWatched\(id\)\) continue;/.test(main));
 });
 
+/* ---------------- 4.9 점검 ---------------- */
+test('4.9: the "use the King\'s Command twice" mission is fed by battle command uses', () => {
+  const D = vm.runInContext('MISSION_DEFS', ctx);
+  const cmd = D.find(m => m.id === 'cmd2');
+  const main = fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8');
+  assert.ok(cmd && new RegExp("addStat\\('" + cmd.stat + "', b\\.cmdUses").test(main), 'recordBattle must add cmdUses');
+  // 모든 임무의 stat 이 어딘가에서 addStat 으로 올라야 한다
+  for (const m of D) assert.ok(main.indexOf("addStat('" + m.stat + "'") >= 0, m.id + ' (' + m.stat + ') never advances');
+});
+test('4.9: every battle start syncs newly unlocked units before building the roster', () => {
+  const main = fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8');
+  const starts = main.match(/syncLoadout\(\);[^\n]*\n\s*battle = new Battle\(/g) || [];
+  assert.equal(starts.length, (main.match(/battle = new Battle\(/g) || []).length);
+});
+test('4.9: "change formation" after a hardcore loss sorties hardcore again', () => {
+  const main = fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8');
+  const fm = fs.readFileSync(path.join(__dirname, '../js/formation.js'), 'utf8');
+  assert.ok(/battle\.hard \? 'hard:' \+ battle\.stageIndex/.test(main) && /startBattle\(hdk, true\)/.test(fm));
+});
+test('4.9: an unknown season id is repaired on load', () => {
+  const main = fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8');
+  assert.ok(/if \(!SEASONS\.some\(x => x\.id === s\.season\)\) s\.season = 'olympus'/.test(main));
+});
+
 console.log(count + ' regression checks passed');

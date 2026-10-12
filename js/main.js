@@ -126,7 +126,7 @@ function normalizeSave(raw) {
     s.totalKills = count(s.totalKills, 0);
     for (const k in s.upgrades) s.upgrades[k] = count(s.upgrades[k], 0);
     for (const k of Object.keys(d.stats)) s.stats[k] = count(s.stats[k], 0);
-    if (!seasonById(s.season)) s.season = 'olympus';
+    if (!SEASONS.some(x => x.id === s.season)) s.season = 'olympus';   // seasonById 는 없으면 첫 시즌을 돌려준다
     if (!Array.isArray(s.presets)) s.presets = [];
     s.presets = s.presets.slice(0, 3).map(p => Array.isArray(p) ? p.filter(id => typeof id === 'string' && UNIT_BY_ID[id]).slice(0, LOADOUT_MAX) : []);
     return s;
@@ -385,6 +385,7 @@ function trailPoint(k, n) {
 
 function renderMap() {
   $('#map-coins').textContent = fmtNum(save.coins);
+  $('#tab-stones').textContent = save.stones;
   updateQuestBadge();
   const pct = (save.cleared / STAGES.length) * 100;
   $('#map-progress').style.width = pct + '%';
@@ -724,6 +725,7 @@ function renderExpDetail(k) {
 function startExpedition(k) {
   if (!expeditionOpen(save, k)) return;
   const st = EXPEDITIONS[k];
+  syncLoadout();
   battle = new Battle(STAGES.length + EVENT_STAGES.length + k, save, st);
   battle.expIndex = k;
   $('#scr-battle').classList.remove('hardcore');
@@ -1320,6 +1322,7 @@ function drawBanner(sn) {
 
 /* ------------------------------ 전투 ------------------------------ */
 function startEndless() {
+  syncLoadout();
   battle = new Battle(0, save, makeEndlessStage());
   $('#scr-battle').classList.remove('hardcore');
   $('#battle-stage').textContent = '무한 전장 · 최고 ' + (save.endlessBest || 0) + '웨이브';
@@ -1329,6 +1332,7 @@ function startEndless() {
 function startEvent(k) {
   if (!eventOpen(save, k)) return;
   const st = EVENT_STAGES[k];
+  syncLoadout();
   battle = new Battle(STAGES.length + k, save, st);
   battle.eventIndex = k;
   $('#scr-battle').classList.add('hardcore');
@@ -1343,6 +1347,7 @@ function awakenNote() {
 }
 
 function startBattle(index, hard) {
+  syncLoadout();                         // 4.9: 결과창 '다음 전장' 으로 바로 가도 새로 해금된 병종이 함께 나간다
   battle = new Battle(index, save, null, { hard: !!hard });
   $('#battle-stage').textContent = (hard ? '💀 ' : '') + (index + 1) + '. ' + battle.stage.name;
   $('#scr-battle').classList.toggle('hardcore', !!hard);
@@ -1612,6 +1617,7 @@ function recordBattle(b) {
   save.stats.bossKills += b.bossKills || 0;
   addStat('kills', b.kills, true);
   addStat('bosses', b.bossKills || 0, true);
+  addStat('commands', b.cmdUses || 0, true);   // 4.9: '왕의 명령 2회 사용' 임무가 한 번도 오르지 않던 문제
   if (b.endless) addStat('endless', b.wavesCleared || 0, true);
   if (b.state === 'win') {
     save.stats.wins++;
@@ -2276,7 +2282,9 @@ function init() {
   $('#btn-fix').addEventListener('click', () => {
     $('#result').classList.remove('show');
     $('#btn-retry').textContent = '다시 도전';
-    const idx = !battle ? null : battle.expedition ? 'exp:' + battle.expIndex : (!battle.endless && !battle.event ? battle.stageIndex : null);
+    // 4.9: 하드코어 · 도전 · 무한도 같은 전장으로 다시 나간다 (예전엔 하드코어가 일반 전장으로, 도전 · 무한은 출진 버튼이 없었다)
+    const idx = !battle ? null : battle.expedition ? 'exp:' + battle.expIndex : battle.event ? 'event:' + battle.eventIndex
+      : battle.endless ? 'endless' : battle.hard ? 'hard:' + battle.stageIndex : battle.stageIndex;
     show('scr-map');                       // 편성에서 '뒤로' 가면 진군도로 (전투 화면이 아니라)
     openFormation(idx);
   });
