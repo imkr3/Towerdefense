@@ -2204,7 +2204,10 @@ function defeatTips(save, stage, info) {
     if (w.mod) tips.push(STAGE_MODS[w.mod].name + ' · ' + STAGE_MODS[w.mod].counter);
     else tips.push(w.key);
   }
-  if (info.bossAlive) tips.push('보스가 끝까지 버텼습니다 · 보스에 강한 병종을 넣고 왕명을 보스 앞에서 쓰세요');
+  // 4.8 도전 기믹마다 맞는 요령 (기관차는 쓰러뜨릴 필요가 없다)
+  if (stage && stage.bossId === 'irontrain') tips.push('기관차는 싸우지 않습니다 · 둔화(서리 마도사·폭풍술사)와 기절(종지기)로 늦추고 그 사이 요새를 부수세요');
+  else if (stage && stage.bossId === 'masklord') tips.push('가장 많이 낸 병종이 봉인되고 그림자로 돌아옵니다 · 비싼 병종을 몰아 내지 말고 고르게 섞으세요');
+  else if (info.bossAlive) tips.push('보스가 끝까지 버텼습니다 · 보스에 강한 병종을 넣고 왕명을 보스 앞에서 쓰세요');
   if (info.foePct > 70) tips.push('적 요새에 거의 닿지 못했습니다 · 무기 연마와 갑옷 강화를 올려 보세요');
   else if (info.time >= 240) tips.push('싸움이 길어지면 적이 억세집니다 · 화력을 더 챙기세요');
   const cheapest = Math.min.apply(null, SHOP_ORDER.slice(0, 5).map(k => (save.upgrades[k] || 0) >= UPGRADES[k].max ? Infinity : upgradeCost(k, save.upgrades[k] || 0)));

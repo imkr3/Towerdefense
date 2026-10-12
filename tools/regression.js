@@ -1487,4 +1487,19 @@ test('4.7: the "all ten" achievement still means the campaign ten; a summoned aw
   assert.ok(!hero.test({ evo2: ten }) && hero.test({ evo2: { ra: true } }));
 });
 
+/* ---------------- 4.8 점검 ---------------- */
+test('4.8: challenge defeats give the right advice (no "kill the boss" for the locomotive)', () => {
+  const D = vm.runInContext('({defeatTips, EVENT_STAGES})', ctx);
+  const s = save(); s.coins = 0; s.upgrades = {}; for (const k of ['power', 'vitality', 'castle', 'income', 'wallet']) s.upgrades[k] = 99;
+  const t6 = D.defeatTips(s, D.EVENT_STAGES[5], { foePct: 100, time: 100, bossAlive: true });
+  assert.ok(t6.some(t => t.indexOf('기관차') >= 0) && !t6.some(t => t.indexOf('보스가 끝까지') >= 0), t6.join(' / '));
+  const t7 = D.defeatTips(s, D.EVENT_STAGES[6], { foePct: 100, time: 100, bossAlive: true });
+  assert.ok(t7.some(t => t.indexOf('봉인') >= 0), t7.join(' / '));
+});
+test('4.8: result-screen trial news only watches units the player has', () => {
+  const main = fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8');
+  assert.ok(/function trialWatched\(id\)[\s\S]{0,300}u\.gacha \? !!\(save\.owned && save\.owned\[id\]\)/.test(main), 'summoned heroes must be owned');
+  assert.ok(/for \(const id in EVO2_TRIALS\) if \(trialWatched\(id\)\)/.test(main) && /if \(!trialWatched\(id\)\) continue;/.test(main));
+});
+
 console.log(count + ' regression checks passed');

@@ -3,7 +3,7 @@
  * ======================================================================= */
 
 
-const APP_VERSION = '4.7.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
+const APP_VERSION = '4.8.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
 
 function defaultSave() {
   const lv = {};
@@ -1675,16 +1675,22 @@ function renderMeter(b) {
 
 /* 4.4 3진 시련: 전투 전후로 비교해 이번 판에 새로 마친 시련을 결과창에 알린다 */
 let trialSnap = null;
+// 4.8: 아직 3진하지 않았고, 가진 병종만 (소환 영웅은 뽑았을 때, 전장 병종은 열렸을 때)
+function trialWatched(id) {
+  const u = UNIT_BY_ID[id];
+  if (!u || (save.evo2 && save.evo2[id] !== undefined)) return false;
+  return u.gacha ? !!(save.owned && save.owned[id]) : u.unlockStage <= save.cleared + 1;
+}
 function trialSnapshot() {
   const m = {};
-  for (const id in EVO2_TRIALS) if (!(save.evo2 && save.evo2[id] !== undefined)) evo2Trials(save, id).forEach((x, i) => { m[id + ':' + i] = x.done; });
+  for (const id in EVO2_TRIALS) if (trialWatched(id)) evo2Trials(save, id).forEach((x, i) => { m[id + ':' + i] = x.done; });
   return m;
 }
 function appendTrialNews(lines) {
   if (!trialSnap) return;
   const before = trialSnap; trialSnap = null;
   for (const id in EVO2_TRIALS) {
-    if (save.evo2 && save.evo2[id] !== undefined) continue;
+    if (!trialWatched(id)) continue;
     const list = evo2Trials(save, id);
     list.forEach((x, i) => {
       if (x.done && before[id + ':' + i] === false) lines.push('✪ 3진 시련 달성 · ' + EVOLUTIONS2[id].name + ': ' + x.text);

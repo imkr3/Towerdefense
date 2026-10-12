@@ -851,6 +851,8 @@ const I18N_EN = {
   '그림자 가면 · 가장 많이 낸 병종을 봉인하고 그 그림자를 보냅니다 · 고르게 섞어 내세요': 'Shadow Mask · seals your most-fielded unit and sends its shadows · mix your units evenly',
   '가장 많이 낸 병종을 봉인하고 그 그림자를 보냅니다 · 한 병종만 쏟지 말고 고르게 섞어 내기': 'Seals your most-fielded unit and sends its shadows · don\'t flood one unit, mix them evenly',
   '무희 입장': 'Dancers Enter', '광대 행렬': 'Jester Parade', '떨어지는 가면': 'Falling Masks', '마지막 춤': 'The Last Dance',
+  '기관차는 싸우지 않습니다 · 둔화(서리 마도사·폭풍술사)와 기절(종지기)로 늦추고 그 사이 요새를 부수세요': 'The engine never fights · slow it (Frost Mage, Stormcaller) and stun it (Bellringer) while you break the fort',
+  '가장 많이 낸 병종이 봉인되고 그림자로 돌아옵니다 · 비싼 병종을 몰아 내지 말고 고르게 섞으세요': 'Your most-fielded unit gets sealed and returns as shadows · don\'t stack pricey units, mix them evenly',
   '기관차를 멈춘 자': 'Engine Stopper', '도전 \'폭주 기관차\' 돌파': 'Clear the \'Runaway Locomotive\' challenge',
   '가면을 벗긴 자': 'Unmasker', '도전 \'그림자 가면무도회\' 돌파': 'Clear the \'Shadow Masquerade\' challenge',
   '격앙': 'Fury', '끝없는 웨이브. 웨이브마다 적이 강해집니다.': 'Endless waves, each stronger than the last.',
