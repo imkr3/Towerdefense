@@ -1854,7 +1854,7 @@ STAGES.forEach((st, i) => {
  * ======================================================================= */
 const EVENT_STAGES = [
   { name: '핏빛 월식', bossId: 'vampire', bossRole: 'caster', boss: true, look: 'graveyard', music: 'underworld',
-    bossMusic: 'boss_vampire', mods: ['curse'], baseHp: 36000, money: 520, rate: 58, reward: 0, enemyMul: 10, bossMul: { hp: 20, atk: 1.6 },
+    bossMusic: 'boss_vampire', mods: ['curse'], baseHp: 36000, money: 520, rate: 58, reward: 0, enemyMul: 10, bossMul: { hp: 18, atk: 1.6 },
     fury: { per30: 0.1, max: 1.2 }, len: 1500,
     event: { id: 'eclipse', deck: ['thor','zeus','ra','odin','pyro','javelin','knight','spartan','frost','catapult'],
              unlock: 10, reward: 6000, stones: 12,
@@ -1863,7 +1863,7 @@ const EVENT_STAGES = [
             W(70,'wraith',5,1.4), W(96,'bat',10,.5), W(120,'bloodthrall',4,1.6), W(150,'hexer',4,1.4), W(180,'wraith',6,1.2),
             W(210,'bloodthrall',5,1.4)] },
   { name: '거신의 망치', bossId: 'titan', bossRole: 'bruiser', boss: true, look: 'volcano', music: 'volcano',
-    bossMusic: 'boss_titan', mods: ['ironclad'], baseHp: 42000, money: 540, rate: 60, reward: 0, enemyMul: 10, bossMul: { hp: 10.4, atk: 1.6 },
+    bossMusic: 'boss_titan', mods: ['ironclad'], baseHp: 42000, money: 540, rate: 60, reward: 0, enemyMul: 10, bossMul: { hp: 11, atk: 1.6 },
     fury: { per30: 0.1, max: 1.2 }, len: 1550,
     event: { id: 'titan', deck: ['thor','ra','odin','rapriest','venom','pyro','alchemist','javelin','shield','knight'],
              unlock: 15, reward: 9000, stones: 15,

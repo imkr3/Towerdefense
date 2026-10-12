@@ -1503,6 +1503,36 @@ test('4.8: result-screen trial news only watches units the player has', () => {
 });
 
 /* ---------------- 4.9 점검 ---------------- */
+test('4.9: a weaker buff refresh does not keep a stronger one alive', () => {
+  const b=battle(), a=b.makeAlly(U.spear,500);
+  a.refresh('rallyT','rallyMul',3.6,1.35); a.rallyT=0.5;
+  a.refresh('rallyT','rallyMul',3.6,1.25);
+  assert.equal(a.rallyMul,1.35); assert.equal(a.rallyT,0.5, 'weaker rally must not extend the stronger one');
+  b.step([a],[],b.enemyCastle,0.6,true); assert.equal(a.rallyMul,1);
+  a.refresh('rallyT','rallyMul',3.6,1.25); assert.equal(a.rallyMul,1.25);
+  a.refresh('hasteT','hasteMul',6,0.55,true); a.refresh('hasteT','hasteMul',3,0.78,true);
+  assert.equal(a.hasteMul,0.55, 'a weaker haste must not overwrite a stronger one');
+});
+test('4.9: poison and burn respect the vampire mist and the titan core', () => {
+  const b=battle(), v=new Fighter(E.vampire,'enemy',1800);
+  v.veilT=4; v.poisonT=3; v.poisonDps=100; v.burnT=3; v.burnDps=100;
+  const hp=v.hp; b.step([v],[],b.allyCastle,1/30,false); assert.equal(v.hp,hp);
+  const a=b.makeAlly(U.venom,1700); b.hitOne(10,v,a,false); assert.equal(v.poisonDps,100,'no new poison through the mist');
+  const t=new Fighter(E.titan,'enemy',1800); t.burnT=3; t.burnDps=100; const th=t.hp;
+  b.step([t],[],b.allyCastle,1,false); assert.ok(Math.abs((th-t.hp)-100*(1-t.ab.core.armor))<1e-6, String(th-t.hp));
+});
+test('4.9: splash and piercing damage to the fort is credited to the unit', () => {
+  const b=battle(), a=b.makeAlly(U.spear,b.enemyCastle.x-50);
+  b.areaHit(100,b.enemyCastle.x,80,[],b.enemyCastle,a,false);
+  b.pierceHit({x:b.enemyCastle.x-200,tx:b.enemyCastle.x,side:'ally',dmg:50,src:a,crit:false,y0:0});
+  assert.equal(b.meter.spear.dmg,150);
+});
+test('4.9: Mask Lord shadows copy the unit level and barracks upgrades', () => {
+  const s=save(); s.levels={spear:20}; s.upgrades={power:10,vitality:10};
+  const b=new Battle(0,s,{baseHp:10000,money:900,rate:0,waves:[],reward:0});
+  const real=b.makeAlly(b.stats('spear'),500); b.spawnShadow(b.stats('spear'),900,1);
+  const sh=b.enemies[b.enemies.length-1]; assert.equal(Math.round(sh.maxHp),Math.round(real.maxHp)); assert.equal(Math.round(sh.atk),Math.round(real.atk));
+});
 test('4.9: the "use the King\'s Command twice" mission is fed by battle command uses', () => {
   const D = vm.runInContext('MISSION_DEFS', ctx);
   const cmd = D.find(m => m.id === 'cmd2');

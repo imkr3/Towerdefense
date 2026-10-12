@@ -406,7 +406,9 @@ const BGM = {
     if (this.name === name && (this.src || this.waiters[name])) return;
     this.name = name;
     this.onEnd = onEnd || null;
-    if (!this.ensure() || this.vol <= 0) return;           // 오디오가 열리거나 소리를 켜면 그때
+    if (!this.ensure()) return;                            // 오디오가 열리면 그때
+    // 4.9: 음악 0 이면 그때 켤 곡만 기억하고 지금 곡은 멈춘다 — 예전엔 옛 곡이 소리 없이 돌다가 소리를 올리면 엉뚱한 곡이 났다
+    if (this.vol <= 0) { this.fadeOut(0.3); return; }
     this.want(name, true).then(buf => { if (this.name === name) this.startBuffer(buf, name); }).catch(() => {});
   },
 

@@ -70,14 +70,19 @@ void main() {
 function glfxDowngrade(src) {
   return src
     .replace('#version 300 es\n', '')
-    .replace(/\bin vec/g, 'attribute vec').replace(/\bin float/g, 'attribute float')
+    // 4.9: varying 을 먼저 바꾼다. 예전엔 'in vec' → attribute 가 조각 셰이더의 'in vec2 v_uv' 까지 먹어서
+    // WebGL1 기기에선 셰이더가 늘 컴파일에 실패했다 (파티클 층 없음)
     .replace(/\bout vec2 v_uv;/, 'varying vec2 v_uv;')
     .replace(/\bout vec4 v_color;/, 'varying vec4 v_color;')
     .replace(/\bin vec2 v_uv;/, 'varying vec2 v_uv;')
     .replace(/\bin vec4 v_color;/, 'varying vec4 v_color;')
+    .replace(/\bin vec/g, 'attribute vec').replace(/\bin float/g, 'attribute float')
     .replace(/\bout vec4 outColor;\n/, '')
     .replace(/\boutColor\b/g, 'gl_FragColor');
 }
+
+/* 4.9: 따로 모양이 없는 필살은 닮은 연출을 빌린다 (예전엔 제우스 · 토르 · 아누비스 등 7명의 필살에 파티클이 하나도 없었다) */
+const GLFX_ALIAS = { thunderseal: 'lightning', sunfall: 'solarburn', underworld: 'runes', runeveil: 'holy' };
 
 class GLFx {
   constructor(canvas, max) {
@@ -97,6 +102,14 @@ class GLFx {
     // 합성식이 포화형이어서 1 을 넘겨도 흰 덩어리로 터지지는 않는다.
     this.gain = 1.15;
     this.ok = this._init();
+    // 4.9: 컨텍스트를 잃으면(앱이 뒤로 가거나 GPU 메모리가 모자라면) Canvas2D 연출로 돌아가고, 돌아오면 다시 만든다.
+    // 예전엔 ok 가 계속 true 라 필살 연출이 그 뒤로 아무것도 그려지지 않았다.
+    canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); this.ok = false; this.count = 0; });
+    canvas.addEventListener('webglcontextrestored', () => {
+      this.ok = this._init();
+      this._empty = false;
+      if (this.ok) this.resize(this.w, this.h, this.dpr);
+    });
   }
 
   _init() {
@@ -314,6 +327,7 @@ class GLFx {
    * opt: color [r,g,b] 0~1 / scale / radius / density / big */
   emit(kind, x, y, opt) {
     if (!this.ok) return;
+    kind = GLFX_ALIAS[kind] || kind;
     opt = opt || {};
     const col = opt.color || [1, 0.88, 0.29];
     const white = [1, 1, 0.94];

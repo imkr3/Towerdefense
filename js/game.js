@@ -224,6 +224,16 @@ class Fighter {
     }
   }
 
+  /* 4.9: 버프 · 디버프 갱신. 약한 효과가 남은 강한 효과의 시간을 늘려 주지 않는다
+   * (예전엔 시간은 max, 세기도 max 로 따로 잡아서, 오딘이 쓰러진 뒤에도 아서의 지휘가 오딘의 ×1.35 를 끝없이 이어 줬다).
+   * low: 값이 작을수록 강한 효과 (가속 · 약화). */
+  refresh(tKey, mKey, dur, mul, low) {
+    if (this[tKey] <= 0 || (low ? mul <= this[mKey] : mul >= this[mKey])) {
+      this[mKey] = mul;
+      this[tKey] = Math.max(this[tKey], dur);
+    }
+  }
+
   takeDamage(dmg, pierceArmor) {
     if (this.dead) return 0;
     dmg = Math.max(0, dmg);
@@ -507,6 +517,10 @@ class Battle {
     const id = f.creditTo || f.s.id;
     return this.meter[id] || (this.meter[id] = { dmg: 0, taken: 0, n: 0 });
   }
+  /* 4.9: 광역 · 관통 · 공병이 요새에 넣은 피해도 전투 기록(3진 시련의 누적 피해)에 센다 */
+  creditCastle(src, got) {
+    if (src && src.side === 'ally' && src.s && got > 0) this.meterRow(src).dmg += got;
+  }
 
   deploy(id) {
     if (!this.canDeploy(id)) return false;
@@ -626,8 +640,14 @@ class Battle {
     return this.allies.find(f=>!f.dead && !f.summoned && f.s.id===id) || null;
   }
   heroTarget(f) {
-    return this.enemies.filter(e=>!e.dead && Math.abs(e.x-f.x)<=f.attackRange+180)
-      .sort((a,b)=>Math.abs(a.x-f.x)-Math.abs(b.x-f.x))[0] || null;
+    // 4.9: 가장 가까운 적 하나만 고른다 (HUD 가 매 프레임 영웅마다 부르므로 배열을 만들지 않는다)
+    let best = null, bd = f.attackRange + 180;
+    for (const e of this.enemies) {
+      if (e.dead) continue;
+      const d = Math.abs(e.x - f.x);
+      if (d < bd || (d === bd && !best)) { best = e; bd = d; }
+    }
+    return best;
   }
   canHeroActive(id) {
     const f=this.heroCaster(id), u=this.stats(id);
@@ -652,7 +672,7 @@ class Battle {
     if(buff) {
       for(const m of this.allies) if(!m.dead && Math.abs(m.x-f.x)<=a.radius) {
         if(a.barrier){m.giveBarrier(a.barrier*f.abMul);m.poisonT=0;m.poisonDps=0;m.burnT=0;m.burnDps=0;}
-        if(a.haste){m.hasteMul=m.hasteT>0?Math.min(m.hasteMul,a.haste.mul):a.haste.mul;m.hasteT=Math.max(m.hasteT,a.haste.dur);m.stunT=0;}
+        if(a.haste){m.refresh('hasteT','hasteMul',a.haste.dur,a.haste.mul,true);m.stunT=0;}
       }
     } else if (this.veiledBoss()) {
       // 안개가 액티브를 삼킨다: 피해는 없고 백작이 피를 채운다
@@ -715,8 +735,7 @@ class Battle {
     }
     for (const a of this.allies) {
       a.heal(a.maxHp * this.cmdHeal);
-      a.hasteT = Math.max(a.hasteT, COMMAND.hasteDur);
-      a.hasteMul = COMMAND.hasteMul;
+      a.refresh('hasteT', 'hasteMul', COMMAND.hasteDur, COMMAND.hasteMul, true);
       a.stunT = 0;
       a.slowT = 0;
       this.fx.push({ type: 'rally', x: a.x, row: a.row, t: 0.6, life: 0.6 });
@@ -1242,7 +1261,10 @@ class Battle {
     for (const k of ['summon', 'gold', 'reanimate', 'sapper', 'hook', 'rally', 'ward', 'vanguard']) delete ab[k];
     const sh = Object.assign({}, st, { ab: ab, shadow: true, active: null, arrive: null, healFx: null, gold: 0,
                                        body: '#2a2238', tunic: '#3a2a52', accent: '#c06aff' });
-    const e = new Fighter(sh, 'enemy', Math.max(80, Math.min(WORLD - 80, x)), mul !== 1 ? { hp: mul, atk: mul } : null);
+    // 4.9: '같은 힘' — 병종 레벨 · 병영 강화까지 따라 한다 (예전엔 Lv1 기본값이라 Lv20 병종의 1/5 이었다)
+    const lm = unitLevelMul(st.level || this.levels[st.id] || 1);
+    const e = new Fighter(sh, 'enemy', Math.max(80, Math.min(WORLD - 80, x)),
+                          { hp: this.buff.hp * lm * mul, atk: this.buff.atk * lm * mul });
     e.gold = 0; e.kind = 'shadow'; e.summoned = true; e.shadow = true;
     this.enemies.push(e);
     this.fx.push({ type: 'spawn', x: e.x, row: e.row, t: 0.5, life: 0.5, grand: true, color: '#c06aff' });
@@ -1283,6 +1305,9 @@ class Battle {
       if (f.poisonT > 0) { dot += f.poisonDps * Math.min(dt, f.poisonT); f.poisonT = Math.max(0, f.poisonT - dt); }
       if (f.burnT > 0) { dot += f.burnDps * Math.min(dt, f.burnT); f.burnT = Math.max(0, f.burnT - dt); }
       if (isAlly) dot *= 1 - 0.05 * Math.min(5, this.save.upgrades.resistance || 0);
+      // 4.9: 지속 피해도 안개화 · 핵 갑주를 따른다 (예전엔 화상 · 독만은 안개를 뚫고 핵에 20배로 들어갔다)
+      if (f.veilT > 0) dot = 0;
+      else if (f.ab.core) dot *= f.exposedT > 0 ? f.ab.core.mul : 1 - f.ab.core.armor;
       if (dot > 0) {
         if (!isAlly && f.dotBy) { const m = this.meter[f.dotBy] || (this.meter[f.dotBy] = { dmg: 0, taken: 0, n: 0 }); m.dmg += Math.min(dot, Math.max(0, f.hp)); }
         f.hp -= dot;
@@ -1407,8 +1432,7 @@ class Battle {
       for (const m of mates) {
         if (m.dead || m === f) continue;
         if (Math.abs(m.x - f.x) > ab.rally.radius) continue;
-        m.rallyT = Math.max(m.rallyT, (ab.interval || 3) + 0.6);
-        m.rallyMul = Math.max(m.rallyMul, 1 + ab.rally.atk);
+        m.refresh('rallyT', 'rallyMul', (ab.interval || 3) + 0.6, 1 + ab.rally.atk);
       }
       f.auraPulse = 0.5;
       this.fx.push({ type: 'aura', x: f.x, row: f.row, r: ab.rally.radius,
@@ -1427,8 +1451,7 @@ class Battle {
     if (ab.pacify) {
       // 삼장법사: 경을 읊으면 주변 적의 살기가 누그러진다
       for (const e of this.foesOf(f.side)) if (!e.dead && Math.abs(e.x - f.x) <= ab.radius) {
-        e.weakT = Math.max(e.weakT, ab.pacify.dur);
-        e.weakMul = Math.min(e.weakMul, ab.pacify.mul);
+        e.refresh('weakT', 'weakMul', ab.pacify.dur, ab.pacify.mul, true);
       }
       this.fx.push({ type: 'aura', x: f.x, row: f.row, r: ab.radius, t: 0.6, life: 0.6, color: '#f6e6a0' });
     }
@@ -1473,8 +1496,7 @@ class Battle {
       for (const m of mates) {
         if (m.dead || m === f) continue;
         if (Math.abs(m.x - f.x) > ab.radius) continue;
-        m.hasteT = Math.max(m.hasteT, ab.haste.dur);
-        m.hasteMul = ab.haste.mul;
+        m.refresh('hasteT', 'hasteMul', ab.haste.dur, ab.haste.mul, true);
       }
       f.auraPulse = 0.5;
       this.fx.push({ type: 'aura', x: f.x, row: f.row, r: ab.radius,
@@ -1672,9 +1694,7 @@ class Battle {
         let sum = 0;
         for (const e of foes) {
           if (e.dead || Math.abs(e.x - f.x) > r) continue;
-          const d = a.dmg || 120;
-          e.takeDamage(d);
-          sum += d;
+          sum += e.takeDamage(a.dmg || 120) || 0;   // 4.9: 보호막에 막힌 만큼은 회복하지 않는다
         }
         f.heal(sum * (a.ratio || 0.6));
         this.fx.push({ type: 'cast', kind: 'runes', x: f.x, row: f.row,
@@ -1921,7 +1941,7 @@ class Battle {
   /* 성벽 파괴병: 성채에 닿으면 짊어진 화약을 터뜨린다. 보상도 없다. */
   sapperBlast(f, foes, foeCastle) {
     const sp = f.ab.sapper, dmg = sp.dmg * f.abMul;
-    foeCastle.takeDamage(dmg);
+    this.creditCastle(f, foeCastle.takeDamage(dmg));
     for (const a of foes) if (!a.dead && Math.abs(a.x - f.x) <= sp.radius + a.radius) a.takeDamage(dmg * 0.3);
     this.fx.push({ type: 'cast', kind: 'firestorm', x: f.x, row: f.row, color: '#ff8a3c', r: sp.radius * 1.4,
                    big: true, dir: f.dir, t: 0.6, life: 0.6 });
@@ -2018,8 +2038,7 @@ class Battle {
     // 저팔계: 쓰러뜨린 만큼 배를 채운다
     if (src && src.ab.feast && dealt > 0 && target.dead && !target.isCastle) src.heal(src.maxHp * src.ab.feast);
     if (src && src.ab.sunmark && !target.isCastle && !target.dead) {
-      target.vulnT = Math.max(target.vulnT, src.ab.sunmark.dur);
-      target.vulnMul = Math.max(target.vulnMul, 1 + src.ab.sunmark.vuln);
+      target.refresh('vulnT', 'vulnMul', src.ab.sunmark.dur, 1 + src.ab.sunmark.vuln);
     }
     if (src && src.ab.chain && !target.isCastle && !this._chaining) this.chainFrom(src, target, dmg);
     if (target.isCastle) {
@@ -2040,7 +2059,7 @@ class Battle {
     }
     const ab = src.ab;
     if (ab.lifesteal) src.heal(dealt * ab.lifesteal);
-    if (target.isCastle || target.dead) return;
+    if (target.isCastle || target.dead || target.veilT > 0) return;   // 4.9: 안개화 중엔 독 · 둔화 · 기절도 닿지 않는다
     if (ab.slow) {
       target.slowT = Math.max(target.slowT, ab.slow);
       this.fx.push({ type: 'chill', x: target.x, row: target.row, t: 0.4, life: 0.4 });
@@ -2066,8 +2085,7 @@ class Battle {
       target.kbTimer = Math.max(target.kbTimer, 0.12);
     }
     if (ab.weaken) {                              // 액막이: 이 적이 주는 피해가 준다
-      target.weakT = Math.max(target.weakT, ab.weaken.dur);
-      target.weakMul = Math.min(target.weakMul, ab.weaken.mul);
+      target.refresh('weakT', 'weakMul', ab.weaken.dur, ab.weaken.mul, true);
     }
     if (ab.charm && !target.boss && !(target.charmGuard > this.time) && Math.random() < ab.charm.chance) {
       target.charmT = Math.max(target.charmT, ab.charm.dur);
@@ -2142,7 +2160,7 @@ class Battle {
       if (Math.abs(e.x - cx) <= radius + e.radius) this.hitOne(dmg, e, src, crit);
     }
     if (castleOk && foeCastle && !foeCastle.dead && Math.abs(foeCastle.x - cx) <= radius + foeCastle.radius) {
-      foeCastle.takeDamage(dmg);
+      this.creditCastle(src, foeCastle.takeDamage(dmg));
     }
     this.fx.push({ type: 'boom', x: cx, r: radius, t: 0.32, life: 0.32 });
     sfx('boom');
@@ -2160,7 +2178,7 @@ class Battle {
       if (e.x >= from - 30 && e.x <= to + 30) { this.hitOne(shot.dmg, e, shot.src, shot.crit); hits++; }
     }
     if (!castle.dead && castle.x >= from - 40 && castle.x <= to + 40) {
-      castle.takeDamage(shot.dmg);
+      this.creditCastle(shot.src, castle.takeDamage(shot.dmg));
     }
     this.fx.push({ type: 'beam', x: shot.x, x2: shot.tx, row: shot.y0, t: 0.22, life: 0.22,
                    color: shot.color });
