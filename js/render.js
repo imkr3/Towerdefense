@@ -616,7 +616,8 @@ class Renderer {
     // 멈춰 있을 때는 숨쉬기 (병사마다 박자가 다르다)
     if (f._seed === undefined) f._seed = Math.random() * 10;
     const clk = (this.clock || 0) + f._seed;
-    const breathe = (!moving && atk === 0 && wind === 0) ? Math.sin(clk * 2.1) * 1.3 * this.cs : 0;
+    const tired = f.maxHp > 0 && f.hp / f.maxHp < 0.3 && !f.isCastle;    // 4.13 체력이 바닥나면 숨이 가쁘고 몸이 숙여진다
+    const breathe = (!moving && atk === 0 && wind === 0) ? Math.sin(clk * (tired ? 4.2 : 2.1)) * (tired ? 1.9 : 1.3) * this.cs : 0;
     // 막 나온 병사는 땅에서 튀어 오르듯 커진다
     const age = f.age === undefined ? 9 : f.age;
     const spawnK = Math.min(1, age / 0.3);
@@ -766,7 +767,7 @@ class Renderer {
     ctx.translate(-recoil * 2.5 * s - wind * 2 * s, -stride * (heavy ? 1.2 : 2.4) * s);
     // 기절하면 휘청이고, 둔화되면 몸이 굳어 흔들림이 준다
     const dizzy = f.stunT > 0 ? Math.sin(clk * 9) * 0.09 : 0;
-    ctx.rotate(lean + sway + strike + dizzy - wind * 0.1 - recoil * 0.06 - kbK * 0.35);
+    ctx.rotate(lean + sway + strike + dizzy - wind * 0.1 - recoil * 0.06 - kbK * 0.35 + (tired && !moving ? 0.07 : 0));
     // 맞으면 잠깐 눌렸다가 돌아온다, 준비 동작은 살짝 움츠리고, 치는 순간은 늘어난다
     const squash = recoil * 0.07 + wind * 0.04;
     const stretch = atk > 0.35 && (style === 'thrust' || style === 'heavy') ? (atk - 0.35) * 0.09 : 0;
@@ -1185,6 +1186,43 @@ class Renderer {
         ctx.globalAlpha=p*.8;
         for(let i=0;i<18;i++){const a=i*2.399,rr=radius*(.2+.8*k);ctx.beginPath();ctx.arc(Math.cos(a)*rr,Math.sin(a)*rr*.2-k*(20+i%4*14)*cs,2*cs,0,7);ctx.fill();}
         ctx.restore();
+      } else if (e.type === 'hit' && e.sty && !this.crowded) {
+        // 4.13 공격 종류별 타격: 베기는 초승달 자국, 내려찍기는 땅 갈라짐과 흙먼지, 찌르기는 곧은 빛줄기
+        const dir = e.dir || 1, q = 1 - p, col = e.color || '#ffffff';
+        if (e.sty === 'melee') { const a = e.st ? attackStyle(e.st) : 'slash'; e.sty = a === 'shoot' || a === 'cast' ? 'slash' : a; }
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        if (e.sty === 'slash') {
+          ctx.strokeStyle = 'rgba(255,255,255,' + p + ')'; ctx.lineWidth = (2 + p * 3) * cs;
+          ctx.beginPath(); ctx.ellipse(x - dir * 4 * cs, y, (12 + q * 10) * cs, (16 + q * 8) * cs, dir * 0.5, -1.2, 1.0); ctx.stroke();
+          ctx.strokeStyle = col; ctx.globalAlpha = p * 0.7; ctx.lineWidth = 1.5 * cs;
+          ctx.beginPath(); ctx.ellipse(x - dir * 4 * cs, y, (9 + q * 10) * cs, (13 + q * 8) * cs, dir * 0.5, -1.0, 0.8); ctx.stroke();
+        } else if (e.sty === 'heavy') {
+          const gy = this.rowY(e.row ?? 1);
+          ctx.fillStyle = 'rgba(255,240,200,' + (p * 0.5) + ')'; ctx.beginPath(); ctx.arc(x, y, (10 + q * 8) * cs, 0, 7); ctx.fill();
+          ctx.globalCompositeOperation = 'source-over';
+          ctx.fillStyle = 'rgba(200,180,150,' + (p * 0.5) + ')';
+          for (let i = -1; i <= 1; i += 2) { ctx.beginPath(); ctx.ellipse(x + i * (8 + q * 22) * cs, gy - (2 + q * 4) * cs, (5 + q * 7) * cs, (2.5 + q * 3) * cs, 0, 0, 7); ctx.fill(); }
+          ctx.strokeStyle = 'rgba(40,30,20,' + p * 0.7 + ')'; ctx.lineWidth = 1.6 * cs;
+          ctx.beginPath(); ctx.moveTo(x - 10 * cs, gy); ctx.lineTo(x - 3 * cs, gy - 2 * cs); ctx.lineTo(x + 3 * cs, gy + 1 * cs); ctx.lineTo(x + 11 * cs, gy - 1 * cs); ctx.stroke();
+        } else if (e.sty === 'thrust') {
+          ctx.strokeStyle = 'rgba(255,255,255,' + p + ')'; ctx.lineWidth = (1.5 + p * 2.5) * cs;
+          ctx.beginPath(); ctx.moveTo(x - dir * (14 - q * 6) * cs, y); ctx.lineTo(x + dir * (8 + q * 16) * cs, y); ctx.stroke();
+          ctx.fillStyle = col; ctx.globalAlpha = p * 0.6; ctx.beginPath(); ctx.arc(x + dir * 4 * cs, y, (3 + q * 6) * cs, 0, 7); ctx.fill();
+        } else {                                       // 쏘기 · 마법: 작은 빛 터짐과 사방 불똥
+          ctx.fillStyle = col; ctx.globalAlpha = p * 0.55; ctx.beginPath(); ctx.arc(x, y, (5 + q * 9) * cs, 0, 7); ctx.fill();
+          ctx.globalAlpha = p; ctx.strokeStyle = 'rgba(255,255,255,' + p + ')'; ctx.lineWidth = 1.4 * cs;
+          for (let i = 0; i < 5; i++) { const a = i * 1.257 + (e.x % 7), d = (4 + q * 14) * cs;
+            ctx.beginPath(); ctx.moveTo(x + Math.cos(a) * d * 0.5, y + Math.sin(a) * d * 0.5); ctx.lineTo(x + Math.cos(a) * d, y + Math.sin(a) * d); ctx.stroke(); }
+        }
+        ctx.restore();
+      } else if (e.type === 'release') {               // 4.13 쏘는 순간: 시위 · 총구의 짧은 섬광
+        const q = 1 - p, dir = e.dir || 1;
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        ctx.fillStyle = e.color || '#ffffff'; ctx.globalAlpha = p * 0.6;
+        ctx.beginPath(); ctx.arc(x, y, (3 + q * 6) * cs, 0, 7); ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,' + p + ')'; ctx.lineWidth = 1.3 * cs;
+        for (const a of [-0.45, 0, 0.45]) { ctx.beginPath(); ctx.moveTo(x + dir * Math.cos(a) * 4 * cs, y + Math.sin(a) * 4 * cs); ctx.lineTo(x + dir * Math.cos(a) * (7 + q * 9) * cs, y + Math.sin(a) * (7 + q * 9) * cs); ctx.stroke(); }
+        ctx.restore();
       } else if (e.type === 'hit') {
         // 3.5: 맞는 순간 짧은 섬광. 무거운 일격(보스·영웅·큰 진화)은 불티도 튄다
         if (p > 0.55) {
@@ -1385,6 +1423,13 @@ class Renderer {
         ctx.scale(e.dir, 1);
         ctx.rotate(-ang);
         drawBody(ctx, e.st, sc, false, true, 0, false, 0);
+        if (k > 0.38 && k < 0.7 && !this.crowded) {     // 4.13 땅에 닿는 순간 흙먼지가 양옆으로 퍼진다
+          const d = (k - 0.38) / 0.32;
+          ctx.save(); ctx.rotate(ang); ctx.scale(e.dir, 1);
+          ctx.fillStyle = 'rgba(220,205,180,' + (1 - d) * 0.45 + ')';
+          for (const sx of [-1, 1]) { ctx.beginPath(); ctx.ellipse(sx * (10 + d * 26) * sc - 24 * sc * e.dir, -2 * sc, (5 + d * 9) * sc, (2.5 + d * 3) * sc, 0, 0, 7); ctx.fill(); }
+          ctx.restore();
+        }
         if (k < 0.12) {                                 // 쓰러지는 순간 하얗게 번쩍
           ctx.globalAlpha = (1 - k / 0.12) * 0.7;
           drawBody(ctx, e.st, sc, true, true, 0, false, 0);
@@ -1423,7 +1468,8 @@ class Renderer {
         // 3.5: 튀어나오듯 커졌다가 자리 잡고 떠오른다. 치명타는 더 크고 흔들린다
         const k = 1 - p, ease = 1 - Math.pow(1 - Math.min(1, k / 0.6), 3);
         const rise = ease * 34 * cs + (e.dy || 0);
-        const pop = k < 0.12 ? 1 + (k / 0.12) * 0.45 : 1.45 - Math.min(0.45, (k - 0.12) * 3);
+        let pop = k < 0.12 ? 1 + (k / 0.12) * 0.45 : 1.45 - Math.min(0.45, (k - 0.12) * 3);
+        if (e.bump > 0) { pop += e.bump * 2.5; e.bump = Math.max(0, e.bump - 0.016); }   // 4.13 합쳐질 때 한 번 더 튄다
         const jx = e.crit && k < 0.3 ? Math.sin(k * 90) * 2 * cs : 0;
         ctx.globalAlpha = Math.min(1, p * 2.5);
         ctx.font = 'bold ' + Math.round((e.crit ? 18 : 13) * cs * pop) + 'px sans-serif';
@@ -8102,6 +8148,8 @@ function armWeapon(S, angle, drawWeapon, gripY) {
   // 준비 동작: 내려찍기는 크게 뒤로, 마법은 지팡이를 치켜들고, 찌르기·쏘기는 조금만.
   const windK = { heavy: 1.15, cast: 0.9, slash: 0.6, thrust: 0.25, shoot: 0.12 }[st];
   angle -= S.wind * windK + (S.cheer ? 0.9 : 0);
+  // 4.13 걸을 때는 걸음에 맞춰 무기를 든 팔이 흔들린다 (모두 같은 자세로 굳어 행진하던 것)
+  if (S.live && S.moving && S.atk <= 0 && S.wind <= 0) angle += Math.sin(S.phase * 2) * 0.13;
   if (st === 'heavy') angle += S.atk * 0.22;             // 내려찍고 조금 더 넘어간다
   let gx = 12 * s, gy = -34 * s - (gripY || 0) * 0.15;
   // 찌르기: 무기 방향으로 쭉 뻗었다가 당긴다. 쏘기: 반동으로 뒤로.
@@ -8194,6 +8242,11 @@ ATTACK_STYLES.heavy += ',bulldozer'; ATTACK_STYLES.cast += ',icecart'; ATTACK_ST
 ATTACK_STYLES.heavy += ',megabot';
 ATTACK_STYLES.cast += ',ambulance,ufo';
 ATTACK_STYLES.shoot += ',tank,dronepilot';
+// 4.13 4.6~4.11 의 새 병종 · 적도 공격 모양을 갖는다 (모두 기본 '베기' 로 휘두르던 것)
+ATTACK_STYLES.heavy += ',maceman,stoneidol,triceratops,jungletyrant,raptorqueen,sporecap,mushking,treant,eldertree,irontrain,coalstoker';
+ATTACK_STYLES.thrust += ',ashigaru,unicorn,lizardman';
+ATTACK_STYLES.cast += ',miko,vineshaman,satyr,pixie,wisp,faequeen,quetzal,masklord';
+ATTACK_STYLES.shoot += ',axethrower,siegebow,kyudo,poisontoad,handcar,jester';
 const ATTACK_STYLE = {};
 for (const k in ATTACK_STYLES) ATTACK_STYLES[k].split(',').forEach(id => { ATTACK_STYLE[id] = k; });
 function attackStyle(st) { return ATTACK_STYLE[st.shape] || (st.ranged ? 'shoot' : 'slash'); }

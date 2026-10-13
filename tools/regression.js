@@ -1610,4 +1610,17 @@ test('4.12: a melee boss with nobody in reach throws at the nearest troop', () =
   if (E.lich.ranged) { b.step([caster], b.allies, b.allyCastle, 1 / 30, false); assert.ok(!b.shots.slice(n).some(x => x.bossThrow), 'ranged bosses already shoot'); }
 });
 
+/* ---------------- 4.13 애니메이션 · 효과 ---------------- */
+test('4.13: hits on one foe in the same instant merge into one number; hits carry their style', () => {
+  const b = battle(); const e = b.spawnEnemy('ogre', 700); e.hp = e.maxHp = 1e6;
+  const a = b.makeAlly(U.spear, 650); b.allies.push(a);
+  b.hitOne(100, e, a, false); b.hitOne(50, e, a, false);
+  const nums = b.fx.filter(x => x.type === 'dmg' && x.tgt === e);
+  assert.equal(nums.length, 1); assert.equal(nums[0].v, 150);
+  b.fx.length = 0; a.cd = 0; b.attack(a, e, b.enemies, b.enemyCastle);
+  const hit = b.fx.find(x => x.type === 'hit' || x.type === 'crit'); assert.ok(hit && hit.st === a.s && hit.sty === 'melee');
+  const ar = b.makeAlly(U.archer, 600); b.allies.push(ar); b.fx.length = 0; b.attack(ar, e, b.enemies, b.enemyCastle);
+  assert.ok(b.fx.some(x => x.type === 'release'), 'bow release flash');
+});
+
 console.log(count + ' regression checks passed');

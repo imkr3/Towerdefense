@@ -1008,7 +1008,10 @@ class Battle {
       }
       if (isEnemySide && !f.exploded) {
         if (f.ab.flee) this.caught = (this.caught || 0) + 1;      // 3.7 잡은 황금 수레
-        this.coins += Math.round((f.gold || 0) * KILL_GOLD_RATE * this.goldMul);
+        const got = Math.round((f.gold || 0) * KILL_GOLD_RATE * this.goldMul);
+        this.coins += got;
+        // 4.13 정예 · 보스를 쓰러뜨리면 금화가 튀어 오른다 (졸개마다 띄우면 화면이 금화투성이가 된다)
+        if (got >= 20 && this.fx.length < FX_LIMIT * 0.6) this.fx.push({ type: 'coin', x: f.x, row: f.row, v: got, t: 0.9, life: 0.9 });
         this.kills++;
         this.reanimate(f);
         if (f.stolen > 0) {                       // 도둑이 훔친 군자금을 되찾는다
@@ -1951,6 +1954,8 @@ class Battle {
     }
     if (f.s.ranged) {
       if (!f.s.atkFx) sfx('arrow');                       // 전차는 포성이 따로 울린다
+      // 4.13 쏘는 순간의 섬광 (손 높이) — 빽빽할 땐 아낀다
+      if (this.fx.length < FX_LIMIT * 0.6) this.fx.push({ type: 'release', x: f.x + f.dir * 16 * (f.scale || 1), row: f.row, dir: f.dir, color: f.s.accent, t: 0.13, life: 0.13 });
       this.shots.push({
         x: f.x, y0: f.row, tx: target.x, side: f.side, t: 0,
         dur: Math.max(0.18, Math.abs(target.x - f.x) / 900),
@@ -1963,7 +1968,7 @@ class Battle {
       else this.hitOne(r.dmg, target, f, r.crit);
       this.castFx(f, target.x !== undefined ? target.x : cx, target.row, r.crit);
       this.fx.push({ type: r.crit ? 'crit' : 'hit', x: target.x, row: target.row ?? 1,
-                     dir: f.dir, t: 0.22, life: 0.22 });
+                     dir: f.dir, t: 0.22, life: 0.22, sty: 'melee', st: f.s, color: f.s.accent });
       sfx(f.s.area ? 'hit' : 'slash');
     }
   }
@@ -2075,13 +2080,20 @@ class Battle {
     if (target.isCastle) {
       if (target.side === 'ally') this.shake = Math.max(this.shake, 8);
     } else if (dealt >= 1 && this.dmgFxCount < 14) {
-      this.dmgFxCount++;
-      // 3.14: 같은 순간 같은 적에게 들어간 숫자는 한 줄씩 위로 (예전엔 '261999' 처럼 겹쳐 읽혔다)
-      let lift = 0;
-      for (const e of this.fx) if (e.type === 'dmg' && e.t > 0.5 && e.tgt === target) lift++;
-      this.fx.push({ type: 'dmg', x: target.x + (Math.random() - 0.5) * 26,
-                     row: target.row, v: Math.round(dealt), dy: Math.random() * 10 + Math.min(lift, 4) * 15,
-                     crit: !!crit, ally: target.side === 'ally', tgt: target, t: 0.65, life: 0.65 });
+      // 4.13 방금 같은 적에게 뜬 숫자가 있으면 거기에 더한다 (범위 공격 · 여럿이 한꺼번에 칠 때 숫자 탑이 쌓이지 않게)
+      let merged = null;
+      for (const e of this.fx) if (e.type === 'dmg' && e.tgt === target && e.t > 0.55 && e.crit === !!crit) { merged = e; break; }
+      if (merged) { merged.v += Math.round(dealt); merged.bump = 0.12; }
+      else {
+        this.dmgFxCount++;
+        // 3.14: 같은 순간 같은 적에게 들어간 숫자는 한 줄씩 위로 (예전엔 '261999' 처럼 겹쳐 읽혔다)
+        // 4.13 옆에 붙어 선 다른 적의 숫자도 피해 위로 쌓고, 좌우로 번갈아 비켜 놓는다
+        let lift = 0;
+        for (const e of this.fx) if (e.type === 'dmg' && e.t > 0.4 && Math.abs(e.x - target.x) < 34) lift++;
+        this.fx.push({ type: 'dmg', x: target.x + (Math.random() - 0.5) * 16 + (lift ? (lift % 2 ? 14 : -14) : 0),
+                       row: target.row, v: Math.round(dealt), dy: Math.random() * 6 + Math.min(lift, 4) * 15,
+                       crit: !!crit, ally: target.side === 'ally', tgt: target, t: 0.65, life: 0.65 });
+      }
     }
     if (!src) return;
     if (!target.isCastle && target.ab.thorns && !src.s.ranged && !src.dead && dealt > 0) {
@@ -2241,7 +2253,7 @@ class Battle {
       // 노린 병사가 날아가는 사이 쓰러졌을 때: 적의 화살은 성채로 새지 않는다
       if (!hit && !castle.dead && Math.abs(castle.x - s.tx) < 110 && (s.side === 'ally' || s.toCastle)) hit = castle;
       if (hit) this.hitOne(s.dmg, hit, s.src, s.crit);
-      this.fx.push({ type: s.crit ? 'crit' : 'hit', x: hit ? hit.x : s.tx, row: hit ? (hit.row ?? s.y0) : s.y0, dir: s.dir, t: 0.22, life: 0.22 });
+      this.fx.push({ type: s.crit ? 'crit' : 'hit', x: hit ? hit.x : s.tx, row: hit ? (hit.row ?? s.y0) : s.y0, dir: s.dir, t: 0.22, life: 0.22, sty: 'shoot', color: s.color });
     }
     this.shots = this.shots.filter(s => !s.done);
   }
