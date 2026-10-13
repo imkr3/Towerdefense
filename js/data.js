@@ -1644,7 +1644,7 @@ STAGES.push(
     W(12,'sporecap',5,1.1),W(22,'pixie',8,.45),W(44,'satyr',1),W(64,'sporecap',6,1),W(88,'wisp',3,2.2),W(112,'pixie',10,.4),W(138,'sporecap',8,.9),W(166,'satyr',2,4),W(196,'sporecap',8,.8)]},
   {name:'★ 버섯 왕의 궁정',hint:'포자 폭탄 예고를 피하고, 중독은 정화로 · 버섯 무리는 범위로 한꺼번에',baseHp:180000,money:705,rate:90,reward:8000,boss:true,enemyMul:19,waves:[
     W(12,'sporecap',6,1),W(24,'mushking',1),W(48,'pixie',10,.4),W(74,'wisp',3,2.2),W(100,'sporecap',8,.9),W(128,'satyr',2,4),W(156,'pixie',12,.35),W(186,'sporecap',10,.8)]},
-  {name:'홀림불 늪',hint:'홀림불은 멀리서 못 쏩니다 · 튼튼한 근접 전열을 앞세우고 범위로 태우세요',baseHp:299000,money:710,rate:91,reward:7700,enemyMul:27,waves:[
+  {name:'홀림불 늪',hint:'홀림불은 멀리서 못 쏩니다 · 튼튼한 근접 전열을 앞세우고 범위로 태우세요',baseHp:299000,money:710,rate:91,reward:7700,enemyMul:25,waves:[
     W(12,'wisp',3,2),W(20,'sporecap',5,1.1),W(42,'wisp',4,1.8),W(66,'pixie',10,.4),W(92,'wisp',5,1.6),W(118,'satyr',2,4),W(146,'sporecap',8,.9),W(176,'wisp',6,1.4),W(206,'pixie',12,.35)]},
   {name:'고목의 회랑',hint:'나무 정령은 화상이 붙으면 다시 자라지 못합니다 · 화상과 파쇄로',baseHp:339000,money:720,rate:92,reward:7900,enemyMul:32.4,mods:['ironclad'],waves:[
     W(12,'sporecap',6,1),W(22,'treant',1),W(46,'wisp',3,2.2),W(72,'treant',2,4),W(98,'pixie',10,.4),W(124,'satyr',2,4),W(150,'treant',2,4),W(178,'sporecap',8,.9),W(208,'wisp',4,1.8)]},
@@ -1656,7 +1656,7 @@ STAGES.push(
     W(12,'pixie',8,.45),W(26,'unicorn',2,3),W(44,'unicorn',3,2.5),W(68,'wisp',4,1.8),W(94,'sporecap',8,.9),W(120,'unicorn',3,2.5),W(146,'satyr',2,4),W(174,'treant',2,4),W(204,'unicorn',4,2)]},
   {name:'숲의 심장부',hint:'요정 숲의 모든 군단 · 정화 · 화상 · 범위를 함께',baseHp:246000,money:755,rate:96,reward:8800,enemyMul:40,mods:['horde','curse'],waves:[
     W(12,'sporecap',8,.9),W(22,'wisp',3,2.2),W(44,'pixie',12,.35),W(68,'treant',2,4),W(92,'satyr',2,4),W(118,'unicorn',3,2.5),W(144,'pixie',14,.35),W(172,'sporecap',10,.8),W(202,'wisp',5,1.6),W(232,'treant',3,3)]},
-  {name:'★ 고목왕',hint:'고목왕은 화상 없이는 계속 자랍니다 · 열매 예고를 피하고, 뿌리가 흔들리면 왕명과 필살을',baseHp:215000,money:770,rate:98,reward:9800,boss:true,enemyMul:24.8,waves:[
+  {name:'★ 고목왕',hint:'고목왕은 화상 없이는 계속 자랍니다 · 열매 예고를 피하고, 뿌리가 흔들리면 왕명과 필살을',baseHp:215000,money:770,rate:98,reward:9800,boss:true,enemyMul:22,waves:[
     W(12,'treant',2,4),W(26,'eldertree',1),W(52,'pixie',12,.35),W(80,'sporecap',8,.9),W(110,'wisp',5,1.6),W(140,'satyr',3,3),W(170,'unicorn',3,2.5),W(200,'treant',3,3),W(232,'pixie',16,.3),W(262,'sporecap',10,.8)]}
 );
 
@@ -2016,7 +2016,7 @@ STAGES.forEach((st, i) => {
  * ======================================================================= */
 const EVENT_STAGES = [
   { name: '핏빛 월식', bossId: 'vampire', bossRole: 'caster', boss: true, look: 'graveyard', music: 'underworld',
-    bossMusic: 'boss_vampire', mods: ['curse'], baseHp: 36000, money: 520, rate: 58, reward: 0, enemyMul: 10, bossMul: { hp: 20, atk: 1.6 },
+    bossMusic: 'boss_vampire', mods: ['curse'], baseHp: 36000, money: 520, rate: 58, reward: 0, enemyMul: 13.5, bossMul: { hp: 22, atk: 1.6 },
     fury: { per30: 0.1, max: 1.2 }, len: 1500,
     event: { id: 'eclipse', deck: ['thor','zeus','ra','odin','pyro','javelin','knight','spartan','frost','catapult'],
              unlock: 10, reward: 6000, stones: 12,
@@ -2025,7 +2025,7 @@ const EVENT_STAGES = [
             W(70,'wraith',5,1.4), W(96,'bat',10,.5), W(120,'bloodthrall',4,1.6), W(150,'hexer',4,1.4), W(180,'wraith',6,1.2),
             W(210,'bloodthrall',5,1.4)] },
   { name: '거신의 망치', bossId: 'titan', bossRole: 'bruiser', boss: true, look: 'volcano', music: 'volcano',
-    bossMusic: 'boss_titan', mods: ['ironclad'], baseHp: 42000, money: 540, rate: 60, reward: 0, enemyMul: 10, bossMul: { hp: 10.4, atk: 1.6 },
+    bossMusic: 'boss_titan', mods: ['ironclad'], baseHp: 42000, money: 540, rate: 60, reward: 0, enemyMul: 11, bossMul: { hp: 4.5, atk: 1.6 },
     fury: { per30: 0.1, max: 1.2 }, len: 1550,
     event: { id: 'titan', deck: ['thor','ra','odin','rapriest','venom','pyro','alchemist','javelin','shield','knight'],
              unlock: 15, reward: 9000, stones: 15,
@@ -2034,7 +2034,7 @@ const EVENT_STAGES = [
             W(66,'rockling',6,1.2), W(92,'golem',2,5), W(120,'stoneward',2,4), W(146,'siegeram',2,5), W(176,'rockling',8,1),
             W(206,'golem',2,5)] },
   { name: '망령 함대', bossId: 'ghostcaptain', bossRole: 'caster', boss: true, look: 'blackriver', music: 'blackriver',
-    bossMusic: 'boss_ghostfleet', mods: ['blitz'], baseHp: 44000, money: 560, rate: 62, reward: 0, enemyMul: 5.8, bossMul: { hp: 2, atk: 1.6 },
+    bossMusic: 'boss_ghostfleet', mods: ['blitz'], baseHp: 44000, money: 560, rate: 62, reward: 0, enemyMul: 5.6, bossMul: { hp: 2, atk: 1.6 },
     fury: { per30: 0.1, max: 1.3 }, len: 1550,
     event: { id: 'fleet', deck: ['zeus','odin','thor','shield','spartan','frost','frostlancer','pyro','catapult','knight'],
              unlock: 20, reward: 12000, stones: 18,
@@ -2043,7 +2043,7 @@ const EVENT_STAGES = [
             W(46,'ghostsailor',5,.8), W(72,'ghostgunner',3,3), W(100,'ghostsailor',8,.7), W(128,'wraith',6,1),
             W(156,'ghostgunner',3,3), W(186,'ghostsailor',10,.6), W(216,'wraith',8,.9)] },
   { name: '혼돈의 균열', bossId: 'voidlord', bossRole: 'caster', boss: true, look: 'eclipse', music: 'eclipse',
-    bossMusic: 'boss_voidlord', mods: ['horde'], baseHp: 48000, money: 580, rate: 64, reward: 0, enemyMul: 10, bossMul: { hp: 5.1, atk: 1.6 },
+    bossMusic: 'boss_voidlord', mods: ['horde'], baseHp: 48000, money: 580, rate: 64, reward: 0, enemyMul: 9.7, bossMul: { hp: 5.1, atk: 1.6 },
     fury: { per30: 0.1, max: 1.3 }, len: 1600,
     event: { id: 'rift', deck: ['zeus','odin','thor','pyro','catapult','frost','knight','shield','spear','mage'],
              unlock: 25, reward: 15000, stones: 20,
@@ -2052,7 +2052,7 @@ const EVENT_STAGES = [
             W(72,'riftcaller',2,4), W(98,'mirror',4,1.4), W(124,'voidspawn',10,.6), W(152,'souleater',2,4),
             W(180,'riftcaller',2,4), W(210,'voidspawn',12,.5)] },
   { name: '마왕 강림', bossId: 'demonking', bossRole: 'bruiser', boss: true, look: 'mythic', music: 'mythic',
-    bossMusic: 'boss_demonking', mods: ['giantslayer', 'curse'], baseHp: 56000, money: 600, rate: 66, reward: 0, enemyMul: 9.5, bossMul: { hp: 2.5, atk: 1.7 },
+    bossMusic: 'boss_demonking', mods: ['giantslayer', 'curse'], baseHp: 56000, money: 600, rate: 66, reward: 0, enemyMul: 9, bossMul: { hp: 1.8, atk: 1.7 },
     fury: { per30: 0.12, max: 1.5 }, len: 1650,
     event: { id: 'demonking', deck: ['spear','shield','javelin','venom','catapult','pyro','frost','knight','musketeer','sniper'],
              unlock: 30, reward: 25000, stones: 30,

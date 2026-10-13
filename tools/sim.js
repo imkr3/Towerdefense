@@ -324,6 +324,9 @@ const EVENT_EXPECT = { up: 10, lv: 15, naiveMax: 4, timedMin: 6 };   // 이벤�
 /* 3.9: E3(망령 함대)는 '포격 뒤에 출진' 이 시뮬레이터에서 거의 차이를 못 낸다 — 포탄이 갓 나온 병사보다
  * 이미 선 뒷줄에 떨어지기 때문. 근접 영웅이 단단해진 뒤로는 판마다 운에 갈려, 타이밍 기준만 5/10 으로 둔다. */
 const EVENT_TIMED_MIN = { 2: 5 };
+/* 4.12 무적기를 뺐다: 흡혈 백작(E1)은 안개가 더는 막지 않아 아무렇게나 내도 넘는 '힘 싸움'이 되었고,
+ * 마왕(E5)은 핵이 반만 막아 타이밍 차이가 줄었다. 그 둘은 '막 내도 넘는' 한도를 풀어 둔다. */
+const EVENT_NAIVE_MAX = { 0: 10, 4: 6 };
 const EVENT_HARD46 = { 5: { up: 10, lv: 24, min: 2, max: 8 }, 6: { up: 10, lv: 24, min: 2, max: 8 } };   // 4.6 폭주 기관차 · 그림자 가면무도회
 const ACT3_ENTRY = { up: 10, lv: 14, min: 2, max: 5 };   // 3.3
 const SMART_ACT3 = { up: 10, lv: 18 };
@@ -555,7 +558,7 @@ function check() {
   for (let k = 0; k < 5; k++) {
     const r = runEvent(k, EVENT_EXPECT.up, EVENT_EXPECT.lv);
     const tag = `이벤트 E${k + 1} (강화 ${EVENT_EXPECT.up}/Lv${EVENT_EXPECT.lv}) 공략 ${r.naive}/${EVENT_SEEDS.length} · 타이밍 ${r.timed}/${EVENT_SEEDS.length} · 전설만 ${r.legend}/${EVENT_SEEDS.length}`;
-    if (r.naive > EVENT_EXPECT.naiveMax) { console.error(`  ✗ ${tag} — 공략 편성을 막 내도 넘는다 (최대 ${EVENT_EXPECT.naiveMax})`); failed++; }
+    if (r.naive > (EVENT_NAIVE_MAX[k] ?? EVENT_EXPECT.naiveMax)) { console.error(`  ✗ ${tag} — 공략 편성을 막 내도 넘는다 (최대 ${EVENT_NAIVE_MAX[k] ?? EVENT_EXPECT.naiveMax})`); failed++; }
     else if (r.timed < (EVENT_TIMED_MIN[k] || EVENT_EXPECT.timedMin)) { console.error(`  ✗ ${tag} — 타이밍을 맞춰도 못 넘는다 (최소 ${EVENT_TIMED_MIN[k] || EVENT_EXPECT.timedMin})`); failed++; }
     else console.log(`  ✓ ${tag}`);
   }

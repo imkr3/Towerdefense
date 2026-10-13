@@ -47,7 +47,8 @@ function sfx(name) {
 
 /* 4.12 보스: 밀치기는 1/3 만 먹고, 근접 보스는 칠 적이 없으면 던진다 */
 const BOSS_PUSH_TAKEN = 0.35;
-const BOSS_THROW = { first: 2, every: 3.2, range: 380, mul: 0.45, radius: 70 };
+const HOLD_GAP = 12;          // 밀려나도 자기 요새 바로 앞에서 멈춘다 (근접 병사가 닿는 자리)
+const BOSS_THROW = { first: 2, every: 4.5, range: 340, mul: 0.25, radius: 70 };
 const FX_LIMIT = 200;        // 이펙트가 무한정 쌓이지 않게
 const X3_FX_LIMIT = 12;      // 4.3 3진 연출(포연·광선·사이렌)이 한꺼번에 떠 있을 수 있는 수
 // 3진의 타격 연출 → 땅에 남는 Canvas 연출 (연기 · 흙 · 갈라진 땅 · 눈더미 · 그을린 자국)
@@ -1386,11 +1387,11 @@ class Battle {
     }
   }
 
-  /* 4.12 밀려나는 한계: 넉백 · 밀치기로도 자기 요새 앞(출진 지점)보다 뒤로는 밀리지 않는다.
+  /* 4.12 밀려나는 한계: 넉백 · 밀치기로도 자기 요새 바로 앞보다 뒤로는 밀리지 않는다.
    * 예전엔 적이 요새 뒤까지 밀려나 근접 병사가 닿지 못하고, 그 적도 아무도 못 치는 채로 굳었다. */
   holdLine(f) {
-    if (f.side === 'enemy') { if (f.x > ENEMY_SPAWN_X) f.x = ENEMY_SPAWN_X; }
-    else if (f.x < ALLY_SPAWN_X) f.x = ALLY_SPAWN_X;
+    if (f.side === 'enemy') { if (f.x > ENEMY_BASE_X - HOLD_GAP) f.x = ENEMY_BASE_X - HOLD_GAP; }
+    else if (f.x < ALLY_BASE_X + HOLD_GAP) f.x = ALLY_BASE_X + HOLD_GAP;
     if (f.x < 60) f.x = 60; else if (f.x > WORLD - 60) f.x = WORLD - 60;
   }
   /* 4.12 근접 보스의 던지기: 앞에 칠 병사가 없으면 every 초마다 사거리 안의 가장 가까운 병사에게
