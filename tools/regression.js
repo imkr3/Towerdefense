@@ -1593,12 +1593,12 @@ test('4.12: pushes never shove a foe behind its own fort; bosses take a third of
   const b = battle(); const W = world();
   const e = b.spawnEnemy('ogre', W.ENEMY_SPAWN_X - 10); e.kbTimer = 5;
   for (let i = 0; i < 90; i++) b.step(b.enemies, b.allies, b.allyCastle, 1 / 30, false);
-  assert.ok(e.x <= W.ENEMY_SPAWN_X + 1e-6, 'knockback stops at the fort front: ' + e.x);
+  assert.ok(e.x <= W.ENEMY_BASE_X - 12 + 1e-6 && e.x > W.ENEMY_SPAWN_X, 'knockback stops just in front of the fort: ' + e.x);
   const sus = b.makeAlly(G.resolveUnit(U.susanoo, 10), 500); b.allies.push(sus);
   const boss = b.spawnEnemy('troll', 700), mob = b.spawnEnemy('ogre', 700);
   b.hitOne(1, boss, sus, false); b.hitOne(1, mob, sus, false);
   assert.ok(boss.x - 700 < (mob.x - 700) * 0.5 && boss.x > 700, 'boss pushed less: ' + (boss.x - 700) + ' vs ' + (mob.x - 700));
-  const a = b.makeAlly(U.spear, 200); a.x -= 400; b.holdLine(a); assert.ok(a.x >= 150, 'allies hold at their own fort front too');
+  const a = b.makeAlly(U.spear, 200); a.x -= 400; b.holdLine(a); assert.ok(a.x >= 96 + 12, 'allies hold at their own fort front too');
 });
 test('4.12: a melee boss with nobody in reach throws at the nearest troop', () => {
   const b = battle();

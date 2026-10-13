@@ -1553,7 +1553,7 @@ STAGES.push(
     W(2,'hellhound',9,.8),W(26,'powder',6,1.8),W(52,'drake',1),W(80,'plaguer',6,2),W(108,'orcshield',6,1.8),W(138,'drake',1),W(170,'hellhound',10,.8),W(200,'siegeram',2,4),W(230,'dark',7,1.5)]},
   {name:'황금 일식의 제단',hint:'치유·가속 토템을 범위 공격으로 압박',baseHp:47500,money:450,rate:56,reward:1650,boss:true,enemyMul:4.2,waves:[
     W(2,'orcshield',5,2),W(26,'totem',2,6),W(50,'shaman',5,3),W(78,'warlord',1),W(108,'golem',2,5),W(140,'drake',1),W(174,'warchief',3,5),W(208,'orcberserk',8,1),W(240,'lich',2,8)]},
-  {name:'★ 세 신화의 종착지',hint:'원거리 호위를 먼저 걷어 내고, 대군주에게 액티브와 왕명을 집중하세요',baseHp:51000,money:465,rate:58,reward:2200,boss:true,enemyMul:11,bossMul:{hp:.65},waves:[
+  {name:'★ 세 신화의 종착지',hint:'원거리 호위를 먼저 걷어 내고, 대군주에게 액티브와 왕명을 집중하세요',baseHp:51000,money:465,rate:58,reward:2200,boss:true,enemyMul:10,bossMul:{hp:.65},waves:[
     W(2,'orcshield',5,2),W(26,'lich',1),W(52,'frostgiant',1),W(82,'drake',1),W(114,'warlord',1),W(148,'warchief',2,5),W(182,'spiderqueen',1),W(216,'golem',3,5),W(248,'warlord',1),W(276,'hellhound',10,.8)]}
 );
 
@@ -1566,13 +1566,13 @@ STAGES.push(
     W(2,'eel',8,.6),W(20,'jelly',8,.6),W(40,'nagaspear',6,1),W(64,'tidecaller',1),W(84,'eel',10,.5),W(110,'clawcrab',5,1.8),W(138,'deepone',4,2),W(166,'jelly',12,.5),W(196,'eel',12,.5)]},
   {name:'★ 크라켄의 만',hint:'촉수 예고를 피하고, 크라켄이 부르는 해파리를 범위로 걷어 내세요',baseHp:58000,money:480,rate:62,reward:2900,boss:true,enemyMul:20.0,waves:[
     W(2,'nagaspear',6,1),W(24,'kraken',1),W(46,'jelly',8,.6),W(70,'clawcrab',5,1.8),W(96,'eel',8,.6),W(124,'deepone',4,2),W(152,'nagaspear',8,.9),W(184,'clawcrab',6,1.6)]},
-  {name:'안개 등대',hint:'세이렌의 노래 · 등대지기의 등불이 홀림을 풉니다',baseHp:60000,money:485,rate:62,reward:2700,enemyMul:27.0,waves:[
+  {name:'안개 등대',hint:'세이렌의 노래 · 등대지기의 등불이 홀림을 풉니다',baseHp:60000,money:485,rate:62,reward:2700,enemyMul:29.0,waves:[
     W(2,'nagaspear',6,1),W(20,'siren',2,3),W(40,'deepone',4,2),W(62,'siren',3,2.5),W(86,'clawcrab',5,1.8),W(112,'seahook',2,4),W(138,'nagaspear',8,.9),W(166,'siren',3,2.5),W(194,'deepone',5,1.8)]},
   {name:'세이렌의 암초',hint:'노래하는 세이렌을 매 조련사와 원거리로 먼저',baseHp:62000,money:490,rate:63,reward:2800,enemyMul:27.0,waves:[
     W(2,'siren',3,2),W(22,'nagaspear',8,.9),W(44,'seahook',2,4),W(66,'siren',4,2),W(90,'eel',10,.5),W(116,'tidecaller',2,5),W(142,'deepone',5,1.8),W(170,'siren',4,2),W(200,'clawcrab',6,1.6)]},
   {name:'★ 해일 여왕의 신전',hint:'해일에 밀려도 닻 수호병은 버팁니다 · 여왕이 부르는 나가를 걷어 내세요',baseHp:65000,money:500,rate:64,reward:3200,boss:true,enemyMul:14.0,waves:[
     W(2,'nagaspear',8,.9),W(26,'tidequeen',1),W(50,'siren',3,2.5),W(76,'clawcrab',6,1.6),W(104,'tidecaller',2,5),W(132,'deepone',5,1.8),W(162,'nagaspear',10,.8),W(194,'eel',12,.5)]},
-  {name:'침몰한 도시',hint:'단단한 무리 · 파쇄와 범위로',baseHp:66000,money:505,rate:64,reward:3000,enemyMul:36.0,waves:[
+  {name:'침몰한 도시',hint:'단단한 무리 · 파쇄와 범위로',baseHp:66000,money:505,rate:64,reward:3000,enemyMul:38.0,waves:[
     W(2,'clawcrab',6,1.6),W(24,'deepone',5,1.8),W(48,'jelly',12,.5),W(72,'seahook',3,3),W(98,'clawcrab',8,1.4),W(126,'golem',2,5),W(154,'deepone',6,1.6),W(184,'nagaspear',10,.8),W(214,'clawcrab',8,1.4)]},
   {name:'폭풍 해협',hint:'질주하는 장어와 영웅 사냥꾼 · 값싼 벽과 범위로',baseHp:68000,money:510,rate:65,reward:3100,enemyMul:16.0,waves:[
     W(2,'eel',12,.5),W(22,'nagaspear',8,.9),W(46,'tidecaller',2,4),W(70,'eel',14,.4),W(96,'siren',4,2),W(122,'hellhound',8,.7),W(150,'nagaspear',10,.8),W(180,'eel',16,.4),W(210,'deepone',6,1.6)]},
@@ -1612,7 +1612,7 @@ STAGES.push(
  * 4막보다 한 단계 억세다: 적 배율이 높고, 처음부터 특성이 붙은 전장이 섞인다. */
 const ACT5_FROM = 50;
 STAGES.push(
-  {name:'덩굴 오솔길',hint:'날쌘 랩터는 넉백 면역 방패와 범위로 · 원거리는 전열 뒤에',baseHp:104000,money:610,rate:77,reward:4600,enemyMul:20.5,waves:[
+  {name:'덩굴 오솔길',hint:'날쌘 랩터는 넉백 면역 방패와 범위로 · 원거리는 전열 뒤에',baseHp:104000,money:610,rate:77,reward:4600,enemyMul:19.5,waves:[
     W(12,'lizardman',5,1),W(22,'raptor',6,.6),W(44,'poisontoad',2,2.5),W(66,'lizardman',7,.9),W(90,'raptor',8,.5),W(116,'vineshaman',1),W(140,'lizardman',8,.8),W(168,'raptor',10,.45),W(198,'poisontoad',3,2.2)]},
   {name:'독안개 늪',hint:'독두꺼비의 범위 중독 · 정화사로 풀고 저격으로 먼저',baseHp:106000,money:615,rate:78,reward:4700,enemyMul:19.5,mods:['curse'],waves:[
     W(12,'poisontoad',3,2.2),W(22,'lizardman',6,.9),W(44,'vineshaman',1),W(64,'poisontoad',4,2),W(88,'raptor',8,.5),W(112,'lizardman',8,.8),W(138,'poisontoad',5,1.8),W(166,'vineshaman',2,4),W(196,'raptor',12,.4)]},
@@ -1638,25 +1638,25 @@ STAGES.push(
  * 5막보다 또 한 단계: 멀리서만 쏘면 홀림불이 안 보이고, 버섯은 쓰러지며 독을 뿌리고, 나무 정령은 화상 없이는 다시 자란다. */
 const ACT6_FROM = 60;
 STAGES.push(
-  {name:'요정 고리 숲길',hint:'날쌘 요정 떼는 범위 공격으로 · 홀림불은 가까이 가야 보입니다',baseHp:307000,money:690,rate:88,reward:7200,enemyMul:33.5,waves:[
+  {name:'요정 고리 숲길',hint:'날쌘 요정 떼는 범위 공격으로 · 홀림불은 가까이 가야 보입니다',baseHp:307000,money:690,rate:88,reward:7200,enemyMul:35.2,waves:[
     W(12,'pixie',6,.5),W(22,'sporecap',4,1.2),W(44,'wisp',2,2.5),W(66,'pixie',10,.4),W(90,'sporecap',6,1),W(116,'satyr',1),W(140,'wisp',3,2.2),W(168,'pixie',12,.35),W(198,'sporecap',7,.9)]},
-  {name:'독버섯 골짜기',hint:'버섯은 쓰러지며 포자를 터뜨립니다 · 정화사를 데려가고 앞줄을 자주 갈아 주세요',baseHp:515000,money:695,rate:89,reward:7400,enemyMul:49.9,mods:['horde'],waves:[
+  {name:'독버섯 골짜기',hint:'버섯은 쓰러지며 포자를 터뜨립니다 · 정화사를 데려가고 앞줄을 자주 갈아 주세요',baseHp:515000,money:695,rate:89,reward:7400,enemyMul:52.4,mods:['horde'],waves:[
     W(12,'sporecap',5,1.1),W(22,'pixie',8,.45),W(44,'satyr',1),W(64,'sporecap',6,1),W(88,'wisp',3,2.2),W(112,'pixie',10,.4),W(138,'sporecap',8,.9),W(166,'satyr',2,4),W(196,'sporecap',8,.8)]},
   {name:'★ 버섯 왕의 궁정',hint:'포자 폭탄 예고를 피하고, 중독은 정화로 · 버섯 무리는 범위로 한꺼번에',baseHp:180000,money:705,rate:90,reward:8000,boss:true,enemyMul:19,waves:[
     W(12,'sporecap',6,1),W(24,'mushking',1),W(48,'pixie',10,.4),W(74,'wisp',3,2.2),W(100,'sporecap',8,.9),W(128,'satyr',2,4),W(156,'pixie',12,.35),W(186,'sporecap',10,.8)]},
-  {name:'홀림불 늪',hint:'홀림불은 멀리서 못 쏩니다 · 튼튼한 근접 전열을 앞세우고 범위로 태우세요',baseHp:299000,money:710,rate:91,reward:7700,enemyMul:25,waves:[
+  {name:'홀림불 늪',hint:'홀림불은 멀리서 못 쏩니다 · 튼튼한 근접 전열을 앞세우고 범위로 태우세요',baseHp:299000,money:710,rate:91,reward:7700,enemyMul:26.5,waves:[
     W(12,'wisp',3,2),W(20,'sporecap',5,1.1),W(42,'wisp',4,1.8),W(66,'pixie',10,.4),W(92,'wisp',5,1.6),W(118,'satyr',2,4),W(146,'sporecap',8,.9),W(176,'wisp',6,1.4),W(206,'pixie',12,.35)]},
   {name:'고목의 회랑',hint:'나무 정령은 화상이 붙으면 다시 자라지 못합니다 · 화상과 파쇄로',baseHp:339000,money:720,rate:92,reward:7900,enemyMul:32.4,mods:['ironclad'],waves:[
     W(12,'sporecap',6,1),W(22,'treant',1),W(46,'wisp',3,2.2),W(72,'treant',2,4),W(98,'pixie',10,.4),W(124,'satyr',2,4),W(150,'treant',2,4),W(178,'sporecap',8,.9),W(208,'wisp',4,1.8)]},
   {name:'★ 달빛 요정 궁',hint:'꽃덩굴에 묶이면 둔화 · 달빛 화살 예고를 피하고 왕명으로 버티세요',baseHp:194000,money:730,rate:93,reward:8600,boss:true,enemyMul:14,waves:[
     W(12,'pixie',10,.4),W(26,'faequeen',1),W(50,'wisp',4,1.8),W(76,'sporecap',8,.9),W(104,'treant',2,4),W(132,'satyr',2,4),W(162,'pixie',14,.35),W(194,'unicorn',2,3)]},
-  {name:'사티로스의 잔치',hint:'피리 소리가 적을 북돋웁니다 · 피리꾼을 먼저, 저주된 아군은 잠시 뒤로',baseHp:590000,money:740,rate:94,reward:8200,enemyMul:52.3,waves:[
+  {name:'사티로스의 잔치',hint:'피리 소리가 적을 북돋웁니다 · 피리꾼을 먼저, 저주된 아군은 잠시 뒤로',baseHp:590000,money:740,rate:94,reward:8200,enemyMul:54.9,waves:[
     W(12,'satyr',2,3),W(22,'sporecap',6,1),W(44,'unicorn',2,3),W(68,'satyr',3,2.5),W(94,'pixie',12,.35),W(120,'unicorn',2,3),W(146,'wisp',4,1.8),W(174,'satyr',3,2.5),W(204,'sporecap',10,.8)]},
-  {name:'일각수 초원',hint:'일각수의 돌격 첫 일격 · 넉백 면역 방패를 앞에 두고 치유하는 기사를 먼저',baseHp:328000,money:745,rate:95,reward:8400,enemyMul:35.6,mods:['blitz'],waves:[
+  {name:'일각수 초원',hint:'일각수의 돌격 첫 일격 · 넉백 면역 방패를 앞에 두고 치유하는 기사를 먼저',baseHp:328000,money:745,rate:95,reward:8400,enemyMul:37.4,mods:['blitz'],waves:[
     W(12,'pixie',8,.45),W(26,'unicorn',2,3),W(44,'unicorn',3,2.5),W(68,'wisp',4,1.8),W(94,'sporecap',8,.9),W(120,'unicorn',3,2.5),W(146,'satyr',2,4),W(174,'treant',2,4),W(204,'unicorn',4,2)]},
-  {name:'숲의 심장부',hint:'요정 숲의 모든 군단 · 정화 · 화상 · 범위를 함께',baseHp:246000,money:755,rate:96,reward:8800,enemyMul:40,mods:['horde','curse'],waves:[
+  {name:'숲의 심장부',hint:'요정 숲의 모든 군단 · 정화 · 화상 · 범위를 함께',baseHp:246000,money:755,rate:96,reward:8800,enemyMul:42,mods:['horde','curse'],waves:[
     W(12,'sporecap',8,.9),W(22,'wisp',3,2.2),W(44,'pixie',12,.35),W(68,'treant',2,4),W(92,'satyr',2,4),W(118,'unicorn',3,2.5),W(144,'pixie',14,.35),W(172,'sporecap',10,.8),W(202,'wisp',5,1.6),W(232,'treant',3,3)]},
-  {name:'★ 고목왕',hint:'고목왕은 화상 없이는 계속 자랍니다 · 열매 예고를 피하고, 뿌리가 흔들리면 왕명과 필살을',baseHp:215000,money:770,rate:98,reward:9800,boss:true,enemyMul:22,waves:[
+  {name:'★ 고목왕',hint:'고목왕은 화상 없이는 계속 자랍니다 · 열매 예고를 피하고, 뿌리가 흔들리면 왕명과 필살을',baseHp:215000,money:770,rate:98,reward:9800,boss:true,enemyMul:23.5,waves:[
     W(12,'treant',2,4),W(26,'eldertree',1),W(52,'pixie',12,.35),W(80,'sporecap',8,.9),W(110,'wisp',5,1.6),W(140,'satyr',3,3),W(170,'unicorn',3,2.5),W(200,'treant',3,3),W(232,'pixie',16,.3),W(262,'sporecap',10,.8)]}
 );
 
