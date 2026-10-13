@@ -3,7 +3,7 @@
  * ======================================================================= */
 
 
-const APP_VERSION = '4.13.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
+const APP_VERSION = '4.14.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
 
 function defaultSave() {
   const lv = {};
@@ -1591,8 +1591,9 @@ let autoTimer = 0;
 let playAccum = 0;
 let resultTimer = null;
 function canBattleInput() {
-  return battle && battle.state === 'play' && !paused && !$('.modal.show') &&
-    $('#scr-battle').classList.contains('active');
+  // 4.14 HUD 가 매 프레임 부르므로 선택자 대신 살아 있는 목록(openModals)과 잡아 둔 전투 화면을 쓴다
+  return battle && battle.state === 'play' && !paused && openModals.length === 0 &&
+    (battleScr || (battleScr = $('#scr-battle'))).classList.contains('active');
 }
 function setPaused(value) {
   paused = value;
@@ -1659,7 +1660,8 @@ function updateHud() {
   hudClass(hudEl('.troop-chip'), 'full', troops >= FIELD_CAP);
   const cmdBtn = hudEl('#btn-command');
   const ready = battle.canCommand();
-  const cmdOff = !canBattleInput() || !ready;
+  const inputOk = canBattleInput();
+  const cmdOff = !inputOk || !ready;
   if (cmdBtn.disabled !== cmdOff) cmdBtn.disabled = cmdOff;
   const allyPct = Math.max(0, battle.allyCastle.hp / battle.allyCastle.maxHp * 100);
   const enemyPct = Math.max(0, battle.enemyCastle.hp / battle.enemyCastle.maxHp * 100);
@@ -1689,7 +1691,6 @@ function updateHud() {
   hudText(hudEl('#wallet-txt'), battle.walletMax);
   hudStyle(hudEl('#wallet-fill'), 'width', pct1(battle.money / battle.walletMax * 100));
   hudClass(hudEl('.wallet'), 'full', battle.money >= battle.walletMax - 1);   // 3.8: 가득 차면 쓰라고 빛난다
-  const inputOk = canBattleInput();
   // 3.14: 필살이 둘 이상 준비되면 '필살 모두' 버튼
   let actReady = 0;
   for (const u of battle.roster) if (u.active && battle.canHeroActive(u.id)) actReady++;
@@ -2316,6 +2317,7 @@ function init() {
         const fresh = defaultSave();
         if (!SaveStore.write(fresh, true)) { toast(SaveStore.error); return; }
         save = fresh;
+        mapChapter = -1; mapSel = -1;      // 4.14 지난 기록의 장(잠긴 6막 등)에 머물지 않게
         refreshTitleBadges();
         toast('기록을 초기화했습니다');
       });
@@ -2421,7 +2423,7 @@ function init() {
     $('#btn-retry').textContent = '다시 도전';
     const idx = !battle ? null : battle.expedition ? 'exp:' + battle.expIndex : (!battle.endless && !battle.event ? battle.stageIndex : null);
     show('scr-map');                       // 편성에서 '뒤로' 가면 진군도로 (전투 화면이 아니라)
-    openFormation(idx);
+    openFormation(idx, battle && battle.hard);   // 4.14 하드코어는 고친 뒤에도 하드코어로
   });
   $('#btn-tomap').addEventListener('click', () => {
     $('#btn-retry').textContent = '다시 도전';
@@ -2665,6 +2667,7 @@ window.receiveSaveBackup = function(raw) {
       ' · 소환석 ' + candidate.stones + '. 이 데이터로 교체할까요? 현재 저장은 자동 백업에 남깁니다.', () => {
       if (!SaveStore.write(candidate, true)) { toast(SaveStore.error); return; }
       save=candidate;
+      mapChapter = -1; mapSel = -1;
       $('#modal-save').classList.remove('show'); $('#save-warning').hidden=true;
       show('scr-title'); toast('진행도를 복원했습니다.' + (candidate._refund ? ' (3진 금화 ' + candidate._refund.gold + ' 환불)' : ''));
     });

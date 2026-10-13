@@ -1080,6 +1080,13 @@ const I18N_EN_HTML = {
 
 /* 숫자가 붙은 말. 구절 치환보다 먼저 한다. */
 const I18N_EN_PATTERNS = [
+  // 4.14 숫자가 섞여 사전에 통째로 안 걸리던 문장들 (반쯤 한글로 남았다)
+  [/병력 가득 · 전장엔 (\d+)명까지/g, 'Army full · up to $1 on the field'],
+  [/전설·신화는 최대 (\d+)명까지 편성할 수 있습니다/g, 'Squads can field up to $1 Legend+ units'],
+  [/(\d+)개 칸을 채웠습니다/g, '$1 slots filled'],
+  [/추천 편성 (\d+)개 병종을 넣었습니다/g, 'Recommended squad: $1 units added'],
+  [/전장 (\d+)개 돌파 · 골드 (\d+) · 소환석 (\d+)\. 이 데이터로 교체할까요\? 현재 저장은 자동 백업에 남깁니다\./g,
+   '$1 stages cleared · Gold $2 · Summon stones $3. Replace with this data? Your current save stays in the auto backup.'],
   // 4.4 3진 시련
   [/✪ 3진 시련 달성 · /g, '✪ Trial cleared · '],
   [/그림자 가면: (.+?) 봉인/g, 'Shadow Mask: $1 sealed'],   // 4.6
@@ -1120,7 +1127,8 @@ const I18N_EN_PATTERNS = [
   [/지금 슬롯 (\d)을 저장하고 슬롯 (\d)\(으\)로 바꿉니다\./g, 'Saves slot $1 and switches to slot $2.'],
   [/슬롯 (\d)의 (진행도와 소환한 병종이 모두 삭제됩니다)/g, 'Slot $1: $2'],
   [/(\d+)시간 (\d+)분/g, '$1h $2m'],
-  [/(\d+)분 (\d+)초/g, '$1m $2s'],          // 4.2: 기록 탭의 총 전투 시간
+  [/(\d+)분 (\d+)초/g, '$1m $2s'],
+  [/(\d+)분(?![가-힣])/g, '$1m'],               // 4.14 한 시간이 안 된 플레이 시간 (슬롯 목록)          // 4.2: 기록 탭의 총 전투 시간
   [/(\d+)\s*전장 돌파/g, 'Stage $1 cleared'],
   [/전장 (\d+)/g, 'Stage $1'],
   [/(\d+)\s*전장/g, 'Stage $1'],

@@ -97,6 +97,16 @@ class GLFx {
     // 합성식이 포화형이어서 1 을 넘겨도 흰 덩어리로 터지지는 않는다.
     this.gain = 1.15;
     this.ok = this._init();
+    // 4.14 폰이 앱을 뒤로 보내거나 GPU 가 초기화되면 컨텍스트를 잃는다. 예전엔 ok 가 그대로라
+    // 렌더러가 Canvas2D 대체 연출도 안 그리고 빈 GL 층에만 보내 필살 연출이 통째로 사라졌다.
+    // 잃는 동안은 ok=false (Canvas2D 로 대체), 돌아오면 셰이더 · 버퍼를 다시 만든다.
+    canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); this.ok = false; this.count = 0; });
+    canvas.addEventListener('webglcontextrestored', () => {
+      this.vao = null;
+      this.ok = this._init();
+      this.count = 0; this._empty = false;
+      if (this.ok) this.resize(this.w, this.h, this.dpr);
+    });
   }
 
   _init() {

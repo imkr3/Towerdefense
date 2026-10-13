@@ -124,7 +124,10 @@ class Renderer {
    * 예전엔 카메라가 움직일 때마다(전투 중엔 거의 매 프레임) 화면 전체를 처음부터 다시 칠했다. */
   drawBackground(look) {
     const far = Math.round(this.cam * BG_FAR_PAR);          // 먼 겹에서 가장 빠른 시차가 움직인 픽셀
-    const key = look + '|' + this.w + 'x' + this.h + '|' + this.groundY + '|' + far;
+    // 4.14: 물결 · 등대 불빛 · 번개처럼 시계로 움직이는 겹이 있으면 카메라가 멈춰도 초당 15번 다시 그린다
+    // (예전엔 카메라가 설 때마다 바다와 구름이 얼어붙었다가 움직이면 툭 뛰었다)
+    const tick = bgAnimated(look) ? Math.floor((this.clock || 0) * BG_ANIM_FPS) : 0;
+    const key = look + '|' + this.w + 'x' + this.h + '|' + this.groundY + '|' + far + '|' + tick;
     if (this._bgKey !== key) {
       if (!this._bg) {
         this._bg = document.createElement('canvas');
@@ -1197,7 +1200,7 @@ class Renderer {
           ctx.strokeStyle = col; ctx.globalAlpha = p * 0.7; ctx.lineWidth = 1.5 * cs;
           ctx.beginPath(); ctx.ellipse(x - dir * 4 * cs, y, (9 + q * 10) * cs, (13 + q * 8) * cs, dir * 0.5, -1.0, 0.8); ctx.stroke();
         } else if (e.sty === 'heavy') {
-          const gy = this.rowY(e.row ?? 1);
+          const gy = this.rowY(e.row || 0);
           ctx.fillStyle = 'rgba(255,240,200,' + (p * 0.5) + ')'; ctx.beginPath(); ctx.arc(x, y, (10 + q * 8) * cs, 0, 7); ctx.fill();
           ctx.globalCompositeOperation = 'source-over';
           ctx.fillStyle = 'rgba(200,180,150,' + (p * 0.5) + ')';
@@ -1427,7 +1430,7 @@ class Renderer {
           const d = (k - 0.38) / 0.32;
           ctx.save(); ctx.rotate(ang); ctx.scale(e.dir, 1);
           ctx.fillStyle = 'rgba(220,205,180,' + (1 - d) * 0.45 + ')';
-          for (const sx of [-1, 1]) { ctx.beginPath(); ctx.ellipse(sx * (10 + d * 26) * sc - 24 * sc * e.dir, -2 * sc, (5 + d * 9) * sc, (2.5 + d * 3) * sc, 0, 0, 7); ctx.fill(); }
+          for (let sx = -1; sx <= 1; sx += 2) { ctx.beginPath(); ctx.ellipse(sx * (10 + d * 26) * sc - 24 * sc * e.dir, -2 * sc, (5 + d * 9) * sc, (2.5 + d * 3) * sc, 0, 0, 7); ctx.fill(); }
           ctx.restore();
         }
         if (k < 0.12) {                                 // 쓰러지는 순간 하얗게 번쩍
@@ -1453,7 +1456,7 @@ class Renderer {
           ctx.quadraticCurveTo(gx - 2 * sc, gy2 + 9 * sc, gx - 6 * sc, gy2 + 12 * sc); ctx.closePath(); ctx.fill();
           ctx.globalAlpha = 1;
         }
-        if (k > 0.4 && k < 0.7) {                       // 쓰러질 때 이는 흙먼지
+        if (k > 0.4 && k < 0.7 && this.crowded) {       // 쓰러질 때 이는 흙먼지 (4.14 붐빌 때만 — 아니면 위의 4.13 양옆 먼지가 대신한다)
           const d = (k - 0.4) / 0.3;
           ctx.globalAlpha = (1 - d) * 0.4;
           ctx.fillStyle = '#d8ccb0';
@@ -1469,7 +1472,10 @@ class Renderer {
         const k = 1 - p, ease = 1 - Math.pow(1 - Math.min(1, k / 0.6), 3);
         const rise = ease * 34 * cs + (e.dy || 0);
         let pop = k < 0.12 ? 1 + (k / 0.12) * 0.45 : 1.45 - Math.min(0.45, (k - 0.12) * 3);
-        if (e.bump > 0) { pop += e.bump * 2.5; e.bump = Math.max(0, e.bump - 0.016); }   // 4.13 합쳐질 때 한 번 더 튄다
+        if (e.bumpAt !== undefined) {                   // 4.13 합쳐질 때 한 번 더 튄다
+          const since = e.bumpAt - e.t;                 // 4.14 프레임마다 깎던 것을 전투 시간으로 (30fps 에서 4배 길게 튀고 정지 중에도 줄던 것)
+          if (since < 0.12) pop += (0.12 - since) * 2.5;
+        }
         const jx = e.crit && k < 0.3 ? Math.sin(k * 90) * 2 * cs : 0;
         ctx.globalAlpha = Math.min(1, p * 2.5);
         ctx.font = 'bold ' + Math.round((e.crit ? 18 : 13) * cs * pop) + 'px sans-serif';
@@ -3025,8 +3031,11 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
   const autoInk = MODEL.ink && !flash;
   const depthOn = !flash && MODEL.depth;
   const wrapped = autoInk || depthOn;                // 4.2: 잉크가 꺼져도 그림자를 다루려고 감싼다
-  if (wrapped) { ctx.fill = inkedFill; ctx.stroke = inkedStroke; ctx._inkW = 0.95 * s; ctx._noInk = !autoInk; ctx._depth = depthOn; }
-  if (depthOn) ctx.fillRect = shadedFillRect;        // 4.5: 사각형도 같은 그림자 규칙으로
+  // 4.14 감싸기는 컨텍스트마다 한 번만 달고 깃발로 켜고 끈다. 예전엔 병사마다 ctx.fill 등을 달았다 지웠는데(delete),
+  // 그러면 컨텍스트 객체가 느린 사전 모드로 바뀌어 그 프레임의 모든 ctx.* 호출이 조금씩 느려졌다
+  if (!ctx._gated) { ctx._gated = true; ctx._wrapOn = false; ctx._rectOn = false; ctx.fill = gatedFill; ctx.stroke = gatedStroke; ctx.fillRect = gatedFillRect; }
+  if (wrapped) { ctx._wrapOn = true; ctx._inkW = 0.95 * s; ctx._noInk = !autoInk; ctx._depth = depthOn; }
+  if (depthOn) ctx._rectOn = true;                   // 4.5: 사각형도 같은 그림자 규칙으로
   if (HUMANOID[st.shape]) armSwing(S);
   if (st.evo && !st.bigEvo) (NO_CAPE[st.shape] ? evoBanner : evoCape)(S);   // 진화: 등 뒤로 망토, 기계·짐승은 군기
 
@@ -7850,8 +7859,8 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
 
   if (st.evo) evoCrest(S);                        // 진화: 머리 위 금빛 문장
 
-  if (wrapped) { delete ctx.fill; delete ctx.stroke; ctx._depth = false; ctx._noInk = false; }
-  if (depthOn) delete ctx.fillRect;
+  if (wrapped) { ctx._wrapOn = false; ctx._depth = false; ctx._noInk = false; }
+  if (depthOn) ctx._rectOn = false;
 
   if (hurt) {
     ctx.strokeStyle = 'rgba(255,255,255,.8)';
@@ -7983,6 +7992,9 @@ function inkedStroke(a) {
 /* 4.5: 반투명('rgba(')·가산 합성 사각형도 그림자를 끈다. 4.2 에선 fill 만 챙겨서, fillRect 로 그린
  * 빛줄기(레일건 레일의 전기 · 궤도 마디 등)가 그림자를 단 채 합성돼 모양 하나에 100ms 가 넘게 걸렸다. */
 const _fillRect0 = CanvasRenderingContext2D.prototype.fillRect;
+function gatedFill() { return this._wrapOn ? inkedFill.apply(this, arguments) : _fill0.apply(this, arguments); }
+function gatedStroke() { return this._wrapOn ? inkedStroke.apply(this, arguments) : _stroke0.apply(this, arguments); }
+function gatedFillRect(x, y, w, h) { return this._rectOn ? shadedFillRect.call(this, x, y, w, h) : _fillRect0.call(this, x, y, w, h); }
 function shadowless(ctx) {
   if (ctx.globalAlpha < 0.9 || ctx.globalCompositeOperation !== 'source-over') return true;
   const fs = ctx.fillStyle;
@@ -9190,6 +9202,15 @@ const FIELD_LOOKS = {
 const FIELD_PALETTES = Object.keys(FIELD_LOOKS).map(k => FIELD_LOOKS[k]);
 /* 시차를 두고 같은 모양을 반복해 그린다 */
 const BG_FAR_PAR = 0.6, BG_FAR_DPR = 1.25;   // 먼 배경 겹: 가장 빠른 시차, 해상도 상한
+const BG_ANIM_FPS = 15;                         // 4.14 움직이는 먼 겹(anim)의 다시 그리기 횟수
+const _bgAnim = {};
+function bgAnimated(look) {
+  if (!(look in _bgAnim)) {
+    const pal = FIELD_LOOKS[look] || FIELD_LOOKS.meadow;
+    _bgAnim[look] = (pal.layers || []).some(n => LOOK_LAYERS[n] && LOOK_LAYERS[n].anim);
+  }
+  return _bgAnim[look];
+}
 function repL(R, cam, par, period, fn) {
   const o = cam * par;
   const k0 = Math.floor((o - 240) / period), k1 = Math.ceil((o + R.w + 240) / period);
@@ -9391,7 +9412,7 @@ const LOOK_LAYERS = {
     });
   } },
   /* ---------------- 3.3 바다 ---------------- */
-  sea: { z: 'back', fn: (R, ctx, pal, cam) => {
+  sea: { z: 'back', anim: true, fn: (R, ctx, pal, cam) => {
     const gy = R.groundY, t = R.clock || 0, top = gy - 46;
     const g = ctx.createLinearGradient(0, top, 0, gy);
     g.addColorStop(0, shade(pal.ridgeFar, -0.05)); g.addColorStop(1, shade(pal.ridge, 0.15));
@@ -9420,7 +9441,7 @@ const LOOK_LAYERS = {
       ctx.fillStyle = c; ctx.beginPath(); ctx.arc(x + 20, gy - 8, 10, Math.PI, 0); ctx.fill();
     });
   } },
-  lighthouseTower: { z: 'far', fn: (R, ctx, pal, cam) => {
+  lighthouseTower: { z: 'far', anim: true, fn: (R, ctx, pal, cam) => {
     const gy = R.groundY, t = R.clock || 0;
     repL(R, cam, 0.1, 1500, (x) => {
       const X = x + 600;
@@ -9437,14 +9458,14 @@ const LOOK_LAYERS = {
       ctx.fillStyle = '#fff4c0'; ctx.beginPath(); ctx.arc(X, gy - 198, 6, 0, 7); ctx.fill();
     });
   } },
-  stormClouds: { z: 'far', fn: (R, ctx, pal, cam) => {
+  stormClouds: { z: 'far', anim: true, fn: (R, ctx, pal, cam) => {
     const t = R.clock || 0, gy = R.groundY;
     ctx.fillStyle = 'rgba(40,48,60,.55)';
     repL(R, cam, 0.05, 300, (x, k) => { for (let j = 0; j < 3; j++) { ctx.beginPath(); ctx.ellipse(x + j * 60, gy * 0.18 + _h(k + j) * 30, 70, 26, 0, 0, 7); ctx.fill(); } });
     const f = (t * 0.37) % 4;
     if (f < 0.12) { ctx.fillStyle = 'rgba(220,235,255,' + (0.25 * (1 - f / 0.12)) + ')'; ctx.fillRect(0, 0, R.w, gy); }
   } },
-  kelp: { z: 'back', fn: (R, ctx, pal, cam) => {
+  kelp: { z: 'back', anim: true, fn: (R, ctx, pal, cam) => {
     const gy = R.groundY, t = R.clock || 0;
     ctx.strokeStyle = shade(pal.ridge, 0.25); ctx.lineWidth = 4;
     repL(R, cam, 0.4, 70, (x, k) => {
@@ -9453,7 +9474,7 @@ const LOOK_LAYERS = {
       ctx.quadraticCurveTo(x + Math.sin(t + k) * 14, gy - hh * 0.5, x + Math.sin(t * 0.8 + k) * 10, gy - hh); ctx.stroke();
     });
   } },
-  abyssVents: { z: 'back', fn: (R, ctx, pal, cam) => {
+  abyssVents: { z: 'back', anim: true, fn: (R, ctx, pal, cam) => {
     const gy = R.groundY, t = R.clock || 0;
     repL(R, cam, 0.35, 380, (x, k) => {
       ctx.fillStyle = '#0a141a'; ctx.beginPath(); ctx.moveTo(x - 30, gy); ctx.lineTo(x - 8, gy - 46); ctx.lineTo(x + 8, gy - 46); ctx.lineTo(x + 30, gy); ctx.fill();
@@ -9593,7 +9614,7 @@ const LOOK_LAYERS = {
     });
   } },
   /* 땅 뒤로 깔린 구름 바다 */
-  cloudSea: { z: 'back', fn: (R, ctx, pal, cam) => {
+  cloudSea: { z: 'back', anim: true, fn: (R, ctx, pal, cam) => {
     const gy = R.groundY, t = R.clock || 0;
     ctx.fillStyle = pal.cloud || 'rgba(255,255,255,.8)';
     repL(R, cam, 0.35, 90, (x, k) => {
@@ -9603,7 +9624,7 @@ const LOOK_LAYERS = {
     ctx.fillRect(0, gy - 4, R.w, 6);
   } },
   /* 번개를 받는 첨탑 */
-  skySpires: { z: 'far', fn: (R, ctx, pal, cam) => {
+  skySpires: { z: 'far', anim: true, fn: (R, ctx, pal, cam) => {
     const gy = R.groundY, t = R.clock || 0, col = shade(pal.ridge, -0.25);
     repL(R, cam, 0.15, 360, (x, k) => {
       const hh = gy * (0.45 + _h(k) * 0.25), w = 14 + _h(k + 2) * 10;

@@ -51,7 +51,8 @@ const HOLD_GAP = 12;          // 밀려나도 자기 요새 바로 앞에서 멈
 const BOSS_THROW = { first: 2, every: 4.5, range: 340, mul: 0.25, radius: 70 };
 /* 4.13 보기 전용 난수: 효과의 흔들림 · 위치에만 쓴다. Math.random 을 쓰면 효과를 바꿀 때마다 전투 결과가 흔들린다 */
 let _visSeed = 1234567;
-function visRand() { _visSeed = (_visSeed * 1103515245 + 12345) & 0x7fffffff; return _visSeed / 0x7fffffff; }
+// 4.14 Math.imul: 그냥 곱하면 2^53 을 넘어 아랫자리가 뭉개져 1만 번쯤마다 같은 흔들림이 되풀이됐다
+function visRand() { _visSeed = (Math.imul(_visSeed, 1103515245) + 12345) & 0x7fffffff; return _visSeed / 0x7fffffff; }
 const FX_LIMIT = 200;        // 이펙트가 무한정 쌓이지 않게
 const X3_FX_LIMIT = 12;      // 4.3 3진 연출(포연·광선·사이렌)이 한꺼번에 떠 있을 수 있는 수
 // 3진의 타격 연출 → 땅에 남는 Canvas 연출 (연기 · 흙 · 갈라진 땅 · 눈더미 · 그을린 자국)
@@ -632,8 +633,14 @@ class Battle {
     return this.allies.find(f=>!f.dead && !f.summoned && f.s.id===id) || null;
   }
   heroTarget(f) {
-    return this.enemies.filter(e=>!e.dead && Math.abs(e.x-f.x)<=f.attackRange+180)
-      .sort((a,b)=>Math.abs(a.x-f.x)-Math.abs(b.x-f.x))[0] || null;
+    // 4.14 매 프레임(필살 버튼 · 머리 위 표시) 부르므로 걸러 정렬하지 않고 한 번 훑어 가장 가까운 적을 고른다
+    let best = null, bd = f.attackRange + 180;
+    for (const e of this.enemies) {
+      if (e.dead) continue;
+      const d = Math.abs(e.x - f.x);
+      if (d <= bd && (!best || d < bd)) { best = e; bd = d; }
+    }
+    return best;
   }
   canHeroActive(id) {
     const f=this.heroCaster(id), u=this.stats(id);
@@ -716,8 +723,7 @@ class Battle {
     }
     for (const a of this.allies) {
       a.heal(a.maxHp * this.cmdHeal);
-      a.hasteT = Math.max(a.hasteT, COMMAND.hasteDur);
-      a.hasteMul = COMMAND.hasteMul;
+      a.hasteT = Math.max(a.hasteT, COMMAND.hasteDur); a.hasteMul = COMMAND.hasteMul;
       a.stunT = 0;
       a.slowT = 0;
       this.fx.push({ type: 'rally', x: a.x, row: a.row, t: 0.6, life: 0.6 });
@@ -1191,9 +1197,11 @@ class Battle {
     if (!f.horn && f.trainCd <= tr.warn) {
       f.horn = true;
       this.announce('경적! 기관차가 돌진합니다', tr.warn);
-      this.fx.push({ type: 'warn', x: f.x - (tr.warn + tr.dur) * f.s.speed * tr.mul * 0.5, r: 160, t: tr.warn, life: tr.warn, color: '#ffb03c' });
+      f.hornFx = { type: 'warn', x: f.x - (tr.warn + tr.dur) * f.s.speed * tr.mul * 0.5, r: 160, t: tr.warn, life: tr.warn, color: '#ffb03c', linked: true, owner: f };
+      this.fx.push(f.hornFx);
       sfx('siren');
     }
+    if (f.hornFx) { f.hornFx.t = Math.max(0, f.trainCd); if (f.trainCd <= 0) f.hornFx = null; }
     if (f.trainCd <= 0) { f.trainCd = tr.every; f.horn = false; f.chargeT = tr.dur; this.shake = Math.max(this.shake, 6); sfx('cannon'); }
     if (f.chargeT > 0) f.chargeT -= dt;
     const charging = f.chargeT > 0;
@@ -1522,6 +1530,7 @@ class Battle {
       for (const m of mates) {
         if (m.dead || m === f) continue;
         if (Math.abs(m.x - f.x) > ab.radius) continue;
+
         m.hasteT = Math.max(m.hasteT, ab.haste.dur);
         m.hasteMul = ab.haste.mul;
       }
@@ -1798,14 +1807,17 @@ class Battle {
   /* 예고 표시를 띄우고, 시간이 되면 그 자리에 내리꽂는다.
    * 무작정 터지지 않으니 피할 틈이 있다. */
   queueStrike(f, o) {
+    const warn = { type: 'warn', x: o.x, r: o.r, t: o.warn, life: o.warn, linked: true,
+                   color: f.side === 'ally' ? '#6fc0ff' : '#e0503c' };
     this.pending.push({
-      t: o.warn, side: f.side, x: o.x, r: o.r, dmg: o.dmg,
+      t: o.warn, warn, side: f.side, x: o.x, r: o.r, dmg: o.dmg,
       burn: o.burn, poison: o.poison, stun: o.stun, kind: o.kind, color: f.s.accent, row: f.row,
       expose: o.expose, src: o.expose ? f : null, noCastle: !!o.noCastle,
       by: f.side === 'ally' ? (f.creditTo || f.s.id) : null
     });
-    this.fx.push({ type: 'warn', x: o.x, r: o.r, t: o.warn, life: o.warn,
-                   color: f.side === 'ally' ? '#6fc0ff' : '#e0503c' });
+    // 4.14 경고 원은 낙하와 같은 시계(전투 시간)로 줄어든다. 예전엔 화면 시간으로 줄어 3배속에선 원이 1/3 줄었을 때 떨어지고,
+    // 오래 멈춰 두면 경고가 먼저 사라졌다.
+    this.fx.push(warn);
   }
 
   updatePending(dt) {
@@ -1813,6 +1825,7 @@ class Battle {
     let landed = false;
     for (const s of this.pending) {
       s.t -= dt;
+      if (s.warn) s.warn.t = Math.max(0, s.t);
       if (s.t > 0) continue;
       s.done = landed = true;
       const foes = this.foesOf(s.side);
@@ -2088,7 +2101,7 @@ class Battle {
       const jx = visRand(), jy = visRand();
       let merged = null;
       for (const e of this.fx) if (e.type === 'dmg' && e.tgt === target && e.t > 0.55 && e.crit === !!crit) { merged = e; break; }
-      if (merged) { merged.v += Math.round(dealt); merged.bump = 0.12; }
+      if (merged) { merged.v += Math.round(dealt); merged.bumpAt = merged.t; }   // 4.14 튀는 시점을 효과 시계로 (화면 프레임 빠르기와 무관)
       else {
         this.dmgFxCount++;
         // 3.14: 같은 순간 같은 적에게 들어간 숫자는 한 줄씩 위로 (예전엔 '261999' 처럼 겹쳐 읽혔다)
@@ -2264,9 +2277,14 @@ class Battle {
   }
 
   updateFx(dt) {
-    for (const e of this.fx) e.t -= dt;
+    // 4.14 linked: 낙하 경고처럼 전투 시계가 직접 맞추는 효과 (주인이 쓰러졌거나 전투가 끝나면 보통 효과처럼 사라진다)
+    const live = this.state === 'play';
+    for (const e of this.fx) if (!e.linked || !live || (e.owner && e.owner.dead)) e.t -= dt;
     this.fx = this.fx.filter(e => e.t > 0);
-    if (this.fx.length > FX_LIMIT) this.fx.splice(0, this.fx.length - FX_LIMIT);
+    if (this.fx.length > FX_LIMIT) {            // 넘치면 오래된 것부터 — 낙하 경고는 남긴다
+      let drop = this.fx.length - FX_LIMIT;
+      this.fx = this.fx.filter(e => e.linked || drop-- <= 0);
+    }
     this.dmgFxCount = 0;
     for (const e of this.fx) if (e.type === 'dmg') this.dmgFxCount++;
     if (this.state !== 'play') this.resultTime = (this.resultTime || 0) + dt;

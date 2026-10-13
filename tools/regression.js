@@ -1623,4 +1623,21 @@ test('4.13: hits on one foe in the same instant merge into one number; hits carr
   assert.ok(b.fx.some(x => x.type === 'release'), 'bow release flash');
 });
 
+/* ---------------- 4.14 버그 점검 ---------------- */
+test('4.14: strike warnings shrink on battle time (3x speed, pause) and survive the effect cap', () => {
+  const b = battle(); b.speed = 3; const k = b.makeAlly(U.spear, 600);
+  b.queueStrike(k, { x: 880, r: 120, dmg: 10, warn: 2, kind: 'runes' });
+  const w = b.fx.find(x => x.type === 'warn'); assert.ok(w && w.linked);
+  b.update(0.1); assert.ok(Math.abs(w.t - 1.7) < 1e-6, 'warn follows the strike timer at 3x');
+  b.updateFx(5); assert.ok(w.t > 1.6, 'pause-time effect decay leaves it alone');
+  for (let i = 0; i < 260; i++) b.fx.push({ type: 'hit', x: 0, row: 0, t: 9, life: 9 });
+  b.updateFx(0.01); assert.ok(b.fx.includes(w), 'kept past FX_LIMIT');
+  for (let i = 0; i < 20; i++) b.update(0.1);
+  assert.equal(b.pending.length, 0); b.updateFx(0.01); assert.ok(!b.fx.includes(w), 'gone once it lands');
+});
+test('4.14: visRand has a long period', () => {
+  const vr = vm.runInContext('visRand', ctx), first = vr(); let n = 0;
+  while (vr() !== first && n < 50000) n++; assert.ok(n >= 50000, 'period ' + n);
+});
+
 console.log(count + ' regression checks passed');

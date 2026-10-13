@@ -15,12 +15,14 @@ const DRAG_START_PX = 8;
 
 let fmTarget = null;          // 전장 번호 | 'endless' | 'event:k' | null(그냥 편성)
 let fmBack = 'scr-map';
+let fmHard = false;           // 4.14 하드코어에서 지고 '편성 고치기'로 왔으면 출진도 하드코어로
 let fmFilter = 'all';
 let fmFocus = null;           // 오른쪽에 정보를 띄울 병종
 let fmDrag = null;
 
-function openFormation(target) {
+function openFormation(target, hard) {
   fmTarget = (target === undefined) ? null : target;
+  fmHard = !!hard && typeof fmTarget === 'number';
   const active = document.querySelector('.screen.active');
   fmBack = active && active.id !== 'scr-formation' ? active.id : 'scr-map';
   show('scr-formation');
@@ -221,7 +223,7 @@ function renderFormationPool() {
   const list = unlockedUnits().filter(unitMatchesFilter).sort(order);
   // 3.8: 목록이 그대로면(넣고 빼기·고르기만 했으면) 다시 만들지 않고 표시만 고친다.
   // 예전엔 누를 때마다 80여 칸을 통째로 다시 만들어 폰에서 눈에 띄게 끊겼다.
-  const sig = fmFilter + '|' + fmSort + '|' + list.map(u => u.id + (save.evo[u.id] ? '+' : '') + (save.evo2 && save.evo2[u.id] ? '+' : '')).join(',');
+  const sig = fmFilter + '|' + fmSort + '|' + list.map(u => u.id + ':' + (save.levels[u.id] || 1) + (save.evo[u.id] ? '+' : '') + (save.evo2 && save.evo2[u.id] ? '+' : '')).join(',');
   if (box._sig === sig && box.children.length === list.length) {
     for (const el of box.children) {
       const id = el.dataset.unit, inTeam = save.loadout.includes(id);
@@ -413,13 +415,13 @@ function renderFormationSide() {
     const evk = typeof fmTarget === 'string' && fmTarget.indexOf('event:') === 0 ? +fmTarget.slice(6) : -1;
     const exk = typeof fmTarget === 'string' && fmTarget.indexOf('exp:') === 0 ? +fmTarget.slice(4) : -1;
     const name = fmTarget === 'endless' ? '무한 전장' : evk >= 0 ? '✦ E' + (evk + 1) + '. ' + EVENT_STAGES[evk].name
-      : exk >= 0 ? '💰 G' + (exk + 1) + '. ' + EXPEDITIONS[exk].name : (fmTarget + 1) + '. ' + STAGES[fmTarget].name;
+      : exk >= 0 ? '💰 G' + (exk + 1) + '. ' + EXPEDITIONS[exk].name : (fmHard ? '💀 ' : '') + (fmTarget + 1) + '. ' + STAGES[fmTarget].name;
     go.innerHTML = '출진 ▶<small>' + name + '</small>';
     go.addEventListener('click', () => {
       if (fmTarget === 'endless') startEndless();
       else if (evk >= 0) startEvent(evk);
       else if (exk >= 0) startExpedition(exk);
-      else startBattle(fmTarget);
+      else startBattle(fmTarget, fmHard);
     });
     side.appendChild(go);
   }
