@@ -165,7 +165,7 @@ test('Several heroes can fire their actives back to back (no shared cooldown)',(
 });
 test('Forty stages retain the existing endless unlock threshold',()=>{
   const {STAGES,ENDLESS_UNLOCK_STAGE}=vm.runInContext('({STAGES,ENDLESS_UNLOCK_STAGE})',ctx);
-  assert.equal(STAGES.length,60);assert.equal(ENDLESS_UNLOCK_STAGE,20);
+  assert.equal(STAGES.length,70);assert.equal(ENDLESS_UNLOCK_STAGE,20);
   assert.ok(STAGES.slice(20).every(s=>s.waves.length>=8&&s.reward>900));
 });
 test('First expansion victory advances from 20 to 21 and retains old stars',()=>{
@@ -1342,7 +1342,7 @@ test('4.4: challenges are tougher and each awakened card makes foes stronger the
 /* ---------------- 4.6 5막 '잊힌 밀림' · 도전 둘 ---------------- */
 test('4.6: Act 5 adds ten jungle stages with three bosses, new looks and new music', () => {
   const A = STAGES.slice(50, 60), A4 = STAGES.slice(40, 50);
-  assert.equal(STAGES.length, 60); assert.equal(A.length, 10);
+  assert.equal(A.length, 10);
   assert.equal(A.filter(s => s.bossId).map(s => s.bossId).join(','), 'raptorqueen,quetzal,jungletyrant');
   assert.ok(A4.length === 10 && Math.max(...A.map(s => s.baseHp)) > Math.max(...A4.map(s => s.baseHp)), 'tougher forts than act 4 (fight length is checked by sim --check)');
   const mus = fs.readFileSync(path.join(__dirname, '../js/music.js'), 'utf8'), render = fs.readFileSync(path.join(__dirname, '../js/render.js'), 'utf8');
@@ -1543,6 +1543,49 @@ test('4.10: training buttons refresh one tile; season-tab scrolling is only for 
   assert.ok(card.indexOf('renderTraining()') < 0 && card.split('refreshTraining(u.id)').length - 1 >= 5, 'card buttons use the light refresh');
   assert.ok(/const tabScroll = tabs\.scrollLeft;[\s\S]{0,900}tabs\.scrollLeft = tabScroll;/.test(main), 'season tabs keep their scroll');
   assert.ok(!/^\.season-tab\{flex:1 0 auto/m.test(css) && /#season-tabs \.season-tab\{flex:1 0 auto/.test(css), 'mission tabs stay equal width');
+});
+
+/* ---------------- 4.11 6막 '홀린 요정 숲' ---------------- */
+test('4.11: Act 6 adds ten fey-wood stages with three bosses, new looks, music and an achievement', () => {
+  const A = STAGES.slice(60, 70), A5 = STAGES.slice(50, 60);
+  assert.equal(STAGES.length, 70); assert.equal(A.length, 10);
+  assert.equal(A.filter(s => s.bossId).map(s => s.bossId).join(','), 'mushking,faequeen,eldertree');
+  assert.ok(Math.min(...A.map(s => s.baseHp)) > Math.max(...A5.map(s => s.baseHp)), 'tougher forts than act 5');
+  const mus = fs.readFileSync(path.join(__dirname, '../js/music.js'), 'utf8'), render = fs.readFileSync(path.join(__dirname, '../js/render.js'), 'utf8');
+  for (const st of A) { assert.ok(mus.indexOf('  ' + st.music + ': {') >= 0, st.music); assert.ok(render.indexOf('  ' + st.look + ':') >= 0, st.look); }
+  for (const t of ['boss_mushking', 'boss_faequeen', 'boss_eldertree', 'finale5', 'hc_fey']) assert.ok(mus.indexOf('  ' + t + ': {') >= 0, t);
+  assert.ok(fs.readFileSync(path.join(__dirname, '../js/audio.js'), 'utf8').indexOf('  fey: function (B, x)') >= 0, 'fey accompaniment');
+  assert.equal(STAGES[59].bossMusic, 'finale4'); assert.equal(STAGES[69].bossMusic, 'finale5');
+  const M = vm.runInContext('({ACHIEVEMENTS, stageMusic: typeof stageMusic === "function" ? stageMusic : null})', ctx);
+  assert.ok(M.ACHIEVEMENTS.some(a => a.id === 'campaign70' && a.test({ cleared: 70 }) && !a.test({ cleared: 69 })));
+  assert.ok(/name: '6막', sub: '홀린 요정 숲', from: 60, to: 70/.test(fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8')), 'map chapter');
+});
+test('4.11: fey foes are drawn and translated; boss-stage garrisons come from the act\'s own army', () => {
+  const render = fs.readFileSync(path.join(__dirname, '../js/render.js'), 'utf8'), i18n = fs.readFileSync(path.join(__dirname, '../js/i18n.js'), 'utf8');
+  for (const id of ['pixie', 'sporecap', 'treant', 'satyr', 'unicorn', 'wisp', 'mushking', 'faequeen', 'eldertree']) {
+    assert.ok(render.indexOf("case '" + E[id].shape + "'") >= 0, id + ' drawn'); assert.ok(i18n.indexOf("'" + E[id].name + "'") >= 0, id + ' name');
+    if (E[id].abText) assert.ok(i18n.indexOf("'" + E[id].abText + "'") >= 0, id + ' abText');
+  }
+  const own = { 3: ['nagaspear', 'clawcrab', 'eel', 'deepone', 'siren', 'seahook', 'tidecaller'], 6: ['sporecap', 'pixie', 'treant', 'unicorn', 'wisp', 'satyr'] };
+  for (const i of [32, 35, 62, 65]) {
+    const st = STAGES[i]; if (!st.sally) continue;
+    for (const w of st.sally) for (const [id] of w.group) assert.ok(own[i >= 60 ? 6 : 3].includes(id), st.name + ' garrison ' + id);
+  }
+});
+test('4.11: wisps hide from far attackers; spores and spore bombs poison', () => {
+  const b = battle();
+  const archer = b.makeAlly(U.archer, 500); b.allies.push(archer);
+  const w = new Fighter(E.wisp, 'enemy', 500 + archer.attackRange - 10); b.enemies.push(w);
+  assert.equal(b.findTarget(archer, b.enemies, b.enemyCastle) === w, false, 'out of the veil: not targetable');
+  w.x = 500 + 120; assert.equal(b.findTarget(archer, b.enemies, b.enemyCastle), w, 'inside the veil: targetable');
+  const sp = new Fighter(E.sporecap, 'enemy', 700); b.enemies.push(sp);
+  const near = b.makeAlly(U.spear, 690); b.allies.push(near);
+  sp.hp = 0; sp.dead = true; b.reap(b.enemies, b.allies, b.allyCastle, true);
+  assert.ok(near.poisonT > 0 && near.poisonDps > 0, 'spore cloud poisons');
+  const k = new Fighter(E.mushking, 'enemy', 900); b.enemies.push(k);
+  const t = b.makeAlly(U.shield, 880); b.allies.push(t);
+  b.queueStrike(k, { x: 880, r: 120, dmg: 10, warn: 0.01, poison: { dps: 90, dur: 4 }, kind: 'runes' });
+  b.updatePending(0.05); assert.ok(t.poisonT > 0, 'spore bomb poisons');
 });
 
 console.log(count + ' regression checks passed');

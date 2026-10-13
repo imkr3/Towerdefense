@@ -331,6 +331,9 @@ const ACT4_ENTRY = { up: 10, lv: 18, min: 2, max: 5 };   // 4.0: 3막을 끝낸 
 const SMART_ACT4 = { up: 10, lv: 24 };                   // 4.0: 레벨 상한 20(+사관학교 5)까지 키우면 전부
 const ACT5_ENTRY = { up: 10, lv: 20, min: 2, max: 6 };   // 4.6: 4막을 끝낸 수준
 const SMART_ACT5 = { up: 10, lv: 24, slower: 1.25 };     // 4.6: 다 키우면 전부, 4막보다 1.25배 넘게 오래
+const ACT6_ENTRY = { up: 10, lv: 22, min: 3, max: 7 };   // 4.11: 5막을 끝내고 조금 더 키운 수준이면 절반쯤
+const ACT6_LOW = { up: 10, lv: 20, max: 4 };              // 4.11: 5막 입구 수준으론 몇 곳만
+const SMART_ACT6 = { up: 10, lv: 24, slower: 1.05 };     // 4.11: 다 키우면 전부, 5막보다 오래
 const HARD_MODE = { up: 10, lv: 15, min: 12, max: 20, bossMax: 6 };   // 하드코어 기대치 (3.1)
 const LEGEND_PROOF_MAX = 1;      // 전설만 편성이 이길 수 있는 최대 판 수
 const COUNTER_MIN = 4;           // 공략 편성이 이겨야 하는 최소 판 수
@@ -515,6 +518,24 @@ function check() {
     if (rows.some(r => !r.win || r.seconds > 400)) { console.error('  ✗ 5막: 끝까지 키운 공략 편성은 400초 안에 전부 넘어야 한다 (seed ' + seed + ')'); failed++; }
     else if (t5 < t4 * SMART_ACT5.slower) { console.error(`  ✗ 5막이 4막보다 어렵지 않다: ${Math.round(t5)}초 vs ${Math.round(t4)}초 (seed ${seed})`); failed++; }
     else console.log(`  ✓ 5막 공략 편성 완주 · 4막의 ${(t5 / t4).toFixed(2)}배 걸림 (seed ${seed})`);
+  }
+  // 4.11 6막 '홀린 요정 숲'
+  {
+    const g = loadEngine(12345); let w = 0, w20 = 0;
+    for (let i = 60; i < 70; i++) w += runStage(g, i, ACT6_ENTRY.up, ACT6_ENTRY.lv, false, 'smart').win ? 1 : 0;
+    for (let i = 60; i < 70; i++) w20 += runStage(g, i, ACT6_LOW.up, ACT6_LOW.lv, false, 'smart').win ? 1 : 0;
+    const tag = `6막 진입 (강화 ${ACT6_ENTRY.up}/Lv${ACT6_ENTRY.lv} 공략 편성) ${w}/10 (기대 ${ACT6_ENTRY.min}~${ACT6_ENTRY.max}) · Lv${ACT6_LOW.lv} ${w20}/10 (최대 ${ACT6_LOW.max})`;
+    if (w < ACT6_ENTRY.min || w > ACT6_ENTRY.max || w20 > ACT6_LOW.max) { console.error('  ✗ ' + tag); failed++; } else console.log('  ✓ ' + tag);
+  }
+  for (const seed of [12345, 98765]) {
+    const g = loadEngine(seed), rows = [], rows5 = [];
+    for (let i = 60; i < 70; i++) rows.push(runStage(g, i, SMART_ACT6.up, SMART_ACT6.lv, false, 'smart'));
+    for (let i = 50; i < 60; i++) rows5.push(runStage(g, i, SMART_ACT6.up, SMART_ACT6.lv, false, 'smart'));
+    printTable(rows, SMART_ACT6.up, SMART_ACT6.lv);
+    const t6 = rows.reduce((a, r) => a + r.seconds, 0), t5 = rows5.reduce((a, r) => a + r.seconds, 0);
+    if (rows.some(r => !r.win || r.seconds > 400)) { console.error('  ✗ 6막: 끝까지 키운 공략 편성은 400초 안에 전부 넘어야 한다 (seed ' + seed + ')'); failed++; }
+    else if (t6 < t5 * SMART_ACT6.slower) { console.error(`  ✗ 6막이 5막보다 어렵지 않다: ${Math.round(t6)}초 vs ${Math.round(t5)}초 (seed ${seed})`); failed++; }
+    else console.log(`  ✓ 6막 공략 편성 완주 · 5막의 ${(t6 / t5).toFixed(2)}배 걸림 (seed ${seed})`);
   }
   // 3.1: 하드코어는 확실히 어렵다. 다 키운 공략 편성으로도 절반 남짓, 보스 전장은 대부분 막힌다.
   {

@@ -989,6 +989,29 @@ const BGM_STYLES = {
     if (I >= 2 && x.s % 4 === 2) B.tamb(x.t, 0.55);
     if (x.last) B.roll(x, I >= 3 ? 'snare' : 'timp', 12, 15, r - 12);
   },
+  /* 4.11 요정 숲: 3+3+3+3+4 로 굴러가는 하프 아르페지오 · 첼레스타 반짝임 · 피치카토 베이스 · 부드러운 프레임 북과 방울 ·
+   * 세기 2부터 합창 · 낮은 현 · 하이햇, 세기 3이면 큰북 · 작은북 · 호른 엇박 */
+  fey: function (B, x) {
+    const c = x.chord, r = c.root, d = x.dt, I = x.int, t3 = c.iv[1], t5 = c.iv[2];
+    if (x.s === 0) {
+      B.chordNotes(c, 12, true).forEach(n => B.note('pad', n, x.t, 16 * d, I >= 2 ? 0.6 : 0.5));
+      if (I >= 2) B.chordNotes(c, 12, false).forEach(n => B.note('choir', n + 12, x.t, 16 * d, I >= 3 ? 0.55 : 0.35));
+      if (x.first && I >= 2) B.crash(x.t, 0.45);
+    }
+    if (B.pat('x..x..x..x..x...', x.s))
+      B.note('harp', r + 12 + [0, 0, 0, t3, 0, 0, t5, 0, 0, 12, 0, 0, t5 + 12, 0, 0, 0][x.s], x.t, d * 3, x.s === 0 ? 0.9 : 0.7);
+    if (x.s % 2 === 1) B.note('harp', r + 24 + [t5, 12, t3 + 12, t5 + 12, 24, t5 + 12, 12, t3 + 12][x.s >> 1], x.t, d * 1.5, 0.32);
+    if (B.pat('......x.......x.', x.s) || (I >= 2 && B.pat('..x.......x.....', x.s))) B.note('celesta', r + 36 + [t5, 12 + t3, 24][x.s % 3], x.t, d * 2, 0.5);
+    if (B.pat('x..x..x.x..x..x.', x.s)) B.note(I >= 3 ? 'bass' : 'pizz', r - 12 + (x.s === 6 || x.s === 14 ? t5 : 0), x.t, d * 1.5, x.s === 0 ? 1 : 0.75);
+    if (B.pat('x.....x...x.....', x.s)) B.frame(x.t, x.s === 0 ? 0.8 : 0.55);
+    if (x.s % 4 === 2) B.tamb(x.t, I >= 2 ? 0.5 : 0.3);
+    if (I >= 2 && x.s % 2 === 1) B.hat(x.t, 0.35);
+    if (I >= 2 && x.s % 2 === 0) B.note('lowstr', r + [0, t5, 12, t5][(x.s >> 1) % 4], x.t, d * 1.6, 0.45);
+    if (I >= 3 && (x.s === 0 || x.s === 8)) B.taiko(x.t, 0.7);
+    if (I >= 3 && (x.s === 4 || x.s === 12)) B.snare(x.t, 0.55);
+    if (I >= 3 && B.pat('...x...x...x..x.', x.s)) B.chordNotes(c, 12, false).forEach(n => B.note('horn', n, x.t, d * 1.2, 0.4));
+    if (x.last) B.roll(x, I >= 3 ? 'snare' : 'timp', 12, 15, r - 12);
+  },
   /* 4.6 폭주 기관차: 네 박 킥 · 칙칙폭폭 하이햇 · 16분 질주 베이스 · 기타 뮤트 · 신스 아르페지오 · 금관 찌르기 · 구간 머리의 기적 소리 */
   rush: function (B, x) {
     const c = x.chord, r = c.root, d = x.dt, I = x.int, t3 = c.iv[1], t5 = c.iv[2];

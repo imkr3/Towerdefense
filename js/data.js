@@ -1278,6 +1278,65 @@ const ENEMIES = {
                 { at: 0.35, t: 'summon', name: '랩터 떼', id: 'raptor', n: 8 },
                 { at: 0.12, t: 'enrage', name: '멸종의 분노', atk: 1.3, rate: 0.75, speed: 1.25 }
               ] },
+  /* ---------- 4.11 6막 '홀린 요정 숲': 요정과 버섯, 나무 정령의 군단 ---------- */
+  pixie:    { name: '장난꾸러기 요정', body: '#f0d8f8', accent: '#7ae8ff', tunic: '#c86ae8', shape: 'pixie',
+              hp: 950, atk: 80, range: 150, speed: 120, interval: .65, kb: 3, gold: 30, ranged: true, scale: .75,
+              ab: { dodge: 0.35 }, abText: '요정 가루 · 35% 회피 · 아주 빠름 · 떼로 날아듭니다' },
+  sporecap: { name: '독버섯 병사', body: '#e8d8c0', accent: '#b06ae8', tunic: '#c83a4a', shape: 'sporecap',
+              hp: 2700, atk: 215, range: 62, speed: 40, interval: 1.1, kb: 2, gold: 60, scale: 1.05,
+              ab: { armor: 0.15, deathBomb: { dmg: 220, radius: 105, poison: { dps: 85, dur: 4 } } },
+              abText: '버섯 갓 · 갑주 15% · 쓰러지면 포자가 터져 둘레를 중독 (85/초)' },
+  treant:   { name: '나무 정령', body: '#6a5a3a', accent: '#8ae86a', tunic: '#4a3a22', shape: 'treant',
+              hp: 6600, atk: 290, range: 92, speed: 22, interval: 2.0, kb: 1, gold: 180, scale: 1.6, noReinf: true,
+              area: true, areaRadius: 90, ab: { kbImmune: true, armor: 0.25, regen: 90 },
+              abText: '나무 몸 · 갑주 25% · 초당 90 회복 · 화상이면 재생 멈춤 · 넉백 면역' },
+  satyr:    { name: '사티로스 피리꾼', body: '#a8784a', accent: '#ffd25a', tunic: '#6a4a2a', shape: 'satyr',
+              hp: 2100, atk: 150, range: 240, speed: 34, interval: 1.4, kb: 1, gold: 70, ranged: true, noReinf: true,
+              ab: { rally: { atk: .3, radius: 220 }, interval: 2.5, weaken: { mul: .75, dur: 3 } },
+              abText: '홀리는 피리 · 주변 적 공격력 +30% · 맞은 아군 공격력 -25% (3초)' },
+  unicorn:  { name: '일각수 기사', body: '#f4f0ff', accent: '#ff8ad8', tunic: '#8a7ae8', shape: 'unicorn',
+              hp: 3700, atk: 265, range: 78, speed: 74, interval: 1.2, kb: 1, gold: 120, scale: 1.25, noReinf: true,
+              ab: { charge: { dist: 140, mul: 2.3, push: 110 }, heal: 150, radius: 180, interval: 5 },
+              abText: '뿔 돌격 · 달려와 첫 일격 2.3배 · 5초마다 주변 적 회복' },
+  wisp:     { name: '홀림불', body: '#c8fff0', accent: '#5affc8', tunic: '#3aa88a', shape: 'wisp',
+              hp: 1600, atk: 175, range: 200, speed: 46, interval: 1.5, kb: 2, gold: 50, ranged: true, scale: 1.1,
+              ab: { glamour: 130, burn: { dps: 50, dur: 3 } },
+              abText: '홀림 장막 · 130 안으로 다가와야 보입니다 (멀리서 못 쏨 · 범위 공격은 맞음) · 도깨비불 화상' },
+  mushking: { name: '버섯 왕', body: '#e8d0b0', accent: '#b06ae8', tunic: '#c8303a', shape: 'mushking',
+              hp: 40000, atk: 1000, range: 100, speed: 20, interval: 2.0, kb: 1, gold: 2000,
+              area: true, areaRadius: 150, scale: 2.2, boss: true,
+              ab: { kbImmune: true, armor: 0.15, summon: { id: 'sporecap', n: 2 }, interval: 9 },
+              special: { t: 'meteor', name: '포자 폭탄', cd: 9, n: 4, dmg: 470, radius: 120, warn: 1.1, poison: { dps: 90, dur: 4 }, kind: 'runes' },
+              phases: [
+                { at: 0.70, t: 'summon', name: '버섯 군락', id: 'sporecap', n: 5 },
+                { at: 0.45, t: 'roar',   name: '포자 폭풍', r: 440, stun: 1.0, push: 110 },
+                { at: 0.15, t: 'enrage', name: '균사의 분노', atk: 1.3, rate: 0.75, speed: 1.3 }
+              ] },
+  faequeen: { name: '요정 여왕', body: '#f8e8ff', accent: '#7ae8ff', tunic: '#a86ae8', shape: 'faequeen',
+              hp: 38000, atk: 960, range: 260, speed: 18, interval: 2.2, kb: 1, gold: 2300, ranged: true,
+              area: true, areaRadius: 140, scale: 2.0, boss: true,
+              ab: { kbImmune: true, dodge: 0.2 },
+              special: { t: 'frost', name: '얽히는 꽃덩굴', first: 6, cd: 10, r: 300, dur: 3 },
+              phases: [
+                { at: 0.75, t: 'summon', name: '요정 무리', id: 'pixie', n: 8 },
+                { at: 0.50, t: 'summon', name: '홀림불 행렬', id: 'wisp', n: 4 },
+                { at: 0.30, t: 'swap',   name: '달빛 화살비',
+                            special: { t: 'meteor', name: '달빛 화살', first: 3, cd: 7, n: 5, dmg: 520, radius: 120, warn: 1.0, kind: 'lightning' } },
+                { at: 0.12, t: 'enrage', name: '여왕의 노여움', atk: 1.25, rate: 0.75, speed: 1.2 }
+              ] },
+  eldertree:{ name: '고목왕', body: '#5a4a32', accent: '#9ae86a', tunic: '#3a2a1a', shape: 'eldertree',
+              hp: 50000, atk: 1250, range: 140, speed: 14, interval: 2.4, kb: 1, gold: 3200,
+              area: true, areaRadius: 190, scale: 2.7, boss: true,
+              ab: { kbImmune: true, armor: 0.25, regen: 220 },
+              special: { t: 'roar', name: '뿌리 흔들기', cd: 11, r: 460, stun: 1.2, push: 120 },
+              phases: [
+                { at: 0.75, t: 'summon', name: '깨어난 숲', id: 'treant', n: 2 },
+                { at: 0.55, t: 'swap',   name: '떨어지는 고목 열매',
+                            special: { t: 'meteor', name: '고목 열매', first: 2, cd: 7, n: 5, dmg: 560, radius: 130, warn: 1.1, poison: { dps: 80, dur: 3 }, kind: 'shockwave' } },
+                { at: 0.35, t: 'summon', name: '일각수 기사단', id: 'unicorn', n: 3 },
+                { at: 0.12, t: 'enrage', name: '숲의 분노', atk: 1.3, rate: 0.75, speed: 1.25 }
+              ],
+              abText: '고목 · 갑주 25% · 초당 220 회복 (화상이면 멈춤) · 뿌리로 밀쳐 기절' },
   /* ---------- 4.6 도전 '폭주 기관차' · '그림자 가면무도회' ---------- */
   irontrain:{ name: '폭주 기관차', body: '#3a3c44', accent: '#ff7a2a', tunic: '#8a2a2a', shape: 'irontrain',
               hp: 60000, atk: 420, range: 60, speed: 9, interval: 1, kb: 1, gold: 3000, scale: 2.1, boss: true,
@@ -1575,6 +1634,32 @@ STAGES.push(
     W(12,'triceratops',2,4),W(26,'jungletyrant',1),W(52,'raptor',12,.4),W(80,'stoneidol',3,3),W(110,'poisontoad',5,1.8),W(140,'vineshaman',3,3),W(170,'lizardman',12,.6),W(200,'triceratops',3,3),W(232,'raptor',16,.35),W(262,'stoneidol',3,3)]}
 );
 
+/* 6막 '홀린 요정 숲' (4.11): 밀림 너머 안개 속 요정의 숲 — 요정 · 버섯 · 나무 정령의 군단. 61~70전장.
+ * 5막보다 또 한 단계: 멀리서만 쏘면 홀림불이 안 보이고, 버섯은 쓰러지며 독을 뿌리고, 나무 정령은 화상 없이는 다시 자란다. */
+const ACT6_FROM = 60;
+STAGES.push(
+  {name:'요정 고리 숲길',hint:'날쌘 요정 떼는 범위 공격으로 · 홀림불은 가까이 가야 보입니다',baseHp:307000,money:690,rate:88,reward:7200,enemyMul:33.5,waves:[
+    W(12,'pixie',6,.5),W(22,'sporecap',4,1.2),W(44,'wisp',2,2.5),W(66,'pixie',10,.4),W(90,'sporecap',6,1),W(116,'satyr',1),W(140,'wisp',3,2.2),W(168,'pixie',12,.35),W(198,'sporecap',7,.9)]},
+  {name:'독버섯 골짜기',hint:'버섯은 쓰러지며 포자를 터뜨립니다 · 정화사를 데려가고 앞줄을 자주 갈아 주세요',baseHp:515000,money:695,rate:89,reward:7400,enemyMul:49.9,mods:['horde'],waves:[
+    W(12,'sporecap',5,1.1),W(22,'pixie',8,.45),W(44,'satyr',1),W(64,'sporecap',6,1),W(88,'wisp',3,2.2),W(112,'pixie',10,.4),W(138,'sporecap',8,.9),W(166,'satyr',2,4),W(196,'sporecap',8,.8)]},
+  {name:'★ 버섯 왕의 궁정',hint:'포자 폭탄 예고를 피하고, 중독은 정화로 · 버섯 무리는 범위로 한꺼번에',baseHp:180000,money:705,rate:90,reward:8000,boss:true,enemyMul:19,waves:[
+    W(12,'sporecap',6,1),W(24,'mushking',1),W(48,'pixie',10,.4),W(74,'wisp',3,2.2),W(100,'sporecap',8,.9),W(128,'satyr',2,4),W(156,'pixie',12,.35),W(186,'sporecap',10,.8)]},
+  {name:'홀림불 늪',hint:'홀림불은 멀리서 못 쏩니다 · 튼튼한 근접 전열을 앞세우고 범위로 태우세요',baseHp:299000,money:710,rate:91,reward:7700,enemyMul:27,waves:[
+    W(12,'wisp',3,2),W(20,'sporecap',5,1.1),W(42,'wisp',4,1.8),W(66,'pixie',10,.4),W(92,'wisp',5,1.6),W(118,'satyr',2,4),W(146,'sporecap',8,.9),W(176,'wisp',6,1.4),W(206,'pixie',12,.35)]},
+  {name:'고목의 회랑',hint:'나무 정령은 화상이 붙으면 다시 자라지 못합니다 · 화상과 파쇄로',baseHp:339000,money:720,rate:92,reward:7900,enemyMul:32.4,mods:['ironclad'],waves:[
+    W(12,'sporecap',6,1),W(22,'treant',1),W(46,'wisp',3,2.2),W(72,'treant',2,4),W(98,'pixie',10,.4),W(124,'satyr',2,4),W(150,'treant',2,4),W(178,'sporecap',8,.9),W(208,'wisp',4,1.8)]},
+  {name:'★ 달빛 요정 궁',hint:'꽃덩굴에 묶이면 둔화 · 달빛 화살 예고를 피하고 왕명으로 버티세요',baseHp:194000,money:730,rate:93,reward:8600,boss:true,enemyMul:14,waves:[
+    W(12,'pixie',10,.4),W(26,'faequeen',1),W(50,'wisp',4,1.8),W(76,'sporecap',8,.9),W(104,'treant',2,4),W(132,'satyr',2,4),W(162,'pixie',14,.35),W(194,'unicorn',2,3)]},
+  {name:'사티로스의 잔치',hint:'피리 소리가 적을 북돋웁니다 · 피리꾼을 먼저, 저주된 아군은 잠시 뒤로',baseHp:590000,money:740,rate:94,reward:8200,enemyMul:52.3,waves:[
+    W(12,'satyr',2,3),W(22,'sporecap',6,1),W(44,'unicorn',2,3),W(68,'satyr',3,2.5),W(94,'pixie',12,.35),W(120,'unicorn',2,3),W(146,'wisp',4,1.8),W(174,'satyr',3,2.5),W(204,'sporecap',10,.8)]},
+  {name:'일각수 초원',hint:'일각수의 돌격 첫 일격 · 넉백 면역 방패를 앞에 두고 치유하는 기사를 먼저',baseHp:328000,money:745,rate:95,reward:8400,enemyMul:35.6,mods:['blitz'],waves:[
+    W(12,'pixie',8,.45),W(26,'unicorn',2,3),W(44,'unicorn',3,2.5),W(68,'wisp',4,1.8),W(94,'sporecap',8,.9),W(120,'unicorn',3,2.5),W(146,'satyr',2,4),W(174,'treant',2,4),W(204,'unicorn',4,2)]},
+  {name:'숲의 심장부',hint:'요정 숲의 모든 군단 · 정화 · 화상 · 범위를 함께',baseHp:246000,money:755,rate:96,reward:8800,enemyMul:40,mods:['horde','curse'],waves:[
+    W(12,'sporecap',8,.9),W(22,'wisp',3,2.2),W(44,'pixie',12,.35),W(68,'treant',2,4),W(92,'satyr',2,4),W(118,'unicorn',3,2.5),W(144,'pixie',14,.35),W(172,'sporecap',10,.8),W(202,'wisp',5,1.6),W(232,'treant',3,3)]},
+  {name:'★ 고목왕',hint:'고목왕은 화상 없이는 계속 자랍니다 · 열매 예고를 피하고, 뿌리가 흔들리면 왕명과 필살을',baseHp:215000,money:770,rate:98,reward:9800,boss:true,enemyMul:24.8,waves:[
+    W(12,'treant',2,4),W(26,'eldertree',1),W(52,'pixie',12,.35),W(80,'sporecap',8,.9),W(110,'wisp',5,1.6),W(140,'satyr',3,3),W(170,'unicorn',3,2.5),W(200,'treant',3,3),W(232,'pixie',16,.3),W(262,'sporecap',10,.8)]}
+);
+
 /* 전장 특성. 어려운 전장에는 특성이 붙어서, 스탯 높은 병종을 몰아 넣는 것만으로는
  * 풀리지 않고 그 특성을 받아칠 병종을 챙겨야 한다. */
 const STAGE_MODS = {
@@ -1667,7 +1752,9 @@ const HARD_STAGE_MODS = {
   // 4막 (4.0)
   43: ['giantslayer'], 46: ['ironclad', 'horde'], 47: ['blitz', 'horde'], 48: ['ironclad', 'giantslayer', 'blitz'],
   // 5막 (4.6): 캠페인에서도 특성이 붙은 곳이 있다 (위의 st.mods 가 먼저)
-  53: ['giantslayer'], 56: ['ironclad', 'horde'], 57: ['blitz', 'giantslayer'], 59: ['ironclad', 'curse']
+  53: ['giantslayer'], 56: ['ironclad', 'horde'], 57: ['blitz', 'giantslayer'], 59: ['ironclad', 'curse'],
+  // 6막 (4.11)
+  63: ['giantslayer'], 66: ['curse', 'giantslayer'], 69: ['ironclad', 'curse']
 };
 STAGES.forEach((st, i) => { if (!st.mods && HARD_STAGE_MODS[i]) st.mods = HARD_STAGE_MODS[i]; });
 // 전설·신화 풀이 넓어질수록 몰아 넣기만 한 편성도 두루 갖춘다. 조합이 필요한
@@ -1757,6 +1844,7 @@ STAGES.forEach((st, i) => {
 
 const BOSS_ROLE = { kraken: 'bruiser', tidequeen: 'caster', leviathan: 'bruiser',
                     raptorqueen: 'bruiser', quetzal: 'flyer', jungletyrant: 'bruiser',
+                    mushking: 'bruiser', faequeen: 'caster', eldertree: 'bruiser',
                     stormgriffin: 'flyer', cloudking: 'bruiser', skylord: 'caster',
                     troll: 'bruiser', frostgiant: 'bruiser', warlord: 'bruiser',
                     lich: 'caster', spiderqueen: 'caster', drake: 'flyer' };
@@ -1764,23 +1852,35 @@ const BOSS_ESCORT = {
   bruiser: { back: ['ballista', 'slinger', 'shaman', 'hexer', 'plaguer', 'orccatapult'], front: ['wolf', 'assassin', 'hellhound', 'orcspear'], nb: 4, nf: 2,
              sea: { back: ['siren', 'seahook'], front: ['nagaspear', 'eel'] },
              sky: { back: ['stormwisp', 'skycannon'], front: ['harpy', 'griffinrider'] },
-             jungle: { back: ['poisontoad', 'vineshaman'], front: ['raptor', 'lizardman', 'triceratops'] } },
+             jungle: { back: ['poisontoad', 'vineshaman'], front: ['raptor', 'lizardman', 'triceratops'] },
+             fey: { back: ['satyr', 'wisp'], front: ['sporecap', 'pixie', 'treant'] } },
   caster:  { back: ['ballista', 'skelarcher', 'plaguer'], front: ['orcshield', 'boneguard', 'orcspear', 'orcberserk', 'chariot', 'dark'], nb: 2, nf: 4,
              sea: { back: ['siren', 'tidecaller'], front: ['clawcrab', 'deepone', 'nagaspear'] },
              sky: { back: ['stormwisp', 'windcaller'], front: ['cloudgiant', 'griffinrider', 'harpy'] },
-             jungle: { back: ['vineshaman', 'poisontoad'], front: ['stoneidol', 'lizardman', 'raptor'] } },
+             jungle: { back: ['vineshaman', 'poisontoad'], front: ['stoneidol', 'lizardman', 'raptor'] },
+             fey: { back: ['wisp', 'satyr'], front: ['sporecap', 'treant', 'unicorn'] } },
   flyer:   { back: ['shaman', 'hexer', 'ballista'], front: ['orcshield', 'burrower', 'hellhound', 'boneguard', 'orcberserk', 'golem'], nb: 2, nf: 3,
              sky: { back: ['stormwisp', 'windcaller'], front: ['cloudgiant', 'harpy'] },
-             jungle: { back: ['poisontoad', 'vineshaman'], front: ['lizardman', 'raptor'] } }
+             jungle: { back: ['poisontoad', 'vineshaman'], front: ['lizardman', 'raptor'] },
+             fey: { back: ['wisp', 'satyr'], front: ['sporecap', 'pixie'] } }
 };
 /* 전장 번호(0부터) → 그 전장의 보스 */
 const STAGE_BOSS = { 4: 'lich', 9: 'troll', 12: 'lich', 14: 'troll', 16: 'frostgiant', 17: 'drake',
                      18: 'spiderqueen', 19: 'warlord', 21: 'lich', 23: 'lich', 26: 'frostgiant',
                      28: 'drake', 29: 'warlord', 32: 'kraken', 35: 'tidequeen', 39: 'leviathan',
                      42: 'stormgriffin', 45: 'cloudking', 49: 'skylord',
-                     52: 'raptorqueen', 55: 'quetzal', 59: 'jungletyrant' };
+                     52: 'raptorqueen', 55: 'quetzal', 59: 'jungletyrant',
+                     62: 'mushking', 65: 'faequeen', 69: 'eldertree' };
 const ELITE_FOR = { troll: ['ogre', 1], lich: ['shaman', 2], frostgiant: ['golem', 1],
                     drake: ['hellhound', 3], spiderqueen: ['spider', 4], warlord: ['warchief', 1] };
+/* 그 막의 군단으로 바꾼 호위 (3막 바다 · 4막 천공 · 5막 밀림 · 6막 요정 숲) */
+function actEscort(role, i) {
+  const esc0 = BOSS_ESCORT[role];
+  return i >= ACT6_FROM && esc0.fey ? Object.assign({}, esc0, esc0.fey)
+    : i >= ACT5_FROM && esc0.jungle ? Object.assign({}, esc0, esc0.jungle)
+    : i >= ACT4_FROM && esc0.sky ? Object.assign({}, esc0, esc0.sky)
+    : i >= ACT3_FROM && esc0.sea ? Object.assign({}, esc0, esc0.sea) : esc0;
+}
 const BOSS_HP_MUL = 2.0;       // 하나뿐인 보스는 그만큼 단단하다
 const BOSS_ATK_MUL = 1.2;
 (function oneBossPerStage() {
@@ -1796,11 +1896,7 @@ const BOSS_ATK_MUL = 1.2;
     const ok = id => first[id] !== undefined && first[id] <= i + 1;
     const pick = (list, k) => { const c = list.filter(ok); return c.length ? c[k % c.length] : 'orcspear'; };
     if (sig) {
-      const esc0 = BOSS_ESCORT[BOSS_ROLE[sig]];
-      // 3막 보스는 바다 군단이 호위한다
-      const esc = i >= ACT5_FROM && esc0.jungle ? Object.assign({}, esc0, esc0.jungle)   // 5막은 밀림 군단이
-        : i >= ACT4_FROM && esc0.sky ? Object.assign({}, esc0, esc0.sky)        // 4막은 천공 군단이
-        : i >= ACT3_FROM && esc0.sea ? Object.assign({}, esc0, esc0.sea) : esc0;
+      const esc = actEscort(BOSS_ROLE[sig], i);
       // 호위 규모: 앞 전장은 절반, 뒤로 갈수록 제 크기
       const grow = 0.5 + 0.5 * Math.min(1, i / 29);
       const nb = Math.max(2, Math.round(esc.nb * grow)), nf = Math.max(1, Math.round(esc.nf * grow));
@@ -1846,7 +1942,8 @@ STAGES.forEach((st, i) => {
   // 수비대: 보스 전장이면 그 보스의 호위, 아니면 이 전장에서 가장 흔한 잡몹 둘
   let front, back;
   if (st.bossRole) {
-    const esc = BOSS_ESCORT[st.bossRole];
+    // 4.11: 수비대도 그 막의 군단으로 (예전엔 바다 · 밀림 · 요정 숲 전장에서도 늑대 기수 · 석궁 사수가 나왔다)
+    const esc = actEscort(st.bossRole, i);
     const seen = new Set(); STAGES.slice(0, i + 1).forEach(x => x.waves.forEach(w => seen.add(w.e)));
     front = esc.front.find(id => seen.has(id)) || 'orcspear';
     back = esc.back.find(id => seen.has(id)) || 'ballista';
@@ -1873,13 +1970,15 @@ const STAGE_LOOKS = ['meadow', 'wheat', 'river', 'forest', 'graveyard', 'cave', 
   'blackriver', 'underworld', 'thorns', 'underworld', 'blizzard', 'snow', 'snow', 'desert', 'eclipse', 'mythic',
   'shore', 'reef', 'stormsea', 'lighthouse', 'reef', 'sunken', 'sunken', 'stormsea', 'abyss', 'abyss',
   'skyisle', 'skyisle', 'stormspire', 'skyisle', 'stormspire', 'skyisle', 'skyisle', 'stormspire', 'stormspire', 'stormspire',
-  'jungle', 'jungle', 'jungle', 'temple', 'jungle', 'temple', 'jungle', 'lavajungle', 'temple', 'lavajungle'];
+  'jungle', 'jungle', 'jungle', 'temple', 'jungle', 'temple', 'jungle', 'lavajungle', 'temple', 'lavajungle',
+  'feywood', 'mushgrove', 'mushgrove', 'moonglade', 'feywood', 'moonglade', 'feywood', 'moonglade', 'mushgrove', 'feywood'];
 const STAGE_MUSIC = ['meadow', 'wheat', 'river', 'wolfwood', 'graveyard', 'cave', 'hills', 'camp', 'canyon', 'fortress',
   'darkwood', 'ruins', 'return', 'shieldwall', 'gate', 'swamp', 'snowpass', 'volcano', 'warcamp', 'throne',
   'blackriver', 'underworld', 'thorngate', 'seal', 'blizzard', 'siege', 'winterthrone', 'desert', 'eclipse', 'mythic',
   'shore', 'coral', 'krakenbay', 'lighthouse', 'sirensong', 'tidetemple', 'sunken', 'strait', 'abyssgate', 'leviathan',
   'cloudbridge', 'windcliff', 'griffinnest', 'skybattery', 'thunderspire', 'cloudthrone', 'skygarden', 'stormeye', 'citadelgate', 'skythrone',
-  'vinepath', 'toadmarsh', 'raptornest', 'templesteps', 'hornplain', 'serpentaltar', 'mistfalls', 'lavajungle', 'templeheart', 'tyrant'];
+  'vinepath', 'toadmarsh', 'raptornest', 'templesteps', 'hornplain', 'serpentaltar', 'mistfalls', 'lavajungle', 'templeheart', 'tyrant',
+  'fairyring', 'sporevale', 'mushcourt', 'wispmarsh', 'treehall', 'moonpalace', 'satyrfeast', 'unicornmeadow', 'forestheart', 'elderking'];
 STAGES.forEach((st, i) => {
   st.look = st.look || STAGE_LOOKS[i] || 'meadow';
   st.music = st.music || STAGE_MUSIC[i] || 'meadow';
@@ -1887,7 +1986,8 @@ STAGES.forEach((st, i) => {
 STAGES[29].finale = true;                      // 2막의 끝: 세 신화의 종착지
 STAGES[39].bossMusic = 'finale2';               // 3막의 끝은 따로 한 곡 (3.3)
 STAGES[ACT5_FROM - 1].bossMusic = 'finale3';      // 4막의 끝 (4.0)
-STAGES[STAGES.length - 1].bossMusic = 'finale4';   // 5막의 끝 (4.6)
+STAGES[ACT6_FROM - 1].bossMusic = 'finale4';      // 5막의 끝 (4.6)
+STAGES[STAGES.length - 1].bossMusic = 'finale5';   // 6막의 끝 (4.11)
 
 /* 전장 길이. 예전엔 모두 2000 이라 병사가 적과 부딪히기까지 40초 넘게 걸어야 했다.
  * 초반은 짧게 붙고, 뒤로 갈수록·보스 전장일수록 조금씩 길어진다. */
@@ -1897,7 +1997,8 @@ STAGES.forEach((st, i) => {
   const wiggle = [0, -70, 50, -40, 80][i % 5];
   const base = i < 20 ? 900 + 20 * i : i < 30 ? 1180 + 18 * (i - 20) : i < 40 ? 1300 + 12 * (i - 30)   // 3막은 조금 짧게 다시 시작
     : i < 50 ? 1340 + 12 * (i - 40)                                                              // 4막도
-    : 1380 + 12 * (i - 50);                                                                      // 5막 (4.6)
+    : i < 60 ? 1380 + 12 * (i - 50)                                                              // 5막 (4.6)
+    : 1380 + 10 * (i - 60);                                                                      // 6막 (4.11)
   st.len = base + wiggle + (st.boss ? 120 : 0);
 });
 
@@ -2154,6 +2255,7 @@ const ACHIEVEMENTS = [
     test: s => Object.keys(EVOLUTIONS2).some(id => UNIT_BY_ID[id].gacha && s.evo2 && s.evo2[id] !== undefined) },
   { id:'campaign50',name:'하늘에 오른 자',desc:'50전장 모두 돌파 (4막 천공 요새)',gold:20000,stone:15,test:s=>s.cleared>=50 },
   { id:'campaign60',name:'밀림의 왕',desc:'60전장 모두 돌파 (5막 잊힌 밀림)',gold:30000,stone:20,test:s=>s.cleared>=60 },
+  { id:'campaign70',name:'숲을 깨운 자',desc:'70전장 모두 돌파 (6막 홀린 요정 숲)',gold:40000,stone:25,test:s=>s.cleared>=70 },
   { id:'trainStop',name:'기관차를 멈춘 자',desc:'도전 \'폭주 기관차\' 돌파',gold:15000,stone:15,test:s=>!!(s.events && s.events.train) },
   { id:'unmasked',name:'가면을 벗긴 자',desc:'도전 \'그림자 가면무도회\' 돌파',gold:15000,stone:15,test:s=>!!(s.events && s.events.masque) },
   { id: 'endless10',name: '끝없는 전장',  desc: '무한 전장 10웨이브 돌파',       gold: 2000, stone: 3,
@@ -2269,6 +2371,9 @@ function defeatTips(save, stage, info) {
   if (stage && stage.bossId === 'irontrain') tips.push('기관차는 싸우지 않습니다 · 둔화(서리 마도사·폭풍술사)와 기절(종지기)로 늦추고 그 사이 요새를 부수세요');
   else if (stage && stage.bossId === 'masklord') tips.push('가장 많이 낸 병종이 봉인되고 그림자로 돌아옵니다 · 비싼 병종을 몰아 내지 말고 고르게 섞으세요');
   else if (info.bossAlive) tips.push('보스가 끝까지 버텼습니다 · 보스에 강한 병종을 넣고 왕명을 보스 앞에서 쓰세요');
+  // 4.11 요정 숲: 홀림불은 멀리서 못 쏘고, 나무 정령 · 고목왕은 화상이 붙어야 재생이 멈춘다
+  if (stage && stage.waves && stage.waves.some(w => w.e === 'wisp')) tips.push('홀림불은 가까이 가야 보입니다 · 근접 전열을 앞세우고 범위 공격을 챙기세요');
+  if (stage && stage.waves && stage.waves.some(w => w.e === 'treant' || w.e === 'eldertree')) tips.push('나무 정령은 화상이 붙어야 재생이 멈춥니다 · 불꽃술사 같은 화상 병종을 넣으세요');
   if (info.foePct > 70) tips.push('적 요새에 거의 닿지 못했습니다 · 무기 연마와 갑옷 강화를 올려 보세요');
   else if (info.time >= 240) tips.push('싸움이 길어지면 적이 억세집니다 · 화력을 더 챙기세요');
   const cheapest = Math.min.apply(null, SHOP_ORDER.slice(0, 5).map(k => (save.upgrades[k] || 0) >= UPGRADES[k].max ? Infinity : upgradeCost(k, save.upgrades[k] || 0)));

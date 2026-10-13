@@ -3,7 +3,7 @@
  * ======================================================================= */
 
 
-const APP_VERSION = '4.10.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
+const APP_VERSION = '4.11.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
 
 function defaultSave() {
   const lv = {};
@@ -353,6 +353,7 @@ const CHAPTERS = [
   { name: '3막', sub: '심연의 바다', from: 30, to: 40 },
   { name: '4막', sub: '천공 요새', from: 40, to: 50 },
   { name: '5막', sub: '잊힌 밀림', from: 50, to: 60 },
+  { name: '6막', sub: '홀린 요정 숲', from: 60, to: 70 },
   { name: '무한', sub: '끝없는 웨이브', endless: true },
   { name: '원정', sub: '금화 원정', expedition: true },
   { name: '이벤트', sub: '극악 도전', event: true }

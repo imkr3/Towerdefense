@@ -1043,6 +1043,141 @@ const BGM_TRACKS = {
       'Bb5*4 Eb6*4 G6*8', 'C6*4 F6*4 A6*8', 'Bb6*4 F6*2 D6*2 Bb5*8', 'D6*4 G6*4 Bb6*8',
       'G6*4 Eb6*2 Bb5*2 G5*8', 'A5*2 C6*2 F6*4 A6*8', 'Bb6*6 A6*2 F6*8', 'Bb6*12 .*4'] }] },
 
+  /* 4.11 6막 '홀린 요정 숲': 하프 아르페지오 · 첼레스타 · 피치카토가 굴러가는 fey 반주 */
+  fairyring: { bpm: 120, style: 'fey', sections: [           // 61 요정 고리 숲길: 리디아풍 라장조
+    { chords: 'D E D G D E A A', lead: 'flute', int: 1, mel: [
+      'F#5*2 A5*2 D6*4 C#6*2 A5*2 F#5*4', 'G#5*2 B5*2 E6*4 B5*8', 'A5*2 F#5*2 D5*4 F#5*8', 'B5*4 G5*4 D6*8',
+      'D6*2 C#6*2 A5*4 F#5*8', 'E5*2 G#5*2 B5*4 E6*8', 'C#6*4 A5*4 E5*8', 'E5*4 A5*4 C#6*8'] },
+    { chords: 'G A Bm G D E A D', lead: 'celesta', dbl: 'flute', int: 2, mel: [
+      'B5*2 D6*2 G6*4 D6*8', 'C#6*2 E6*2 A6*4 E6*8', 'D6*4 F#6*4 B6*8', 'G6*2 D6*2 B5*4 G5*8',
+      'A5*2 D6*2 F#6*4 A6*8', 'G#6*4 E6*4 B5*8', 'A6*4 E6*2 C#6*2 A5*8', 'D6*12 .*4'] }] },
+
+  sporevale: { bpm: 112, style: 'fey', sections: [           // 62 독버섯 골짜기: 어둑한 마단조
+    { chords: 'Em C Am B Em C B B', lead: 'oboe', int: 1, mel: [
+      'E5*4 G5*2 F#5*2 E5*8', 'C5*2 E5*2 G5*4 E5*8', 'A4*4 C5*2 E5*2 A5*8', 'B4*4 D#5*4 F#5*8',
+      'G5*4 F#5*2 E5*2 B4*8', 'C5*2 E5*2 G5*4 C6*8', 'B5*4 A5*2 F#5*2 D#5*8', 'F#5*8 B4*8'] },
+    { chords: 'Am B Em C Am B Em Em', lead: 'celesta', dbl: 'oboe', int: 2, mel: [
+      'A5*2 C6*2 E6*4 C6*8', 'B5*2 D#6*2 F#6*4 D#6*8', 'E6*4 B5*2 G5*2 E5*8', 'C6*2 E6*2 G6*4 E6*8',
+      'A5*4 C6*4 E6*8', 'F#6*4 D#6*2 B5*2 F#5*8', 'G5*4 B5*4 E6*8', 'E6*12 .*4'] }] },
+
+  mushcourt: { bpm: 128, style: 'fey', sections: [           // 63 버섯 왕의 궁정: 익살맞은 라단조
+    { chords: 'Dm A Dm A Bb F Gm A', lead: 'oboe', int: 1, mel: [
+      'D5*2 F5*2 A5*2 F5*2 D5*8', 'C#5*2 E5*2 A5*4 E5*8', 'F5*2 A5*2 D6*4 A5*8', 'E5*4 C#5*4 A4*8',
+      'Bb4*2 D5*2 F5*4 Bb5*8', 'A5*4 F5*4 C5*8', 'G5*2 Bb5*2 D6*4 Bb5*8', 'A5*4 C#6*4 E6*8'] },
+    { chords: 'Gm A Dm Bb Gm A Dm Dm', lead: 'marimba', dbl: 'oboe', int: 2, mel: [
+      'G5*2 Bb5*2 D6*4 G6*8', 'A5*2 C#6*2 E6*4 A6*8', 'F6*4 D6*2 A5*2 F5*8', 'Bb5*2 D6*2 F6*4 D6*8',
+      'G6*4 D6*4 Bb5*8', 'E6*4 C#6*2 A5*2 E5*8', 'D6*4 F6*4 A6*8', 'D6*12 .*4'] }] },
+
+  wispmarsh: { bpm: 104, style: 'fey', sections: [           // 64 홀림불 늪: 홀리는 나단조
+    { chords: 'Bm G Bm F# Bm Em F# F#', lead: 'choir', style: 'mystic', int: 1, mel: [
+      'B4*6 C#5*2 D5*8', 'D5*4 B4*4 G4*8', 'F#5*4 D5*4 B4*8', 'C#5*4 A#4*4 F#4*8',
+      'B4*4 D5*4 F#5*8', 'E5*4 G5*4 B5*8', 'A#5*4 F#5*4 C#5*8', 'F#5*8 A#5*8'] },
+    { chords: 'G A Bm Bm Em F# Bm Bm', lead: 'celesta', dbl: 'strings', int: 2, mel: [
+      'D6*2 B5*2 G5*4 B5*8', 'C#6*2 A5*2 E5*4 A5*8', 'D6*4 F#6*4 B6*8', 'F#6*2 D6*2 B5*4 F#5*8',
+      'G5*2 B5*2 E6*4 G6*8', 'F#6*4 C#6*2 A#5*2 F#5*8', 'B5*4 D6*4 F#6*8', 'B5*12 .*4'] }] },
+
+  treehall: { bpm: 96, style: 'fey', sections: [            // 65 고목의 회랑: 장엄한 사단조
+    { chords: 'Gm Eb Bb F Gm Eb D D', lead: 'horn', int: 2, mel: [
+      'G4*4 Bb4*4 D5*8', 'Eb5*4 G5*4 Bb5*8', 'F5*2 D5*2 Bb4*4 D5*8', 'C5*4 A4*4 F4*8',
+      'G4*2 Bb4*2 D5*4 G5*8', 'Bb5*4 G5*4 Eb5*8', 'F#5*4 A5*4 D6*8', 'D6*8 A5*8'] },
+    { chords: 'Cm D Gm Eb Cm D Gm Gm', lead: 'strings', dbl: 'horn', int: 3, mel: [
+      'C6*4 Eb6*4 G6*8', 'A5*4 D6*4 F#6*8', 'G6*4 D6*2 Bb5*2 G5*8', 'Bb5*2 Eb6*2 G6*4 Eb6*8',
+      'C6*4 G5*4 Eb5*8', 'F#5*2 A5*2 D6*4 F#6*8', 'G6*4 F#6*2 D6*2 Bb5*8', 'G5*12 .*4'] }] },
+
+  moonpalace: { bpm: 112, style: 'fey', sections: [          // 66 달빛 요정 궁: 꿈꾸는 바단조
+    { chords: 'Fm Db Ab Eb Fm Db C C', lead: 'choir', int: 1, mel: [
+      'C5*6 Db5*2 F5*8', 'Db5*4 F5*4 Ab5*8', 'Eb5*4 Ab5*4 C6*8', 'Bb5*4 G5*4 Eb5*8',
+      'F5*4 Ab5*4 C6*8', 'Db6*4 Ab5*4 F5*8', 'E5*4 G5*4 C6*8', 'C6*8 G5*8'] },
+    { chords: 'Db Eb Fm Fm Bbm C Fm Fm', lead: 'celesta', dbl: 'flute', int: 2, mel: [
+      'F6*2 Db6*2 Ab5*4 F5*8', 'G5*2 Bb5*2 Eb6*4 G6*8', 'Ab6*4 F6*2 C6*2 Ab5*8', 'C6*2 F6*2 Ab6*4 F6*8',
+      'Bb5*2 Db6*2 F6*4 Bb6*8', 'G6*4 E6*2 C6*2 G5*8', 'F6*4 Ab6*4 C7*8', 'F6*12 .*4'] }] },
+
+  satyrfeast: { bpm: 150, style: 'fey', sections: [          // 67 사티로스의 잔치: 신나는 도리아풍 가단조
+    { chords: 'Am D Am D C G Am E', lead: 'flute', int: 2, mel: [
+      'A5*2 B5*2 C6*2 E6*2 D6*4 B5*4', 'F#5*2 A5*2 D6*4 A5*8', 'E6*2 C6*2 A5*2 C6*2 E6*8', 'D6*2 F#6*2 A6*4 F#6*8',
+      'G6*2 E6*2 C6*4 E6*8', 'D6*2 B5*2 G5*4 B5*8', 'C6*2 B5*2 A5*4 E5*8', 'G#5*4 B5*4 E6*8'] },
+    { chords: 'F G Am D F G E E', lead: 'trumpet', dbl: 'flute', int: 3, mel: [
+      'A5*4 C6*4 F6*8', 'B5*4 D6*4 G6*8', 'A6*4 E6*2 C6*2 A5*8', 'F#6*2 D6*2 A5*4 D6*8',
+      'C6*2 F6*2 A6*4 F6*8', 'D6*2 G6*2 B6*4 G6*8', 'G#6*4 E6*4 B5*8', 'E6*12 .*4'] }] },
+
+  unicornmeadow: { bpm: 140, style: 'fey', sections: [       // 68 일각수 초원: 내달리는 바장조
+    { chords: 'F C Dm Bb F C Bb C', lead: 'horn', int: 2, mel: [
+      'C5*2 F5*2 A5*2 C6*2 A5*8', 'C6*2 G5*2 E5*4 G5*8', 'D5*2 F5*2 A5*4 D6*8', 'Bb5*4 F5*4 D5*8',
+      'F5*2 A5*2 C6*4 F6*8', 'E6*2 C6*2 G5*4 C6*8', 'D6*4 Bb5*4 F5*8', 'E5*4 G5*4 C6*8'] },
+    { chords: 'Bb C Am Dm Bb C F F', lead: 'trumpet', dbl: 'strings', int: 3, mel: [
+      'D6*4 F6*4 Bb6*8', 'E6*4 G6*4 C6*8', 'C6*2 E6*2 A6*4 E6*8', 'D6*2 F6*2 A6*4 F6*8',
+      'Bb5*4 D6*4 F6*8', 'G6*4 E6*2 C6*2 G5*8', 'A5*4 C6*4 F6*8', 'F6*12 .*4'] }] },
+
+  forestheart: { bpm: 134, style: 'fey', sections: [         // 69 숲의 심장부: 맥박 치는 올림다단조
+    { chords: 'C#m A E B C#m A G# G#', lead: 'horn', int: 2, mel: [
+      'C#5*2 E5*2 G#5*4 C#6*8', 'A5*2 C#6*2 E6*4 C#6*8', 'B5*2 G#5*2 E5*4 B5*8', 'D#6*4 B5*4 F#5*8',
+      'E6*2 C#6*2 G#5*4 C#6*8', 'A5*4 E5*4 C#5*8', 'C6*4 G#5*4 D#5*8', 'G#5*8 C6*8'] },
+    { chords: 'A B C#m C#m F#m G# C#m C#m', lead: 'trumpet', dbl: 'horn', int: 3, mel: [
+      'C#6*4 E6*4 A6*8', 'D#6*4 F#6*4 B6*8', 'G#6*4 E6*2 C#6*2 G#5*8', 'E6*2 G#6*2 C#7*4 G#6*8',
+      'F#6*4 A6*4 C#6*8', 'G#6*4 D#6*2 C6*2 G#5*8', 'E6*4 D#6*2 C#6*2 G#5*8', 'C#6*12 .*4'] }] },
+
+  elderking: { bpm: 128, style: 'fey', sections: [           // 70 고목왕: 깨어나는 마단조
+    { chords: 'Em Em C D Em Em C B', lead: 'lowbrass', int: 2, mel: [
+      'E3*4 G3*2 B3*2 E4*8', 'D4*2 B3*2 G3*4 E3*8', 'C4*4 E4*4 G4*8', 'D4*4 F#4*4 A4*8',
+      'E4*2 G4*2 B4*4 E5*8', 'B4*4 G4*4 E4*8', 'C5*4 G4*4 E4*8', 'D#4*4 F#4*4 B4*8'] },
+    { chords: 'Am B Em C Am B Em Em', lead: 'horn', dbl: 'strings', int: 3, mel: [
+      'A5*2 C6*2 E6*4 A6*8', 'B5*2 D#6*2 F#6*4 B6*8', 'G6*4 E6*2 B5*2 G5*8', 'C6*2 E6*2 G6*4 E6*8',
+      'A6*4 E6*4 C6*8', 'B6*4 F#6*2 D#6*2 B5*8', 'G6*4 F#6*2 E6*2 B5*8', 'E6*12 .*4'] }] },
+
+  boss_mushking: { bpm: 158, style: 'grand', sections: [       // 버섯 왕: 통통 튀다 터지는 라단조
+    { chords: 'Dm Dm Bb A', lead: 'lowbrass', int: 1, mel: [
+      'D3*2 D3*2 F3*2 D3*2 A3*4 G3*4', 'D3*2 F3*2 A3*4 D4*8', 'Bb3*2 A3*2 F3*4 D3*8', 'A3*4 C#4*4 E4*8'] },
+    { chords: 'Dm Bb F C Dm Gm A A', lead: 'horn', int: 2, mel: [
+      'A5*2 D6*2 F6*2 D6*2 A5*4 F5*4', 'Bb5*2 D6*2 F6*4 D6*8', 'C6*2 F6*2 A6*4 F6*8', 'E6*2 C6*2 G5*4 C6*8',
+      'D6*2 F6*2 A6*4 D7*8', 'G6*2 D6*2 Bb5*4 D6*8', 'C#6*2 E6*2 A6*4 E6*8', 'A6*8 C#6*8'] },
+    { chords: 'Bb C Dm Dm Gm A Dm Dm', lead: 'trumpet', int: 3, cm: ['F5*16', 'G5*16', 'A5*16', 'A5*16', 'Bb5*16', 'A5*16', 'A5*16', 'F5*16'], cmi: 'choir', mel: [
+      'D6*4 F6*4 Bb6*8', 'E6*4 G6*4 C7*8', 'F6*4 D6*2 A5*2 F5*8', 'A5*2 D6*2 F6*4 A6*8',
+      'G6*4 D6*4 Bb5*8', 'A6*4 E6*2 C#6*2 A5*8', 'F6*4 E6*2 D6*2 A5*8', 'D6*12 .*4'] }] },
+
+  boss_faequeen: { bpm: 150, style: 'grand', sections: [       // 요정 여왕: 달빛처럼 차가운 나단조
+    { chords: 'Bm Bm G F#', lead: 'lowbrass', int: 1, mel: [
+      'B3*4 D4*2 F#4*2 B4*8', 'A4*2 F#4*2 D4*4 B3*8', 'G3*4 B3*4 D4*8', 'F#3*4 A#3*4 C#4*8'] },
+    { chords: 'Bm G D A Bm Em F# F#', lead: 'horn', int: 2, mel: [
+      'F#5*2 B5*2 D6*2 B5*2 F#6*4 D6*4', 'G5*2 B5*2 D6*4 G6*8', 'A5*2 D6*2 F#6*4 D6*8', 'E6*2 C#6*2 A5*4 E5*8',
+      'B5*2 D6*2 F#6*4 B6*8', 'G6*2 E6*2 B5*4 E6*8', 'C#6*2 F#6*2 A#6*4 F#6*8', 'F#6*8 C#6*8'] },
+    { chords: 'G A Bm Bm Em F# Bm Bm', lead: 'trumpet', int: 3, cm: ['D5*16', 'E5*16', 'F#5*16', 'F#5*16', 'G5*16', 'F#5*16', 'F#5*16', 'D5*16'], cmi: 'choir', mel: [
+      'B5*4 D6*4 G6*8', 'C#6*4 E6*4 A6*8', 'D6*4 F#6*2 B6*2 F#6*8', 'B6*4 F#6*4 D6*8',
+      'E6*4 G6*4 B6*8', 'A#6*4 F#6*2 C#6*2 A#5*8', 'B6*4 A#6*2 F#6*2 D6*8', 'B5*12 .*4'] }] },
+
+  boss_eldertree: { bpm: 154, style: 'grand', sections: [      // 고목왕: 뿌리가 땅을 가르는 마단조
+    { chords: 'Em Em C B', lead: 'lowbrass', int: 1, mel: [
+      'E3*2 E3*2 G3*2 E3*2 B3*4 A3*4', 'E3*2 G3*2 B3*4 E4*8', 'C4*2 B3*2 G3*4 E3*8', 'B3*4 D#4*4 F#4*8'] },
+    { chords: 'Em C G D Em C B B', lead: 'horn', int: 2, mel: [
+      'B5*2 E6*2 G6*2 E6*2 B5*4 G5*4', 'C6*2 E6*2 G6*4 C6*8', 'D6*2 G6*2 B6*4 G6*8', 'A6*2 F#6*2 D6*4 A5*8',
+      'E6*2 G6*2 B6*4 E6*8', 'C6*2 G5*2 E5*4 G5*8', 'F#5*2 D#6*2 B5*4 F#6*8', 'B5*8 D#6*8'] },
+    { chords: 'C D Em Em Am B Em Em', lead: 'trumpet', int: 3, cm: ['G5*16', 'A5*16', 'B5*16', 'B5*16', 'C6*16', 'B5*16', 'B5*16', 'G5*16'], cmi: 'choir', mel: [
+      'E6*4 G6*4 C6*8', 'F#6*4 A6*4 D6*8', 'G6*4 E6*2 B5*2 G5*8', 'B5*2 E6*2 G6*4 B6*8',
+      'C6*4 A5*4 E6*8', 'B5*4 F#6*2 D#6*2 B5*8', 'G6*4 F#6*2 E6*2 B5*8', 'E6*12 .*4'] }] },
+
+  finale5: { bpm: 144, style: 'grand', sections: [             // 6막의 끝: 마단조의 결전에서 마장조의 아침으로
+    { chords: 'Em C G D Am Em B B', lead: 'choir', int: 1, mel: [
+      'B4*4 E5*4 B4*8', 'C5*4 E5*4 G5*8', 'B4*6 D5*2 G5*8', 'A4*4 F#4*4 D4*8',
+      'E4*4 A4*4 C5*8', 'B4*4 G4*4 E4*8', 'D#4*4 F#4*4 B4*8', 'B4*12 .*4'] },
+    { chords: 'Em Am D G C Am B B', lead: 'horn', int: 2, mel: [
+      'E5*2 B4*2 G4*2 B4*2 E5*4 G5*4', 'E5*2 C5*2 A4*2 C5*2 E5*8', 'F#5*2 D5*2 A4*2 D5*2 F#5*8', 'G5*4 D5*4 B4*8',
+      'C5*2 E5*2 G5*4 E5*8', 'A4*2 C5*2 E5*4 A5*8', 'F#5*2 D#5*2 B4*4 F#5*8', 'B5*8 F#5*8'] },
+    { chords: 'C D Em Em Am B Em B', lead: 'trumpet', int: 3, cm: ['E5*16', 'F#5*16', 'G5*16', 'G5*16', 'E5*16', 'D#5*16', 'E5*16', 'D#5*16'], cmi: 'choir', mel: [
+      'G5*4 E5*4 C5*8', 'A5*4 F#5*4 D5*8', 'B5*4 G5*2 E5*2 B4*8', 'E5*2 G5*2 B5*4 G5*8',
+      'C6*4 A5*4 E5*8', 'B5*4 F#5*2 D#5*2 B4*8', 'E5*4 G5*4 B5*8', 'D#5*4 F#5*4 B5*8'] },
+    { chords: 'E A B E C#m A B E', lead: 'trumpet', int: 3, mel: [
+      'G#5*4 B5*4 E5*8', 'A5*4 C#6*4 E5*8', 'B5*4 F#5*4 D#5*8', 'E5*2 G#5*2 B5*4 G#5*8',
+      'C#5*2 E5*2 G#5*4 C#6*8', 'A5*4 E5*4 C#5*8', 'D#5*2 F#5*2 B5*4 F#5*8', 'E5*12 .*4'] }] },
+
+  hc_fey: { bpm: 172, style: 'grand', sections: [              // 6막 하드코어: 올림바단조에서 가장조로 내달린다
+    { chords: 'F#m F#m D E', lead: 'horn', int: 1, mel: [
+      'F#4*4 A4*4 C#5*8', 'E5*4 C#5*4 A4*8', 'D5*4 F#5*4 A5*8', 'G#5*8 B5*8'] },
+    { chords: 'F#m D A E F#m D E E', lead: 'trumpet', int: 2, mel: [
+      'C#5*2 F#5*2 A5*2 C#6*2 B5*4 A5*4', 'A5*2 F#5*2 D5*2 F#5*2 A5*8', 'E5*2 A5*2 C#6*2 E6*2 C#6*8', 'B5*4 G#5*4 E5*8',
+      'F#5*2 A5*2 C#6*4 F#6*8', 'D6*2 A5*2 F#5*4 A5*8', 'G#5*4 B5*4 E6*8', 'E6*8 B5*8'] },
+    { chords: 'D E A F#m D E A A', lead: 'strings', int: 3, cm: ['F#5*16', 'G#5*16', 'A5*16', 'A5*16', 'F#5*16', 'G#5*16', 'E5*16', 'E5*16'], cmi: 'choir', mel: [
+      'A5*4 D6*4 F#6*8', 'B5*4 E6*4 G#6*8', 'C#6*4 E6*2 A6*2 E6*8', 'F#6*4 C#6*4 A5*8',
+      'D6*4 F#6*2 A6*2 F#6*8', 'E6*2 G#6*2 B6*4 G#6*8', 'A6*6 G#6*2 E6*8', 'A6*12 .*4'] }] },
+
   /* 4.6 도전: 신나고 빠르게 — 폭주 기관차(rush) · 그림자 가면무도회(masque) */
   railrush: { bpm: 176, style: 'rush', wet: 0.2, sections: [       // E6 폭주 기관차 전장: 칙칙폭폭 내달리는 마단조 → 사장조
     { chords: 'Em Em C D Em Em C B', lead: 'synlead', int: 2, mel: [
@@ -1113,7 +1248,10 @@ const BGM_GAIN = {
   // 4.6 5막 · 도전 (렌더해 재서 맞춤)
   vinepath: 1.07, toadmarsh: 1.11, raptornest: 0.84, templesteps: 0.94, hornplain: 0.8, serpentaltar: 0.99, mistfalls: 1.02, lavajungle: 0.75,
   templeheart: 0.82, tyrant: 0.85, boss_raptorqueen: 0.97, boss_quetzal: 0.97, boss_jungletyrant: 0.9, finale4: 0.98, hc_jungle: 0.92,
-  railrush: 0.77, boss_train: 0.95, masquerade: 1.08, boss_masklord: 1.24
+  railrush: 0.77, boss_train: 0.95, masquerade: 1.08, boss_masklord: 1.24,
+  // 4.11 6막 (렌더해 재서 맞춤)
+  fairyring: 1.43, sporevale: 1.7, mushcourt: 1.66, wispmarsh: 1.12, treehall: 1.0, moonpalace: 1.28, satyrfeast: 1.02, unicornmeadow: 1.05,
+  forestheart: 1.0, elderking: 1.06, boss_mushking: 0.96, boss_faequeen: 0.99, boss_eldertree: 0.93, finale5: 0.99, hc_fey: 0.94
 };
 
 /* 3.17 보스곡 리믹스 → 3.20 배틀 록 재편곡. 보스곡 · 마지막 전장 · 이벤트 보스 · 하드코어 곡 전부.
@@ -1126,7 +1264,8 @@ const BGM_ROCK = ['boss_lich', 'boss_troll', 'boss_frostgiant', 'boss_drake', 'b
   'boss_vampire', 'boss_titan', 'boss_ghostfleet', 'boss_voidlord', 'boss_demonking', 'boss_goldwyrm',
   'hc_iron', 'hc_storm', 'hc_abyss', 'hc_boss',
   'boss_stormgriffin', 'boss_cloudking', 'boss_skylord', 'finale3', 'hc_sky',
-  'boss_raptorqueen', 'boss_quetzal', 'boss_jungletyrant', 'finale4', 'hc_jungle'];
+  'boss_raptorqueen', 'boss_quetzal', 'boss_jungletyrant', 'finale4', 'hc_jungle',
+  'boss_mushking', 'boss_faequeen', 'boss_eldertree', 'finale5', 'hc_fey'];
 BGM_ROCK.forEach(k => {
   const tr = BGM_TRACKS[k];
   tr.style = 'rock'; tr.wet = 0.2;
@@ -1145,7 +1284,7 @@ BGM_ROCK.forEach(k => {
 function stageMusic(stage, hard) {
   if (stage && stage.endless) return 'endless';
   // 3.19 하드코어: 막마다 신나고 빠른 전용 곡 (1막 · 2막 · 3막 · 4.0 4막)
-  if (hard) { const i = STAGES.indexOf(stage); return typeof ACT5_FROM !== 'undefined' && i >= ACT5_FROM ? 'hc_jungle' : typeof ACT4_FROM !== 'undefined' && i >= ACT4_FROM ? 'hc_sky' : i >= ACT3_FROM ? 'hc_abyss' : i >= 15 ? 'hc_storm' : 'hc_iron'; }
+  if (hard) { const i = STAGES.indexOf(stage); return typeof ACT6_FROM !== 'undefined' && i >= ACT6_FROM ? 'hc_fey' : typeof ACT5_FROM !== 'undefined' && i >= ACT5_FROM ? 'hc_jungle' : typeof ACT4_FROM !== 'undefined' && i >= ACT4_FROM ? 'hc_sky' : i >= ACT3_FROM ? 'hc_abyss' : i >= 15 ? 'hc_storm' : 'hc_iron'; }
   return (stage && stage.music && BGM_TRACKS[stage.music]) ? stage.music : 'meadow';
 }
 function bossTrack(stage, bossId, hard) {

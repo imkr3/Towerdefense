@@ -998,7 +998,15 @@ class Battle {
       if (f.ab.deathBomb) {
         const b = f.ab.deathBomb;
         this.areaHit(b.dmg * f.abMul, f.x, b.radius, foes, foeCastle, null, false);
-        this.fx.push({ type: 'boom', x: f.x, r: b.radius, t: 0.35, life: 0.35 });
+        // 4.11 독버섯: 터지며 포자를 흩뿌려 둘레의 병사를 중독시킨다 (정화로 풀린다)
+        if (b.poison) for (const a of foes) {
+          if (a.dead || a.burrowed || Math.abs(a.x - f.x) > b.radius + a.radius) continue;
+          if (a.poisonT <= 0) a.poisonDps = 0;
+          a.poisonT = Math.max(a.poisonT, b.poison.dur);
+          a.poisonDps = Math.max(a.poisonDps, b.poison.dps * f.abMul);
+        }
+        if (b.poison) this.fx.push({ type: 'aura', x: f.x, row: f.row, r: b.radius, t: 0.8, life: 0.8, color: '#b06ae8' });
+        else this.fx.push({ type: 'boom', x: f.x, r: b.radius, t: 0.35, life: 0.35 });
       }
       if (isEnemySide && !f.exploded) {
         if (f.ab.flee) this.caught = (this.caught || 0) + 1;      // 3.7 잡은 황금 수레
@@ -1309,6 +1317,11 @@ class Battle {
       // 보스 패턴
       if (f.s.phases || f.s.special) this.bossTick(f, dt);
       if (f.ab.mask && !isAlly) this.maskTick(f, dt);       // 4.6 가면 군주
+      if (f.ab.glamour) {                                    // 4.11 홀림불: 가까이 선 적이 있으면 장막이 걷힌 모습 (그리기용)
+        let near = false;
+        for (const a of foes) if (!a.dead && Math.abs(a.x - f.x) <= f.ab.glamour + a.radius + f.radius) { near = true; break; }
+        f.unveiled = near;
+      }
 
       // 기절
       if (f.stunT > 0) { f.stunT -= dt; continue; }
@@ -1738,7 +1751,7 @@ class Battle {
             x: Math.max(120, Math.min(WORLD - 120, tx)),
             r: a.radius || 110, dmg: a.dmg || 300,
             warn: (a.warn || 1.0) + i * 0.12,
-            burn: a.burn, stun: a.stun, kind: a.kind || 'firestorm'
+            burn: a.burn, poison: a.poison, stun: a.stun, kind: a.kind || 'firestorm'
           });
         }
         break;
@@ -1751,7 +1764,7 @@ class Battle {
   queueStrike(f, o) {
     this.pending.push({
       t: o.warn, side: f.side, x: o.x, r: o.r, dmg: o.dmg,
-      burn: o.burn, stun: o.stun, kind: o.kind, color: f.s.accent, row: f.row,
+      burn: o.burn, poison: o.poison, stun: o.stun, kind: o.kind, color: f.s.accent, row: f.row,
       expose: o.expose, src: o.expose ? f : null, noCastle: !!o.noCastle,
       by: f.side === 'ally' ? (f.creditTo || f.s.id) : null
     });
@@ -1776,6 +1789,11 @@ class Battle {
           if (e.burnT <= 0) e.burnDps = 0;
           e.burnT = Math.max(e.burnT, s.burn.dur);
           e.burnDps = Math.max(e.burnDps, s.burn.dps);
+        }
+        if (s.poison) {                  // 4.11 버섯 왕의 포자 폭탄
+          if (e.poisonT <= 0) e.poisonDps = 0;
+          e.poisonT = Math.max(e.poisonT, s.poison.dur);
+          e.poisonDps = Math.max(e.poisonDps, s.poison.dps);
         }
         if (s.stun) e.stun(s.stun);
       }
@@ -1818,6 +1836,8 @@ class Battle {
       if (e.dead) continue;
       const d = (e.x - f.x) * f.dir;
       if (d < -f.radius || d > reach + e.radius) continue;
+      // 4.11 홀림 장막(요정 숲): 가까이 다가와야만 보인다 — 멀리서 쏘는 병사는 고를 수 없다 (범위 피해는 그대로 맞는다)
+      if (e.ab.glamour && d > e.ab.glamour + e.radius + f.radius) continue;
       if (back ? (best === null || d > -bestD) : d < bestD) { bestD = back ? -d : d; best = e; }
     }
     if (best) return best;
