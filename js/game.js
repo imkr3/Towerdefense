@@ -723,7 +723,8 @@ class Battle {
     }
     for (const a of this.allies) {
       a.heal(a.maxHp * this.cmdHeal);
-      a.hasteT = Math.max(a.hasteT, COMMAND.hasteDur); a.hasteMul = COMMAND.hasteMul;
+      // 4.14 더 센 가속(과부하 등)이 걸려 있으면 덮어쓰지 않는다 (예전엔 0.55 가 0.6 으로 약해졌다)
+      if (!(a.hasteT > 0 && a.hasteMul < COMMAND.hasteMul)) { a.hasteT = Math.max(a.hasteT, COMMAND.hasteDur); a.hasteMul = COMMAND.hasteMul; }
       a.stunT = 0;
       a.slowT = 0;
       this.fx.push({ type: 'rally', x: a.x, row: a.row, t: 0.6, life: 0.6 });
@@ -1530,7 +1531,7 @@ class Battle {
       for (const m of mates) {
         if (m.dead || m === f) continue;
         if (Math.abs(m.x - f.x) > ab.radius) continue;
-
+        if (m.hasteT > 0 && m.hasteMul < ab.haste.mul) continue;   // 4.14 더 센 가속은 끝날 때까지 그대로 (끝나면 다음 박자에 이 가속이 붙는다)
         m.hasteT = Math.max(m.hasteT, ab.haste.dur);
         m.hasteMul = ab.haste.mul;
       }

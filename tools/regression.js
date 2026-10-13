@@ -1624,6 +1624,13 @@ test('4.13: hits on one foe in the same instant merge into one number; hits carr
 });
 
 /* ---------------- 4.14 버그 점검 ---------------- */
+test('4.14: a weaker haste (herald, command) does not overwrite a stronger one', () => {
+  const b = battle(); const h = b.makeAlly(U.herald, 600), m = b.makeAlly(U.spear, 620); b.allies.push(h, m);
+  m.hasteMul = 0.55; m.hasteT = 6; h.abCd = 0;
+  b.supportTick(h, b.allies, 0.01, true); assert.equal(m.hasteMul, 0.55); assert.equal(m.hasteT, 6);
+  m.hasteT = 0; h.abCd = 0; b.supportTick(h, b.allies, 0.01, true); assert.equal(m.hasteMul, 0.78);
+  m.hasteMul = 0.55; m.hasteT = 3; b.cmdCd = 0; b.useCommand(); assert.equal(m.hasteMul, 0.55);
+});
 test('4.14: strike warnings shrink on battle time (3x speed, pause) and survive the effect cap', () => {
   const b = battle(); b.speed = 3; const k = b.makeAlly(U.spear, 600);
   b.queueStrike(k, { x: 880, r: 120, dmg: 10, warn: 2, kind: 'runes' });
