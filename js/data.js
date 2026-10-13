@@ -1646,7 +1646,7 @@ STAGES.push(
     W(12,'sporecap',6,1),W(24,'mushking',1),W(48,'pixie',10,.4),W(74,'wisp',3,2.2),W(100,'sporecap',8,.9),W(128,'satyr',2,4),W(156,'pixie',12,.35),W(186,'sporecap',10,.8)]},
   {name:'홀림불 늪',hint:'홀림불은 멀리서 못 쏩니다 · 튼튼한 근접 전열을 앞세우고 범위로 태우세요',baseHp:299000,money:710,rate:91,reward:7700,enemyMul:26.5,waves:[
     W(12,'wisp',3,2),W(20,'sporecap',5,1.1),W(42,'wisp',4,1.8),W(66,'pixie',10,.4),W(92,'wisp',5,1.6),W(118,'satyr',2,4),W(146,'sporecap',8,.9),W(176,'wisp',6,1.4),W(206,'pixie',12,.35)]},
-  {name:'고목의 회랑',hint:'나무 정령은 화상이 붙으면 다시 자라지 못합니다 · 화상과 파쇄로',baseHp:339000,money:720,rate:92,reward:7900,enemyMul:32.4,mods:['ironclad'],waves:[
+  {name:'고목의 회랑',hint:'나무 정령은 화상이 붙으면 다시 자라지 못합니다 · 화상과 파쇄로',baseHp:339000,money:720,rate:92,reward:7900,enemyMul:31,mods:['ironclad'],waves:[
     W(12,'sporecap',6,1),W(22,'treant',1),W(46,'wisp',3,2.2),W(72,'treant',2,4),W(98,'pixie',10,.4),W(124,'satyr',2,4),W(150,'treant',2,4),W(178,'sporecap',8,.9),W(208,'wisp',4,1.8)]},
   {name:'★ 달빛 요정 궁',hint:'꽃덩굴에 묶이면 둔화 · 달빛 화살 예고를 피하고 왕명으로 버티세요',baseHp:194000,money:730,rate:93,reward:8600,boss:true,enemyMul:14,waves:[
     W(12,'pixie',10,.4),W(26,'faequeen',1),W(50,'wisp',4,1.8),W(76,'sporecap',8,.9),W(104,'treant',2,4),W(132,'satyr',2,4),W(162,'pixie',14,.35),W(194,'unicorn',2,3)]},
@@ -1654,7 +1654,7 @@ STAGES.push(
     W(12,'satyr',2,3),W(22,'sporecap',6,1),W(44,'unicorn',2,3),W(68,'satyr',3,2.5),W(94,'pixie',12,.35),W(120,'unicorn',2,3),W(146,'wisp',4,1.8),W(174,'satyr',3,2.5),W(204,'sporecap',10,.8)]},
   {name:'일각수 초원',hint:'일각수의 돌격 첫 일격 · 넉백 면역 방패를 앞에 두고 치유하는 기사를 먼저',baseHp:328000,money:745,rate:95,reward:8400,enemyMul:37.4,mods:['blitz'],waves:[
     W(12,'pixie',8,.45),W(26,'unicorn',2,3),W(44,'unicorn',3,2.5),W(68,'wisp',4,1.8),W(94,'sporecap',8,.9),W(120,'unicorn',3,2.5),W(146,'satyr',2,4),W(174,'treant',2,4),W(204,'unicorn',4,2)]},
-  {name:'숲의 심장부',hint:'요정 숲의 모든 군단 · 정화 · 화상 · 범위를 함께',baseHp:246000,money:755,rate:96,reward:8800,enemyMul:42,mods:['horde','curse'],waves:[
+  {name:'숲의 심장부',hint:'요정 숲의 모든 군단 · 정화 · 화상 · 범위를 함께',baseHp:246000,money:755,rate:96,reward:8800,enemyMul:37,mods:['horde','curse'],waves:[
     W(12,'sporecap',8,.9),W(22,'wisp',3,2.2),W(44,'pixie',12,.35),W(68,'treant',2,4),W(92,'satyr',2,4),W(118,'unicorn',3,2.5),W(144,'pixie',14,.35),W(172,'sporecap',10,.8),W(202,'wisp',5,1.6),W(232,'treant',3,3)]},
   {name:'★ 고목왕',hint:'고목왕은 화상 없이는 계속 자랍니다 · 열매 예고를 피하고, 뿌리가 흔들리면 왕명과 필살을',baseHp:215000,money:770,rate:98,reward:9800,boss:true,enemyMul:23.5,waves:[
     W(12,'treant',2,4),W(26,'eldertree',1),W(52,'pixie',12,.35),W(80,'sporecap',8,.9),W(110,'wisp',5,1.6),W(140,'satyr',3,3),W(170,'unicorn',3,2.5),W(200,'treant',3,3),W(232,'pixie',16,.3),W(262,'sporecap',10,.8)]}
