@@ -1043,6 +1043,13 @@ class Renderer {
       const shape = s.src && s.src.s && s.src.s.shape;
       const shot = s.src && s.src.s && s.src.s.shot;   // 4.1 3진: 투사체도 바뀐다
       if (shot && this.drawShot3(ctx, cs, shot, s, p)) { /* 그렸다 */ }
+      else if (s.bossThrow) {                  // 4.12 근접 보스가 던진 기운 덩어리: 어두운 돌 · 보스 색 불꽃 테
+        ctx.rotate(this.clock * 9);
+        ctx.fillStyle = s.color; ctx.globalAlpha = 0.35; ctx.beginPath(); ctx.arc(0, 0, 13 * cs, 0, 7); ctx.fill(); ctx.globalAlpha = 1;
+        ctx.fillStyle = '#3a3036'; ctx.beginPath();
+        for (let i = 0; i < 7; i++) { const a = i / 7 * Math.PI * 2, r = (7.5 + (i % 2) * 2) * cs; ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
+        ctx.closePath(); ctx.fill(); ctx.strokeStyle = s.color; ctx.lineWidth = 2 * cs; ctx.stroke();
+      }
       else if (shape === 'javelin') {          // 투창: 긴 나무 자루와 넓은 창끝
         ctx.strokeStyle = 'rgba(12,16,24,.8)'; ctx.lineWidth = 4.2 * cs;
         ctx.beginPath(); ctx.moveTo(-20 * cs, 0); ctx.lineTo(12 * cs, 0); ctx.stroke();

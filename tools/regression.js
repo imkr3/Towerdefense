@@ -755,28 +755,28 @@ test('Event battles are not campaign progress: they record stars and pay stones 
   assert.equal(s.stars[STAGES.length], undefined, 'no campaign stars');
   const b2 = evBattle(0, s); b2.finish('win'); assert.equal(b2.stoneGain, 0); assert.equal(EV.eventCount(s), 1);
 });
-test('Mistform: the vampire takes nothing, charms troops sent in, and swallows actives', () => {
+test('Mistform (4.12: no longer invulnerable): the vampire still takes damage and actives land, troops sent in are charmed', () => {
   const s = save(); s.owned.thor = true; s.loadout = ['thor', 'spear']; s.cleared = 30;
   const b = evBattle(0, s); b.update(1 / 30);
   const v = b.spawnEnemy('vampire', 700); b.bossAct(v, E.vampire.special);
-  assert.ok(v.veilT > 0); const hp = v.hp; assert.equal(v.takeDamage(99999), 0); assert.equal(v.hp, hp);
+  assert.ok(v.veilT > 0); const hp = v.hp; assert.ok(v.takeDamage(1000) > 0 && v.hp < hp, 'mist is not a shield any more');
   b.money = 9999; b.cooldowns.spear = 0; b.deploy('spear'); assert.ok(b.allies[b.allies.length - 1].charmT > 0, 'charmed in the mist');
   b.cooldowns.thor = 0; b.deploy('thor'); const thor = b.allies.find(a => a.s.id === 'thor'); thor.x = 650; thor.charmT = 0;
-  const mob = b.spawnEnemy('goblin', 690); const mhp = mob.hp; v.hp = v.maxHp * 0.5;
+  const mob = b.spawnEnemy('goblin', 690); const mhp = mob.hp;
   b.heroCooldowns.thor = 0; b.heroGlobalCd = 0; assert.equal(b.useHeroActive('thor'), true);
-  assert.equal(mob.hp, mhp, 'active swallowed'); assert.ok(v.hp > v.maxHp * 0.5, 'mist feeds on it');
+  assert.ok(mob.hp < mhp, 'active lands in the mist');
   v.veilT = 0; b.money = 9999; b.cooldowns.spear = 0; b.deploy('spear'); assert.equal(b.allies[b.allies.length - 1].charmT, 0);
 });
-test('Magma core: the titan shrugs off hits until its slam lands, then takes 3.6x', () => {
+test('Magma core: the titan takes half damage until its slam lands, then 2.2x', () => {
   const b = evBattle(1); b.update(1 / 30);
   const t = b.spawnEnemy('titan', 900); t.stunImm = 99;
   const arm = 1 - Math.min(0.75, t.ab.armor || 0);          // 중갑 특성도 함께 걸린다
   const h0 = t.hp; t.takeDamage(1000); const guarded = h0 - t.hp;
-  assert.ok(Math.abs(guarded - 50 * arm) < 1, 'guarded ' + guarded);
+  assert.ok(Math.abs(guarded - 500 * arm) < 1, 'guarded ' + guarded);
   b.allies.push(b.makeAlly(U.spear, 700));
   b.bossAct(t, E.titan.special); assert.equal(b.pending.length, 1);
   b.updatePending(5); assert.ok(t.exposedT > 5);
-  const h1 = t.hp; t.takeDamage(1000); assert.ok(Math.abs(h1 - t.hp - 3600 * arm) < 1);
+  const h1 = t.hp; t.takeDamage(1000); assert.ok(Math.abs(h1 - t.hp - 2200 * arm) < 1);
 });
 test('Broadside shells the deploy zone, not the front line', () => {
   const b = evBattle(2); b.update(1 / 30);
@@ -1586,6 +1586,28 @@ test('4.11: wisps hide from far attackers; spores and spore bombs poison', () =>
   const t = b.makeAlly(U.shield, 880); b.allies.push(t);
   b.queueStrike(k, { x: 880, r: 120, dmg: 10, warn: 0.01, poison: { dps: 90, dur: 4 }, kind: 'runes' });
   b.updatePending(0.05); assert.ok(t.poisonT > 0, 'spore bomb poisons');
+});
+
+/* ---------------- 4.12 보스 밀림 · 던지기 · 무적기 ---------------- */
+test('4.12: pushes never shove a foe behind its own fort; bosses take a third of the push', () => {
+  const b = battle(); const W = world();
+  const e = b.spawnEnemy('ogre', W.ENEMY_SPAWN_X - 10); e.kbTimer = 5;
+  for (let i = 0; i < 90; i++) b.step(b.enemies, b.allies, b.allyCastle, 1 / 30, false);
+  assert.ok(e.x <= W.ENEMY_SPAWN_X + 1e-6, 'knockback stops at the fort front: ' + e.x);
+  const sus = b.makeAlly(G.resolveUnit(U.susanoo, 10), 500); b.allies.push(sus);
+  const boss = b.spawnEnemy('troll', 700), mob = b.spawnEnemy('ogre', 700);
+  b.hitOne(1, boss, sus, false); b.hitOne(1, mob, sus, false);
+  assert.ok(boss.x - 700 < (mob.x - 700) * 0.5 && boss.x > 700, 'boss pushed less: ' + (boss.x - 700) + ' vs ' + (mob.x - 700));
+  const a = b.makeAlly(U.spear, 200); a.x -= 400; b.holdLine(a); assert.ok(a.x >= 150, 'allies hold at their own fort front too');
+});
+test('4.12: a melee boss with nobody in reach throws at the nearest troop', () => {
+  const b = battle();
+  const boss = b.spawnEnemy('troll', 900); boss.throwCd = 0;
+  const sp = b.makeAlly(U.spear, 600); b.allies.push(sp);
+  b.step(b.enemies, b.allies, b.allyCastle, 1 / 30, false);
+  const sh = b.shots.find(x => x.bossThrow); assert.ok(sh && sh.side === 'enemy' && Math.abs(sh.tx - 600) < 1 && sh.dmg > 0);
+  const caster = b.spawnEnemy('lich', 900); caster.throwCd = 0; const n = b.shots.length;
+  if (E.lich.ranged) { b.step([caster], b.allies, b.allyCastle, 1 / 30, false); assert.ok(!b.shots.slice(n).some(x => x.bossThrow), 'ranged bosses already shoot'); }
 });
 
 console.log(count + ' regression checks passed');

@@ -1399,25 +1399,25 @@ const ENEMIES = {
               hp: 20000, atk: 700, range: 110, speed: 26, interval: 1.8, kb: 1, gold: 700,
               scale: 1.6, boss: true,
               ab: { lifesteal: 0.3, summon: { id: 'bloodthrall', n: 1 }, interval: 9 },
-              special: { t: 'veil', name: '안개화 · 출진과 액티브를 멈추세요', first: 10, cd: 14, dur: 4.5, r: 300, dmg: 160, ratio: 0.8, charm: 6 },
+              special: { t: 'veil', name: '안개화 · 안개 속에 병사를 내보내지 마세요', first: 10, cd: 14, dur: 4.5, r: 300, dmg: 160, ratio: 0.8, charm: 6 },
               phases: [
                 { at: 0.70, t: 'summon', name: '밤의 권속', id: 'bat', n: 6 },
                 { at: 0.40, t: 'swap', name: '핏빛 월식', atk: 1.15,
-                            special: { t: 'veil', name: '안개화 · 출진과 액티브를 멈추세요', first: 3, cd: 10, dur: 5, r: 340, dmg: 200, ratio: 0.9, charm: 6 } },
+                            special: { t: 'veil', name: '안개화 · 안개 속에 병사를 내보내지 마세요', first: 3, cd: 10, dur: 5, r: 340, dmg: 200, ratio: 0.9, charm: 6 } },
                 { at: 0.15, t: 'enrage', name: '피의 갈증', atk: 1.25, rate: 0.8 }
               ],
-              abText: '안개화 · 주기적으로 안개가 되어 어떤 공격도 받지 않고 피를 빱니다. 안개 속에 내보낸 병사는 홀리고, 액티브는 삼켜집니다' },
+              abText: '안개화 · 주기적으로 안개가 되어 주변의 피를 빱니다. 안개 속에 내보낸 병사는 홀립니다' },
   titan:    { name: '대지 거신', body: '#6a6458', accent: '#ffb03c', tunic: '#4a453c', shape: 'titan',
               hp: 30000, atk: 900, range: 170, speed: 14, interval: 2.8, kb: 1, gold: 900,
               area: true, areaRadius: 160, scale: 2.2, boss: true,
-              ab: { kbImmune: true, core: { armor: 0.95, mul: 3.6 } },
+              ab: { kbImmune: true, core: { armor: 0.5, mul: 2.2 } },
               special: { t: 'slam', name: '대지 분쇄', first: 9, cd: 15, dmg: 1100, radius: 220, warn: 2.4, stun: 1.2, expose: 6 },
               phases: [
                 { at: 0.60, t: 'summon', name: '바위 떼', id: 'rockling', n: 3 },
                 { at: 0.30, t: 'swap', name: '거신의 분노',
                             special: { t: 'slam', name: '대지 분쇄', first: 4, cd: 11, dmg: 1300, radius: 240, warn: 2.2, stun: 1.4, expose: 5 } }
               ],
-              abText: '용암 핵 · 평소엔 피해 95% 감소, 대지 분쇄 뒤 6초간 핵이 드러나 3.6배 — 그때 액티브와 왕명을' },
+              abText: '용암 핵 · 평소엔 피해 50% 감소, 대지 분쇄 뒤 6초간 핵이 드러나 2.2배 — 그때 액티브와 왕명을' },
   ghostcaptain:{ name: '유령 선장', body: '#6a8a96', accent: '#5de0d0', tunic: '#2a3a48', shape: 'ghostcaptain',
               hp: 24000, atk: 760, range: 150, speed: 22, interval: 2.0, kb: 1, gold: 800,
               area: true, areaRadius: 130, scale: 1.7, boss: true, ab: { dodge: 0.15 },
@@ -1450,7 +1450,7 @@ const ENEMIES = {
                 { at: 0.75, t: 'swap', name: '마왕의 결계',
                             special: { t: 'reflect', name: '마계 반사 · 액티브와 왕명을 참으세요', first: 3, cd: 11, dur: 4.5, ratio: 0.85 } },
                 { at: 0.55, t: 'summon', name: '마계 근위대', id: 'demonknight', n: 2 },
-                { at: 0.35, t: 'swap', name: '마왕 강림', core: { armor: 0.8, mul: 2.8 }, atk: 1.15,
+                { at: 0.35, t: 'swap', name: '마왕 강림', core: { armor: 0.4, mul: 1.8 }, atk: 1.15,
                             special: { t: 'slam', name: '종말의 일격', first: 4, cd: 12, dmg: 1500, radius: 250, warn: 2.3, stun: 1.4, expose: 6 } },
                 { at: 0.12, t: 'enrage', name: '마왕의 광기', atk: 1.25, rate: 0.8, speed: 1.2 }
               ],
@@ -2007,7 +2007,7 @@ STAGES.forEach((st, i) => {
  *
  *  보스마다 "언제 무엇을 하느냐" 를 묻는 기믹이 하나씩 있다. 카드를 나오는 대로 내고
  *  액티브를 쿨마다 눌러서는 잘 이기지 못한다(시뮬레이터 공략 편성 승률 50% 이하).
- *   - 흡혈 백작: 안개화 중엔 무적 — 액티브를 안개가 걷힌 뒤로 아낀다
+ *   - 흡혈 백작: 안개화 중 내보낸 병사는 홀린다 — 출진을 안개가 걷힌 뒤로 미룬다 (4.12: 무적은 뺐다)
  *   - 대지 거신: 핵이 85%를 막다가 내려찍은 뒤 6초만 드러난다 — 그때 액티브·왕명을 몰아 쓴다
  *   - 유령 선장: 출진 지점 포격 — 포탄이 떨어진 다음에 병사를 내보낸다
  *   - 공허의 군주: 반사 결계 중에 때리면 되돌아온다 — 결계 중엔 액티브를 참는다
@@ -2020,7 +2020,7 @@ const EVENT_STAGES = [
     fury: { per30: 0.1, max: 1.2 }, len: 1500,
     event: { id: 'eclipse', deck: ['thor','zeus','ra','odin','pyro','javelin','knight','spartan','frost','catapult'],
              unlock: 10, reward: 6000, stones: 12,
-             mech: '안개화 중엔 무적 · 출진과 액티브는 안개가 걷힌 뒤에' },
+             mech: '안개화 중 내보낸 병사는 홀립니다 · 출진은 안개가 걷힌 뒤에' },
     waves: [W(2,'bat',8,.6), W(14,'bloodthrall',3,2), W(30,'hexer',3,1.6), W(40,'vampire',1), W(44,'bloodthrall',3,1.6),
             W(70,'wraith',5,1.4), W(96,'bat',10,.5), W(120,'bloodthrall',4,1.6), W(150,'hexer',4,1.4), W(180,'wraith',6,1.2),
             W(210,'bloodthrall',5,1.4)] },

@@ -45,6 +45,9 @@ function sfx(name) {
   if (fn) fn.call(SFX);
 }
 
+/* 4.12 보스: 밀치기는 1/3 만 먹고, 근접 보스는 칠 적이 없으면 던진다 */
+const BOSS_PUSH_TAKEN = 0.35;
+const BOSS_THROW = { first: 2, every: 3.2, range: 380, mul: 0.45, radius: 70 };
 const FX_LIMIT = 200;        // 이펙트가 무한정 쌓이지 않게
 const X3_FX_LIMIT = 12;      // 4.3 3진 연출(포연·광선·사이렌)이 한꺼번에 떠 있을 수 있는 수
 // 3진의 타격 연출 → 땅에 남는 Canvas 연출 (연기 · 흙 · 갈라진 땅 · 눈더미 · 그을린 자국)
@@ -175,7 +178,7 @@ class Fighter {
     this.hookCd = 2.5;      // 사슬 간수 첫 갈고리
 
     // 3.2 이벤트 보스: 타이밍을 맞춰야 잡힌다
-    this.veilT = 0;         // 안개화: 어떤 피해도 받지 않는다
+    this.veilT = 0;         // 안개화: 주변의 피를 빨고, 안개 속에 내보낸 병사를 홀린다 (4.12: 무적은 뺐다)
     this.reflectT = 0;      // 반사 결계: 받은 피해를 때린 자에게 되돌린다
     this.exposedT = 0;      // 약점 노출: 핵(core)이 드러나 피해가 몇 배로 들어간다
     this.curSpecial = null; // 페이즈에 따라 바뀐 고유 기술
@@ -227,7 +230,6 @@ class Fighter {
   takeDamage(dmg, pierceArmor) {
     if (this.dead) return 0;
     dmg = Math.max(0, dmg);
-    if (this.veilT > 0) { this.veilHit = 0.3; return 0; }            // 안개화: 아무것도 닿지 않는다
     // 핵: 평소엔 거의 막고, 약점이 드러난 동안에만 몇 배로 들어간다
     if (this.ab.core) dmg *= this.exposedT > 0 ? this.ab.core.mul : (1 - this.ab.core.armor);
     if (this.vulnT > 0) dmg *= this.vulnMul;                          // 낙인
@@ -640,7 +642,8 @@ class Battle {
     if (!this.canHeroActive(id)) return false;
     const u = this.stats(id);
     if (u.active.barrier || u.active.haste) return true;
-    if (this.veiledBoss() || this.reflectingBoss()) return false;
+    if (this.reflectingBoss()) return false;
+    // 핵이 닫힌 보스: 피해가 절반만 들어가니 드러난 뒤로 아낀다
     for (const e of this.enemies) if (!e.dead && e.boss && e.ab.core && !(e.exposedT > 0)) return false;
     return true;
   }
@@ -654,12 +657,6 @@ class Battle {
         if(a.barrier){m.giveBarrier(a.barrier*f.abMul);m.poisonT=0;m.poisonDps=0;m.burnT=0;m.burnDps=0;}
         if(a.haste){m.hasteMul=m.hasteT>0?Math.min(m.hasteMul,a.haste.mul):a.haste.mul;m.hasteT=Math.max(m.hasteT,a.haste.dur);m.stunT=0;}
       }
-    } else if (this.veiledBoss()) {
-      // 안개가 액티브를 삼킨다: 피해는 없고 백작이 피를 채운다
-      const vb = this.veiledBoss();
-      vb.heal(vb.maxHp * 0.03);
-      this.announce('안개가 기술을 삼켰다', 1.6);
-      this.fx.push({ type: 'aura', x: vb.x, row: vb.row, r: 110, t: 0.6, life: 0.6, color: '#e04b6a' });
     } else if (this.reflectingBoss() && Math.abs(this.reflectingBoss().x - target.x) <= 450) {
       // 공허 반사: 결계 곁에 쓴 액티브는 시전자에게 돌아온다
       const rb = this.reflectingBoss();
@@ -675,7 +672,7 @@ class Battle {
           if(a.stun)e.stun(a.stun);
           if(a.charm&&!e.boss){e.charmT=Math.max(e.charmT,a.charm);this.fx.push({type:'charm',x:e.x,row:e.row,t:.7,life:.7});}
           if(a.execute)this.tryExecute(e,a.execute);
-          if(a.push&&!e.ab.kbImmune&&!e.dead){e.x=Math.max(60,Math.min(WORLD-60,e.x+f.dir*a.push));e.kbTimer=Math.max(e.kbTimer,.3);}
+          if(a.push&&!e.ab.kbImmune&&!e.dead){e.x+=f.dir*a.push*(e.boss?BOSS_PUSH_TAKEN:1);this.holdLine(e);e.kbTimer=Math.max(e.kbTimer,.3);}
           if(a.burn){e.dotBy=f.creditTo||f.s.id;if(e.burnT<=0)e.burnDps=0;e.burnT=Math.max(e.burnT,a.burn);e.burnDps=Math.max(e.burnDps,24*f.abMul);}
           // 혼천릉: 붉은 비단으로 묶어 한곳에 끌어모은다 (보스·넉백 면역은 버틴다)
           if(a.pull&&!e.dead&&!e.ab.kbImmune&&!e.boss){const dx=target.x-e.x;e.x+=Math.sign(dx)*Math.min(Math.abs(dx),a.pull);e.kbTimer=Math.max(e.kbTimer,.2);}
@@ -1331,6 +1328,7 @@ class Battle {
         f.kbTimer -= dt;
         f.x -= f.dir * 150 * dt;
         f.x = Math.max(60, Math.min(WORLD - 60, f.x));
+        this.holdLine(f);
         continue;
       }
 
@@ -1356,6 +1354,7 @@ class Battle {
         continue;
       }
       const target = this.findTarget(f, foes, foeCastle);
+      if (!target && !isAlly && f.boss && !f.s.ranged) this.bossThrow(f, foes, dt);
       if (target) {
         f.engaged = true;
         f.idleT = 0;
@@ -1385,6 +1384,36 @@ class Battle {
         if (f.ab.charge) f.chargeDist += f.speedNow * dt;   // 달려온 만큼 창끝이 무거워진다
       }
     }
+  }
+
+  /* 4.12 밀려나는 한계: 넉백 · 밀치기로도 자기 요새 앞(출진 지점)보다 뒤로는 밀리지 않는다.
+   * 예전엔 적이 요새 뒤까지 밀려나 근접 병사가 닿지 못하고, 그 적도 아무도 못 치는 채로 굳었다. */
+  holdLine(f) {
+    if (f.side === 'enemy') { if (f.x > ENEMY_SPAWN_X) f.x = ENEMY_SPAWN_X; }
+    else if (f.x < ALLY_SPAWN_X) f.x = ALLY_SPAWN_X;
+    if (f.x < 60) f.x = 60; else if (f.x > WORLD - 60) f.x = WORLD - 60;
+  }
+  /* 4.12 근접 보스의 던지기: 앞에 칠 병사가 없으면 every 초마다 사거리 안의 가장 가까운 병사에게
+   * 바위 · 기운을 던진다 (공격력의 mul 배, 작은 범위). 멀리서 쏘기만 하는 편성도 보스를 마냥 두들기지 못한다. */
+  bossThrow(f, foes, dt) {
+    if (f.throwCd === undefined) f.throwCd = BOSS_THROW.first;
+    f.throwCd -= dt;
+    if (f.throwCd > 0) return;
+    let best = null, bd = Infinity;
+    for (const a of foes) {
+      if (a.dead || a.burrowed) continue;
+      const d = (a.x - f.x) * f.dir;
+      if (d > 0 && d <= BOSS_THROW.range && d < bd) { bd = d; best = a; }
+    }
+    if (!best) { f.throwCd = 0.5; return; }
+    f.throwCd = BOSS_THROW.every;
+    f.swing = 0.22;
+    this.shots.push({
+      x: f.x, y0: f.row, tx: best.x, side: f.side, t: 0, dur: Math.max(0.3, bd / 700),
+      color: f.s.accent, dmg: this.rollDamage(f).dmg * BOSS_THROW.mul, crit: false, src: f,
+      area: true, areaRadius: BOSS_THROW.radius, dir: f.dir, bossThrow: true
+    });
+    sfx('arrow');
   }
 
   /* 사제·나팔수처럼 공격하지 않는 병종은 적과 일정 거리를 두고 멈춘다.
@@ -1621,7 +1650,7 @@ class Battle {
           if (e.dead || Math.abs(e.x - f.x) > r) continue;
           if (a.stun) e.stun(a.stun);
           if (a.push && !e.ab.kbImmune) {
-            e.x = Math.max(60, Math.min(WORLD - 60, e.x + f.dir * a.push));
+            e.x += f.dir * a.push; this.holdLine(e);
             e.kbTimer = Math.max(e.kbTimer, 0.2);
           }
           if (a.dmg) e.takeDamage(a.dmg);
@@ -1695,7 +1724,7 @@ class Battle {
         break;
       }
       /* ---- 3.2 이벤트 보스 ---- */
-      case 'veil': {                       // 안개화: 잠깐 무적, 그 사이 주변의 피를 빤다
+      case 'veil': {                       // 안개화: 잠깐 안개가 되어 주변의 피를 빤다 (4.12: 무적은 없다)
         f.veilT = a.dur || 4;
         if (a.dmg) {
           let sum = 0;
@@ -1912,7 +1941,7 @@ class Battle {
     }
     if (charged && !target.isCastle) {
       if (!target.ab.kbImmune && !target.boss) {
-        target.x = Math.max(60, Math.min(WORLD - 60, target.x + f.dir * f.ab.charge.push));
+        target.x += f.dir * f.ab.charge.push; this.holdLine(target);
         target.kbTimer = Math.max(target.kbTimer, 0.3);
       }
       this.fx.push({ type: 'cast', kind: 'shockwave', x: target.x, row: target.row, color: f.s.accent, r: 70,
@@ -2081,8 +2110,9 @@ class Battle {
       else if (target.resistFx && this.dmgFxCount < 14) this.fx.push({ type: 'miss', text: '기절 면역', x: target.x, row: target.row, t: 0.5, life: 0.5 });
       target.resistFx = false;
     }
-    if (ab.push && !target.ab.kbImmune) {
-      target.x += src.dir * ab.push * 0.01 * 60;
+    if (ab.push && !target.ab.kbImmune && !target.isCastle) {
+      target.x += src.dir * ab.push * 0.01 * 60 * (target.boss ? BOSS_PUSH_TAKEN : 1);
+      this.holdLine(target);
       target.kbTimer = Math.max(target.kbTimer, 0.12);
     }
     if (ab.weaken) {                              // 액막이: 이 적이 주는 피해가 준다
@@ -2313,7 +2343,7 @@ class Battle {
         if (a.dead || a.ab.hold || Math.abs(c.x - a.x) > 380) continue;
         a.stun(0.4);
         if (a.ab.kbImmune) continue;
-        a.x = Math.max(60, a.x - 140);
+        a.x -= 140; this.holdLine(a);
         a.kbTimer = Math.max(a.kbTimer, 0.42);
       }
       sy.group.forEach(([id, n]) => {
