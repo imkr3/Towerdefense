@@ -1547,7 +1547,7 @@ STAGES.push(
     W(2,'wolf',10,.8),W(24,'dark',5,2),W(48,'frostgiant',1),W(72,'wolf',10,.8),W(96,'orccatapult',2,5),W(120,'orcberserk',7,1.2),W(148,'frostgiant',1),W(180,'golem',2,5),W(208,'wolf',12,.7)]},
   {name:'얼어붙은 공성로',hint:'공성 병기를 막을 보호막 전열 필요',baseHp:41000,money:430,rate:53,reward:1320,enemyMul:2.46,waves:[
     W(2,'orcshield',4,2),W(22,'siegeram',2,5),W(46,'ballista',6,2),W(72,'frostgiant',1),W(100,'orcshield',6,1.8),W(126,'orccatapult',3,5),W(154,'warchief',2,5),W(184,'frostgiant',1),W(214,'dark',7,1.8)]},
-  {name:'★ 영원의 겨울 왕좌',hint:'연속 광역 공격 뒤 왕명으로 회복',baseHp:44000,money:440,rate:54,reward:1600,boss:true,enemyMul:11.2,waves:[
+  {name:'★ 영원의 겨울 왕좌',hint:'연속 광역 공격 뒤 왕명으로 회복',baseHp:44000,money:440,rate:54,reward:1600,boss:true,enemyMul:10.6,waves:[
     W(2,'wolf',8,1),W(24,'frostgiant',1),W(52,'troll',1),W(78,'orcshield',6,1.8),W(104,'frostgiant',1),W(136,'golem',2,5),W(164,'warchief',2,5),W(192,'frostgiant',1),W(224,'orcberserk',8,1)]},
   {name:'불타는 태양 회랑',hint:'화상을 정화하며 화룡을 견제',baseHp:45500,money:445,rate:55,reward:1500,enemyMul:6,waves:[
     W(2,'hellhound',9,.8),W(26,'powder',6,1.8),W(52,'drake',1),W(80,'plaguer',6,2),W(108,'orcshield',6,1.8),W(138,'drake',1),W(170,'hellhound',10,.8),W(200,'siegeram',2,4),W(230,'dark',7,1.5)]},
@@ -1640,17 +1640,17 @@ const ACT6_FROM = 60;
 STAGES.push(
   {name:'요정 고리 숲길',hint:'날쌘 요정 떼는 범위 공격으로 · 홀림불은 가까이 가야 보입니다',baseHp:307000,money:690,rate:88,reward:7200,enemyMul:35.2,waves:[
     W(12,'pixie',6,.5),W(22,'sporecap',4,1.2),W(44,'wisp',2,2.5),W(66,'pixie',10,.4),W(90,'sporecap',6,1),W(116,'satyr',1),W(140,'wisp',3,2.2),W(168,'pixie',12,.35),W(198,'sporecap',7,.9)]},
-  {name:'독버섯 골짜기',hint:'버섯은 쓰러지며 포자를 터뜨립니다 · 정화사를 데려가고 앞줄을 자주 갈아 주세요',baseHp:515000,money:695,rate:89,reward:7400,enemyMul:52.4,mods:['horde'],waves:[
+  {name:'독버섯 골짜기',hint:'버섯은 쓰러지며 포자를 터뜨립니다 · 정화사를 데려가고 앞줄을 자주 갈아 주세요',baseHp:515000,money:695,rate:89,reward:7400,enemyMul:57,mods:['horde'],waves:[
     W(12,'sporecap',5,1.1),W(22,'pixie',8,.45),W(44,'satyr',1),W(64,'sporecap',6,1),W(88,'wisp',3,2.2),W(112,'pixie',10,.4),W(138,'sporecap',8,.9),W(166,'satyr',2,4),W(196,'sporecap',8,.8)]},
   {name:'★ 버섯 왕의 궁정',hint:'포자 폭탄 예고를 피하고, 중독은 정화로 · 버섯 무리는 범위로 한꺼번에',baseHp:180000,money:705,rate:90,reward:8000,boss:true,enemyMul:19,waves:[
     W(12,'sporecap',6,1),W(24,'mushking',1),W(48,'pixie',10,.4),W(74,'wisp',3,2.2),W(100,'sporecap',8,.9),W(128,'satyr',2,4),W(156,'pixie',12,.35),W(186,'sporecap',10,.8)]},
   {name:'홀림불 늪',hint:'홀림불은 멀리서 못 쏩니다 · 튼튼한 근접 전열을 앞세우고 범위로 태우세요',baseHp:299000,money:710,rate:91,reward:7700,enemyMul:26.5,waves:[
     W(12,'wisp',3,2),W(20,'sporecap',5,1.1),W(42,'wisp',4,1.8),W(66,'pixie',10,.4),W(92,'wisp',5,1.6),W(118,'satyr',2,4),W(146,'sporecap',8,.9),W(176,'wisp',6,1.4),W(206,'pixie',12,.35)]},
-  {name:'고목의 회랑',hint:'나무 정령은 화상이 붙으면 다시 자라지 못합니다 · 화상과 파쇄로',baseHp:339000,money:720,rate:92,reward:7900,enemyMul:31,mods:['ironclad'],waves:[
+  {name:'고목의 회랑',hint:'나무 정령은 화상이 붙으면 다시 자라지 못합니다 · 화상과 파쇄로',baseHp:339000,money:720,rate:92,reward:7900,enemyMul:29.5,mods:['ironclad'],waves:[
     W(12,'sporecap',6,1),W(22,'treant',1),W(46,'wisp',3,2.2),W(72,'treant',2,4),W(98,'pixie',10,.4),W(124,'satyr',2,4),W(150,'treant',2,4),W(178,'sporecap',8,.9),W(208,'wisp',4,1.8)]},
   {name:'★ 달빛 요정 궁',hint:'꽃덩굴에 묶이면 둔화 · 달빛 화살 예고를 피하고 왕명으로 버티세요',baseHp:194000,money:730,rate:93,reward:8600,boss:true,enemyMul:14,waves:[
     W(12,'pixie',10,.4),W(26,'faequeen',1),W(50,'wisp',4,1.8),W(76,'sporecap',8,.9),W(104,'treant',2,4),W(132,'satyr',2,4),W(162,'pixie',14,.35),W(194,'unicorn',2,3)]},
-  {name:'사티로스의 잔치',hint:'피리 소리가 적을 북돋웁니다 · 피리꾼을 먼저, 저주된 아군은 잠시 뒤로',baseHp:590000,money:740,rate:94,reward:8200,enemyMul:54.9,waves:[
+  {name:'사티로스의 잔치',hint:'피리 소리가 적을 북돋웁니다 · 피리꾼을 먼저, 저주된 아군은 잠시 뒤로',baseHp:590000,money:740,rate:94,reward:8200,enemyMul:59,waves:[
     W(12,'satyr',2,3),W(22,'sporecap',6,1),W(44,'unicorn',2,3),W(68,'satyr',3,2.5),W(94,'pixie',12,.35),W(120,'unicorn',2,3),W(146,'wisp',4,1.8),W(174,'satyr',3,2.5),W(204,'sporecap',10,.8)]},
   {name:'일각수 초원',hint:'일각수의 돌격 첫 일격 · 넉백 면역 방패를 앞에 두고 치유하는 기사를 먼저',baseHp:328000,money:745,rate:95,reward:8400,enemyMul:37.4,mods:['blitz'],waves:[
     W(12,'pixie',8,.45),W(26,'unicorn',2,3),W(44,'unicorn',3,2.5),W(68,'wisp',4,1.8),W(94,'sporecap',8,.9),W(120,'unicorn',3,2.5),W(146,'satyr',2,4),W(174,'treant',2,4),W(204,'unicorn',4,2)]},

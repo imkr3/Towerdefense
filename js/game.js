@@ -49,6 +49,9 @@ function sfx(name) {
 const BOSS_PUSH_TAKEN = 0.35;
 const HOLD_GAP = 12;          // 밀려나도 자기 요새 바로 앞에서 멈춘다 (근접 병사가 닿는 자리)
 const BOSS_THROW = { first: 2, every: 4.5, range: 340, mul: 0.25, radius: 70 };
+/* 4.13 보기 전용 난수: 효과의 흔들림 · 위치에만 쓴다. Math.random 을 쓰면 효과를 바꿀 때마다 전투 결과가 흔들린다 */
+let _visSeed = 1234567;
+function visRand() { _visSeed = (_visSeed * 1103515245 + 12345) & 0x7fffffff; return _visSeed / 0x7fffffff; }
 const FX_LIMIT = 200;        // 이펙트가 무한정 쌓이지 않게
 const X3_FX_LIMIT = 12;      // 4.3 3진 연출(포연·광선·사이렌)이 한꺼번에 떠 있을 수 있는 수
 // 3진의 타격 연출 → 땅에 남는 Canvas 연출 (연기 · 흙 · 갈라진 땅 · 눈더미 · 그을린 자국)
@@ -2081,6 +2084,8 @@ class Battle {
       if (target.side === 'ally') this.shake = Math.max(this.shake, 8);
     } else if (dealt >= 1 && this.dmgFxCount < 14) {
       // 4.13 방금 같은 적에게 뜬 숫자가 있으면 거기에 더한다 (범위 공격 · 여럿이 한꺼번에 칠 때 숫자 탑이 쌓이지 않게)
+      // 4.13 숫자 자리 흔들기는 보기용 난수(visRand)로 — 표시 방식이 바뀌어도 전투의 난수 흐름(=결과)은 그대로다
+      const jx = visRand(), jy = visRand();
       let merged = null;
       for (const e of this.fx) if (e.type === 'dmg' && e.tgt === target && e.t > 0.55 && e.crit === !!crit) { merged = e; break; }
       if (merged) { merged.v += Math.round(dealt); merged.bump = 0.12; }
@@ -2090,8 +2095,8 @@ class Battle {
         // 4.13 옆에 붙어 선 다른 적의 숫자도 피해 위로 쌓고, 좌우로 번갈아 비켜 놓는다
         let lift = 0;
         for (const e of this.fx) if (e.type === 'dmg' && e.t > 0.4 && Math.abs(e.x - target.x) < 34) lift++;
-        this.fx.push({ type: 'dmg', x: target.x + (Math.random() - 0.5) * 16 + (lift ? (lift % 2 ? 14 : -14) : 0),
-                       row: target.row, v: Math.round(dealt), dy: Math.random() * 6 + Math.min(lift, 4) * 15,
+        this.fx.push({ type: 'dmg', x: target.x + (jx - 0.5) * 16 + (lift ? (lift % 2 ? 14 : -14) : 0),
+                       row: target.row, v: Math.round(dealt), dy: jy * 6 + Math.min(lift, 4) * 15,
                        crit: !!crit, ally: target.side === 'ally', tgt: target, t: 0.65, life: 0.65 });
       }
     }
