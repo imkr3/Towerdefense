@@ -90,7 +90,10 @@
   </div>
   <div class="formation-bottom">
     <div class="formation-pool-wrap">
-      <nav class="pool-filters" id="pool-filters" aria-label="병종 분류"></nav>
+      <div class="pool-head">
+        <nav class="pool-filters" id="pool-filters" aria-label="병종 분류"></nav>
+        <div class="pool-sort" id="pool-sort" aria-label="정렬"></div>
+      </div>
       <div class="formation-pool" id="formation-pool" aria-label="보유 병종"></div>
     </div>
     <aside class="formation-side" id="formation-side"></aside>
@@ -117,8 +120,12 @@
   </header>
   <div class="cap-line"><span id="train-cap"></span></div>
   <div class="train-tools"><button class="btn ghost open-formation" id="btn-open-formation">편성 화면 열기 · 끌어서 배치</button><button class="btn ghost" id="btn-train-deck">편성 병종 고르게 훈련</button></div>
-  <nav id="training-filters" class="training-filters" aria-label="병종 목록 필터"><button class="on" data-filter="all" aria-pressed="true">전체</button><button data-filter="team" aria-pressed="false">내 편성</button><button data-filter="ally" aria-pressed="false">왕국군</button><button data-filter="enemy" aria-pressed="false">적 도감</button></nav>
-  <div class="scroll grid" id="units-list"></div>
+  <nav id="training-filters" class="training-filters" aria-label="병종 목록 필터"><button class="on" data-filter="ally" aria-pressed="true">왕국군</button><button data-filter="team" aria-pressed="false">내 편성</button><button data-filter="ready" aria-pressed="false">키울 수 있음</button><button data-filter="melee" aria-pressed="false">근접</button><button data-filter="ranged" aria-pressed="false">원거리</button><button data-filter="support" aria-pressed="false">지원</button><button data-filter="summon" aria-pressed="false">소환 영웅</button><button data-filter="enemy" aria-pressed="false">적 도감</button><button data-filter="all" aria-pressed="false">전체</button></nav>
+  <div class="training-sort" id="training-sort" aria-label="정렬"></div>
+  <div class="train-split">
+    <div class="unit-grid" id="units-list" aria-label="병종 목록"></div>
+    <aside class="unit-detail" id="unit-detail" aria-live="polite"></aside>
+  </div>
 </section>
 
 <!-- ===================== 임무 · 업적 · 기록 ===================== -->

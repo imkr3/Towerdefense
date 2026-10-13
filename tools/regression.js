@@ -366,9 +366,9 @@ test('A squad brings at most five legends and mythics', () => {
   assert.equal(ids.filter(id => U[id].rarity === 'UR' || U[id].rarity === 'SSR').length, 5);
   assert.ok(ids.includes('spear')); assert.ok(!ids.includes('zeus'));
 });
-test('Seven seasons, every summon points at a real unit', () => {
+test('Eight seasons (4.9: +벚꽃 전국), every summon points at a real unit', () => {
   const { SEASONS } = vm.runInContext('({SEASONS})', ctx);
-  assert.equal(SEASONS.length, 7);
+  assert.equal(SEASONS.length, 8);
   for (const sn of SEASONS) for (const id of sn.units) { assert.ok(U[id], id); assert.equal(U[id].season, sn.id); }
   for (const u of UNITS) if (u.ab && u.ab.summon) assert.ok(U[u.ab.summon.id], u.id);
 });
@@ -1500,6 +1500,39 @@ test('4.8: result-screen trial news only watches units the player has', () => {
   const main = fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8');
   assert.ok(/function trialWatched\(id\)[\s\S]{0,300}u\.gacha \? !!\(save\.owned && save\.owned\[id\]\)/.test(main), 'summoned heroes must be owned');
   assert.ok(/for \(const id in EVO2_TRIALS\) if \(trialWatched\(id\)\)/.test(main) && /if \(!trialWatched\(id\)\) continue;/.test(main));
+});
+
+/* ---------------- 4.9 벚꽃 전국 · 기본 병종 · 훈련소 보기 ---------------- */
+test('4.9: Sengoku season and the three new basic units are drawn, translated and evolvable', () => {
+  const render = fs.readFileSync(path.join(__dirname, '../js/render.js'), 'utf8');
+  const i18n = fs.readFileSync(path.join(__dirname, '../js/i18n.js'), 'utf8');
+  const { SEASONS, EVOLUTIONS, UNIT_COOLDOWN } = vm.runInContext('({SEASONS, EVOLUTIONS, UNIT_COOLDOWN})', ctx);
+  const sn = SEASONS.find(x => x.id === 'sengoku');
+  assert.equal(sn.units.slice().sort().join(','), 'ashigaru,kyudo,miko,ninja,samurai,susanoo,tengu');
+  const rar = {}; for (const id of sn.units) rar[U[id].rarity] = (rar[U[id].rarity] || 0) + 1;
+  assert.deepEqual(rar, { UR: 1, SSR: 1, SR: 2, R: 2, N: 1 });
+  for (const id of sn.units.concat(['maceman', 'axethrower', 'siegebow'])) {
+    assert.ok(render.indexOf("case '" + U[id].shape + "'") >= 0, id + ' drawn');
+    assert.ok(i18n.indexOf("'" + U[id].name + "'") >= 0, id + ' name');
+    assert.ok(EVOLUTIONS[id] && i18n.indexOf("'" + EVOLUTIONS[id].name + "'") >= 0, id + ' evolution');
+    assert.ok(UNIT_COOLDOWN[id] > 0, id + ' cooldown');
+  }
+  assert.ok(U.susanoo.maxActive === 1 && U.tengu.maxActive === 1 && U.ninja.maxActive === 2);
+  assert.ok(U.susanoo.active && U.tengu.active && i18n.indexOf("'" + U.susanoo.active.name + "'") >= 0);
+  assert.deepEqual(['maceman', 'axethrower', 'siegebow'].map(id => U[id].unlockStage), [34, 44, 52]);
+  assert.ok(!U.siegebow.gacha && U.siegebow.ab.pierce && U.siegebow.range >= 400, 'ballista shoots far and through');
+});
+test('4.9: training screen uses tiles + a detail pane, and filters/sorts work', () => {
+  const main = fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8');
+  const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
+  assert.ok(html.indexOf('id="unit-detail"') >= 0 && html.indexOf('id="training-sort"') >= 0 && html.indexOf('id="pool-sort"') >= 0);
+  const grab = name => { const i = main.indexOf('function ' + name + '('); return main.slice(i, main.indexOf('\n}\n', i) + 3); };
+  const T = vm.runInContext('(function(){ var trainingFilter = "ally", save = { loadout: [] }; ' + grab('isSupportUnit') + grab('trainMatches') +
+    ' return { pick: (f, u) => { trainingFilter = f; return trainMatches("ally", u, true); } }; })()', ctx);
+  assert.ok(T.pick('melee', U.maceman) && !T.pick('ranged', U.maceman));
+  assert.ok(T.pick('ranged', U.siegebow) && T.pick('support', U.priest) && !T.pick('ranged', U.priest));
+  assert.ok(T.pick('summon', U.susanoo) && !T.pick('summon', U.spear) && T.pick('support', U.miko));
+  assert.ok(!T.pick('enemy', U.spear) && T.pick('ally', U.spear));
 });
 
 console.log(count + ' regression checks passed');

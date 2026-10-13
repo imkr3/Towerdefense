@@ -35,8 +35,8 @@ android {
         applicationId "com.stickkingdom.war"
         minSdk 26
         targetSdk 34
-        versionCode 41000
-        versionName "4.8.0"
+        versionCode 41100
+        versionName "4.9.0"
     }
 
     signingConfigs {

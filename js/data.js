@@ -286,6 +286,22 @@ const UNITS = [
     cost:460,kb:1,scale:1.25,unlockStage:38,
     ab:{kbImmune:true,armor:.3,slow:1.2,push:30},abText:'닻 · 넉백 면역 · 갑주 30% · 맞은 적 둔화',
     desc:'거대한 닻을 휘둘러 전열을 붙듭니다. 해일도 밀어내지 못하는 마지막 둑입니다.'}),
+  // 4.9 기본 병종 셋 — 3막 · 4막 · 5막에서 하나씩 합류
+  mk({id:'maceman',name:'철퇴병',role:'타격',shape:'maceman',castFx:'shockwave',
+    body:'#2b3038',accent:'#b8a070',tunic:'#6a4a3a',hp:1500,atk:84,range:70,speed:36,interval:1.4,
+    cost:230,kb:1,unlockStage:34,
+    ab:{stun:{chance:.2,dur:.8},breaker:1.25},abText:'철퇴 · 20% 기절 0.8초 · 중장갑에게 1.25배',
+    desc:'묵직한 철퇴로 투구째 내리칩니다. 맞은 적이 비틀거리는 사이 전열이 숨을 돌립니다.'}),
+  mk({id:'axethrower',name:'도끼 투척병',short:'도끼투척',role:'근거리 투척',shape:'axethrower',
+    body:'#2b3038',accent:'#c8ccd4',tunic:'#4a6a3a',hp:760,atk:76,range:200,speed:40,interval:1.3,
+    cost:210,kb:2,ranged:true,area:true,areaRadius:45,unlockStage:44,
+    ab:{},abText:'빙글 도는 손도끼 · 짧은 사거리 · 작은 범위',
+    desc:'전열 바로 뒤에서 손도끼를 던집니다. 멀리는 못 가지만 몰려든 적을 두셋씩 찍어 냅니다.'}),
+  mk({id:'siegebow',name:'발리스타',role:'공성 쇠뇌',shape:'siegebow',
+    body:'#2b3038',accent:'#d8b878',tunic:'#5a4a34',hp:720,atk:100,range:420,speed:22,interval:2.6,
+    cost:320,kb:2,ranged:true,unlockStage:52,
+    ab:{pierce:true,breaker:1.6},abText:'거대 쇠뇌 · 일직선 관통 · 보스·중장갑에게 1.6배 · 아주 긴 사거리',
+    desc:'바퀴 달린 거대한 쇠뇌입니다. 창만 한 화살이 줄지어 선 적을 꿰뚫고 갑옷까지 뚫습니다.'}),
   // 소환 전용
   mk({
     id: 'barricade', name: '나무 방벽', role: '구조물', shape: 'barricade',
@@ -735,6 +751,44 @@ SEASON_UNITS.push(
     cost:150,kb:2,
     ab:{armor:.12,dodge:.1},abText:'값싼 창방패 · 갑주 12% · 회피 10%',
     desc:'카멜롯 성문을 지키는 병사입니다. 싸고 날래게 전열을 채웁니다.'}),
+  // 4.9 시즌: 벚꽃 전국 (일본 설화와 무사) — 폭풍의 신 · 산의 요괴 · 그림자 · 신사의 무녀 · 무사들
+  mk({id:'susanoo',name:'스사노오',role:'폭풍의 신',shape:'susanoo',castFx:'slash',season:'sengoku',rarity:'UR',gacha:true,unlockStage:999,
+    body:'#e8d8c0',accent:'#7ad0ff',tunic:'#2a3a6a',hp:1750,atk:138,range:100,speed:40,interval:1.5,
+    cost:560,kb:2,area:true,areaRadius:90,scale:1.2,
+    ab:{slow:1,push:25},abText:'폭풍 검 · 범위 · 맞은 적 1초 둔화 · 밀쳐 냄 · 오로치 베기',
+    desc:'여덟 머리 큰뱀을 벤 폭풍의 신입니다. 몰려든 적을 한꺼번에 베고 바람으로 밀어냅니다. 혼자 보스를 녹이지는 못합니다.',
+    active:{name:'오로치 베기',kind:'thunderseal',cd:50,radius:240,mul:2.6,slow:4,push:80,desc:'가장 가까운 적 주변 폭풍 베기 · 4초 둔화 · 밀쳐 냄.'}}),
+  mk({id:'tengu',name:'텐구',role:'산의 요괴',shape:'tengu',castFx:'slash',season:'sengoku',rarity:'SSR',gacha:true,unlockStage:999,
+    body:'#d84a3a',accent:'#f0e0b0',tunic:'#3a3a3a',hp:1500,atk:108,range:82,speed:80,interval:1.0,
+    cost:450,kb:2,scale:1.1,
+    ab:{dodge:.25,charge:{dist:120,mul:2.2,push:40}},abText:'날개 · 25% 회피 · 달려온 첫 일격 2.2배 · 깃털 부채 돌풍',
+    desc:'붉은 얼굴에 긴 코, 검은 날개를 단 산의 요괴입니다. 바람처럼 날아들어 첫 칼에 크게 베고 빠집니다.',
+    active:{name:'깃털 부채 돌풍',kind:'steamburst',cd:44,radius:230,mul:1.8,push:120,desc:'가장 가까운 적 주변 돌풍 피해 · 크게 밀쳐 냄.'}}),
+  mk({id:'ninja',name:'닌자',role:'그림자',shape:'ninja',castFx:'slash',season:'sengoku',rarity:'SR',gacha:true,unlockStage:999,
+    body:'#2a2a34',accent:'#c8c8d8',tunic:'#1e1e28',hp:950,atk:94,range:66,speed:90,interval:0.8,
+    cost:330,kb:2,
+    ab:{crit:{chance:.3,mul:2.3},dodge:.3},abText:'쌍 단도 · 치명타 30% ×2.3 · 30% 회피 · 아주 빠름',
+    desc:'그림자에서 튀어나와 급소만 찌릅니다. 맞기 전에 피하지만, 오래 붙어 싸우면 버티지 못합니다.'}),
+  mk({id:'miko',name:'무녀',role:'신사의 무녀',shape:'miko',season:'sengoku',rarity:'SR',gacha:true,unlockStage:999,
+    body:'#f0e8e0',accent:'#e8505a',tunic:'#f4f0ea',hp:780,atk:40,range:200,speed:32,interval:1.8,
+    cost:300,kb:2,ranged:true,
+    ab:{heal:50,radius:170,interval:4,cleanse:true},abText:'방울 춤 · 4초마다 주변 아군 회복 · 중독·화상 정화',
+    desc:'신사의 방울을 흔들어 부정을 씻어 냅니다. 아군의 독과 불을 털어 주고 상처를 아물게 합니다.'}),
+  mk({id:'samurai',name:'사무라이',role:'칼잡이',shape:'samurai',castFx:'slash',season:'sengoku',rarity:'R',gacha:true,unlockStage:999,
+    body:'#2b3038',accent:'#d8d8e0',tunic:'#8e2f3a',hp:1150,atk:76,range:74,speed:40,interval:1.1,
+    cost:240,kb:2,
+    ab:{crit:{chance:.2,mul:2},armor:.1},abText:'발도술 · 치명타 20% ×2 · 갑주 10%',
+    desc:'갑옷을 두른 무사입니다. 칼집에서 뽑는 한 번의 베기에 모든 것을 겁니다.'}),
+  mk({id:'kyudo',name:'궁도가',role:'긴 활',shape:'kyudo',season:'sengoku',rarity:'R',gacha:true,unlockStage:999,
+    body:'#2b3038',accent:'#e8c65a',tunic:'#3a4a6a',hp:580,atk:70,range:350,speed:34,interval:1.5,
+    cost:245,kb:2,ranged:true,
+    ab:{crit:{chance:.15,mul:2.2}},abText:'긴 활 · 긴 사거리 · 치명타 15% ×2.2',
+    desc:'키보다 긴 활을 당기는 궁도가입니다. 아주 멀리서 정확히 맞힙니다.'}),
+  mk({id:'ashigaru',name:'아시가루',role:'창 졸병',shape:'ashigaru',season:'sengoku',rarity:'N',gacha:true,unlockStage:999,
+    body:'#2b3038',accent:'#c8a050',tunic:'#4a3a2a',hp:620,atk:43,range:86,speed:44,interval:1.1,
+    cost:140,kb:2,
+    ab:{armor:.1},abText:'긴 창 · 값싸게 머릿수 · 갑주 10%',
+    desc:'삿갓을 쓴 창 졸병입니다. 싸고 많이 나와 긴 창으로 전열을 채웁니다.'}),
   // 소환 전용
   mk({id:'monkeyclone',name:'분신',role:'소환수',shape:'monkeyclone',unlockStage:999,
     body:'#c98a4a',accent:'#ffd24a',tunic:'#b8322e',hp:520,atk:60,range:80,speed:60,interval:1.0,
@@ -793,7 +847,10 @@ const UNIT_COOLDOWN = {
   // 3.3
   harpoon: 7.5, corsair: 13.7, beacon: 15.0, stormcaller: 33.0, anchorguard: 40.0,
   // 4.0 원탁의 기사 (같은 등급 병종들과 나란히)
-  camelotguard: 6.4, galahad: 12.6, tristan: 13.1, morgana: 21.0, lancelot: 27.0, merlin: 50.0, arthur: 66.0
+  camelotguard: 6.4, galahad: 12.6, tristan: 13.1, morgana: 21.0, lancelot: 27.0, merlin: 50.0, arthur: 66.0,
+  // 4.9 벚꽃 전국 · 기본 병종 셋
+  ashigaru: 5.9, samurai: 12.7, kyudo: 13.3, miko: 20.5, ninja: 26.5, tengu: 44.5, susanoo: 66.2,
+  maceman: 13.6, axethrower: 11.6, siegebow: 22.0
 };
 const TIER_FROM = 200, TIER_TO = 560, TIER_MAX = 0.35;
 function costTierMul(cost) {
@@ -845,7 +902,11 @@ const SEASONS = [
   { id: 'camelot', name: '원탁의 기사', sub: '아서왕 전설',
     color: '#8fb4ec', accent: '#2a4a8e',
     desc: '성검이 다시 뽑히고, 원탁에 둘러앉았던 기사들이 왕국의 부름에 응합니다.',
-    units: ['arthur', 'merlin', 'lancelot', 'morgana', 'tristan', 'galahad', 'camelotguard'] }
+    units: ['arthur', 'merlin', 'lancelot', 'morgana', 'tristan', 'galahad', 'camelotguard'] },
+  { id: 'sengoku', name: '벚꽃 전국', sub: '일본 설화와 무사',
+    color: '#f0a8c0', accent: '#a8324a',
+    desc: '벚꽃이 흩날리는 산성에서 폭풍의 신과 요괴, 무사들이 왕국의 부름에 응합니다.',
+    units: ['susanoo', 'tengu', 'ninja', 'miko', 'samurai', 'kyudo', 'ashigaru'] }
 ];
 
 /* 소환 풀: 시즌 병종 + (다른 시즌은 낮은 확률로) */
@@ -2267,6 +2328,10 @@ const EVOLUTIONS = {
   beacon: { name: '대등대지기', short: '대등대', plus: '보호막 180 · 등불이 더 멀리', ab: { barrier: 180, radius: 280 }, cost: { 'ab.interval': 1.15 } },
   stormcaller: { name: '뇌우의 군주', short: '뇌우군주', plus: '벼락이 네 번 튕김', ab: { chain: { n: 4, fall: 0.66, range: 140 } }, cost: { interval: 1.12 } },
   anchorguard: { name: '심해 수호자', short: '심해수호', plus: '근접 피해 15% 반사', ab: { thorns: 0.15 }, cost: { speed: 0.85 } },
+  // 4.9 기본 병종 셋
+  maceman:     { name: '철퇴 대장', short: '철퇴대장', plus: '기절 30% · 넉백 면역', ab: { stun: { chance: 0.3, dur: 0.8 }, kbImmune: true }, cost: { speed: 0.85 } },
+  axethrower:  { name: '쌍도끼 투척병', short: '쌍도끼', plus: '범위 +20 · 공격 15% 빠름', add: { areaRadius: 20 }, set: { interval: 1.1 }, cost: { hp: 0.9 } },
+  siegebow:    { name: '연발 발리스타', short: '연발노', plus: '공격 25% 빠름 · 파쇄 1.8배', ab: { breaker: 1.8 }, set: { interval: 1.95 }, cost: { range: 0.9 } },
   spear:   { look: { shape: 'spear_evo', tunic: '#8e2f3a', accent: '#e8c65a', grow: 1.06 }, name: '근위 창병', plus: '사거리 +20 · 찌를 때 적을 밀쳐 냄', add: { range: 20 }, ab: { push: 22 }, cost: { interval: 1.1 } },
   shield:  { name: '철벽 방패병', short: '철벽병', plus: '넉백 면역 · 근접 피해 15% 반사', ab: { kbImmune: true, thorns: 0.15 }, cost: { speed: 0.85 } },
   archer:  { look: { shape: 'archer_evo', tunic: '#2f6a3a', accent: '#9fffb0', grow: 1.08 }, name: '명궁', plus: '치명타 25% (2.2배)', ab: { crit: { chance: 0.25, mul: 2.2 } }, cost: { interval: 1.12 } },
@@ -2345,6 +2410,14 @@ const EVOLUTIONS = {
   morgana: { name: '요정 여왕', short: '요정여왕', plus: '중독 +60% · 둔화 2초', mul: { 'poison.dps': 1.6 }, ab: { slow: 2 }, cost: { interval: 1.12 } },
   tristan: { name: '음유 명궁', short: '음유명궁', plus: '사거리 +60 · 치명타 30%', add: { range: 60 }, ab: { crit: { chance: 0.3, mul: 2.4 } }, cost: { atk: 0.9 } },
   galahad: { name: '성배의 수호자', short: '성배수호', plus: '갑주 40% · 초당 40 회복', ab: { armor: 0.4, regen: 40 }, cost: { speed: 0.85 } },
+  // 4.9 벚꽃 전국
+  susanoo: { name: '폭풍의 신위', short: '폭풍신위', plus: '범위 +20 · 오로치 베기 강화', add: { areaRadius: 20 }, active: { mul: 3.0 }, cost: { atk: 0.88 } },
+  tengu:   { name: '대텐구', short: '대텐구', plus: '회피 35% · 깃털 부채 돌풍 강화', ab: { dodge: 0.35 }, active: { mul: 2.2, push: 160 }, cost: { hp: 0.9 } },
+  ninja:   { name: '상급 닌자', short: '상급닌자', plus: '치명타 35% · 달려온 첫 일격 1.8배', ab: { crit: { chance: 0.35, mul: 2.3 }, charge: { dist: 100, mul: 1.8, push: 20 } }, cost: { hp: 0.88 } },
+  miko:    { name: '대무녀', short: '대무녀', plus: '회복 +40% · 주변 보호막 70', mul: { heal: 1.4 }, ab: { barrier: 70 }, cost: { atk: 0.8 } },
+  samurai: { name: '무사 대장', short: '무사대장', plus: '치명타 30% · 흡혈 12%', ab: { crit: { chance: 0.3, mul: 2 }, lifesteal: 0.12 }, cost: { interval: 1.1 } },
+  kyudo:   { name: '궁도 명인', short: '궁도명인', plus: '사거리 +40 · 관통', add: { range: 40 }, ab: { pierce: true }, cost: { interval: 1.12 } },
+  ashigaru:{ name: '아시가루 조장', short: '조장', plus: '갑주 20% · 사거리 +10', add: { range: 10 }, ab: { armor: 0.2 }, cost: { atk: 0.9 } },
   camelotguard:{ name: '카멜롯 근위대', short: '근위대', plus: '갑주 22% · 회피 15%', ab: { armor: 0.22, dodge: 0.15 }, cost: { atk: 0.9 } },
   // 3.0 서유기
   wukong:  { look: { shape: 'wukong_evo', tunic: '#c9a227', accent: '#ffd35a', grow: 1.1 }, name: '투전승불', plus: '분신 최대 6 · 여의봉 강타 강화', ab: { summon: { max: 6 } }, active: { mul: 2.9 }, cost: { atk: 0.85 } },

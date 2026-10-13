@@ -3,7 +3,7 @@
  * ======================================================================= */
 
 
-const APP_VERSION = '4.8.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
+const APP_VERSION = '4.9.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
 
 function defaultSave() {
   const lv = {};
@@ -862,6 +862,49 @@ function squadBtnLabel() {
 
 /* ------------------------------ 훈련소 ------------------------------ */
 let trainingFilter = 'ally';
+/* 4.9 훈련소: 긴 카드 목록 대신 왼쪽엔 작은 타일, 오른쪽엔 고른 병종 하나의 상세 카드.
+ * 분류(편성 · 근접 · 원거리 · 지원 · 소환 영웅 · 키울 수 있음 · 적 도감)와 정렬(기본 · 레벨 · 비용 · 등급 · 이름). */
+let trainSort = 'role';
+let trainSel = null;
+function trainUnits() { return ROSTER_UNITS.concat(SEASON_UNITS.filter(u => u.gacha && save.owned[u.id])); }
+function isSupportUnit(u) {
+  const ab = u.ab || {};
+  return !!(ab.heal || ab.barrier || ab.haste || ab.rally || ab.gold || ab.ward || ab.cleanse || ab.noAttack || ab.summon || ab.pacify);
+}
+/* 이 병종을 지금 키우거나 진화시킬 수 있나 — 타일의 작은 표시와 '키울 수 있음' 분류 */
+function trainReady(u) {
+  const lv = save.levels[u.id] || 1, cap = unitLevelCap(save.cleared, save.upgrades.academy);
+  const train = lv < cap && save.coins >= unitTrainCost(u, lv);
+  const evo = !!EVOLUTIONS[u.id] && save.evo[u.id] === undefined && lv >= EVO_LEVEL;
+  const evo2 = !!EVOLUTIONS2[u.id] && save.evo[u.id] !== undefined && !(save.evo2 && save.evo2[u.id] !== undefined) && lv >= EVO2_LEVEL && evo2TrialsDone(save, u.id);
+  return { train, evo, evo2, any: train || evo || evo2 };
+}
+const TRAIN_RANK = { UR: 0, SSR: 1, SR: 2, R: 3, N: 4 };
+function trainSorted(list) {
+  const lv = u => save.levels[u.id] || 1, idx = new Map(list.map((u, i) => [u.id, i]));
+  const key = {
+    role: (a, b) => idx.get(a.id) - idx.get(b.id),
+    level: (a, b) => lv(b) - lv(a) || idx.get(a.id) - idx.get(b.id),
+    cost: (a, b) => a.cost - b.cost || idx.get(a.id) - idx.get(b.id),
+    rarity: (a, b) => (a.gacha ? TRAIN_RANK[a.rarity] : 9) - (b.gacha ? TRAIN_RANK[b.rarity] : 9) || b.cost - a.cost,
+    name: (a, b) => t(unitFor(save, a.id).name).localeCompare(t(unitFor(save, b.id).name))
+  }[trainSort] || (() => 0);
+  return list.slice().sort(key);
+}
+function trainMatches(kind, u, unlocked) {
+  switch (trainingFilter) {
+    case 'enemy': return kind === 'enemy';
+    case 'all': return true;
+    case 'team': return kind === 'ally' && save.loadout.includes(u.id);
+    case 'melee': return kind === 'ally' && unlocked && !u.ranged && !isSupportUnit(u);
+    case 'ranged': return kind === 'ally' && unlocked && !!u.ranged && !isSupportUnit(u);
+    case 'support': return kind === 'ally' && unlocked && isSupportUnit(u);
+    case 'summon': return kind === 'ally' && !!u.gacha;
+    case 'ready': return kind === 'ally' && unlocked && trainReady(u).any;
+    default: return kind === 'ally';      // 'ally' (왕국군 전체)
+  }
+}
+
 function renderTraining() {
   const hardCap = UNIT_LEVEL_HARD_CAP + (save.upgrades.academy || 0);
   $('#train-coins').textContent = fmtNum(save.coins);
@@ -873,9 +916,72 @@ function renderTraining() {
     ' <span class="hint">전투 카드는 편성한 병종만 나옵니다</span>';
 
   const box = $('#units-list');
+  const keep = box.scrollTop;
   box.innerHTML = '';
-  const ownedSeason = SEASON_UNITS.filter(u => u.gacha && save.owned[u.id]);
-  ROSTER_UNITS.concat(ownedSeason).forEach(u => {
+  const frag = document.createDocumentFragment();
+  for (const u of trainSorted(trainUnits())) {
+    const unlocked = u.gacha ? true : (u.unlockStage <= save.cleared + 1);
+    const r = unitFor(save, u.id), lv = save.levels[u.id] || 1, inTeam = save.loadout.includes(u.id);
+    const rd = unlocked ? trainReady(u) : null;
+    const el = document.createElement('button');
+    el.type = 'button';
+    el.className = 'unit-tile' + (unlocked ? '' : ' dim') + (inTeam ? ' teamed' : '') + (u.gacha ? ' r-' + rarityOf(u) : '') +
+                   (r.evo2 ? ' evolved2' : r.evo ? ' evolved' : '');
+    el.dataset.kind = 'ally'; el.dataset.unit = u.id; el.dataset.teamed = String(inTeam); el.dataset.unlocked = String(unlocked);
+    el.innerHTML = (unlocked ? '<canvas></canvas>' : '<span class="ut-lock">?</span>') +
+      '<span class="ut-name">' + (unlocked ? (r.evo2 ? '✪' : r.evo ? '✦' : '') + (r.short || r.name) : u.unlockStage + '전장') + '</span>' +
+      (unlocked ? '<span class="ut-lv">' + lv + '</span>' : '') +
+      (inTeam ? '<span class="ut-team">✓</span>' : '') +
+      (rd && rd.any ? '<span class="ut-ready">' + (rd.evo2 ? '✪' : rd.evo ? '✦' : '▲') + '</span>' : '');
+    el.setAttribute('aria-label', (unlocked ? u.name + ' 레벨 ' + lv : '미합류 병종') + (inTeam ? ' 편성됨' : ''));
+    if (unlocked) drawUnitIcon(el.querySelector('canvas'), r, 40);
+    el.addEventListener('click', () => { trainSel = u.id; SFX.ui(); showTrainingDetail(); });
+    frag.appendChild(el);
+  }
+  for (const key of Object.keys(ENEMIES)) {
+    const e = ENEMIES[key];
+    const el = document.createElement('button');
+    el.type = 'button';
+    el.className = 'unit-tile foe' + (e.boss ? ' boss' : '');
+    el.dataset.kind = 'enemy'; el.dataset.unit = 'foe:' + key;
+    el.innerHTML = '<canvas></canvas><span class="ut-name">' + e.name + '</span>' + (e.boss ? '<span class="ut-ready">보스</span>' : '');
+    drawUnitIcon(el.querySelector('canvas'), e, 40);
+    el.addEventListener('click', () => { trainSel = 'foe:' + key; SFX.ui(); showTrainingDetail(); });
+    frag.appendChild(el);
+  }
+  box.appendChild(frag);
+  box.scrollTop = keep;
+  renderTrainingSort();
+  applyTrainingFilter();
+}
+
+/* 상세 카드: 고른 병종(또는 적) 하나의 훈련 · 진화 · 편성 카드 */
+function showTrainingDetail() {
+  const pane = $('#unit-detail');
+  if (!pane) return;
+  pane.innerHTML = '';
+  $$('#units-list .unit-tile').forEach(el => el.classList.toggle('sel', el.dataset.unit === trainSel));
+  if (!trainSel) { pane.innerHTML = '<p class="ud-empty">병종을 고르면 훈련 · 진화 정보가 여기 나옵니다</p>'; return; }
+  const card = trainSel.indexOf('foe:') === 0 ? buildFoeCard(trainSel.slice(4)) : (UNIT_BY_ID[trainSel] ? buildUnitCard(UNIT_BY_ID[trainSel]) : null);
+  if (card) { pane.appendChild(card); pane.scrollTop = 0; }
+}
+
+function renderTrainingSort() {
+  const box = $('#training-sort');
+  if (!box) return;
+  box.innerHTML = '<span class="ts-label">정렬</span>';
+  [['role', '기본순'], ['level', '레벨순'], ['cost', '비용순'], ['rarity', '등급순'], ['name', '이름순']].forEach(([k, label]) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = label; b.className = k === trainSort ? 'on' : '';
+    b.setAttribute('aria-pressed', String(k === trainSort));
+    b.addEventListener('click', () => { if (trainSort === k) return; trainSort = k; SFX.ui(); renderTraining(); });
+    box.appendChild(b);
+  });
+}
+
+function buildUnitCard(u) {
+  const hardCap = UNIT_LEVEL_HARD_CAP + (save.upgrades.academy || 0);
+  const cap = unitLevelCap(save.cleared, save.upgrades.academy);
     const unlocked = u.gacha ? true : (u.unlockStage <= save.cleared + 1);
     const lv = save.levels[u.id] || 1;
     const mul = unitLevelMul(lv);
@@ -1048,11 +1154,11 @@ function renderTraining() {
     el.dataset.kind = 'ally';
     el.dataset.teamed = String(inTeam);
     el.dataset.unlocked = String(unlocked);
-    box.appendChild(el);
-  });
+    return el;
 
-  // 적 도감
-  Object.keys(ENEMIES).forEach(key => {
+}
+
+function buildFoeCard(key) {
     const e = ENEMIES[key];
     const el = document.createElement('div');
     el.className = 'unit-card foe';
@@ -1085,21 +1191,25 @@ function renderTraining() {
     tactic.textContent = (e.abText ? e.abText + ' · ' : '') + enemyTactic(e);
     el.querySelector('.unit-body').appendChild(tactic);
     drawUnitIcon(el.querySelector('canvas'), e, 54);
-    box.appendChild(el);
-  });
-  applyTrainingFilter();
+    return el;
 }
 
 function applyTrainingFilter() {
-  $$('#units-list .unit-card').forEach(el => {
-    el.hidden = trainingFilter === 'team' ? el.dataset.teamed !== 'true' :
-      trainingFilter === 'ally' ? el.dataset.kind !== 'ally' :
-      trainingFilter === 'enemy' ? el.dataset.kind !== 'enemy' : false;
+  let first = null, selShown = false;
+  $$('#units-list .unit-tile').forEach(el => {
+    const kind = el.dataset.kind, id = el.dataset.unit;
+    const u = kind === 'ally' ? UNIT_BY_ID[id] : null;
+    el.hidden = !trainMatches(kind, u, el.dataset.unlocked !== 'false');
+    if (!el.hidden) { if (!first) first = id; if (id === trainSel) selShown = true; }
   });
   $$('#training-filters button').forEach(el => {
     el.classList.toggle('on', el.dataset.filter === trainingFilter);
     el.setAttribute('aria-pressed', String(el.dataset.filter === trainingFilter));
   });
+  if (!selShown) trainSel = first;
+  const n = $$('#units-list .unit-tile:not([hidden])').length;
+  const cnt = $('#training-count'); if (cnt) cnt.textContent = n + '종';
+  showTrainingDetail();
 }
 
 /* ============================ 소환의 제단 ============================ */

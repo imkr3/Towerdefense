@@ -1435,3 +1435,64 @@ body{background:var(--bg0);color:var(--tx)}
 /* 4.6 가면 군주가 봉인한 카드: 보랏빛 자물쇠 */
 .card.sealed{filter:saturate(.25);border-color:#c06aff!important;box-shadow:0 0 0 1px #c06aff88,0 0 12px #c06aff55!important}
 .card.sealed .cool{background:rgba(60,20,90,.78)!important;color:#e8c8ff;font-size:13px}
+
+/* 4.9 훈련소: 타일 목록 + 상세 카드 */
+.training-filters{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;flex-shrink:0}
+.training-filters::-webkit-scrollbar{display:none}
+.training-filters button{flex-shrink:0;white-space:nowrap}
+.training-sort{display:flex;align-items:center;gap:5px;padding:5px 14px 0;flex-shrink:0;flex-wrap:wrap}
+.training-sort .ts-label{font-size:11px;color:var(--tx3);margin-right:2px}
+.training-sort button{border:1px solid var(--ln-soft);border-radius:6px;background:#ffffff08;color:var(--tx2);font-size:11px;padding:3px 9px;cursor:pointer}
+.training-sort button.on{border-color:var(--au);color:var(--au-l);font-weight:800;background:#e2bf7218}
+.train-split{flex:1;min-height:0;display:flex;gap:10px;padding:8px 12px calc(6px + var(--sb, 0px))}
+.unit-grid{flex:1;min-width:0;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:6px;
+  align-content:start;padding:2px 2px 8px;-webkit-overflow-scrolling:touch}
+.unit-tile{position:relative;height:72px;border:1px solid var(--ln-soft);border-radius:8px;background:linear-gradient(180deg,#203650,#172a3e);
+  color:var(--tx);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:2px;cursor:pointer;font:inherit}
+.unit-tile canvas{width:40px;height:40px;pointer-events:none;filter:drop-shadow(0 0 3px #cfe3f255)}
+.unit-tile .ut-name{font-size:10.5px;font-weight:700;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+.unit-tile .ut-lv{position:absolute;right:4px;top:2px;font-size:9.5px;color:var(--tx3)}
+.unit-tile .ut-team{position:absolute;left:4px;top:2px;font-size:10px;color:var(--ok);font-weight:900}
+.unit-tile .ut-ready{position:absolute;left:3px;top:16px;font-size:9px;font-weight:900;color:#2a1d08;background:var(--au-l);border-radius:5px;padding:0 4px;line-height:14px}
+.unit-tile .ut-lock{font-size:22px;color:var(--tx3)}
+.unit-tile.dim{opacity:.55}
+.unit-tile.teamed{border-color:#6fcf8a88}
+.unit-tile.r-SR{border-color:#b98adf99}
+.unit-tile.r-SSR{border-color:#e0ac3a;background:linear-gradient(180deg,#3d3120,#241c10)}
+.unit-tile.r-UR{border-color:#39b9aa;background:linear-gradient(180deg,#153d3c,#0e2626)}
+.unit-tile.evolved canvas{filter:drop-shadow(0 0 4px #f6d36588)}
+.unit-tile.evolved2 canvas{filter:drop-shadow(0 0 5px #7ff0ffaa)}
+.unit-tile.foe{background:linear-gradient(180deg,#2c1d24,#1c1318)}
+.unit-tile.foe .ut-ready{background:#e04b6a;color:#fff}
+.unit-tile.sel{outline:2px solid var(--au-l);outline-offset:1px;box-shadow:0 0 12px #f6d36555}
+.unit-tile:active{transform:scale(.97)}
+.unit-detail{flex:0 0 clamp(300px,46%,520px);min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.unit-detail .unit-card{margin:0}
+.ud-empty{color:var(--tx3);font-size:12px;text-align:center;margin-top:30px}
+@media(max-height:450px){.unit-tile{height:62px}.unit-tile canvas{width:32px;height:32px}.training-sort{padding-top:3px}.train-split{padding-top:5px}}
+@media(max-width:700px){.unit-detail{flex-basis:52%}.unit-grid{grid-template-columns:repeat(auto-fill,minmax(62px,1fr))}}
+
+/* 4.9 편성: 분류가 늘어 가로로 넘기고, 정렬 · 작게 보기 */
+.pool-filters{overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.pool-filters::-webkit-scrollbar{display:none}
+.pool-filters button{flex-shrink:0;white-space:nowrap}
+.pool-sort{display:flex;gap:5px;flex-shrink:0;flex-wrap:wrap;align-items:center}
+.pool-sort button{border:1px solid var(--ln-soft);border-radius:6px;background:#ffffff08;color:var(--tx2);font-size:11px;padding:3px 9px;cursor:pointer}
+.pool-sort button.on{border-color:var(--au);color:var(--au-l);font-weight:800;background:#e2bf7218}
+.pool-sort .ps-compact{margin-left:auto}
+.formation-pool.compact{grid-template-columns:repeat(auto-fill,minmax(54px,1fr));gap:4px}
+.formation-pool.compact .f-tile{height:54px}
+.formation-pool.compact .f-tile canvas{width:28px;height:28px}
+.formation-pool.compact .ft-sub{display:none}
+.formation-pool.compact .ft-name{font-size:9.5px}
+/* 4.9 시즌이 여덟 개라 좁은 화면에서는 탭 이름을 한 줄로 두고 옆으로 넘긴다 */
+.season-tabs{overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.season-tabs::-webkit-scrollbar{display:none}
+.season-tab .s-name{white-space:nowrap}
+.season-tab{flex:1 0 auto;min-width:76px;padding-left:8px;padding-right:8px}
+/* 4.9 분류 칩과 정렬·작게 버튼을 한 줄에 — 낮은 화면에서도 병종 칸이 두 줄 넘게 보이게 */
+.pool-head{display:flex;gap:8px;align-items:center;flex-shrink:0;min-width:0}
+.pool-head .pool-filters{flex:1;min-width:0}
+.pool-head .pool-sort{flex-wrap:nowrap}
+.pool-sort .ps-sort::before{content:'⇅ ';opacity:.8}
+.pool-sort button{white-space:nowrap}

@@ -108,11 +108,18 @@ function autoFillLoadout() {
 }
 
 function unitMatchesFilter(u) {
-  if (fmFilter === 'melee') return !u.ranged;
-  if (fmFilter === 'ranged') return !!u.ranged;
+  if (fmFilter === 'melee') return !u.ranged && !isSupportUnit(u);
+  if (fmFilter === 'ranged') return !!u.ranged && !isSupportUnit(u);
+  if (fmFilter === 'support') return isSupportUnit(u);
   if (fmFilter === 'hero') return u.rarity === 'SSR' || u.rarity === 'UR';
+  if (fmFilter === 'summon') return !!u.gacha;
+  if (fmFilter === 'out') return !save.loadout.includes(u.id);
   return true;
 }
+/* 4.9 정렬 · 작게 보기 (기기에 기억해 둔다) */
+let fmSort = 'rarity', fmCompact = false;
+try { const p = JSON.parse(localStorage.getItem('stick-kingdom-ui-v1') || '{}'); if (p.fmSort) fmSort = p.fmSort; fmCompact = !!p.fmCompact; } catch (e) { /* 저장소를 못 쓰면 기본값 */ }
+function rememberFormationView() { try { localStorage.setItem('stick-kingdom-ui-v1', JSON.stringify({ fmSort, fmCompact })); } catch (e) { /* 무시 */ } }
 
 function renderFormation() {
   if (!$('#scr-formation').classList.contains('active')) return;
@@ -175,7 +182,7 @@ function renderFormationSlots() {
 function renderFormationPool() {
   const filters = $('#pool-filters');
   filters.innerHTML = '';
-  [['all', '전체'], ['melee', '근접'], ['ranged', '원거리'], ['hero', '전설·신화']].forEach(([k, label]) => {
+  [['all', '전체'], ['melee', '근접'], ['ranged', '원거리'], ['support', '지원'], ['hero', '전설·신화'], ['summon', '소환 영웅'], ['out', '미편성']].forEach(([k, label]) => {
     const b = document.createElement('button');
     b.type = 'button';
     b.textContent = label;
@@ -184,14 +191,37 @@ function renderFormationPool() {
     b.addEventListener('click', () => { fmFilter = k; renderFormationPool(); });
     filters.appendChild(b);
   });
+  const sorts = $('#pool-sort');
+  if (sorts) {
+    sorts.innerHTML = '';
+    // 한 줄에 다 들어가게 정렬은 버튼 하나로 — 누를 때마다 등급 → 비용 → 레벨 → 이름 순으로 바뀐다
+    const SORTS = [['rarity', '등급순'], ['cost', '비용순'], ['level', '레벨순'], ['name', '이름순']];
+    const cur = SORTS.findIndex(x => x[0] === fmSort);
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'ps-sort'; b.textContent = SORTS[Math.max(0, cur)][1];
+    b.title = '정렬';
+    b.addEventListener('click', () => { fmSort = SORTS[(cur + 1) % SORTS.length][0]; rememberFormationView(); renderFormationPool(); });
+    sorts.appendChild(b);
+    const c = document.createElement('button');
+    c.type = 'button'; c.className = 'ps-compact' + (fmCompact ? ' on' : ''); c.textContent = '작게';
+    c.setAttribute('aria-pressed', String(fmCompact));
+    c.addEventListener('click', () => { fmCompact = !fmCompact; rememberFormationView(); renderFormationPool(); });
+    sorts.appendChild(c);
+  }
 
   const box = $('#formation-pool');
-  const rank = { UR: 0, SSR: 1, SR: 2, R: 3, N: 4 };
-  const list = unlockedUnits().filter(unitMatchesFilter)
-    .sort((a, b) => (a.gacha ? rank[a.rarity] : 9) - (b.gacha ? rank[b.rarity] : 9) || a.cost - b.cost);
+  box.classList.toggle('compact', fmCompact);
+  const rank = { UR: 0, SSR: 1, SR: 2, R: 3, N: 4 }, lv = u => save.levels[u.id] || 1;
+  const order = {
+    rarity: (a, b) => (a.gacha ? rank[a.rarity] : 9) - (b.gacha ? rank[b.rarity] : 9) || a.cost - b.cost,
+    cost: (a, b) => a.cost - b.cost || lv(b) - lv(a),
+    level: (a, b) => lv(b) - lv(a) || a.cost - b.cost,
+    name: (a, b) => t(unitFor(save, a.id).name).localeCompare(t(unitFor(save, b.id).name))
+  }[fmSort] || (() => 0);
+  const list = unlockedUnits().filter(unitMatchesFilter).sort(order);
   // 3.8: 목록이 그대로면(넣고 빼기·고르기만 했으면) 다시 만들지 않고 표시만 고친다.
   // 예전엔 누를 때마다 80여 칸을 통째로 다시 만들어 폰에서 눈에 띄게 끊겼다.
-  const sig = fmFilter + '|' + list.map(u => u.id + (save.evo[u.id] ? '+' : '') + (save.evo2 && save.evo2[u.id] ? '+' : '')).join(',');
+  const sig = fmFilter + '|' + fmSort + '|' + list.map(u => u.id + (save.evo[u.id] ? '+' : '') + (save.evo2 && save.evo2[u.id] ? '+' : '')).join(',');
   if (box._sig === sig && box.children.length === list.length) {
     for (const el of box.children) {
       const id = el.dataset.unit, inTeam = save.loadout.includes(id);

@@ -215,12 +215,16 @@ async function runSize(browser, size) {
   if(!await page.evaluate(()=>save.loadout.length===5&&save.presets[0].length===5))throw Error('Loadout or preset lost after reload');
   await page.evaluate(()=>{for(const id of ['runeguard','musketeer','purifier','frostlancer']){const cv=document.createElement('canvas');drawUnitIcon(cv,UNIT_BY_ID[id],60);}});
 
-  const cards = await page.$$eval('#units-list .unit-card', e => e.length);
+  const cards = await page.$$eval('#units-list .unit-tile', e => e.length);
   if (cards < 20) failures.push(size.name + ': 훈련소 목록이 부족하다 (' + cards + ')');
   await page.click('[data-filter="enemy"]');
-  const wrong = await page.$$eval('#units-list .unit-card:not([hidden])', es => es.some(e => e.dataset.kind !== 'enemy'));
+  const wrong = await page.$$eval('#units-list .unit-tile:not([hidden])', es => es.some(e => e.dataset.kind !== 'enemy'));
   if (wrong) failures.push(size.name + ': 적 도감 필터 오류');
   await page.click('[data-filter="all"]');
+  // 4.9: 타일을 누르면 오른쪽 상세 칸에 그 병종 카드가 나온다
+  await page.click('#units-list .unit-tile[data-unit="archer"]');
+  if (!await page.evaluate(() => /궁수|Archer/.test($('#unit-detail').textContent) && !!$('#unit-detail .unit-card')))
+    failures.push(size.name + ': 훈련소 상세 칸이 비었다');
   // Removing a card must survive navigation and save/reload.
   await page.evaluate(() => { save.loadout = save.loadout.filter(id => id !== 'archer'); saveGame(save); });
   await page.click('#scr-units [data-goto]');
