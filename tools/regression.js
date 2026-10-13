@@ -1535,4 +1535,14 @@ test('4.9: training screen uses tiles + a detail pane, and filters/sorts work', 
   assert.ok(!T.pick('enemy', U.spear) && T.pick('ally', U.spear));
 });
 
+/* ---------------- 4.10 점검 ---------------- */
+test('4.10: training buttons refresh one tile; season-tab scrolling is only for the summon altar', () => {
+  const main = fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8');
+  const css = fs.readFileSync(path.join(__dirname, '../css/style.css'), 'utf8');
+  const i = main.indexOf('function buildUnitCard(u) {'), card = main.slice(i, main.indexOf('\nfunction ', i + 10));
+  assert.ok(card.indexOf('renderTraining()') < 0 && card.split('refreshTraining(u.id)').length - 1 >= 5, 'card buttons use the light refresh');
+  assert.ok(/const tabScroll = tabs\.scrollLeft;[\s\S]{0,900}tabs\.scrollLeft = tabScroll;/.test(main), 'season tabs keep their scroll');
+  assert.ok(!/^\.season-tab\{flex:1 0 auto/m.test(css) && /#season-tabs \.season-tab\{flex:1 0 auto/.test(css), 'mission tabs stay equal width');
+});
+
 console.log(count + ' regression checks passed');

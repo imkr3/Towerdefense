@@ -1486,10 +1486,10 @@ body{background:var(--bg0);color:var(--tx)}
 .formation-pool.compact .ft-sub{display:none}
 .formation-pool.compact .ft-name{font-size:9.5px}
 /* 4.9 시즌이 여덟 개라 좁은 화면에서는 탭 이름을 한 줄로 두고 옆으로 넘긴다 */
-.season-tabs{overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
-.season-tabs::-webkit-scrollbar{display:none}
-.season-tab .s-name{white-space:nowrap}
-.season-tab{flex:1 0 auto;min-width:76px;padding-left:8px;padding-right:8px}
+#season-tabs{overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+#season-tabs::-webkit-scrollbar{display:none}
+#season-tabs .season-tab .s-name{white-space:nowrap}
+#season-tabs .season-tab{flex:1 0 auto;min-width:76px;padding-left:8px;padding-right:8px}
 /* 4.9 분류 칩과 정렬·작게 버튼을 한 줄에 — 낮은 화면에서도 병종 칸이 두 줄 넘게 보이게 */
 .pool-head{display:flex;gap:8px;align-items:center;flex-shrink:0;min-width:0}
 .pool-head .pool-filters{flex:1;min-width:0}

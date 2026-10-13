@@ -225,6 +225,15 @@ async function runSize(browser, size) {
   await page.click('#units-list .unit-tile[data-unit="archer"]');
   if (!await page.evaluate(() => /궁수|Archer/.test($('#unit-detail').textContent) && !!$('#unit-detail .unit-card')))
     failures.push(size.name + ': 훈련소 상세 칸이 비었다');
+  // 4.10: 훈련하면 그 타일 레벨 · 상세 칸이 바로 바뀐다 (목록 전체를 다시 만들지 않고)
+  const trained = await page.evaluate(() => {
+    save.coins = 1e6; const lv = save.levels.archer || 1; const btn = $('#unit-detail .train-btn');
+    if (!btn) return 'no button';
+    btn.click();
+    const tile = $('#units-list .unit-tile[data-unit="archer"]');
+    return save.levels.archer === lv + 1 && tile.querySelector('.ut-lv').textContent === String(lv + 1) && tile.classList.contains('sel') ? 'ok' : 'stale';
+  });
+  if (trained !== 'ok') failures.push(size.name + ': 훈련 후 타일이 갱신되지 않았다 (' + trained + ')');
   // Removing a card must survive navigation and save/reload.
   await page.evaluate(() => { save.loadout = save.loadout.filter(id => id !== 'archer'); saveGame(save); });
   await page.click('#scr-units [data-goto]');
