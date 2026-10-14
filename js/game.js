@@ -646,12 +646,20 @@ class Battle {
   }
 
   /* 왕의 명령: 전군 회복 + 가속 */
+  // 4.18: HUD 가 프레임마다 여러 번 묻는다. 배열을 새로 만들거나 정렬하지 않고 한 번 훑는다.
   heroCaster(id) {
-    return this.allies.find(f=>!f.dead && !f.summoned && f.s.id===id) || null;
+    for (const f of this.allies) if (!f.dead && !f.summoned && f.s.id === id) return f;
+    return null;
   }
   heroTarget(f) {
-    return this.enemies.filter(e=>!e.dead && Math.abs(e.x-f.x)<=f.attackRange+180)
-      .sort((a,b)=>Math.abs(a.x-f.x)-Math.abs(b.x-f.x))[0] || null;
+    const lim = f.attackRange + 180;
+    let best = null, bd = Infinity;
+    for (const e of this.enemies) {
+      if (e.dead) continue;
+      const d = Math.abs(e.x - f.x);
+      if (d <= lim && d < bd) { bd = d; best = e; }
+    }
+    return best;
   }
   canHeroActive(id) {
     const f=this.heroCaster(id), u=this.stats(id);
@@ -742,8 +750,8 @@ class Battle {
     }
     for (const a of this.allies) {
       a.heal(a.maxHp * this.cmdHeal);
+      a.hasteMul = a.hasteT > 0 ? Math.min(a.hasteMul, COMMAND.hasteMul) : COMMAND.hasteMul;   // 4.18: 더 센 가속을 덮지 않게
       a.hasteT = Math.max(a.hasteT, COMMAND.hasteDur);
-      a.hasteMul = COMMAND.hasteMul;
       a.stunT = 0;
       a.slowT = 0;
       this.fx.push({ type: 'rally', x: a.x, row: a.row, t: 0.6, life: 0.6 });
@@ -756,13 +764,14 @@ class Battle {
 
   update(dtRaw) {
     if (this.state !== 'play') { this.updateFx(dtRaw); return; }
-    let remaining = Math.max(0, Math.min(0.1, dtRaw)) * this.speed;
+    const gameDt = Math.max(0, Math.min(0.1, dtRaw)) * this.speed;
+    let remaining = gameDt;
     while (remaining > 1e-8 && this.state === 'play') {
       const step = Math.min(1 / 30, remaining);
       this.tick(step);
       remaining -= step;
     }
-    this.updateFx(dtRaw);
+    this.updateFx(dtRaw, gameDt);
   }
 
   tick(dt) {
@@ -1405,6 +1414,8 @@ class Battle {
         f.unveiled = near;
       }
 
+      // 4.18: 홀림은 기절 · 넉백 중에도 풀려 간다 (예전엔 그만큼 늘어났다)
+      if (f.charmT > 0 && (f.stunT > 0 || f.kbTimer > 0)) f.charmT -= dt;
       // 기절
       if (f.stunT > 0) { f.stunT -= dt; continue; }
 
@@ -1600,8 +1611,8 @@ class Battle {
       for (const m of mates) {
         if (m.dead || m === f) continue;
         if (Math.abs(m.x - f.x) > ab.radius) continue;
+        m.hasteMul = m.hasteT > 0 ? Math.min(m.hasteMul, ab.haste.mul) : ab.haste.mul;
         m.hasteT = Math.max(m.hasteT, ab.haste.dur);
-        m.hasteMul = ab.haste.mul;
       }
       f.auraPulse = 0.5;
       this.fx.push({ type: 'aura', x: f.x, row: f.row, r: ab.radius,
@@ -2308,7 +2319,8 @@ class Battle {
       if (Math.abs(e.x - cx) <= radius + e.radius) this.hitOne(dmg, e, src, crit);
     }
     if (castleOk && foeCastle && !foeCastle.dead && Math.abs(foeCastle.x - cx) <= radius + foeCastle.radius) {
-      foeCastle.takeDamage(dmg);
+      const got = foeCastle.takeDamage(dmg);       // 4.18: 범위 공격의 요새 피해도 병종 기록에 넣는다
+      if (got > 0 && src && src.side === 'ally' && src.s) this.meterRow(src).dmg += got;
     }
     this.fx.push({ type: 'boom', x: cx, r: radius, t: 0.32, life: 0.32 });
     sfx('boom');
@@ -2325,8 +2337,10 @@ class Battle {
       if (e.dead) continue;
       if (e.x >= from - 30 && e.x <= to + 30) { this.hitOne(shot.dmg, e, shot.src, shot.crit); hits++; }
     }
-    if (!castle.dead && castle.x >= from - 40 && castle.x <= to + 40) {
-      castle.takeDamage(shot.dmg);
+    // 4.18: 적(가면 보스의 그림자 등)이 병사를 노린 관통은 뒤의 성채까지 꿰지 않는다 (범위 공격과 같은 규칙)
+    if (!castle.dead && (shot.side === 'ally' || shot.toCastle) && castle.x >= from - 40 && castle.x <= to + 40) {
+      const got = castle.takeDamage(shot.dmg);
+      if (got > 0 && shot.src && shot.src.side === 'ally' && shot.src.s) this.meterRow(shot.src).dmg += got;
     }
     this.fx.push({ type: 'beam', x: shot.x, x2: shot.tx, row: shot.y0, t: 0.22, life: 0.22,
                    color: shot.color });
@@ -2359,15 +2373,34 @@ class Battle {
       if (hit) this.hitOne(s.dmg, hit, s.src, s.crit);
       this.fx.push({ type: s.crit ? 'crit' : 'hit', x: hit ? hit.x : s.tx, row: hit ? (hit.row ?? s.y0) : s.y0, dir: s.dir, t: 0.22, life: 0.22, sty: 'shoot', color: s.color });
     }
-    this.shots = this.shots.filter(s => !s.done);
+    const sh = this.shots; let n = 0;               // 4.18: 제자리에서 줄인다
+    for (let i = 0; i < sh.length; i++) if (!sh[i].done) sh[n++] = sh[i];
+    sh.length = n;
   }
 
-  updateFx(dt) {
-    for (const e of this.fx) e.t -= dt;
-    this.fx = this.fx.filter(e => e.t > 0);
-    if (this.fx.length > FX_LIMIT) this.fx.splice(0, this.fx.length - FX_LIMIT);
-    this.dmgFxCount = 0;
-    for (const e of this.fx) if (e.type === 'dmg') this.dmgFxCount++;
+  /* 4.18: 한 번 훑으며 줄이고 피해 숫자도 같이 센다 (프레임마다 새 배열을 만들지 않게).
+   * 공격 예고 원은 전투 시간으로 줄어든다 — 2·3배속에서 원이 다 좁혀지기 전에 포탄이 떨어지고
+   * 떨어진 뒤에도 원이 남아 또 온다고 착각하게 했다. 멈춘 동안(gameDt 없음)엔 포격처럼 예고 원도 멈춘다.
+   * 넘칠 때 지우는 것도 예고 원은 건너뛴다. */
+  updateFx(dt, gameDt) {
+    const fx = this.fx, warnDt = this.state !== 'play' ? dt : (gameDt || 0);
+    let n = 0, dmg = 0;
+    for (let i = 0; i < fx.length; i++) {
+      const e = fx[i];
+      e.t -= e.type === 'warn' ? warnDt : dt;
+      if (e.t > 0) { fx[n++] = e; if (e.type === 'dmg') dmg++; }
+    }
+    fx.length = n;
+    if (n > FX_LIMIT) {
+      let drop = n - FX_LIMIT, w = 0;
+      for (let i = 0; i < n; i++) {
+        const e = fx[i];
+        if (drop > 0 && e.type !== 'warn') { drop--; if (e.type === 'dmg') dmg--; continue; }
+        fx[w++] = e;
+      }
+      fx.length = w;
+    }
+    this.dmgFxCount = dmg;
     if (this.state !== 'play') this.resultTime = (this.resultTime || 0) + dt;
   }
 

@@ -133,6 +133,11 @@ function normalizeSave(raw) {
     if (!seasonById(s.season)) s.season = 'olympus';
     if (!Array.isArray(s.presets)) s.presets = [];
     s.presets = s.presets.slice(0, 3).map(p => Array.isArray(p) ? p.filter(id => typeof id === 'string' && UNIT_BY_ID[id]).slice(0, LOADOUT_MAX) : []);
+    // 4.18: 일일 임무가 깨졌거나(목록 없음) 패치로 사라진 임무가 남아 있으면 진군도 · 전투 끝에서 멈췄다. 다시 뽑게 비운다.
+    const dl = s.daily;
+    if (!dl || typeof dl !== 'object' || typeof dl.date !== 'string' || !Array.isArray(dl.list) ||
+        dl.list.some(m => !m || typeof m !== 'object' || !missionById(m.id))) s.daily = null;
+    else dl.list.forEach(m => { m.got = count(m.got, 0); m.claimed = m.claimed === true; });
     return s;
 }
 
@@ -367,6 +372,12 @@ let eventSel = 0;          // 이벤트 장에서 고른 전장
 let expSel = 0;            // 금화 원정에서 고른 곳 (3.7)
 let mapChapter = -1;       // -1: 진행 중인 장을 자동으로 고른다
 let mapSel = -1;           // 고른 전장
+/* 4.18: 저장을 통째로 바꾸면(초기화 · 복원) 지난 저장의 화면 선택을 잊는다 — 잠긴 7장이 열린 채 나오거나
+ * 되돌리기가 지난 저장의 편성을 새 저장에 써넣었다 */
+function resetUiState() {
+  eventSel = 0; expSel = 0; mapChapter = -1; mapSel = -1; trainSel = null;
+  if (typeof deckUndo !== 'undefined') deckUndo = null;
+}
 
 function chapterOf(i) {
   for (let c = 0; c < CHAPTERS.length; c++) {
@@ -1210,6 +1221,7 @@ function buildUnitCard(u) {
             if (save.loadout.length <= 1) { toast('최소 1개 병종은 편성해야 합니다'); return; }
             save.loadout = save.loadout.filter(id => id !== u.id);
           } else {
+            if (!heroRoom(u.id)) return;           // 4.18: 전설·신화 상한 (넘긴 병종은 전투에서 말없이 빠졌다)
             save.loadout.push(u.id);
           }
           saveGame(save);
@@ -1328,6 +1340,7 @@ function grantUnit(u) {
 }
 
 function doPull(count) {
+  if ($('#pull-result').classList.contains('show')) return;   // 4.18: 결과창 뒤 버튼에 남은 초점으로 Enter 를 누르면 또 뽑혔다
   const cost = count === 10 ? GACHA.tenPull : GACHA.stonePerPull * count;
   if (save.stones < cost) { toast('소환석이 부족합니다'); return; }
   save.stones -= cost;
@@ -1386,6 +1399,7 @@ function showPullResult(results) {
     : (best >= 3 ? '전설 강림!' : (best >= 2 ? '영웅 등장' : '소환 결과'));
   $('#pull-head').className = 'pull-head r-' + RARITY_ORDER[best];
   box.classList.add('show');
+  $('#btn-pull-close').focus({ preventScroll: true });
 }
 
 function renderGacha() {
@@ -1450,7 +1464,7 @@ function renderGacha() {
     RARITY_ORDER.slice().reverse().map(k =>
       '<div class="rate-row r-' + k + '"><span>' + RARITY[k].name + '</span><span>' +
       (RARITY[k].weight / total * 100).toFixed(1) + '%</span></div>').join('') +
-    '<div class="active-desc">신화 확정까지 ' + (GACHA.mythPity-(save.mythPity||0)) + '회 · 전설 확정까지 ' + (GACHA.pity-save.pity) + '회<br>시즌 변경 시 누적 유지 · 신화 획득 시 두 누적 초기화</div>';
+    '<div class="active-desc">신화 확정까지 ' + Math.max(0, GACHA.mythPity-(save.mythPity||0)) + '회 · 전설 확정까지 ' + Math.max(0, GACHA.pity-save.pity) + '회<br>시즌 변경 시 누적 유지 · 신화 획득 시 두 누적 초기화</div>';
 
   drawBanner(sn);
 }
@@ -1639,8 +1653,10 @@ let autoTimer = 0;
 let playAccum = 0;
 let resultTimer = null;
 function canBattleInput() {
-  return battle && battle.state === 'play' && !paused && !$('.modal.show') &&
-    $('#scr-battle').classList.contains('active');
+  // 4.18: 프레임마다 여러 번 불린다 — 선택자로 문서를 훑지 않고 살아 있는 목록을 본다
+  battleScr = battleScr || $('#scr-battle');
+  return !!battle && battle.state === 'play' && !paused && openModals.length === 0 &&
+    battleScr.classList.contains('active');
 }
 function setPaused(value) {
   paused = value;
@@ -2379,6 +2395,7 @@ function init() {
         const fresh = defaultSave();
         if (!SaveStore.write(fresh, true)) { toast(SaveStore.error); return; }
         save = fresh;
+        resetUiState();
         refreshTitleBadges();
         toast('기록을 초기화했습니다');
       });
@@ -2484,7 +2501,7 @@ function init() {
     $('#btn-retry').textContent = '다시 도전';
     const idx = !battle ? null : battle.expedition ? 'exp:' + battle.expIndex : (!battle.endless && !battle.event ? battle.stageIndex : null);
     show('scr-map');                       // 편성에서 '뒤로' 가면 진군도로 (전투 화면이 아니라)
-    openFormation(idx);
+    openFormation(idx, !!(battle && battle.hard));
   });
   $('#btn-tomap').addEventListener('click', () => {
     $('#btn-retry').textContent = '다시 도전';
@@ -2727,7 +2744,7 @@ window.receiveSaveBackup = function(raw) {
     askConfirm('진행도 복원', '전장 ' + candidate.cleared + '개 돌파 · 골드 ' + candidate.coins +
       ' · 소환석 ' + candidate.stones + '. 이 데이터로 교체할까요? 현재 저장은 자동 백업에 남깁니다.', () => {
       if (!SaveStore.write(candidate, true)) { toast(SaveStore.error); return; }
-      save=candidate;
+      save=candidate; resetUiState();
       $('#modal-save').classList.remove('show'); $('#save-warning').hidden=true;
       show('scr-title'); toast('진행도를 복원했습니다.' + (candidate._refund ? ' (3진 금화 ' + candidate._refund.gold + ' 환불)' : ''));
     });

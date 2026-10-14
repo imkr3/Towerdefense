@@ -16,11 +16,16 @@ const SaveStore = {
   },
   /* 슬롯 요약을 본다 (아무것도 고치지 않는다). 비었으면 null, 못 읽으면 {broken:true} */
   peek(n) {
-    try {
-      const raw = localStorage.getItem(this.keyOf(n)) || localStorage.getItem(this.keyOf(n) + '-backup');
-      if (!raw) return null;
-      return this.parse(raw);
-    } catch (e) { return { broken: true }; }
+    // 4.18: 본 저장이 깨졌어도 백업이 멀쩡하면 read() 처럼 백업으로 보여 준다 (예전엔 '손상'으로 떴다)
+    let main = null, back = null;
+    try { main = localStorage.getItem(this.keyOf(n)); back = localStorage.getItem(this.keyOf(n) + '-backup'); }
+    catch (e) { return { broken: true }; }
+    if (!main && !back) return null;
+    for (const raw of [main, back]) {
+      if (!raw) continue;
+      try { return this.parse(raw); } catch (e) { /* 다음 후보 */ }
+    }
+    return { broken: true };
   },
   blocked: false, recovered: false, error: '',
   validate(s) {

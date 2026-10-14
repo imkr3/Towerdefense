@@ -97,6 +97,17 @@ class GLFx {
     // 합성식이 포화형이어서 1 을 넘겨도 흰 덩어리로 터지지는 않는다.
     this.gain = 1.15;
     this.ok = this._init();
+    // 4.18: GPU 초기화 · 백그라운드 탭에서 컨텍스트를 잃으면 Canvas2D 로 물러났다가 되살아나면 다시 쓴다.
+    // 예전엔 ok 가 true 로 남아 필살 연출이 통째로 사라졌다.
+    canvas.addEventListener('webglcontextlost', e => {
+      e.preventDefault();
+      this.ok = false; this.count = 0;
+    });
+    canvas.addEventListener('webglcontextrestored', () => {
+      this.count = 0; this._empty = false;
+      this.ok = this._init();
+      if (this.ok) this.resize(this.w, this.h, this.dpr);
+    });
   }
 
   _init() {
@@ -123,8 +134,10 @@ class GLFx {
     const prog = gl.createProgram();
     gl.attachShader(prog, vs); gl.attachShader(prog, fs);
     gl.linkProgram(prog);
+    gl.deleteShader(vs); gl.deleteShader(fs);   // 프로그램에 붙어 있는 동안은 살아 있다
     if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
       this.error = gl.getProgramInfoLog(prog);
+      gl.deleteProgram(prog);
       return false;
     }
     this.prog = prog;
@@ -295,7 +308,8 @@ class GLFx {
       o[q + 5] = d[b + P_R];
       o[q + 6] = d[b + P_G];
       o[q + 7] = d[b + P_B];
-      o[q + 8] = d[b + P_A] * Math.pow(1 - t, d[b + P_FADE]);
+      const u = 1 - t, fe = d[b + P_FADE];
+      o[q + 8] = d[b + P_A] * (fe === 1 ? u : fe === 2 ? u * u : Math.pow(u, fe));
     }
 
     gl.useProgram(this.prog);

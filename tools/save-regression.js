@@ -117,4 +117,21 @@ test('4.4: trial records are cleaned when a save is loaded',()=>{
   ctx.raw=old;const fresh=vm.runInContext('normalizeSave(raw)',ctx);
   assert.deepEqual(JSON.parse(JSON.stringify([fresh.best,fresh.perfect,fresh.life])),[{},{},{}],'old saves start empty');
 });
+test('4.18: slot preview falls back to a valid backup when the primary is corrupted',()=>{
+  const {store:s,data}=fixture();data.set(s.keyOf(1),'broken');data.set(s.keyOf(1)+'-backup',JSON.stringify(old));
+  assert.equal(s.peek(1).cleared,13);
+  data.set(s.keyOf(1)+'-backup','broken too');assert.equal(s.peek(1).broken,true);
+});
+test('4.18: damaged daily missions are dropped so they are rolled again',()=>{
+  const src=fs.readFileSync('js/main.js','utf8');
+  const grab=name=>{const i=src.indexOf('function '+name+'(');const j=src.indexOf('\n}\n',i);return src.slice(i,j+3);};
+  const ctx=vm.createContext({console});vm.runInContext(fs.readFileSync('js/data.js','utf8'),ctx);
+  vm.runInContext(grab('defaultSave')+grab('normalizeSave'),ctx);
+  const id=vm.runInContext('MISSION_DEFS[0].id',ctx);
+  for(const daily of [{date:'2026-1-1'},{date:'2026-1-1',list:[{id:'gone',got:1,claimed:false}]},{list:[]},'x'])
+    {ctx.raw={...old,daily};assert.equal(vm.runInContext('normalizeSave(raw)',ctx).daily,null);}
+  ctx.raw={...old,daily:{date:'2026-1-1',list:[{id,got:'7',claimed:1}]}};
+  const d=vm.runInContext('normalizeSave(raw)',ctx).daily;
+  assert.equal(d.list[0].got,7);assert.equal(d.list[0].claimed,false);
+});
 console.log(n+' save protection checks passed');

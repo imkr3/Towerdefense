@@ -1788,4 +1788,21 @@ test('4.18: save keeps 4th forms only where the 3rd exists; hardcore saturates o
   for (const st of H.EVENT_STAGES) assert.ok((H.EVENT_TOUGH[st.event.id] || [1])[0] > 1, st.event.id + ' tougher');
 });
 
+test('4.18 check: strike warnings run on battle time, stronger haste is kept, splash castle damage is credited, enemy pierce spares the ally castle', () => {
+  const b = battle(); b.speed = 3;
+  const boss = b.spawnEnemy('ogre', 900); b.queueStrike(boss, { x: 500, r: 100, dmg: 1, warn: 1.5 });
+  const warn = b.fx.find(e => e.type === 'warn'), strike = b.pending[0];
+  for (let i = 0; i < 10; i++) b.update(1 / 30);
+  assert.ok(Math.abs(warn.t - strike.t) < 1e-6, 'warn circle and strike stay in step at 3x');
+  const t0 = warn.t; b.updateFx(0.5); assert.equal(warn.t, t0, 'paused: the warning waits like the strike');
+  const a = b.makeAlly(U.spear, 400); b.allies.push(a); a.hasteT = 5; a.hasteMul = 0.4;
+  b.cmdUsed = false; b.cmdCd = 0; assert.ok(b.useCommand(), 'command fires'); assert.equal(a.hasteMul, 0.4, 'king\'s command keeps the stronger haste');
+  const c = battle(), src = c.makeAlly(U.catapult, c.enemyCastle.x - 50);
+  c.areaHit(100, c.enemyCastle.x, 80, c.enemies, c.enemyCastle, src, false);
+  assert.equal(c.meter.catapult.dmg, 100, 'splash damage on the fort is credited');
+  const d = battle(), hp = d.allyCastle.hp;
+  d.pierceHit({ x: d.allyCastle.x + 300, tx: d.allyCastle.x, side: 'enemy', dmg: 50, src: null, toCastle: false, y0: 0 });
+  assert.equal(d.allyCastle.hp, hp, 'enemy pierce aimed at soldiers does not hit the castle');
+});
+
 console.log(count + ' regression checks passed');

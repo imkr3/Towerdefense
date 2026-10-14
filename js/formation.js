@@ -19,8 +19,10 @@ let fmFilter = 'all';
 let fmFocus = null;           // 오른쪽에 정보를 띄울 병종
 let fmDrag = null;
 
-function openFormation(target) {
+let fmHard = false;           // 4.18: 하드코어 패배 뒤 '편성 바꾸기' 로 왔으면 출진도 하드코어로
+function openFormation(target, hard) {
   fmTarget = (target === undefined) ? null : target;
+  fmHard = !!hard && typeof fmTarget === 'number';
   const active = document.querySelector('.screen.active');
   fmBack = active && active.id !== 'scr-formation' ? active.id : 'scr-map';
   show('scr-formation');
@@ -420,7 +422,7 @@ function renderFormationSide() {
       if (fmTarget === 'endless') startEndless();
       else if (evk >= 0) startEvent(evk);
       else if (exk >= 0) startExpedition(exk);
-      else startBattle(fmTarget);
+      else startBattle(fmTarget, fmHard);
     });
     side.appendChild(go);
   }

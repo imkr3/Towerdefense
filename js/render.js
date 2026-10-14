@@ -355,7 +355,8 @@ class Renderer {
   drawSandstorm(battle) {
     const want = battle.storming ? 1 : 0, cur = this._storm || 0;
     if (!want && !cur) return;
-    const k = this._storm = cur + Math.max(-0.04, Math.min(0.04, want - cur));
+    const step = 2.4 * (this._fdt || 0.016);          // 4.18: 초당 같은 속도 (30fps 에서 두 배 느리던 것)
+    const k = this._storm = cur + Math.max(-step, Math.min(step, want - cur));
     if (k <= 0.001) { this._storm = 0; return; }
     const ctx = this.ctx, W = this.w, H = this.h, t = this.clock || 0, q = this.fxq < 0.5 ? 0.5 : 1;
     ctx.save();
@@ -798,9 +799,10 @@ class Renderer {
     // 3.2 이벤트 보스: 안개화 중엔 반투명
     // 4.11 홀림불: 가까이 다가가기 전엔 흐릿하다 (멀리서 쏠 수 없다는 표시)
     const veiled = f.veilT > 0 || (f.ab.glamour && !f.unveiled);
+    const alpha0 = ctx.globalAlpha;                   // 4.18: 출진 중 서서히 나타나는 투명도를 지우지 않게
     if (veiled) ctx.globalAlpha *= (f.veilT > 0 ? 0.32 : 0.4) + Math.sin(clk * 6) * 0.06;
     drawBody(ctx, f.s, s, false, f.kbTimer > 0, f.bob, moving, atk, wind, won);
-    if (veiled) ctx.globalAlpha = 1;
+    if (veiled) ctx.globalAlpha = alpha0;
     MODEL.blink = false; MODEL.angry = false;
     // 맞은 순간의 흰 번쩍임은 몸을 한 번 더 그린다. 빽빽할 땐(자동 품질) 건너뛴다 — 움찔(recoil)과 피해 숫자로 충분하다
     if (f.hitFlash > 0 && !this.crowded) {
@@ -1178,9 +1180,12 @@ class Renderer {
 
   drawFx(battle) {
     const ctx = this.ctx, cs = this.cs;
+    const W = this.w, zoom = this.zoom;
     for (const e of battle.fx) {
       const p = e.t / e.life;
       const x = this.screenX(e.x);
+      // 4.18: 한 점에 그리는 연출은 화면 밖이면 건너뛴다 (두 점 · 화면 전체 · GL 을 한 번 쏘는 연출은 제외)
+      if (FX_LOCAL[e.type] && (x < -320 - (e.r || 0) * zoom || x > W + 320 + (e.r || 0) * zoom)) continue;
       const y = this.rowY(e.row || 0) - 28 * cs;
       if(e.type==='mythic') {
         const k=1-p, radius=Math.min(e.r*this.zoom,260*cs), ground=this.rowY(e.row);
@@ -1556,7 +1561,7 @@ class Renderer {
         const k = 1 - p, ease = 1 - Math.pow(1 - Math.min(1, k / 0.6), 3);
         const rise = ease * 34 * cs + (e.dy || 0);
         let pop = k < 0.12 ? 1 + (k / 0.12) * 0.45 : 1.45 - Math.min(0.45, (k - 0.12) * 3);
-        if (e.bump > 0) { pop += e.bump * 2.5; e.bump = Math.max(0, e.bump - 0.016); }   // 4.13 합쳐질 때 한 번 더 튄다
+        if (e.bump > 0) { pop += e.bump * 2.5; e.bump = Math.max(0, e.bump - (this._fdt || 0.016)); }   // 4.13 합쳐질 때 한 번 더 튄다
         const jx = e.crit && k < 0.3 ? Math.sin(k * 90) * 2 * cs : 0;
         ctx.globalAlpha = Math.min(1, p * 2.5);
         ctx.font = 'bold ' + Math.round((e.crit ? 18 : 13) * cs * pop) + 'px sans-serif';
@@ -2898,8 +2903,25 @@ class Renderer {
     }
   }
 
+  /* 4.18: 그리다가 한 번이라도 예외가 나면 save 가 풀리지 않은 채 쌓이고(흔들림 이동이 누적돼 화면이 흘러간다),
+   * 그 프레임 뒤의 HUD · 결과 처리까지 건너뛰었다. 상태를 되돌리고 같은 오류는 한 번만 알린다. */
   render(battle, dt, fxDt) {
+    try { this.renderFrame(battle, dt, fxDt); }
+    catch (e) {
+      const ctx = this.ctx;
+      ctx._wrap = false; ctx._shadeRect = false; ctx._depth = false; ctx._noInk = false; ctx._skipInk = false;
+      if (typeof ctx.reset === 'function') ctx.reset();
+      else for (let i = 0; i < 64; i++) ctx.restore();
+      const dpr = this.cv.width / (this.w || 1);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const msg = String(e && e.stack || e);
+      if (this._lastErr !== msg) { this._lastErr = msg; console.error(e); }
+    }
+  }
+
+  renderFrame(battle, dt, fxDt) {
     this.trackFrame(dt);
+    this._fdt = Math.min(0.1, dt || 0);
     this.outcome = battle.state === 'win' ? 'win' : (battle.state === 'play' ? null : 'lose');
     this._battle = battle;
     this.clock = (this.clock || 0) + dt;             // 전투가 끝나 시간이 멈춰도 도는 시계
@@ -3117,34 +3139,34 @@ function x3Wheel(S, x, y, r, rot, tire, rim) {
 function x3Glow(S, x, y, r, color, a) {
   if (S.flash || a <= 0) return;
   const { ctx } = S;
-  ctx.save(); ctx._skipInk = true;
+  const ink0 = ctx._skipInk; ctx.save(); ctx._skipInk = true;
   ctx.globalCompositeOperation = 'lighter';
   ctx.globalAlpha *= Math.min(1, a);
   ctx.fillStyle = color;
   ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
   ctx.globalAlpha *= 0.45;
   ctx.beginPath(); ctx.arc(x, y, r * 1.9, 0, 7); ctx.fill();
-  ctx.restore(); ctx._skipInk = false;
+  ctx.restore(); ctx._skipInk = ink0;   // 4.18: 바깥 블록의 잉크 끔을 되살리지 않게
 }
 /* 연기 한 줌 */
 function x3Puff(S, x, y, r, a, color) {
   if (S.flash || !S.live || a <= 0.01) return;
   const { ctx } = S;
-  ctx.save(); ctx._skipInk = true; ctx.globalAlpha *= Math.min(0.85, a);
+  const ink0 = ctx._skipInk; ctx.save(); ctx._skipInk = true; ctx.globalAlpha *= Math.min(0.85, a);
   ctx.fillStyle = color || '#d8d8d8';
   ctx.beginPath();
   ctx.arc(x, y, r, 0, 7); ctx.arc(x + r * 0.75, y + r * 0.25, r * 0.7, 0, 7); ctx.arc(x - r * 0.65, y + r * 0.3, r * 0.6, 0, 7);
   ctx.fill();
-  ctx.restore(); ctx._skipInk = false;
+  ctx.restore(); ctx._skipInk = ink0;   // 4.18: 바깥 블록의 잉크 끔을 되살리지 않게
 }
 /* 4.7 홀로그램 대마도사: 떠다니는 반투명 룬 판 (화면이 아니라 몸 좌표) */
 function holoPanel(ctx, s, x, y, a, acc) {
-  ctx.save(); ctx._skipInk = true; ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha *= a;
+  const ink0 = ctx._skipInk; ctx.save(); ctx._skipInk = true; ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha *= a;
   ctx.fillStyle = acc; ctx.globalAlpha *= 0.22; ctx.fillRect(x - 6 * s, y - 8 * s, 12 * s, 16 * s);
   ctx.globalAlpha /= 0.22; ctx.strokeStyle = acc; ctx.lineWidth = 1 * s; ctx.strokeRect(x - 6 * s, y - 8 * s, 12 * s, 16 * s);
   ctx.beginPath(); ctx.moveTo(x - 3 * s, y - 4 * s); ctx.lineTo(x + 3 * s, y - 4 * s); ctx.moveTo(x, y - 4 * s); ctx.lineTo(x, y + 4 * s);
   ctx.moveTo(x - 3 * s, y + 1 * s); ctx.lineTo(x + 2 * s, y + 4 * s); ctx.stroke();
-  ctx.restore(); ctx._skipInk = false;
+  ctx.restore(); ctx._skipInk = ink0;   // 4.18: 바깥 블록의 잉크 끔을 되살리지 않게
 }
 /* 4.7 제트팩 발키리: 제트팩에서 위로 펼친 금속 깃 날개 하나 (back 이면 뒤쪽, 어둡게) */
 function valkWing(S, t, back) {
@@ -3249,8 +3271,11 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
   const autoInk = MODEL.ink && !flash;
   const depthOn = !flash && MODEL.depth;
   const wrapped = autoInk || depthOn;                // 4.2: 잉크가 꺼져도 그림자를 다루려고 감싼다
-  if (wrapped) { ctx.fill = inkedFill; ctx.stroke = inkedStroke; ctx._inkW = 0.95 * s; ctx._noInk = !autoInk; ctx._depth = depthOn; }
-  if (depthOn) ctx.fillRect = shadedFillRect;        // 4.5: 사각형도 같은 그림자 규칙으로
+  // 4.18: 감싼 메서드는 컨텍스트마다 한 번만 붙이고 깃발로 켜고 끈다. 예전엔 병사마다 붙였다 delete 해서
+  // 컨텍스트 객체가 느린 사전 모드로 떨어져 렌더러의 모든 ctx.* 호출이 느려졌다.
+  if (!ctx._wrapped) installWrap(ctx);
+  if (wrapped) { ctx._wrap = true; ctx._inkW = 0.95 * s; ctx._noInk = !autoInk; ctx._depth = depthOn; }
+  if (depthOn) ctx._shadeRect = true;                // 4.5: 사각형도 같은 그림자 규칙으로
   if (HUMANOID[st.shape]) armSwing(S);
   if (st.evo && !st.bigEvo) (NO_CAPE[st.shape] ? evoBanner : evoCape)(S);   // 진화: 등 뒤로 망토, 기계·짐승은 군기
 
@@ -8797,8 +8822,8 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
 
   if (st.evo) evoCrest(S);                        // 진화: 머리 위 금빛 문장
 
-  if (wrapped) { delete ctx.fill; delete ctx.stroke; ctx._depth = false; ctx._noInk = false; }
-  if (depthOn) delete ctx.fillRect;
+  if (wrapped) { ctx._wrap = false; ctx._depth = false; ctx._noInk = false; }
+  if (depthOn) ctx._shadeRect = false;
 
   if (hurt) {
     ctx.strokeStyle = 'rgba(255,255,255,.8)';
@@ -8961,6 +8986,15 @@ function inkedFill(a) {
   if (a && typeof a === 'object') _stroke0.call(this, a); else _stroke0.call(this);
   this.strokeStyle = ss; this.lineWidth = lw;
 }
+function installWrap(ctx) {
+  ctx._wrap = false; ctx._shadeRect = false; ctx._depth = false; ctx._noInk = false; ctx._skipInk = false; ctx._inkW = 1;
+  ctx.fill = function () { return this._wrap ? inkedFill.apply(this, arguments) : _fill0.apply(this, arguments); };
+  ctx.stroke = function () { return this._wrap ? inkedStroke.apply(this, arguments) : _stroke0.apply(this, arguments); };
+  ctx.fillRect = function (x, y, w, h) { return this._shadeRect ? shadedFillRect.call(this, x, y, w, h) : _fillRect0.call(this, x, y, w, h); };
+  ctx._wrapped = true;
+}
+const FX_LOCAL = { release: 1, warn: 1, aura: 1, charm: 1, coin: 1, miss: 1,          // GL 파티클을 쏘지 않는 것만
+  bell: 1, reap: 1, chill: 1, stun: 1, dmg: 1, rally: 1 };
 const MODEL = { depth: true, ink: true, blink: false, time: 0, angry: false };
 const _shadeCache = {};
 function shade(hex, k) {                     // k<0 어둡게, k>0 밝게
@@ -10657,7 +10691,7 @@ const LOOK_LAYERS = {
   } },
   /* 달빛 숲 바닥의 빛나는 꽃 */
   glowFlowers: { z: 'back', fn: (R, ctx, pal, cam) => {
-    const gy = R.groundY, t = MODEL.time;
+    const gy = R.groundY, t = R.clock || 0;
     repL(R, cam, 0.5, 54, (x, k) => {
       const h = 14 + _h(k) * 22, c = k % 3 === 0 ? '160,230,255' : k % 3 === 1 ? '255,170,230' : '200,255,200';
       ctx.strokeStyle = shade(pal.prop, 0.25); ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(x, gy); ctx.quadraticCurveTo(x + 5, gy - h * 0.5, x + 2, gy - h); ctx.stroke();
@@ -10698,7 +10732,7 @@ const LOOK_LAYERS = {
   } },
   /* 왕가의 계곡: 절벽에 새긴 무덤 문 */
   tombCliffs: { z: 'far', fn: (R, ctx, pal, cam) => {
-    const gy = R.groundY, t = MODEL.time;
+    const gy = R.groundY, t = R.clock || 0;
     repL(R, cam, 0.18, 420, (x, k) => {
       const hh = gy * (0.42 + _h(k) * 0.16), w = 150;
       ctx.fillStyle = shade(pal.ridgeFar, -0.08); ctx.fillRect(x - w / 2, gy - hh, w, hh);
@@ -10713,7 +10747,7 @@ const LOOK_LAYERS = {
   } },
   /* 묘실 천장에서 쏟아지는 모래 폭포 */
   sandFalls: { z: 'back', fn: (R, ctx, pal, cam) => {
-    const gy = R.groundY, t = MODEL.time;
+    const gy = R.groundY, t = R.clock || 0;
     repL(R, cam, 0.36, 330, (x, k) => {
       const w = 10 + _h(k) * 14;
       ctx.fillStyle = 'rgba(230,190,120,.5)'; ctx.fillRect(x - w / 2, 0, w, gy);
@@ -10724,7 +10758,7 @@ const LOOK_LAYERS = {
   } },
   /* 오아시스: 야자수 그림자 */
   oasisPalms: { z: 'back', fn: (R, ctx, pal, cam) => {
-    const gy = R.groundY, t = MODEL.time, col = shade(pal.prop, 0.1), leaf = '#4a7a3a';
+    const gy = R.groundY, t = R.clock || 0, col = shade(pal.prop, 0.1), leaf = '#4a7a3a';
     repL(R, cam, 0.42, 150, (x, k) => {
       const hh = 70 + _h(k) * 60, lean = (_h(k + 4) - 0.5) * 40, tx = x + lean, ty = gy - hh, sw = Math.sin(t * 1.2 + k) * 3;
       ctx.strokeStyle = col; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x, gy); ctx.quadraticCurveTo(x + lean * 0.2, gy - hh * 0.5, tx, ty); ctx.stroke();
@@ -10737,7 +10771,7 @@ const LOOK_LAYERS = {
   } },
   /* 반짝이는 오아시스 물웅덩이 */
   oasisPool: { z: 'ground', fn: (R, ctx, pal, cam) => {
-    const gy = R.groundY, t = MODEL.time;
+    const gy = R.groundY, t = R.clock || 0;
     repL(R, cam, R.zoom, 700, (x, k) => {
       const w = 110 + _h(k) * 60, y = gy + 26;
       ctx.fillStyle = 'rgba(60,150,170,.55)'; ctx.beginPath(); ctx.ellipse(x, y, w, 9, 0, 0, 7); ctx.fill();
@@ -10955,26 +10989,28 @@ const PROP_DRAW = {
 /* 날씨: 매 프레임 시간으로만 계산한다 (상태를 들고 다니지 않는다) */
 function wx(i, t, speed, W) { return ((_h(i) * W * 1.4 + t * speed) % W + W) % W; }
 const WEATHER = {
+  /* 4.18: 같은 색의 빗줄기 · 눈송이는 경로 하나에 모아 한 번에 긋는다 (눈보라는 프레임당 150번 → 1번) */
   /* 3.3 바다 날씨 */
   /* 4.0 하늘 바람: 옆으로 흐르는 바람결 */
-  wind: (c, W, H, gy, t, cam, q) => { c.strokeStyle = 'rgba(255,255,255,.45)'; c.lineWidth = 1.3; for (let i = 0; i < 22 * q; i++) {
+  wind: (c, W, H, gy, t, cam, q) => { c.strokeStyle = 'rgba(255,255,255,.45)'; c.lineWidth = 1.3; c.beginPath(); for (let i = 0; i < 22 * q; i++) {
       const L = 30 + _h(i + 3) * 50, x = ((_h(i) * W * 1.5 - t * (260 + _h(i + 7) * 160) - cam * 0.4) % (W + 120) + W + 120) % (W + 120) - 60, y = _h(i + 11) * H * 0.85;
-      c.beginPath(); c.moveTo(x, y); c.quadraticCurveTo(x + L * 0.5, y - 4, x + L, y); c.stroke(); } },
-  rain: (c, W, H, gy, t, cam, q) => { c.strokeStyle = 'rgba(200,215,235,.55)'; c.lineWidth = 1.2; for (let i = 0; i < 120 * q; i++) {
+      c.moveTo(x, y); c.quadraticCurveTo(x + L * 0.5, y - 4, x + L, y); } c.stroke(); },
+  rain: (c, W, H, gy, t, cam, q) => { c.strokeStyle = 'rgba(200,215,235,.55)'; c.lineWidth = 1.2; c.beginPath(); for (let i = 0; i < 120 * q; i++) {
       const x = ((_h(i) * W * 1.3 - t * 140 - cam * 0.3) % (W + 40) + W + 40) % (W + 40) - 20, y = ((_h(i + 9) * H + t * (520 + _h(i + 4) * 160)) % H);
-      c.beginPath(); c.moveTo(x, y); c.lineTo(x - 4, y + 14); c.stroke(); } },
-  bubbles: (c, W, H, gy, t, cam, q) => { c.strokeStyle = 'rgba(200,245,255,.55)'; c.lineWidth = 1.1; for (let i = 0; i < 30 * q; i++) {
+      c.moveTo(x, y); c.lineTo(x - 4, y + 14); } c.stroke(); },
+  bubbles: (c, W, H, gy, t, cam, q) => { c.strokeStyle = 'rgba(200,245,255,.55)'; c.lineWidth = 1.1; c.beginPath(); for (let i = 0; i < 30 * q; i++) {
       const x = (_h(i) * W + Math.sin(t * 1.4 + i) * 10 - cam * 0.2 % W + W) % W, y = gy - ((t * (24 + _h(i + 3) * 30) + _h(i + 9) * gy) % gy);
-      c.beginPath(); c.arc(x, y, 1.5 + _h(i + 1) * 2.5, 0, 7); c.stroke(); } },
+      const r = 1.5 + _h(i + 1) * 2.5; c.moveTo(x + r, y); c.arc(x, y, r, 0, 7); } c.stroke(); },
   spray: (c, W, H, gy, t, cam, q) => { c.fillStyle = 'rgba(235,248,255,.6)'; for (let i = 0; i < 26 * q; i++) {
       const x = wx(i, t, 40 + _h(i + 2) * 40, W + 40) - 20, y = gy - 20 - ((_h(i + 9) * 80 + t * 30 + Math.sin(t * 2 + i) * 10) % 80);
       c.fillRect(x, y, 2, 1.4); } },
-  snow: (c, W, H, gy, t, cam, q) => { c.fillStyle = 'rgba(255,255,255,.85)'; for (let i = 0; i < 80 * q; i++) {
+  snow: (c, W, H, gy, t, cam, q) => { c.fillStyle = 'rgba(255,255,255,.85)'; c.beginPath(); for (let i = 0; i < 80 * q; i++) {
       const x = (wx(i, t, -8 - _h(i + 3) * 10, W + 40) + Math.sin(t * 1.3 + i) * 8 - cam * 0.2 % (W + 40) + W + 40) % (W + 40) - 20, y = ((_h(i + 9) * H + t * (28 + _h(i + 5) * 30)) % H);
-      c.beginPath(); c.arc(x, y, 1 + _h(i + 1) * 1.8, 0, 7); c.fill(); } },
-  blizzard: (c, W, H, gy, t, cam, q) => { c.strokeStyle = 'rgba(255,255,255,.7)'; c.lineWidth = 1.4; for (let i = 0; i < 150 * q; i++) {
+      const r = 1 + _h(i + 1) * 1.8; c.moveTo(x + r, y); c.arc(x, y, r, 0, 7); } c.fill(); },
+  blizzard: (c, W, H, gy, t, cam, q) => { c.strokeStyle = 'rgba(255,255,255,.7)'; c.lineWidth = 1.4; c.beginPath(); for (let i = 0; i < 150 * q; i++) {
       const x = ((_h(i) * W * 1.5 - t * (260 + _h(i + 2) * 160)) % (W + 60) + W + 60) % (W + 60) - 30, y = ((_h(i + 9) * H + t * (90 + _h(i + 4) * 40)) % H);
-      c.beginPath(); c.moveTo(x, y); c.lineTo(x + 9, y - 3); c.stroke(); }
+      c.moveTo(x, y); c.lineTo(x + 9, y - 3); }
+    c.stroke();
     c.fillStyle = 'rgba(230,236,242,.12)'; c.fillRect(0, 0, W, H); },
   embers: (c, W, H, gy, t, cam, q) => { for (let i = 0; i < 44 * q; i++) {
       const x = (wx(i, t, 6 + _h(i + 2) * 10, W) + Math.sin(t * 2 + i) * 6), y = H - ((_h(i + 9) * H + t * (30 + _h(i + 4) * 40)) % H);

@@ -386,7 +386,7 @@ body{
 }
 .pick.owned{opacity:1; border-color:#fff;}
 .pick canvas{display:block; margin:0 auto;}
-.pick-name{font-size:9.5px; font-weight:900; color:#fff; line-height:1.1;}
+.pick-name{font-size:9.5px; font-weight:900; color:#fff; line-height:1.1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
 .pick-rarity{font-size:8.5px; font-weight:800; color:#ffe9a8;}
 .pick.r-SSR{border-color:#e8a020;}
 .pick.r-SR{border-color:#c99ae8;}
