@@ -394,6 +394,25 @@ async function runSize(browser, size) {
   console.log('\n  브라우저 스모크 테스트');
   console.log('  ' + '-'.repeat(58));
   for (const s of SIZES) await runSize(browser, s);
+  // 4.14: 모든 병종 · 진화 · 적 · 전장 · 업적 · 시즌 문구가 영어로 옮겨지는지 (4.11 에서 한 줄이 지워져 모르가나 진화명이 한글로 남았다)
+  {
+    const page = await browser.newPage();
+    await page.goto('file://' + path.join(__dirname, '..', 'index.html'));
+    await page.evaluate(() => localStorage.setItem('stick-kingdom-settings-v1', JSON.stringify({ lang: 'en' })));
+    await page.reload(); await page.waitForTimeout(300);
+    const miss = await page.evaluate(() => {
+      const out = new Set(); const chk = x => { if (typeof x === 'string' && /[가-힣]/.test(x) && /[가-힣]/.test(t(x))) out.add(x); };
+      for (const u of UNITS) { chk(u.name); chk(u.short); chk(u.role); chk(u.abText); chk(u.desc); if (u.active) { chk(u.active.name); chk(u.active.desc); } }
+      for (const E of [EVOLUTIONS, EVOLUTIONS2]) for (const k in E) { chk(E[k].name); chk(E[k].short); chk(E[k].plus); }
+      for (const k in ENEMIES) { const e = ENEMIES[k]; chk(e.name); chk(e.abText); if (e.special) chk(e.special.name); (e.phases || []).forEach(q => { chk(q.name); if (q.special) chk(q.special.name); }); }
+      STAGES.concat(EVENT_STAGES).forEach(s => { chk(s.name); chk(s.hint); if (s.event) chk(s.event.mech); });
+      ACHIEVEMENTS.forEach(a => { chk(a.name); chk(a.desc); }); SEASONS.forEach(s => { chk(s.name); chk(s.sub); chk(s.desc); });
+      return [...out];
+    });
+    if (miss.length) failures.push('영어 번역이 빠진 문구 ' + miss.length + '개: ' + JSON.stringify(miss.slice(0, 8)));
+    else console.log('  ✓ 데이터 문구 전부 영어로 옮겨짐');
+    await page.close();
+  }
   await browser.close();
   console.log('  ' + '-'.repeat(58));
   if (failures.length) {

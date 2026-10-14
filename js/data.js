@@ -1312,7 +1312,7 @@ const ENEMIES = {
                 { at: 0.45, t: 'roar',   name: '포자 폭풍', r: 440, stun: 1.0, push: 110 },
                 { at: 0.15, t: 'enrage', name: '균사의 분노', atk: 1.3, rate: 0.75, speed: 1.3 }
               ] },
-  faequeen: { name: '요정 여왕', body: '#f8e8ff', accent: '#7ae8ff', tunic: '#a86ae8', shape: 'faequeen',
+  faequeen: { name: '달빛 요정 여왕', body: '#f8e8ff', accent: '#7ae8ff', tunic: '#a86ae8', shape: 'faequeen',
               hp: 38000, atk: 960, range: 260, speed: 18, interval: 2.2, kb: 1, gold: 2300, ranged: true,
               area: true, areaRadius: 140, scale: 2.0, boss: true,
               ab: { kbImmune: true, dodge: 0.2 },
