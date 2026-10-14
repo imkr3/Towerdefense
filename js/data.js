@@ -2144,7 +2144,8 @@ STAGES[ACT5_FROM - 1].bossMusic = 'finale3';      // 4막의 끝 (4.0)
 STAGES[ACT6_FROM - 1].bossMusic = 'finale4';      // 5막의 끝 (4.6)
 STAGES[ACT7_FROM - 1].bossMusic = 'finale5';      // 6막의 끝 (4.11)
 STAGES[STAGES.length - 1].bossMusic = 'finale6';
-STAGES[79].hardSoft = 0.8; STAGES[79].hardBoss = 0.7; STAGES[75].hardSoft = 0.85; STAGES[75].hardBoss = 0.75;   // 4.18 하드코어 7막의 끝: 되살아나는 파라오 앞에서 다 키운 편성도 무너졌다 — 이 전장만 배율을 조금 덜어 준다   // 7막의 끝 (4.15)
+STAGES.forEach((st, i) => { if (i < 50) st.hardRatio = i === 37 ? 1 : 1.3; });   // 4.18 하드코어 적 배율 바닥: 1~5막은 전장의 1.3배 이상 (38전장 기습은 1배), 6~7막은 0.8배 이상 — 다 키운 편성이 겨우 넘는 곳이라 요새·성채·보스·특성으로 어렵게
+STAGES[79].hardSoft = 0.65; STAGES[79].hardBoss = 0.7; STAGES[75].hardSoft = 0.85; STAGES[75].hardBoss = 0.75;   // 4.18 하드코어 7막의 끝: 되살아나는 파라오 앞에서 다 키운 편성도 무너졌다 — 이 전장만 배율을 조금 덜어 준다   // 7막의 끝 (4.15)
 
 /* 전장 길이. 예전엔 모두 2000 이라 병사가 적과 부딪히기까지 40초 넘게 걸어야 했다.
  * 초반은 짧게 붙고, 뒤로 갈수록·보스 전장일수록 조금씩 길어진다. */
@@ -2259,7 +2260,7 @@ EVENT_STAGES.push(
 /* 4.18: 다 키운 편성이면 도전 여덟이 모두 성채 100% 로 끝났다 (하드코어보다 쉽다는 말이 맞았다).
  * 도전을 더 억세게: 적 배율 · 보스 체력에 곱한다.
    * 도전마다 여유가 달라(앞의 다섯은 넉넉, 뒤의 셋은 빠듯) 따로 맞춘다: [적 배율, 보스 체력] */
-const EVENT_TOUGH = { eclipse: [2.1, 2.1], titan: [2, 2], fleet: [2.1, 2.1], rift: [1.75, 1.75], demonking: [2, 2],
+const EVENT_TOUGH = { eclipse: [2.1, 2.1], titan: [2, 2], fleet: [1.85, 1.85], rift: [1.5, 1.55], demonking: [2, 2],
                       train: [1.45, 1.45], masque: [1.45, 1.45], hourglass: [1.45, 1.45] };
 EVENT_STAGES.forEach((st, k) => {
   st.eventIndex = k; st.opening = 'rush';
@@ -3258,13 +3259,13 @@ const HARDCORE = { enemyMul: 4.6, fortMul: 2.4, castleMul: 0.6, cmdMul: 1.5, rew
                    boss: { hp: 2, atk: 1.2 },     // 4.18: 3.3 → 2 (7막 끝 보스 셋이 다 키워도 넘을 수 없었다)
                    fury: { per30: 0.15, max: 1.5 },   // 3.1: 오래 끌수록 새로 나오는 적이 억세진다 (최대 2.5배)
                    // 앞쪽 전장도 모질게: 적 배율과 요새 체력에 바닥을 깐다 (2막 초입 수준)
-                   mulFloor: 6.9, fortFloor: 50000, soft: 4, sally: 0.5,
+                   mulFloor: 6.9, fortFloor: 50000, soft: 4, sally: 0.5, minRatio: 0.8,
                    twists: ['blitz', 'horde', 'ironclad', 'curse'] };
 /* 4.4 각성 경계: 도전(하드코어 · 이벤트)에서는 편성한 3진 하나마다 적이 6%씩 억세진다 (3진은 체력·공격 ×1.35) */
 const AWAKEN_TAX = 0.06;
 /* 4.18: 전장 배율이 큰 뒤쪽 전장은 하드코어 배율이 누그러진다 (m / (1 + m/soft)). 예전엔 7막(배율 16~59)에 ×4.6 을 그대로 곱해
  * ×270 까지 올라 다 키운 편성도 30초 안에 성채가 무너졌다 — 어려운 게 아니라 깰 수 없었다. 앞쪽 전장은 거의 그대로다. */
-function hardcoreEnemyMul(st) { const m = st.enemyMul || 1; return Math.max(HARDCORE.enemyMul * m / (1 + m / HARDCORE.soft) * (st.hardSoft || 1), HARDCORE.mulFloor); }
+function hardcoreEnemyMul(st) { const m = st.enemyMul || 1; return Math.max(Math.max(HARDCORE.enemyMul * m / (1 + m / HARDCORE.soft), m * (st.hardRatio || HARDCORE.minRatio)) * (st.hardSoft || 1), HARDCORE.mulFloor); }
 function hardcoreFortHp(st) { return Math.max(Math.round(st.baseHp * HARDCORE.fortMul), HARDCORE.fortFloor); }
 function hardcoreMods(st, i) {
   const base = (st && st.mods) || [];

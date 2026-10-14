@@ -327,16 +327,10 @@ const EXP_EXPECT = [
   { up: 5, lv: 9,  min: 4, minRate: 650, maxRate: 1400 },
   { up: 8, lv: 12, min: 4, minRate: 1800, maxRate: 3000 }
 ];
-const EVENT_EXPECT = { up: 10, lv: 15, naiveMax: 4, timedMin: 6 };   // 이벤트 전장 기대치 (3.2) · 3.9: 판 10개 기준 (5판은 한두 판 운에 갈렸다)
-/* 3.9: E3(망령 함대)는 '포격 뒤에 출진' 이 시뮬레이터에서 거의 차이를 못 낸다 — 포탄이 갓 나온 병사보다
- * 이미 선 뒷줄에 떨어지기 때문. 근접 영웅이 단단해진 뒤로는 판마다 운에 갈려, 타이밍 기준만 5/10 으로 둔다. */
-const EVENT_TIMED_MIN = { 2: 5 };
-/* 4.12 무적기를 뺐다: 흡혈 백작(E1)은 안개가 더는 막지 않아 아무렇게나 내도 넘는 '힘 싸움'이 되었고,
- * 마왕(E5)은 핵이 반만 막아 타이밍 차이가 줄었다. 유령 선장(E3)은 근접 보스의 던지기가 생기며 포격을 피해 기다리는
- * 이득이 거의 사라졌다 (배율을 어떻게 잡아도 막 내기 · 타이밍 차가 1판 안팎). 셋은 '막 내도 넘는' 한도를 풀어 둔다. */
-const EVENT_NAIVE_MAX = { 0: 10, 2: 7, 4: 6 };
-const EVENT_HARD46 = { 5: { up: 10, lv: 24, min: 2, max: 8 }, 6: { up: 10, lv: 24, min: 2, max: 8 },   // 4.6 폭주 기관차 · 그림자 가면무도회
-                       7: { up: 10, lv: 25, min: 2, max: 8 } };   // 4.15 파라오의 모래시계 (7막 입구에서 열린다)
+/* 4.18 도전 전장: '하드코어에 비해 도전이 쉽다' 해서 다 올렸다 — 이제 끝까지 키워야(Lv27) 넘고, 중간 전력(Lv20)으론 거의 못 넘는다.
+ * 3.2~4.15 의 'Lv15 막 내기 · 타이밍' 과 4.6 의 'Lv24 반타작' 검사는 그 전력으로 아예 못 넘게 되어 이 둘로 바꿨다. */
+const EVENT_MAX = { up: 10, lv: 27, timedMin: 6 };   // 다 키운 공략 편성 + 타이밍: 10판 중 6판 이상
+const EVENT_MID = { up: 10, lv: 20, timedMax: 2 };   // 중간 전력: 10판 중 2판 이하
 const ACT3_ENTRY = { up: 10, lv: 14, min: 2, max: 5 };   // 3.3
 const SMART_ACT3 = { up: 10, lv: 18 };
 const ACT4_ENTRY = { up: 10, lv: 18, min: 2, max: 5 };   // 4.0: 3막을 끝낸 수준으론 앞 몇 곳만
@@ -588,23 +582,7 @@ function check() {
     else if (bossWins > HARD_MODE.bossMax) { console.error(`  ✗ ${tag} — 보스 전장이 너무 쉽다 (최대 ${HARD_MODE.bossMax})`); failed++; }
     else console.log(`  ✓ ${tag}`);
   }
-  // 3.2 이벤트 전장: 공략 편성을 나오는 대로 내면 절반도 못 이기고, 타이밍을 맞춰야 넘는다
-  for (let k = 0; k < 5; k++) {
-    const r = runEvent(k, EVENT_EXPECT.up, EVENT_EXPECT.lv);
-    const tag = `이벤트 E${k + 1} (강화 ${EVENT_EXPECT.up}/Lv${EVENT_EXPECT.lv}) 공략 ${r.naive}/${EVENT_SEEDS.length} · 타이밍 ${r.timed}/${EVENT_SEEDS.length} · 전설만 ${r.legend}/${EVENT_SEEDS.length}`;
-    if (r.naive > (EVENT_NAIVE_MAX[k] ?? EVENT_EXPECT.naiveMax)) { console.error(`  ✗ ${tag} — 공략 편성을 막 내도 넘는다 (최대 ${EVENT_NAIVE_MAX[k] ?? EVENT_EXPECT.naiveMax})`); failed++; }
-    else if (r.timed < (EVENT_TIMED_MIN[k] || EVENT_EXPECT.timedMin)) { console.error(`  ✗ ${tag} — 타이밍을 맞춰도 못 넘는다 (최소 ${EVENT_TIMED_MIN[k] || EVENT_EXPECT.timedMin})`); failed++; }
-    else console.log(`  ✓ ${tag}`);
-  }
-  // 4.6 도전 둘: 끝까지 키운 공략 편성으로도 반타작 언저리 — 넘을 수는 있되 쉽지 않다
-  for (const k in EVENT_HARD46) {
-    const X = EVENT_HARD46[k], r = runEvent(+k, X.up, X.lv);
-    const tag = `도전 E${+k + 1} (강화 ${X.up}/Lv${X.lv}) 공략 ${r.naive}/${EVENT_SEEDS.length} · 타이밍 ${r.timed}/${EVENT_SEEDS.length} · 전설만 ${r.legend}/${EVENT_SEEDS.length} (기대 ${X.min}~${X.max})`;
-    if (r.timed < X.min) { console.error(`  ✗ ${tag} — 다 키워도 못 넘는다`); failed++; }
-    else if (Math.max(r.naive, r.timed) > X.max) { console.error(`  ✗ ${tag} — 공략 편성으로 너무 쉽게 넘는다`); failed++; }
-    else if (r.legend > X.max) { console.error(`  ✗ ${tag} — 전설만으로 넘는다`); failed++; }
-    else console.log(`  ✓ ${tag}`);
-  }
+  failed += checkEvents();
   // 4.16 무한 전장: 끝이 없다 — 보스를 섞어 가파르게 세지니 다 키워도 몇 분 안에 무너진다
   for (const X of ENDLESS_EXPECT) {
     const r = runStage(loadEngine(12345), 0, X.up, X.lv, false, 'smart', false, { endless: X.at - 1 });
@@ -668,6 +646,20 @@ function runEvent(k, upLv, unitLv, seeds, tweak) {
   return r;
 }
 
+function checkEvents() {
+  let failed = 0;
+  const n = loadEngine(12345).EVENT_STAGES.length;
+  const timed = (k, X) => EVENT_SEEDS.reduce((w, sd) => w + (runStage(loadEngine(sd), 0, X.up, X.lv, false, 'counter', false, { event: k, timed: true }).win ? 1 : 0), 0);
+  for (let k = 0; k < n; k++) {
+    const hi = timed(k, EVENT_MAX), mid = timed(k, EVENT_MID);
+    const tag = `도전 E${k + 1} 공략 편성 + 타이밍 — 강화 ${EVENT_MAX.up}/Lv${EVENT_MAX.lv} ${hi}/${EVENT_SEEDS.length} · Lv${EVENT_MID.lv} ${mid}/${EVENT_SEEDS.length}`;
+    if (hi < EVENT_MAX.timedMin) { console.error(`  ✗ ${tag} — 다 키워도 못 넘는다 (최소 ${EVENT_MAX.timedMin})`); failed++; }
+    else if (mid > EVENT_MID.timedMax) { console.error(`  ✗ ${tag} — 중간 전력으로 넘는다 (최대 ${EVENT_MID.timedMax})`); failed++; }
+    else console.log(`  ✓ ${tag}`);
+  }
+  return failed;
+}
+
 const args = process.argv.slice(2);
 if (args[0] === '--event') {
   // node tools/sim.js --event [강화] [Lv] [번호,...]   이벤트 전장 승수 (공략·타이밍·전설만)
@@ -698,6 +690,9 @@ if (args[0] === '--event') {
   const k = +args[1] - 1, upLv = +(args[2] || 10), unitLv = +(args[3] || 15);
   const g = loadEngine(12345);
   printTable([runStage(g, 0, upLv, unitLv, true, args[4] || 'counter', false, { event: k, timed: args[5] === 'timed' })], upLv, unitLv);
+} else if (args[0] === '--echeck') {
+  // node tools/sim.js --echeck   4.18 도전 전장 검사만
+  process.exitCode = checkEvents() ? 1 : 0;
 } else if (args[0] === '--check') {
   check();
 } else if (args[0] === '--tune') {
