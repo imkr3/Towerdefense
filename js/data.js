@@ -2144,7 +2144,7 @@ STAGES[ACT5_FROM - 1].bossMusic = 'finale3';      // 4막의 끝 (4.0)
 STAGES[ACT6_FROM - 1].bossMusic = 'finale4';      // 5막의 끝 (4.6)
 STAGES[ACT7_FROM - 1].bossMusic = 'finale5';      // 6막의 끝 (4.11)
 STAGES[STAGES.length - 1].bossMusic = 'finale6';
-STAGES[79].hardSoft = 0.8; STAGES[79].hardBoss = 0.7;   // 4.18 하드코어 7막의 끝: 되살아나는 파라오 앞에서 다 키운 편성도 무너졌다 — 이 전장만 배율을 조금 덜어 준다   // 7막의 끝 (4.15)
+STAGES[79].hardSoft = 0.8; STAGES[79].hardBoss = 0.7; STAGES[75].hardSoft = 0.85; STAGES[75].hardBoss = 0.75;   // 4.18 하드코어 7막의 끝: 되살아나는 파라오 앞에서 다 키운 편성도 무너졌다 — 이 전장만 배율을 조금 덜어 준다   // 7막의 끝 (4.15)
 
 /* 전장 길이. 예전엔 모두 2000 이라 병사가 적과 부딪히기까지 40초 넘게 걸어야 했다.
  * 초반은 짧게 붙고, 뒤로 갈수록·보스 전장일수록 조금씩 길어진다. */
@@ -2259,8 +2259,8 @@ EVENT_STAGES.push(
 /* 4.18: 다 키운 편성이면 도전 여덟이 모두 성채 100% 로 끝났다 (하드코어보다 쉽다는 말이 맞았다).
  * 도전을 더 억세게: 적 배율 · 보스 체력에 곱한다.
    * 도전마다 여유가 달라(앞의 다섯은 넉넉, 뒤의 셋은 빠듯) 따로 맞춘다: [적 배율, 보스 체력] */
-const EVENT_TOUGH = { eclipse: [1.7, 1.7], titan: [2, 2], fleet: [1.7, 1.7], rift: [1.4, 1.4], demonking: [1.6, 1.6],
-                      train: [1.2, 1.2], masque: [1.2, 1.2], hourglass: [1.2, 1.2] };
+const EVENT_TOUGH = { eclipse: [2.1, 2.1], titan: [2, 2], fleet: [2.1, 2.1], rift: [1.75, 1.75], demonking: [2, 2],
+                      train: [1.45, 1.45], masque: [1.45, 1.45], hourglass: [1.45, 1.45] };
 EVENT_STAGES.forEach((st, k) => {
   st.eventIndex = k; st.opening = 'rush';
   const tg = EVENT_TOUGH[st.event.id] || [1, 1];
