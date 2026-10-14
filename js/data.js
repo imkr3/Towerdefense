@@ -1901,7 +1901,7 @@ const HARD_STAGE_MODS = {
   // 6막 (4.11)
   63: ['giantslayer'], 66: ['curse', 'giantslayer'], 69: ['ironclad', 'curse'],
   // 7막 (4.15)
-  73: ['giantslayer'], 79: ['ironclad', 'blitz']
+  73: ['giantslayer'], 79: ['blitz']
 };
 STAGES.forEach((st, i) => { if (!st.mods && HARD_STAGE_MODS[i]) st.mods = HARD_STAGE_MODS[i]; });
 // 전설·신화 풀이 넓어질수록 몰아 넣기만 한 편성도 두루 갖춘다. 조합이 필요한
