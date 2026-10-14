@@ -1496,3 +1496,14 @@ body{background:var(--bg0);color:var(--tx)}
 .pool-head .pool-sort{flex-wrap:nowrap}
 .pool-sort .ps-sort::before{content:'⇅ ';opacity:.8}
 .pool-sort button{white-space:nowrap}
+
+/* 4.17: 장 탭이 11개(7막 · 무한 · 원정 · 이벤트)라 넓은 화면에서도 부제가 한 글자 폭으로 짓눌려 세로로 쌓였다.
+ * 탭은 줄어들지 않고 제 폭 그대로 한 줄 — 넘치면 탭 줄을 옆으로 민다(가장자리가 흐려져 더 있음을 알린다). */
+.chapter-tabs{overflow-x:auto;overflow-y:hidden;scrollbar-width:none;flex-wrap:nowrap;scroll-behavior:smooth;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 14px,#000 calc(100% - 14px),transparent 100%);
+          mask-image:linear-gradient(90deg,transparent 0,#000 14px,#000 calc(100% - 14px),transparent 100%)}
+.chapter-tabs::-webkit-scrollbar{display:none}
+.chapter-tab{flex:0 0 auto;min-width:max-content;white-space:nowrap;display:flex;align-items:baseline;gap:6px}
+.chapter-tab .ch-name,.chapter-tab .ch-sub,.chapter-tab .ch-star{white-space:nowrap;overflow:visible;text-overflow:clip}
+@media(max-width:1000px){.chapter-tab .ch-sub{display:none}}
+@media(max-width:780px){.chapter-tab{flex-direction:column;align-items:center;gap:0}}

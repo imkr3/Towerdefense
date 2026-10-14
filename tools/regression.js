@@ -1726,4 +1726,11 @@ test('4.15: hardcore hits harder', () => {
   assert.ok(H.HARDCORE.enemyMul >= 4.6 && H.HARDCORE.fortMul >= 2.4 && H.HARDCORE.boss.hp >= 3.3 && H.HARDCORE.mulFloor >= 6.9);
 });
 
+test('4.17: upgrading keeps the detail pane where it was; chapter tabs scroll instead of squeezing', () => {
+  const main = fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8'), css = fs.readFileSync(path.join(__dirname, '../css/style.css'), 'utf8');
+  assert.ok(/pane\.scrollTop = same \? keep : 0/.test(main), 'same unit: keep scroll');
+  assert.ok(/\.chapter-tab\{flex:0 0 auto;min-width:max-content;white-space:nowrap/.test(css), 'tabs keep their width');
+  assert.ok(main.indexOf('tabs.scrollLeft') >= 0, 'selected tab scrolled into view');
+});
+
 console.log(count + ' regression checks passed');

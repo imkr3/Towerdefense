@@ -3,7 +3,7 @@
  * ======================================================================= */
 
 
-const APP_VERSION = '4.16.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
+const APP_VERSION = '4.17.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
 
 function defaultSave() {
   const lv = {};
@@ -428,6 +428,9 @@ function renderMap() {
     });
     tabs.appendChild(b);
   });
+  // 4.17: 탭이 많아 옆으로 밀리므로 고른 장이 늘 보이게
+  const onTab = tabs.children[mapChapter];
+  if (onTab) { const l = onTab.offsetLeft, r = l + onTab.offsetWidth; if (l < tabs.scrollLeft || r > tabs.scrollLeft + tabs.clientWidth) tabs.scrollLeft = Math.max(0, l - (tabs.clientWidth - onTab.offsetWidth) / 2); }
   // 4.2: 좁은 화면에서 탭 줄이 밀리면 고른 탭이 보이게
   if (tabs.scrollWidth > tabs.clientWidth + 1) {
     const on = tabs.querySelector('.on');
@@ -982,14 +985,19 @@ function refreshTraining(id) {
 }
 
 /* 상세 카드: 고른 병종(또는 적) 하나의 훈련 · 진화 · 편성 카드 */
+let detailShown = null;
 function showTrainingDetail() {
   const pane = $('#unit-detail');
   if (!pane) return;
+  // 4.17: 같은 병종을 훈련 · 진화하고 다시 그릴 때는 스크롤을 그대로 둔다 (누를 때마다 맨 위로 튀어 다시 내려야 했다)
+  const same = detailShown === trainSel, keep = pane.scrollTop;
+  const outer = pane.closest('.screen'), keepOuter = outer ? outer.scrollTop : 0;
+  detailShown = trainSel;
   pane.innerHTML = '';
   $$('#units-list .unit-tile').forEach(el => el.classList.toggle('sel', el.dataset.unit === trainSel));
   if (!trainSel) { pane.innerHTML = '<p class="ud-empty">병종을 고르면 훈련 · 진화 정보가 여기 나옵니다</p>'; return; }
   const card = trainSel.indexOf('foe:') === 0 ? buildFoeCard(trainSel.slice(4)) : (UNIT_BY_ID[trainSel] ? buildUnitCard(UNIT_BY_ID[trainSel]) : null);
-  if (card) { pane.appendChild(card); pane.scrollTop = 0; }
+  if (card) { pane.appendChild(card); pane.scrollTop = same ? keep : 0; if (same && outer) outer.scrollTop = keepOuter; }
 }
 
 function renderTrainingSort() {

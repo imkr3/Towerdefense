@@ -275,7 +275,7 @@ const I18N_EN = {
   '왕국 방어선 · 전 30 전장': 'Realm Defense · 30 battlefields',
   '왕국 진군도': 'Campaign Map', '타이틀로': 'To title', '장 선택': 'Chapters', '설정': 'Settings',
   '국경 전선': 'Border Front', '왕도 수호': 'Royal Capital', '신화의 끝': 'End of Myths', '끝없는 웨이브': 'Endless waves',
-  '1장': 'Ch.1', '2장': 'Ch.2', '2막': 'Act II', '무한': 'Endless',
+  '1장': 'Ch.1', '2장': 'Ch.2', '2막': 'Act 2', '무한': 'Endless',
   '짧은 전장': 'Short field', '보통 전장': 'Medium field', '긴 전장': 'Long field',
   '보스 전장': 'Boss stage', '출진 ▶': 'March ▶', '잠김': 'Locked',
   '이전 장을 먼저 돌파해야 합니다.': 'Clear the previous chapter first.',
