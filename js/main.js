@@ -3,7 +3,7 @@
  * ======================================================================= */
 
 
-const APP_VERSION = '4.14.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
+const APP_VERSION = '4.15.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
 
 function defaultSave() {
   const lv = {};
@@ -354,6 +354,7 @@ const CHAPTERS = [
   { name: '4막', sub: '천공 요새', from: 40, to: 50 },
   { name: '5막', sub: '잊힌 밀림', from: 50, to: 60 },
   { name: '6막', sub: '홀린 요정 숲', from: 60, to: 70 },
+  { name: '7막', sub: '모래폭풍 사막', from: 70, to: 80 },
   { name: '무한', sub: '끝없는 웨이브', endless: true },
   { name: '원정', sub: '금화 원정', expedition: true },
   { name: '이벤트', sub: '극악 도전', event: true }
@@ -1680,7 +1681,9 @@ function updateHud() {
   const wp = hudEl('#wave-preview');
   hudText(wp, msg);
   if (wp.hidden !== !msg) wp.hidden = !msg;
-  hudText(hudEl('#battle-clock'), Math.floor(battle.time / 60) + ':' + String(Math.floor(battle.time % 60)).padStart(2, '0'));
+  // 4.15 모래시계 도전: 남은 시간을 거꾸로 센다
+  const clk = battle.stage.hourglass ? battle.hourglassLeft() : battle.time;
+  hudText(hudEl('#battle-clock'), (battle.stage.hourglass ? '⏳ ' : '') + Math.floor(clk / 60) + ':' + String(Math.floor(clk % 60)).padStart(2, '0'));
   hudClass(cmdBtn, 'ready', ready);
   hudText(hudEl('#cmd-cd'), ready ? '준비' : (battle.cmdCd > 0 ? Math.ceil(battle.cmdCd) : '대기'));
   // 시간 주술사가 살아 있으면 카드가 느리게 찬다는 걸 보여 준다

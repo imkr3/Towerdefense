@@ -165,7 +165,7 @@ test('Several heroes can fire their actives back to back (no shared cooldown)',(
 });
 test('Forty stages retain the existing endless unlock threshold',()=>{
   const {STAGES,ENDLESS_UNLOCK_STAGE}=vm.runInContext('({STAGES,ENDLESS_UNLOCK_STAGE})',ctx);
-  assert.equal(STAGES.length,70);assert.equal(ENDLESS_UNLOCK_STAGE,20);
+  assert.equal(STAGES.length,80);assert.equal(ENDLESS_UNLOCK_STAGE,20);
   assert.ok(STAGES.slice(20).every(s=>s.waves.length>=8&&s.reward>900));
 });
 test('First expansion victory advances from 20 to 21 and retains old stars',()=>{
@@ -366,9 +366,9 @@ test('A squad brings at most five legends and mythics', () => {
   assert.equal(ids.filter(id => U[id].rarity === 'UR' || U[id].rarity === 'SSR').length, 5);
   assert.ok(ids.includes('spear')); assert.ok(!ids.includes('zeus'));
 });
-test('Eight seasons (4.9: +벚꽃 전국), every summon points at a real unit', () => {
+test('Nine seasons (4.15: +삼국지), every summon points at a real unit', () => {
   const { SEASONS } = vm.runInContext('({SEASONS})', ctx);
-  assert.equal(SEASONS.length, 8);
+  assert.equal(SEASONS.length, 9);
   for (const sn of SEASONS) for (const id of sn.units) { assert.ok(U[id], id); assert.equal(U[id].season, sn.id); }
   for (const u of UNITS) if (u.ab && u.ab.summon) assert.ok(U[u.ab.summon.id], u.id);
 });
@@ -736,8 +736,8 @@ test('Fury: in hardcore and act 2, foes arriving later are tougher', () => {
 /* ---------------- 3.2 이벤트 전장 ---------------- */
 const EV = vm.runInContext('({EVENT_STAGES, eventOpen, eventCount})', ctx);
 function evBattle(k, s) { return new Battle(STAGES.length + k, s || save(), EV.EVENT_STAGES[k]); }
-test('Seven event stages (4.6: +2), each with its own new boss, locked behind campaign progress', () => {
-  assert.equal(EV.EVENT_STAGES.length, 7);
+test('Eight event stages (4.15: +1), each with its own new boss, locked behind campaign progress', () => {
+  assert.equal(EV.EVENT_STAGES.length, 8);
   const bosses = new Set();
   EV.EVENT_STAGES.forEach((st, k) => {
     assert.ok(E[st.bossId] && E[st.bossId].boss, st.name); bosses.add(st.bossId);
@@ -746,7 +746,7 @@ test('Seven event stages (4.6: +2), each with its own new boss, locked behind ca
     assert.ok(st.event.deck.length === 10 && st.event.deck.every(id => U[id]), 'recommended deck');
     assert.equal(EV.eventOpen({ cleared: st.event.unlock - 1 }, k), false); assert.equal(EV.eventOpen({ cleared: st.event.unlock }, k), true);
   });
-  assert.equal(bosses.size, 7);
+  assert.equal(bosses.size, 8);
 });
 test('Event battles are not campaign progress: they record stars and pay stones once', () => {
   const s = save(); s.stones = 0; s.cleared = 30; const b = evBattle(0, s);
@@ -1435,7 +1435,7 @@ test('4.6: hardcore act 5 and challenge bosses get their own tracks', () => {
 });
 
 /* ---------------- 4.7 소환 영웅의 3진 ---------------- */
-const H47 = ['wukong', 'ra', 'thor', 'merlin', 'valkyrie', 'artemis'];
+const H47 = ['wukong', 'ra', 'thor', 'merlin', 'valkyrie', 'artemis', 'guanyu'];   // 4.15: + 관우
 test('4.7: two mythic, two legendary and two hero summons awaken — drawn, translated, with their own effects', () => {
   const X = vm.runInContext('({EVOLUTIONS, EVOLUTIONS2, EVO2_TRIALS, evo2Cost})', ctx);
   const read = f => fs.readFileSync(path.join(__dirname, '../js/' + f), 'utf8');
@@ -1443,7 +1443,7 @@ test('4.7: two mythic, two legendary and two hero summons awaken — drawn, tran
   const gacha = Object.keys(X.EVOLUTIONS2).filter(id => U[id].gacha).sort();
   assert.deepEqual(gacha, H47.slice().sort());
   const rar = {}; gacha.forEach(id => { rar[U[id].rarity] = (rar[U[id].rarity] || 0) + 1; });
-  assert.deepEqual(rar, { UR: 2, SSR: 2, SR: 2 }, 'mythic · legendary · hero, two each');
+  assert.deepEqual(rar, { UR: 3, SSR: 2, SR: 2 }, 'mythic · legendary · hero');
   const shapes = new Set(Object.values(X.EVOLUTIONS2).map(e => e.look.shape)); assert.equal(shapes.size, Object.keys(X.EVOLUTIONS2).length, 'all third forms look different');
   for (const id of gacha) {
     const e = X.EVOLUTIONS2[id];
@@ -1548,7 +1548,7 @@ test('4.10: training buttons refresh one tile; season-tab scrolling is only for 
 /* ---------------- 4.11 6막 '홀린 요정 숲' ---------------- */
 test('4.11: Act 6 adds ten fey-wood stages with three bosses, new looks, music and an achievement', () => {
   const A = STAGES.slice(60, 70), A5 = STAGES.slice(50, 60);
-  assert.equal(STAGES.length, 70); assert.equal(A.length, 10);
+  assert.equal(A.length, 10);
   assert.equal(A.filter(s => s.bossId).map(s => s.bossId).join(','), 'mushking,faequeen,eldertree');
   assert.ok(Math.min(...A.map(s => s.baseHp)) > Math.max(...A5.map(s => s.baseHp)), 'tougher forts than act 5');
   const mus = fs.readFileSync(path.join(__dirname, '../js/music.js'), 'utf8'), render = fs.readFileSync(path.join(__dirname, '../js/render.js'), 'utf8');
@@ -1621,6 +1621,86 @@ test('4.13: hits on one foe in the same instant merge into one number; hits carr
   const hit = b.fx.find(x => x.type === 'hit' || x.type === 'crit'); assert.ok(hit && hit.st === a.s && hit.sty === 'melee');
   const ar = b.makeAlly(U.archer, 600); b.allies.push(ar); b.fx.length = 0; b.attack(ar, e, b.enemies, b.enemyCastle);
   assert.ok(b.fx.some(x => x.type === 'release'), 'bow release flash');
+});
+
+/* ---------------- 4.15 7막 · 삼국지 · 도전 '파라오의 모래시계' · 하드코어 ---------------- */
+test('4.15: Act 7 adds ten sandstorm stages with three bosses, new looks, music and an achievement', () => {
+  const A = STAGES.slice(70, 80), A6 = STAGES.slice(60, 70);
+  assert.equal(A.length, 10);
+  assert.equal(A.filter(s => s.bossId).map(s => s.bossId).join(','), 'scorpking,sphinx,sandpharaoh');
+  assert.ok(A.every(s => s.storm && s.storm.range < 1), 'every act-7 stage has sandstorms');
+  assert.ok(A6.every(s => !s.storm), 'earlier acts have none');
+  assert.ok(A.every(s => s.baseHp >= 240000), 'sturdy forts');
+  const mus = fs.readFileSync(path.join(__dirname, '../js/music.js'), 'utf8'), render = fs.readFileSync(path.join(__dirname, '../js/render.js'), 'utf8');
+  for (const st of A) { assert.ok(mus.indexOf('  ' + st.music + ': {') >= 0, st.music); assert.ok(render.indexOf('  ' + st.look + ':') >= 0, st.look); }
+  for (const t of ['boss_scorpking', 'boss_sphinx', 'boss_sandpharaoh', 'finale6', 'hc_desert', 'sandclock', 'boss_anubis']) assert.ok(mus.indexOf('  ' + t + ': {') >= 0, t);
+  const au = fs.readFileSync(path.join(__dirname, '../js/audio.js'), 'utf8');
+  assert.ok(au.indexOf('  sands: function (B, x)') >= 0 && au.indexOf('  sandrush: function (B, x)') >= 0, 'desert accompaniments');
+  assert.equal(STAGES[69].bossMusic, 'finale5'); assert.equal(STAGES[79].bossMusic, 'finale6');
+  const M = vm.runInContext('({ACHIEVEMENTS})', ctx);
+  assert.ok(M.ACHIEVEMENTS.some(a => a.id === 'campaign80' && a.test({ cleared: 80 }) && !a.test({ cleared: 79 })));
+  assert.ok(/name: '7막', sub: '모래폭풍 사막', from: 70, to: 80/.test(fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8')), 'map chapter');
+  const i18n = fs.readFileSync(path.join(__dirname, '../js/i18n.js'), 'utf8');
+  for (const id of ['scorpion', 'mummy', 'sandworm', 'dunerider', 'sandmage', 'scarab', 'scarablet', 'scorpking', 'sphinx', 'sandpharaoh', 'hourglass', 'jackalgod']) {
+    assert.ok(render.indexOf("case '" + E[id].shape + "'") >= 0, id + ' drawn');
+    assert.ok(i18n.indexOf("'" + E[id].name + "'") >= 0, id + ' name');
+  }
+});
+test('4.15: sandstorms shorten ranged reach on both sides, on a schedule', () => {
+  const st = STAGES[70];
+  const b = new Battle(70, save(), st);
+  const ar = b.makeAlly(U.archer, 500); b.allies.push(ar);
+  const e = b.spawnEnemy('orcspear', 500 + ar.attackRange * 0.8);
+  assert.equal(b.findTarget(ar, b.enemies, b.enemyCastle), e, 'clear sky: in reach');
+  b.time = st.storm.first + 1 - 1 / 30; b.tick(1 / 30);
+  assert.ok(b.storming, 'storm is up');
+  assert.notEqual(b.findTarget(ar, b.enemies, b.enemyCastle), e, 'sandstorm: out of reach');
+  b.time = st.storm.first + st.storm.dur + 1; b.tick(1 / 30);
+  assert.ok(!b.storming, 'storm passes');
+});
+test('4.15: Three Kingdoms season — seven drawn, translated, evolvable units; Guan Yu awakens', () => {
+  const render = fs.readFileSync(path.join(__dirname, '../js/render.js'), 'utf8');
+  const i18n = fs.readFileSync(path.join(__dirname, '../js/i18n.js'), 'utf8');
+  const { SEASONS, EVOLUTIONS, EVOLUTIONS2, EVO2_TRIALS, UNIT_COOLDOWN } = vm.runInContext('({SEASONS, EVOLUTIONS, EVOLUTIONS2, EVO2_TRIALS, UNIT_COOLDOWN})', ctx);
+  const sn = SEASONS.find(x => x.id === 'threekingdoms');
+  assert.equal(sn.units.slice().sort().join(','), 'guanyu,huangzhong,jiqiang,tengjia,zhangfei,zhaoyun,zhugeliang');
+  const rar = {}; for (const id of sn.units) rar[U[id].rarity] = (rar[U[id].rarity] || 0) + 1;
+  assert.deepEqual(rar, { UR: 1, SSR: 1, SR: 2, R: 2, N: 1 });
+  const cds = Object.values(UNIT_COOLDOWN); assert.equal(new Set(cds).size, cds.length, 'cooldowns stay unique');
+  for (const id of sn.units) {
+    assert.ok(render.indexOf("case '" + U[id].shape + "'") >= 0, id + ' drawn');
+    assert.ok(i18n.indexOf("'" + U[id].name + "'") >= 0, id + ' name');
+    assert.ok(EVOLUTIONS[id] && i18n.indexOf("'" + EVOLUTIONS[id].name + "'") >= 0, id + ' evolution');
+    assert.ok(UNIT_COOLDOWN[id] > 0, id + ' cooldown');
+  }
+  assert.ok(U.guanyu.maxActive === 1 && U.zhugeliang.maxActive === 1 && U.zhaoyun.maxActive === 2);
+  for (const id of ['guanyu', 'zhugeliang']) { const k = U[id].active.kind; assert.ok(render.indexOf("e.kind==='" + k + "'") >= 0, k + ' drawn'); }
+  const x3 = EVOLUTIONS2.guanyu; assert.ok(x3 && render.indexOf("case '" + x3.look.shape + "'") >= 0 && i18n.indexOf("'" + x3.name + "'") >= 0, 'Azure Dragon War God');
+  assert.equal(EVO2_TRIALS.guanyu.length, 2);
+  const r = G.resolveUnit(U.guanyu, 20, 2);
+  assert.ok(r.evo2); assert.equal(r.shape, 'azureguan'); assert.ok(r.active.mul >= 3.4 && r.active.stun >= 1.2 && r.ab.slow >= 1.5 && r.castFx === 'dragonslash');
+});
+test('4.15: the Pharaoh\'s Hourglass — totems heal the fort on each turn, and time running out loses', () => {
+  const k = EV.EVENT_STAGES.findIndex(st => st.event.id === 'hourglass');
+  assert.ok(k >= 0); const st = EV.EVENT_STAGES[k], hg = st.hourglass;
+  const b = evBattle(k); b.tick(1 / 30);
+  const totems = b.enemies.filter(e => e.kind === 'hourglass');
+  assert.equal(totems.length, hg.at.length, 'totems stand on the field');
+  assert.ok(totems.every(e => e.x > 96 && e.x < b.enemyCastle.x), 'between the castles');
+  const c = b.enemyCastle; c.hp = c.maxHp * 0.5;
+  b.hgFlip = 0.01; b.tick(1 / 30);
+  assert.ok(Math.abs(c.hp - c.maxHp * (0.5 + hg.heal * hg.at.length)) < 1, 'heals per living totem');
+  for (const e of totems) { e.hp = 0; e.dead = true; }
+  const before = c.hp; b.hgFlip = 0.01; b.tick(1 / 30); assert.equal(c.hp, before, 'no totems, no healing');
+  assert.ok(!b.allyCastle.dead);
+  b.time = hg.limit; b.tick(1 / 30);
+  assert.ok(b.allyCastle.dead || b.allyCastle.hp <= 0, 'out of sand: the castle falls');
+  const M = vm.runInContext('({ACHIEVEMENTS})', ctx);
+  assert.ok(M.ACHIEVEMENTS.some(a => a.id === 'timeDefier' && a.test({ events: { hourglass: 1 } })));
+});
+test('4.15: hardcore hits harder', () => {
+  const H = vm.runInContext('({HARDCORE})', ctx);
+  assert.ok(H.HARDCORE.enemyMul >= 4.6 && H.HARDCORE.fortMul >= 2.4 && H.HARDCORE.boss.hp >= 3.3 && H.HARDCORE.mulFloor >= 6.9);
 });
 
 console.log(count + ' regression checks passed');

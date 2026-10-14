@@ -328,7 +328,8 @@ const EVENT_TIMED_MIN = { 2: 5 };
  * 마왕(E5)은 핵이 반만 막아 타이밍 차이가 줄었다. 유령 선장(E3)은 근접 보스의 던지기가 생기며 포격을 피해 기다리는
  * 이득이 거의 사라졌다 (배율을 어떻게 잡아도 막 내기 · 타이밍 차가 1판 안팎). 셋은 '막 내도 넘는' 한도를 풀어 둔다. */
 const EVENT_NAIVE_MAX = { 0: 10, 2: 7, 4: 6 };
-const EVENT_HARD46 = { 5: { up: 10, lv: 24, min: 2, max: 8 }, 6: { up: 10, lv: 24, min: 2, max: 8 } };   // 4.6 폭주 기관차 · 그림자 가면무도회
+const EVENT_HARD46 = { 5: { up: 10, lv: 24, min: 2, max: 8 }, 6: { up: 10, lv: 24, min: 2, max: 8 },   // 4.6 폭주 기관차 · 그림자 가면무도회
+                       7: { up: 10, lv: 25, min: 2, max: 8 } };   // 4.15 파라오의 모래시계 (7막 입구에서 열린다)
 const ACT3_ENTRY = { up: 10, lv: 14, min: 2, max: 5 };   // 3.3
 const SMART_ACT3 = { up: 10, lv: 18 };
 const ACT4_ENTRY = { up: 10, lv: 18, min: 2, max: 5 };   // 4.0: 3막을 끝낸 수준으론 앞 몇 곳만
@@ -338,6 +339,9 @@ const SMART_ACT5 = { up: 10, lv: 24, slower: 1.25 };     // 4.6: 다 키우면 �
 const ACT6_ENTRY = { up: 10, lv: 22, min: 3, max: 7 };   // 4.11: 5막을 끝내고 조금 더 키운 수준이면 절반쯤
 const ACT6_LOW = { up: 10, lv: 20, max: 4 };              // 4.11: 5막 입구 수준으론 몇 곳만
 const SMART_ACT6 = { up: 10, lv: 24, slower: 1.05 };     // 4.11: 다 키우면 전부, 5막보다 오래
+const ACT7_ENTRY = { up: 10, lv: 24, min: 3, max: 7 };   // 4.15: 6막을 끝낸 수준이면 절반쯤
+const ACT7_LOW = { up: 10, lv: 22, max: 4 };              // 4.15: 6막 입구 수준으론 몇 곳만
+const SMART_ACT7 = { up: 10, lv: 27, slower: 1.05 };     // 4.15: 상한(22+사관학교 5)까지 키우면 전부, 6막보다 오래
 const HARD_MODE = { up: 10, lv: 15, min: 12, max: 20, bossMax: 6 };   // 하드코어 기대치 (3.1)
 const LEGEND_PROOF_MAX = 1;      // 전설만 편성이 이길 수 있는 최대 판 수
 const COUNTER_MIN = 4;           // 공략 편성이 이겨야 하는 최소 판 수
@@ -540,6 +544,24 @@ function check() {
     if (rows.some(r => !r.win || r.seconds > 400)) { console.error('  ✗ 6막: 끝까지 키운 공략 편성은 400초 안에 전부 넘어야 한다 (seed ' + seed + ')'); failed++; }
     else if (t6 < t5 * SMART_ACT6.slower) { console.error(`  ✗ 6막이 5막보다 어렵지 않다: ${Math.round(t6)}초 vs ${Math.round(t5)}초 (seed ${seed})`); failed++; }
     else console.log(`  ✓ 6막 공략 편성 완주 · 5막의 ${(t6 / t5).toFixed(2)}배 걸림 (seed ${seed})`);
+  }
+  // 4.15 7막 '모래폭풍 사막'
+  {
+    const g = loadEngine(12345); let w = 0, wl = 0;
+    for (let i = 70; i < 80; i++) w += runStage(g, i, ACT7_ENTRY.up, ACT7_ENTRY.lv, false, 'smart').win ? 1 : 0;
+    for (let i = 70; i < 80; i++) wl += runStage(g, i, ACT7_LOW.up, ACT7_LOW.lv, false, 'smart').win ? 1 : 0;
+    const tag = `7막 진입 (강화 ${ACT7_ENTRY.up}/Lv${ACT7_ENTRY.lv} 공략 편성) ${w}/10 (기대 ${ACT7_ENTRY.min}~${ACT7_ENTRY.max}) · Lv${ACT7_LOW.lv} ${wl}/10 (최대 ${ACT7_LOW.max})`;
+    if (w < ACT7_ENTRY.min || w > ACT7_ENTRY.max || wl > ACT7_LOW.max) { console.error('  ✗ ' + tag); failed++; } else console.log('  ✓ ' + tag);
+  }
+  for (const seed of [12345, 98765]) {
+    const g = loadEngine(seed), rows = [], rows6 = [];
+    for (let i = 70; i < 80; i++) rows.push(runStage(g, i, SMART_ACT7.up, SMART_ACT7.lv, false, 'smart'));
+    for (let i = 60; i < 70; i++) rows6.push(runStage(g, i, SMART_ACT7.up, SMART_ACT7.lv, false, 'smart'));
+    printTable(rows, SMART_ACT7.up, SMART_ACT7.lv);
+    const t7 = rows.reduce((a, r) => a + r.seconds, 0), t6 = rows6.reduce((a, r) => a + r.seconds, 0);
+    if (rows.some(r => !r.win || r.seconds > 420)) { console.error('  ✗ 7막: 끝까지 키운 공략 편성은 420초 안에 전부 넘어야 한다 (seed ' + seed + ')'); failed++; }
+    else if (t7 < t6 * SMART_ACT7.slower) { console.error(`  ✗ 7막이 6막보다 어렵지 않다: ${Math.round(t7)}초 vs ${Math.round(t6)}초 (seed ${seed})`); failed++; }
+    else console.log(`  ✓ 7막 공략 편성 완주 · 6막의 ${(t7 / t6).toFixed(2)}배 걸림 (seed ${seed})`);
   }
   // 3.1: 하드코어는 확실히 어렵다. 다 키운 공략 편성으로도 절반 남짓, 보스 전장은 대부분 막힌다.
   {

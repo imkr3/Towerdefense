@@ -789,6 +789,44 @@ SEASON_UNITS.push(
     cost:140,kb:2,
     ab:{armor:.1},abText:'긴 창 · 값싸게 머릿수 · 갑주 10%',
     desc:'삿갓을 쓴 창 졸병입니다. 싸고 많이 나와 긴 창으로 전열을 채웁니다.'}),
+  // 4.15 시즌: 삼국지 (도원결의와 와룡) — 청룡도의 무신 · 와룡 군사 · 상산의 창 · 장판교의 호령 · 노장의 활 · 등갑 · 극
+  mk({id:'guanyu',name:'관우',role:'청룡도의 무신',shape:'guanyu',castFx:'slash',season:'threekingdoms',rarity:'UR',gacha:true,unlockStage:999,
+    body:'#2b3038',accent:'#4ad08a',tunic:'#2a6a3a',hp:1850,atk:140,range:104,speed:36,interval:1.5,
+    cost:560,kb:2,area:true,areaRadius:85,scale:1.22,
+    ab:{armor:.15,kbImmune:true,push:20},abText:'청룡언월도 · 범위 · 갑주 15% · 넉백 면역 · 밀쳐 냄 · 청룡언월 일섬',
+    desc:'붉은 얼굴에 긴 수염, 여든두 근 청룡언월도를 든 무신입니다. 흔들림 없이 서서 한 번 휘두를 때마다 앞줄을 통째로 벱니다.',
+    active:{name:'청룡언월 일섬',kind:'dragonblade',cd:50,radius:250,mul:2.8,stun:.7,push:60,desc:'가장 가까운 적 주변을 크게 베어 피해 · 0.7초 기절 · 밀쳐 냄.'}}),
+  mk({id:'zhugeliang',name:'제갈량',role:'와룡 군사',shape:'zhugeliang',season:'threekingdoms',rarity:'SSR',gacha:true,unlockStage:999,
+    body:'#f0e0c8',accent:'#ffb04a',tunic:'#f4f0e6',hp:900,atk:96,range:300,speed:32,interval:1.8,
+    cost:450,kb:2,ranged:true,area:true,areaRadius:80,
+    ab:{slow:1.5},abText:'학 깃털 부채 · 바람 칼날 범위 · 맞은 적 1.5초 둔화 · 동남풍',
+    desc:'학 깃털 부채를 든 와룡 선생입니다. 바람을 불러 적의 발을 묶고, 때가 오면 동남풍에 불을 실어 보냅니다.',
+    active:{name:'동남풍',kind:'eastwind',cd:46,radius:260,mul:2.2,burn:5,push:60,desc:'가장 가까운 적 주변 불바람 피해 · 5초 화상 · 밀쳐 냄.'}}),
+  mk({id:'zhaoyun',name:'조운',role:'상산의 창',shape:'zhaoyun',castFx:'slash',season:'threekingdoms',rarity:'SR',gacha:true,unlockStage:999,
+    body:'#e8dcc8',accent:'#a8d8ff',tunic:'#e8eaf0',hp:1100,atk:90,range:92,speed:72,interval:1.0,
+    cost:340,kb:2,scale:1.1,
+    ab:{charge:{dist:120,mul:2,push:30},dodge:.2},abText:'백마와 용담창 · 달려온 첫 일격 2배 · 회피 20% · 빠름',
+    desc:'흰 말을 타고 적진을 홀로 가르는 상산의 장수입니다. 달려 들어가는 첫 창이 가장 무섭습니다.'}),
+  mk({id:'zhangfei',name:'장비',role:'장판교의 호령',shape:'zhangfei',castFx:'slash',season:'threekingdoms',rarity:'SR',gacha:true,unlockStage:999,
+    body:'#3a3030',accent:'#e8c050',tunic:'#2a2a3a',hp:1500,atk:82,range:88,speed:34,interval:1.3,
+    cost:320,kb:2,scale:1.12,
+    ab:{stun:{chance:.15,dur:.7},armor:.2},abText:'장팔사모 · 기절 15% · 갑주 20%',
+    desc:'호랑이 수염에 우레 같은 목소리를 가진 장수입니다. 장팔사모로 찌르면 적이 넋을 잃고 멈춰 섭니다.'}),
+  mk({id:'huangzhong',name:'황충',role:'노장의 활',shape:'huangzhong',season:'threekingdoms',rarity:'R',gacha:true,unlockStage:999,
+    body:'#2b3038',accent:'#e8c65a',tunic:'#8a3a2a',hp:600,atk:70,range:340,speed:32,interval:1.5,
+    cost:245,kb:2,ranged:true,
+    ab:{breaker:1.4,crit:{chance:.1,mul:2}},abText:'노장의 강궁 · 긴 사거리 · 보스·중장갑에게 1.4배 · 치명타 10%',
+    desc:'흰 수염의 노장이지만 활은 누구보다 셉니다. 단단한 적일수록 더 깊이 꿰뚫습니다.'}),
+  mk({id:'tengjia',name:'등갑병',role:'남만의 등갑',shape:'tengjia',season:'threekingdoms',rarity:'R',gacha:true,unlockStage:999,
+    body:'#2b3038',accent:'#e8d080',tunic:'#a8803a',hp:1450,atk:50,range:72,speed:34,interval:1.3,
+    cost:235,kb:1,
+    ab:{armor:.4,thorns:.1},abText:'기름 먹인 등나무 갑옷 · 갑주 40% · 근접 피해 10% 반사',
+    desc:'기름에 절인 등나무 갑옷을 입은 남만의 병사입니다. 칼도 화살도 잘 들지 않아 앞줄을 오래 버팁니다.'}),
+  mk({id:'jiqiang',name:'창극병',role:'긴 극',shape:'jiqiang',season:'threekingdoms',rarity:'N',gacha:true,unlockStage:999,
+    body:'#2b3038',accent:'#d84a3a',tunic:'#3a4a6a',hp:640,atk:44,range:92,speed:42,interval:1.15,
+    cost:145,kb:2,
+    ab:{push:10},abText:'긴 극 · 값싸게 머릿수 · 살짝 밀쳐 냄',
+    desc:'갈고리 달린 긴 극을 든 졸병입니다. 싸고 많이 나와 적을 조금씩 밀어냅니다.'}),
   // 소환 전용
   mk({id:'monkeyclone',name:'분신',role:'소환수',shape:'monkeyclone',unlockStage:999,
     body:'#c98a4a',accent:'#ffd24a',tunic:'#b8322e',hp:520,atk:60,range:80,speed:60,interval:1.0,
@@ -850,7 +888,9 @@ const UNIT_COOLDOWN = {
   camelotguard: 6.4, galahad: 12.6, tristan: 13.1, morgana: 21.0, lancelot: 27.0, merlin: 50.0, arthur: 66.0,
   // 4.9 벚꽃 전국 · 기본 병종 셋
   ashigaru: 5.9, samurai: 12.7, kyudo: 13.3, miko: 20.5, ninja: 26.5, tengu: 44.5, susanoo: 66.2,
-  maceman: 13.6, axethrower: 11.6, siegebow: 22.0
+  maceman: 13.6, axethrower: 11.6, siegebow: 22.0,
+  // 4.15 삼국지
+  jiqiang: 6.2, tengjia: 12.3, huangzhong: 13.4, zhangfei: 21.2, zhaoyun: 26.3, zhugeliang: 44.8, guanyu: 66.4
 };
 const TIER_FROM = 200, TIER_TO = 560, TIER_MAX = 0.35;
 function costTierMul(cost) {
@@ -906,7 +946,11 @@ const SEASONS = [
   { id: 'sengoku', name: '벚꽃 전국', sub: '일본 설화와 무사',
     color: '#f0a8c0', accent: '#a8324a',
     desc: '벚꽃이 흩날리는 산성에서 폭풍의 신과 요괴, 무사들이 왕국의 부름에 응합니다.',
-    units: ['susanoo', 'tengu', 'ninja', 'miko', 'samurai', 'kyudo', 'ashigaru'] }
+    units: ['susanoo', 'tengu', 'ninja', 'miko', 'samurai', 'kyudo', 'ashigaru'] },
+  { id: 'threekingdoms', name: '삼국지', sub: '도원결의와 와룡',
+    color: '#e8b04a', accent: '#8e2a1f',
+    desc: '복숭아밭에서 형제를 맺은 장수들과 와룡 선생이 왕국의 깃발 아래 모입니다.',
+    units: ['guanyu', 'zhugeliang', 'zhaoyun', 'zhangfei', 'huangzhong', 'tengjia', 'jiqiang'] }
 ];
 
 /* 소환 풀: 시즌 병종 + (다른 시즌은 낮은 확률로) */
@@ -1337,6 +1381,79 @@ const ENEMIES = {
                 { at: 0.12, t: 'enrage', name: '숲의 분노', atk: 1.3, rate: 0.75, speed: 1.25 }
               ],
               abText: '고목 · 갑주 25% · 초당 220 회복 (화상이면 멈춤) · 뿌리로 밀쳐 기절' },
+  /* ---------- 4.15 7막 '모래폭풍 사막': 전갈 · 미라 · 모래벌레의 군단 ---------- */
+  scorpion: { name: '거대 전갈', body: '#b8783a', accent: '#5aff8a', tunic: '#7a4a22', shape: 'scorpion',
+              hp: 3300, atk: 250, range: 70, speed: 50, interval: 1.1, kb: 2, gold: 70, scale: 1.15,
+              ab: { armor: 0.25, poison: { dps: 70, dur: 3 } }, abText: '독침 · 갑주 25% · 중독 70/초' },
+  mummy:    { name: '미라 병사', body: '#d8cca8', accent: '#5ae8ff', tunic: '#a89870', shape: 'mummy',
+              hp: 2600, atk: 220, range: 62, speed: 34, interval: 1.2, kb: 2, gold: 60,
+              ab: { revive: 0.5 }, abText: '붕대 몸 · 한 번 쓰러져도 체력 50% 로 다시 일어남' },
+  sandworm: { name: '모래벌레', body: '#c89a5a', accent: '#ff7a5a', tunic: '#8a6a3a', shape: 'sandworm',
+              hp: 7500, atk: 320, range: 96, speed: 40, interval: 1.8, kb: 1, gold: 200, scale: 1.6, noReinf: true,
+              area: true, areaRadius: 100, ab: { kbImmune: true, armor: 0.2, burrow: { stun: 1.0, radius: 110 } },
+              abText: '땅속으로 다가와 전열 밑에서 솟구치며 기절 · 갑주 20% · 넉백 면역' },
+  dunerider:{ name: '사막 약탈자', body: '#7a5a3a', accent: '#ffd25a', tunic: '#3a5a8a', shape: 'dunerider',
+              hp: 2300, atk: 210, range: 260, speed: 70, interval: 1.3, kb: 2, gold: 70, ranged: true, scale: 1.1,
+              ab: { dodge: 0.15 }, abText: '낙타 궁기병 · 빠르게 달려와 쏨 · 15% 회피' },
+  sandmage: { name: '모래 술사', body: '#8a6a4a', accent: '#ffb84a', tunic: '#5a2a5a', shape: 'sandmage',
+              hp: 2200, atk: 150, range: 240, speed: 30, interval: 1.8, kb: 1, gold: 80, ranged: true, noReinf: true,
+              area: true, areaRadius: 90, ab: { weaken: { mul: 0.75, dur: 3 } }, abText: '모래 회오리 · 범위 공격 · 맞은 아군 공격력 -25% (3초)' },
+  scarab:   { name: '황금 풍뎅이 떼', body: '#c8a83a', accent: '#5affd8', tunic: '#7a5a1a', shape: 'scarab_e',
+              hp: 1800, atk: 160, range: 58, speed: 88, interval: .8, kb: 2, gold: 40, scale: .95,
+              ab: { split: { id: 'scarablet', n: 3 } }, abText: '떼 · 아주 빠름 · 쓰러지면 작은 풍뎅이 셋으로 흩어짐' },
+  scarablet:{ name: '작은 풍뎅이', body: '#d8b84a', accent: '#5affd8', tunic: '#8a6a2a', shape: 'scarablet',
+              hp: 520, atk: 80, range: 52, speed: 104, interval: .7, kb: 3, gold: 6, scale: .65 },
+  scorpking:{ name: '전갈 왕', body: '#a8602a', accent: '#5aff8a', tunic: '#6a3a1a', shape: 'scorpking',
+              hp: 46000, atk: 1150, range: 110, speed: 22, interval: 2.0, kb: 1, gold: 2400,
+              area: true, areaRadius: 160, scale: 2.3, boss: true,
+              ab: { kbImmune: true, armor: 0.25, poison: { dps: 120, dur: 4 } },
+              special: { t: 'meteor', name: '독침 비', cd: 9, n: 4, dmg: 520, radius: 120, warn: 1.1, poison: { dps: 110, dur: 4 }, kind: 'runes' },
+              phases: [
+                { at: 0.70, t: 'summon', name: '전갈 떼', id: 'scorpion', n: 4 },
+                { at: 0.45, t: 'roar',   name: '모래 꼬리치기', r: 440, stun: 1.0, push: 110 },
+                { at: 0.15, t: 'enrage', name: '독의 분노', atk: 1.3, rate: 0.75, speed: 1.3 }
+              ] },
+  sphinx:   { name: '스핑크스', body: '#d8b06a', accent: '#5ac8ff', tunic: '#2a4a8a', shape: 'sphinx',
+              hp: 44000, atk: 1050, range: 270, speed: 16, interval: 2.2, kb: 1, gold: 2600, ranged: true,
+              area: true, areaRadius: 150, scale: 2.3, boss: true,
+              ab: { kbImmune: true, dodge: 0.1 },
+              special: { t: 'frost', name: '수수께끼의 모래', first: 6, cd: 10, r: 320, dur: 3 },
+              phases: [
+                { at: 0.75, t: 'summon', name: '미라 근위대', id: 'mummy', n: 5 },
+                { at: 0.50, t: 'swap',   name: '태양 광선',
+                            special: { t: 'meteor', name: '태양 광선', first: 3, cd: 7, n: 5, dmg: 560, radius: 120, warn: 1.0, burn: { dps: 80, dur: 3 }, kind: 'lightning' } },
+                { at: 0.30, t: 'summon', name: '약탈자 습격', id: 'dunerider', n: 4 },
+                { at: 0.12, t: 'enrage', name: '풀리지 않는 수수께끼', atk: 1.25, rate: 0.75, speed: 1.2 }
+              ] },
+  sandpharaoh:{ name: '모래폭풍의 파라오', body: '#c8a86a', accent: '#ffd23a', tunic: '#2a3a7a', shape: 'sandpharaoh',
+              hp: 56000, atk: 1350, range: 140, speed: 16, interval: 2.4, kb: 1, gold: 3600,
+              area: true, areaRadius: 190, scale: 2.6, boss: true,
+              ab: { kbImmune: true, armor: 0.2, revive: 0.3 },
+              special: { t: 'roar', name: '모래폭풍의 포효', cd: 11, r: 460, stun: 1.2, push: 120 },
+              phases: [
+                { at: 0.75, t: 'summon', name: '모래벌레 소환', id: 'sandworm', n: 2 },
+                { at: 0.55, t: 'swap',   name: '무너지는 피라미드',
+                            special: { t: 'meteor', name: '떨어지는 사암', first: 2, cd: 7, n: 5, dmg: 600, radius: 130, warn: 1.1, kind: 'shockwave' } },
+                { at: 0.35, t: 'summon', name: '불멸의 군단', id: 'mummy', n: 6 },
+                { at: 0.12, t: 'enrage', name: '사막의 분노', atk: 1.3, rate: 0.75, speed: 1.25 }
+              ],
+              abText: '파라오 · 갑주 20% · 한 번 쓰러져도 체력 30% 로 다시 일어남 · 모래폭풍의 포효' },
+  /* ---------- 4.15 도전 '파라오의 모래시계' ---------- */
+  hourglass:{ name: '모래시계 토템', body: '#c8a050', accent: '#ffe08a', tunic: '#6a4a24', shape: 'hourglass',
+              hp: 6000, atk: 0, range: 0, speed: 0, interval: 3, kb: 1, gold: 150, scale: 1.3, noReinf: true,
+              ab: { hold: true, noAttack: true, kbImmune: true, armor: 0.2 },
+              abText: '살아 있으면 모래시계가 뒤집힐 때마다 요새 회복 · 움직이지 않는다' },
+  jackalgod:{ name: '심판의 아누비스', body: '#1c1c24', accent: '#ffd23a', tunic: '#2a5a8a', shape: 'jackalgod',
+              hp: 52000, atk: 1100, range: 110, speed: 18, interval: 2.0, kb: 1, gold: 3400,
+              area: true, areaRadius: 150, scale: 2.4, boss: true,
+              ab: { kbImmune: true, armor: 0.15 },
+              special: { t: 'meteor', name: '심판의 저울', first: 5, cd: 9, n: 4, dmg: 520, radius: 110, warn: 1.1, kind: 'lightning' },
+              phases: [
+                { at: 0.70, t: 'summon', name: '모래시계 재건', id: 'hourglass', n: 2 },
+                { at: 0.45, t: 'summon', name: '미라 근위대', id: 'mummy', n: 6 },
+                { at: 0.20, t: 'enrage', name: '최후의 심판', atk: 1.25, rate: 0.75, speed: 1.2 }
+              ],
+              abText: '심판의 신 · 갑주 15% · 넉백 면역 · 쓰러진 모래시계를 다시 세운다 · 심판의 저울' },
   /* ---------- 4.6 도전 '폭주 기관차' · '그림자 가면무도회' ---------- */
   irontrain:{ name: '폭주 기관차', body: '#3a3c44', accent: '#ff7a2a', tunic: '#8a2a2a', shape: 'irontrain',
               hp: 60000, atk: 420, range: 60, speed: 9, interval: 1, kb: 1, gold: 3000, scale: 2.1, boss: true,
@@ -1660,6 +1777,34 @@ STAGES.push(
     W(12,'treant',2,4),W(26,'eldertree',1),W(52,'pixie',12,.35),W(80,'sporecap',8,.9),W(110,'wisp',5,1.6),W(140,'satyr',3,3),W(170,'unicorn',3,2.5),W(200,'treant',3,3),W(232,'pixie',16,.3),W(262,'sporecap',10,.8)]}
 );
 
+/* 7막 '모래폭풍 사막' (4.15): 요정 숲 너머 끝없는 모래바다 — 전갈 · 미라 · 모래벌레, 잊힌 파라오의 군단. 71~80전장.
+ * 새 기믹 '모래폭풍': storm.every 초마다 storm.dur 초 동안 모래가 불어 원거리 사거리가 storm.range 배가 된다 (양쪽 모두). */
+const ACT7_FROM = 70;
+const SANDSTORM = { first: 18, every: 24, dur: 8, range: 0.55 };
+STAGES.push(
+  {name:'뜨거운 모래언덕',hint:'모래폭풍이 불면 원거리가 짧아집니다 · 튼튼한 근접 전열을 앞세우세요',baseHp:300000,money:790,rate:100,reward:10000,enemyMul:30,waves:[
+    W(12,'scarab',5,.6),W(22,'scorpion',3,1.4),W(44,'dunerider',3,1.6),W(66,'scarab',7,.5),W(90,'mummy',5,1),W(116,'sandmage',1),W(140,'scorpion',5,1.1),W(168,'scarab',9,.45),W(198,'dunerider',4,1.4)]},
+  {name:'미라의 골짜기',hint:'미라는 한 번 더 일어납니다 · 범위 공격으로 두 번 쓰러뜨리세요',baseHp:320000,money:795,rate:101,reward:10300,enemyMul:25,mods:['curse'],waves:[
+    W(12,'mummy',5,1),W(22,'scarab',6,.5),W(44,'sandmage',1),W(64,'mummy',6,.9),W(88,'scorpion',4,1.2),W(112,'mummy',7,.8),W(138,'dunerider',4,1.4),W(166,'sandmage',2,4),W(196,'mummy',8,.7)]},
+  {name:'★ 전갈 왕의 둥지',hint:'독침 비 예고를 피하고 중독은 정화로 · 전갈 떼는 파쇄와 범위로',baseHp:240000,money:805,rate:102,reward:11000,boss:true,enemyMul:20,waves:[
+    W(12,'scorpion',4,1.2),W(24,'scorpking',1),W(48,'scarab',7,.5),W(74,'dunerider',3,1.6),W(100,'scorpion',5,1.1),W(128,'sandmage',2,4),W(156,'scarab',9,.45),W(186,'scorpion',6,1)]},
+  {name:'모래벌레의 사구',hint:'모래벌레는 땅속으로 다가와 솟구칩니다 · 전열 뒤를 비우지 마세요',baseHp:330000,money:810,rate:103,reward:10600,enemyMul:23,waves:[
+    W(12,'scarab',6,.5),W(20,'sandworm',1),W(42,'dunerider',3,1.6),W(66,'sandworm',2,4),W(92,'scorpion',4,1.2),W(118,'sandmage',2,4),W(146,'sandworm',2,4),W(176,'mummy',7,.8),W(206,'scarab',9,.45)]},
+  {name:'신기루 오아시스',hint:'약탈자는 빠르게 달려와 쏩니다 · 넉백 면역 방패와 저격으로',baseHp:340000,money:815,rate:104,reward:10800,enemyMul:22,mods:['blitz'],waves:[
+    W(12,'dunerider',3,1.4),W(22,'scarab',7,.5),W(44,'dunerider',4,1.3),W(68,'sandmage',2,3),W(94,'scorpion',5,1.1),W(120,'dunerider',5,1.2),W(146,'mummy',6,.9),W(174,'dunerider',5,1.2),W(204,'scarab',10,.4)]},
+  {name:'★ 스핑크스의 문',hint:'수수께끼의 모래에 묶이면 둔화 · 태양 광선 예고를 피하고 왕명으로 버티세요',baseHp:250000,money:825,rate:105,reward:11800,boss:true,enemyMul:18,waves:[
+    W(12,'mummy',5,1),W(26,'sphinx',1),W(50,'dunerider',4,1.4),W(76,'scorpion',5,1.1),W(104,'sandmage',2,4),W(132,'mummy',7,.8),W(162,'scarab',10,.4),W(194,'sandworm',2,4)]},
+  {name:'왕가의 계곡',hint:'미라와 술사의 진군 · 술사를 먼저 끊으세요',baseHp:350000,money:830,rate:106,reward:11200,enemyMul:26,mods:['giantslayer'],waves:[
+    W(12,'mummy',4,1.1),W(24,'sandmage',2,3),W(44,'scorpion',4,1.2),W(68,'sandmage',3,2.5),W(94,'mummy',8,.7),W(120,'dunerider',4,1.4),W(146,'sandmage',3,2.5),W(174,'mummy',8,.7),W(204,'scorpion',6,1)]},
+  {name:'유리 사막',hint:'단단한 무리 · 화상과 파쇄를 함께',opening:'calm',baseHp:360000,money:835,rate:107,reward:11400,enemyMul:22,mods:['ironclad'],waves:[
+    W(12,'scorpion',5,1.1),W(22,'sandworm',1),W(46,'scorpion',5,1.1),W(72,'mummy',7,.8),W(98,'sandworm',2,4),W(124,'scorpion',6,1),W(152,'sandmage',2,4),W(180,'sandworm',2,4),W(210,'dunerider',5,1.2)]},
+  {name:'모래폭풍의 눈',hint:'사막의 모든 군단 · 근접 전열 · 정화 · 범위를 함께',baseHp:340000,money:845,rate:108,reward:11800,enemyMul:38,mods:['horde','curse'],waves:[
+    W(12,'scarab',8,.45),W(22,'mummy',5,1),W(44,'dunerider',4,1.4),W(68,'sandworm',2,4),W(92,'sandmage',2,4),W(118,'scorpion',5,1.1),W(144,'scarab',10,.4),W(172,'mummy',8,.7),W(202,'dunerider',5,1.2),W(232,'sandworm',2,4)]},
+  {name:'★ 모래폭풍의 파라오',hint:'파라오는 한 번 다시 일어납니다 · 사암 예고를 피하고, 포효엔 왕명과 필살을',baseHp:280000,money:860,rate:110,reward:13000,boss:true,enemyMul:16,waves:[
+    W(12,'scorpion',4,1.2),W(26,'sandpharaoh',1),W(52,'scarab',9,.45),W(80,'sandworm',2,4),W(110,'mummy',7,.8),W(140,'sandmage',3,3),W(170,'dunerider',5,1.2),W(200,'scorpion',6,1),W(232,'scarab',12,.4),W(262,'sandworm',3,3)]}
+);
+STAGES.slice(ACT7_FROM).forEach(st => { st.storm = SANDSTORM; });
+
 /* 전장 특성. 어려운 전장에는 특성이 붙어서, 스탯 높은 병종을 몰아 넣는 것만으로는
  * 풀리지 않고 그 특성을 받아칠 병종을 챙겨야 한다. */
 const STAGE_MODS = {
@@ -1754,7 +1899,9 @@ const HARD_STAGE_MODS = {
   // 5막 (4.6): 캠페인에서도 특성이 붙은 곳이 있다 (위의 st.mods 가 먼저)
   53: ['giantslayer'], 56: ['ironclad', 'horde'], 57: ['blitz', 'giantslayer'], 59: ['ironclad', 'curse'],
   // 6막 (4.11)
-  63: ['giantslayer'], 66: ['curse', 'giantslayer'], 69: ['ironclad', 'curse']
+  63: ['giantslayer'], 66: ['curse', 'giantslayer'], 69: ['ironclad', 'curse'],
+  // 7막 (4.15)
+  73: ['giantslayer'], 79: ['ironclad', 'blitz']
 };
 STAGES.forEach((st, i) => { if (!st.mods && HARD_STAGE_MODS[i]) st.mods = HARD_STAGE_MODS[i]; });
 // 전설·신화 풀이 넓어질수록 몰아 넣기만 한 편성도 두루 갖춘다. 조합이 필요한
@@ -1845,6 +1992,7 @@ STAGES.forEach((st, i) => {
 const BOSS_ROLE = { kraken: 'bruiser', tidequeen: 'caster', leviathan: 'bruiser',
                     raptorqueen: 'bruiser', quetzal: 'flyer', jungletyrant: 'bruiser',
                     mushking: 'bruiser', faequeen: 'caster', eldertree: 'bruiser',
+                    scorpking: 'bruiser', sphinx: 'caster', sandpharaoh: 'bruiser',
                     stormgriffin: 'flyer', cloudking: 'bruiser', skylord: 'caster',
                     troll: 'bruiser', frostgiant: 'bruiser', warlord: 'bruiser',
                     lich: 'caster', spiderqueen: 'caster', drake: 'flyer' };
@@ -1853,16 +2001,19 @@ const BOSS_ESCORT = {
              sea: { back: ['siren', 'seahook'], front: ['nagaspear', 'eel'] },
              sky: { back: ['stormwisp', 'skycannon'], front: ['harpy', 'griffinrider'] },
              jungle: { back: ['poisontoad', 'vineshaman'], front: ['raptor', 'lizardman', 'triceratops'] },
-             fey: { back: ['satyr', 'wisp'], front: ['sporecap', 'pixie', 'treant'] } },
+             fey: { back: ['satyr', 'wisp'], front: ['sporecap', 'pixie', 'treant'] },
+             sand: { back: ['dunerider', 'sandmage'], front: ['scorpion', 'scarab', 'mummy'] } },
   caster:  { back: ['ballista', 'skelarcher', 'plaguer'], front: ['orcshield', 'boneguard', 'orcspear', 'orcberserk', 'chariot', 'dark'], nb: 2, nf: 4,
              sea: { back: ['siren', 'tidecaller'], front: ['clawcrab', 'deepone', 'nagaspear'] },
              sky: { back: ['stormwisp', 'windcaller'], front: ['cloudgiant', 'griffinrider', 'harpy'] },
              jungle: { back: ['vineshaman', 'poisontoad'], front: ['stoneidol', 'lizardman', 'raptor'] },
-             fey: { back: ['wisp', 'satyr'], front: ['sporecap', 'treant', 'unicorn'] } },
+             fey: { back: ['wisp', 'satyr'], front: ['sporecap', 'treant', 'unicorn'] },
+             sand: { back: ['sandmage', 'dunerider'], front: ['mummy', 'scorpion', 'sandworm'] } },
   flyer:   { back: ['shaman', 'hexer', 'ballista'], front: ['orcshield', 'burrower', 'hellhound', 'boneguard', 'orcberserk', 'golem'], nb: 2, nf: 3,
              sky: { back: ['stormwisp', 'windcaller'], front: ['cloudgiant', 'harpy'] },
              jungle: { back: ['poisontoad', 'vineshaman'], front: ['lizardman', 'raptor'] },
-             fey: { back: ['wisp', 'satyr'], front: ['sporecap', 'pixie'] } }
+             fey: { back: ['wisp', 'satyr'], front: ['sporecap', 'pixie'] },
+             sand: { back: ['dunerider', 'sandmage'], front: ['scorpion', 'mummy'] } }
 };
 /* 전장 번호(0부터) → 그 전장의 보스 */
 const STAGE_BOSS = { 4: 'lich', 9: 'troll', 12: 'lich', 14: 'troll', 16: 'frostgiant', 17: 'drake',
@@ -1870,13 +2021,15 @@ const STAGE_BOSS = { 4: 'lich', 9: 'troll', 12: 'lich', 14: 'troll', 16: 'frostg
                      28: 'drake', 29: 'warlord', 32: 'kraken', 35: 'tidequeen', 39: 'leviathan',
                      42: 'stormgriffin', 45: 'cloudking', 49: 'skylord',
                      52: 'raptorqueen', 55: 'quetzal', 59: 'jungletyrant',
-                     62: 'mushking', 65: 'faequeen', 69: 'eldertree' };
+                     62: 'mushking', 65: 'faequeen', 69: 'eldertree',
+                     72: 'scorpking', 75: 'sphinx', 79: 'sandpharaoh' };
 const ELITE_FOR = { troll: ['ogre', 1], lich: ['shaman', 2], frostgiant: ['golem', 1],
                     drake: ['hellhound', 3], spiderqueen: ['spider', 4], warlord: ['warchief', 1] };
 /* 그 막의 군단으로 바꾼 호위 (3막 바다 · 4막 천공 · 5막 밀림 · 6막 요정 숲) */
 function actEscort(role, i) {
   const esc0 = BOSS_ESCORT[role];
-  return i >= ACT6_FROM && esc0.fey ? Object.assign({}, esc0, esc0.fey)
+  return i >= ACT7_FROM && esc0.sand ? Object.assign({}, esc0, esc0.sand)
+    : i >= ACT6_FROM && esc0.fey ? Object.assign({}, esc0, esc0.fey)
     : i >= ACT5_FROM && esc0.jungle ? Object.assign({}, esc0, esc0.jungle)
     : i >= ACT4_FROM && esc0.sky ? Object.assign({}, esc0, esc0.sky)
     : i >= ACT3_FROM && esc0.sea ? Object.assign({}, esc0, esc0.sea) : esc0;
@@ -1954,7 +2107,7 @@ STAGES.forEach((st, i) => {
     front = top.find(id => !ENEMIES[id].ranged) || top[0] || 'orcspear';
     back = top.find(id => ENEMIES[id].ranged) || top[1] || front;
   }
-  const n = 2 + Math.floor(i / 7);
+  const n = Math.min(11, 2 + Math.floor(i / 7));   // 4.15: 7막에서 13명씩 쏟아져 단번에 무너졌다 — 6막 크기(11)에서 멈춘다
   st.sally = [
     { at: 0.8, group: [[front, n], [back, Math.max(1, n - 1)]] },
     { at: 0.45, group: [[front, n + 1], [back, n]] }
@@ -1971,14 +2124,16 @@ const STAGE_LOOKS = ['meadow', 'wheat', 'river', 'forest', 'graveyard', 'cave', 
   'shore', 'reef', 'stormsea', 'lighthouse', 'reef', 'sunken', 'sunken', 'stormsea', 'abyss', 'abyss',
   'skyisle', 'skyisle', 'stormspire', 'skyisle', 'stormspire', 'skyisle', 'skyisle', 'stormspire', 'stormspire', 'stormspire',
   'jungle', 'jungle', 'jungle', 'temple', 'jungle', 'temple', 'jungle', 'lavajungle', 'temple', 'lavajungle',
-  'feywood', 'mushgrove', 'mushgrove', 'moonglade', 'feywood', 'moonglade', 'feywood', 'moonglade', 'mushgrove', 'feywood'];
+  'feywood', 'mushgrove', 'mushgrove', 'moonglade', 'feywood', 'moonglade', 'feywood', 'moonglade', 'mushgrove', 'feywood',
+  'dunes', 'tombvalley', 'dunes', 'dunes', 'oasis', 'tombvalley', 'tombvalley', 'oasis', 'dunes', 'tombvalley'];
 const STAGE_MUSIC = ['meadow', 'wheat', 'river', 'wolfwood', 'graveyard', 'cave', 'hills', 'camp', 'canyon', 'fortress',
   'darkwood', 'ruins', 'return', 'shieldwall', 'gate', 'swamp', 'snowpass', 'volcano', 'warcamp', 'throne',
   'blackriver', 'underworld', 'thorngate', 'seal', 'blizzard', 'siege', 'winterthrone', 'desert', 'eclipse', 'mythic',
   'shore', 'coral', 'krakenbay', 'lighthouse', 'sirensong', 'tidetemple', 'sunken', 'strait', 'abyssgate', 'leviathan',
   'cloudbridge', 'windcliff', 'griffinnest', 'skybattery', 'thunderspire', 'cloudthrone', 'skygarden', 'stormeye', 'citadelgate', 'skythrone',
   'vinepath', 'toadmarsh', 'raptornest', 'templesteps', 'hornplain', 'serpentaltar', 'mistfalls', 'lavajungle', 'templeheart', 'tyrant',
-  'fairyring', 'sporevale', 'mushcourt', 'wispmarsh', 'treehall', 'moonpalace', 'satyrfeast', 'unicornmeadow', 'forestheart', 'elderking'];
+  'fairyring', 'sporevale', 'mushcourt', 'wispmarsh', 'treehall', 'moonpalace', 'satyrfeast', 'unicornmeadow', 'forestheart', 'elderking',
+  'hotdunes', 'mummyvale', 'scorpnest', 'wormdunes', 'mirage', 'sphinxgate', 'kingsvalley', 'glassdesert', 'stormeye7', 'pharaoh'];
 STAGES.forEach((st, i) => {
   st.look = st.look || STAGE_LOOKS[i] || 'meadow';
   st.music = st.music || STAGE_MUSIC[i] || 'meadow';
@@ -1987,7 +2142,8 @@ STAGES[29].finale = true;                      // 2막의 끝: 세 신화의 종
 STAGES[39].bossMusic = 'finale2';               // 3막의 끝은 따로 한 곡 (3.3)
 STAGES[ACT5_FROM - 1].bossMusic = 'finale3';      // 4막의 끝 (4.0)
 STAGES[ACT6_FROM - 1].bossMusic = 'finale4';      // 5막의 끝 (4.6)
-STAGES[STAGES.length - 1].bossMusic = 'finale5';   // 6막의 끝 (4.11)
+STAGES[ACT7_FROM - 1].bossMusic = 'finale5';      // 6막의 끝 (4.11)
+STAGES[STAGES.length - 1].bossMusic = 'finale6';   // 7막의 끝 (4.15)
 
 /* 전장 길이. 예전엔 모두 2000 이라 병사가 적과 부딪히기까지 40초 넘게 걸어야 했다.
  * 초반은 짧게 붙고, 뒤로 갈수록·보스 전장일수록 조금씩 길어진다. */
@@ -1998,7 +2154,8 @@ STAGES.forEach((st, i) => {
   const base = i < 20 ? 900 + 20 * i : i < 30 ? 1180 + 18 * (i - 20) : i < 40 ? 1300 + 12 * (i - 30)   // 3막은 조금 짧게 다시 시작
     : i < 50 ? 1340 + 12 * (i - 40)                                                              // 4막도
     : i < 60 ? 1380 + 12 * (i - 50)                                                              // 5막 (4.6)
-    : 1380 + 10 * (i - 60);                                                                      // 6막 (4.11)
+    : i < 70 ? 1380 + 10 * (i - 60)                                                              // 6막 (4.11)
+    : 1360 + 10 * (i - 70);                                                                      // 7막 (4.15)
   st.len = base + wiggle + (st.boss ? 120 : 0);
 });
 
@@ -2082,6 +2239,21 @@ EVENT_STAGES.push(
     waves: [W(2,'dancer',6,.6), W(14,'jester',2,2.5), W(28,'dancer',6,.6), W(40,'masklord',1), W(46,'jester',3,2.2),
             W(70,'dancer',10,.5), W(96,'jester',4,2), W(122,'dancer',12,.45), W(150,'jester',4,2), W(180,'dancer',14,.4),
             W(210,'jester',5,1.8)] }
+);
+/* 4.15 도전: '파라오의 모래시계' — 시간 제한 공성. 모래가 다 떨어지기 전에 요새를 부숴야 한다.
+ * 전장 곳곳의 모래시계 토템이 살아 있으면 모래시계가 뒤집힐 때마다 요새가 토템 수만큼 회복한다.
+ * 버티기만 하는 편성으로는 시간이 모자라고, 토템을 내버려 두면 요새가 끝없이 아문다. */
+EVENT_STAGES.push(
+  { name: '파라오의 모래시계', bossId: 'jackalgod', bossRole: 'bruiser', boss: true, look: 'goldtomb', music: 'sandclock',
+    bossMusic: 'boss_anubis', mods: ['blitz'], baseHp: 170000, money: 680, rate: 86, reward: 0, enemyMul: 11, bossMul: { hp: 3, atk: 1.3 },
+    fury: { per30: 0.12, max: 1.5 }, len: 1650,
+    hourglass: { id: 'hourglass', at: [0.5, 0.68, 0.84], every: 18, heal: 0.05, limit: 210 },
+    event: { id: 'hourglass', deck: ['sniper','catapult','zhugeliang','huangzhong','pyro','knight','shield','spear','mage','guanyu'],
+             unlock: 70, reward: 50000, stones: 45,
+             mech: '3분 30초 안에 요새를 부수지 못하면 패배 · 모래시계 토템이 살아 있으면 18초마다 요새 회복 · 토템부터 깨기' },
+    waves: [W(2,'mummy',5,.8), W(12,'scarab',4,1.2), W(26,'sandmage',2,3), W(40,'jackalgod',1), W(46,'dunerider',4,1.2),
+            W(66,'mummy',8,.7), W(88,'scorpion',3,2.5), W(110,'scarab',8,.8), W(132,'sandmage',3,2.5), W(156,'mummy',10,.6),
+            W(180,'sandworm',2,4)] }
 );
 EVENT_STAGES.forEach((st, k) => { st.eventIndex = k; st.opening = 'rush'; });
 function eventOpen(s, k) { return !!EVENT_STAGES[k] && (s.cleared || 0) >= EVENT_STAGES[k].event.unlock; }
@@ -2256,8 +2428,10 @@ const ACHIEVEMENTS = [
   { id:'campaign50',name:'하늘에 오른 자',desc:'50전장 모두 돌파 (4막 천공 요새)',gold:20000,stone:15,test:s=>s.cleared>=50 },
   { id:'campaign60',name:'밀림의 왕',desc:'60전장 모두 돌파 (5막 잊힌 밀림)',gold:30000,stone:20,test:s=>s.cleared>=60 },
   { id:'campaign70',name:'숲을 깨운 자',desc:'70전장 모두 돌파 (6막 홀린 요정 숲)',gold:40000,stone:25,test:s=>s.cleared>=70 },
+  { id:'campaign80',name:'모래폭풍을 건넌 자',desc:'80전장 모두 돌파 (7막 모래폭풍 사막)',gold:50000,stone:30,test:s=>s.cleared>=80 },
   { id:'trainStop',name:'기관차를 멈춘 자',desc:'도전 \'폭주 기관차\' 돌파',gold:15000,stone:15,test:s=>!!(s.events && s.events.train) },
   { id:'unmasked',name:'가면을 벗긴 자',desc:'도전 \'그림자 가면무도회\' 돌파',gold:15000,stone:15,test:s=>!!(s.events && s.events.masque) },
+  { id:'timeDefier',name:'시간을 거스른 자',desc:'도전 \'파라오의 모래시계\' 돌파',gold:20000,stone:20,test:s=>!!(s.events && s.events.hourglass) },
   { id: 'endless10',name: '끝없는 전장',  desc: '무한 전장 10웨이브 돌파',       gold: 2000, stone: 3,
     test: s => (s.endlessBest || 0) >= 10 },
   { id: 'endless25',name: '불굴의 성채',  desc: '무한 전장 25웨이브 돌파',       gold: 7000, stone: 8,
@@ -2392,7 +2566,7 @@ const COMMAND = {
 };
 
 /* -------------------- 병종 레벨 -------------------- */
-const UNIT_LEVEL_HARD_CAP = 20;   // 4.0: 15 → 20 (사관학교까지 25) — 4막에서 더 키울 자리
+const UNIT_LEVEL_HARD_CAP = 22;   // 4.0: 15 → 20 (사관학교까지 25) — 4막에서 더 키울 자리 · 4.15: 22 (27) — 7막
 const UNIT_LEVEL_BASE_CAP = 5;
 const UNIT_LEVEL_GAIN = 0.10;
 
@@ -2523,6 +2697,14 @@ const EVOLUTIONS = {
   samurai: { name: '무사 대장', short: '무사대장', plus: '치명타 30% · 흡혈 12%', ab: { crit: { chance: 0.3, mul: 2 }, lifesteal: 0.12 }, cost: { interval: 1.1 } },
   kyudo:   { name: '궁도 명인', short: '궁도명인', plus: '사거리 +40 · 관통', add: { range: 40 }, ab: { pierce: true }, cost: { interval: 1.12 } },
   ashigaru:{ name: '아시가루 조장', short: '조장', plus: '갑주 20% · 사거리 +10', add: { range: 10 }, ab: { armor: 0.2 }, cost: { atk: 0.9 } },
+  // 4.15 삼국지
+  guanyu:  { name: '무성 관우', short: '무성', plus: '범위 +20 · 청룡언월 일섬 강화', add: { areaRadius: 20 }, active: { mul: 3.1 }, cost: { atk: 0.88 } },
+  zhugeliang:{ name: '와룡 선생', short: '와룡', plus: '바람에 불 · 화상 · 동남풍 강화', ab: { burn: { dps: 40, dur: 3 } }, active: { mul: 2.6, burn: 7 }, cost: { hp: 0.88 } },
+  zhaoyun: { name: '상산의 조자룡', short: '조자룡', plus: '회피 30% · 달려온 첫 일격 2.6배', ab: { dodge: 0.3, charge: { mul: 2.6 } }, cost: { hp: 0.9 } },
+  zhangfei:{ name: '만인지적', short: '만인적', plus: '기절 25% · 근접 피해 15% 반사', ab: { stun: { chance: 0.25, dur: 0.8 }, thorns: 0.15 }, cost: { speed: 0.88 } },
+  huangzhong:{ name: '노익장 신궁', short: '신궁', plus: '사거리 +40 · 치명타 25%', add: { range: 40 }, ab: { crit: { chance: 0.25, mul: 2.2 } }, cost: { interval: 1.1 } },
+  tengjia: { name: '남만 등갑대', short: '등갑대', plus: '갑주 50% · 초당 25 회복', ab: { armor: 0.5, regen: 25 }, cost: { atk: 0.85 } },
+  jiqiang: { name: '극병 대장', short: '극병장', plus: '사거리 +12 · 갑주 15%', add: { range: 12 }, ab: { armor: 0.15 }, cost: { atk: 0.9 } },
   camelotguard:{ name: '카멜롯 근위대', short: '근위대', plus: '갑주 22% · 회피 15%', ab: { armor: 0.22, dodge: 0.15 }, cost: { atk: 0.9 } },
   // 3.0 서유기
   wukong:  { look: { shape: 'wukong_evo', tunic: '#c9a227', accent: '#ffd35a', grow: 1.1 }, name: '투전승불', plus: '분신 최대 6 · 여의봉 강타 강화', ab: { summon: { max: 6 } }, active: { mul: 2.9 }, cost: { atk: 0.85 } },
@@ -2670,7 +2852,12 @@ const EVOLUTIONS2 = {
   artemis: { look: { shape: 'moonbow', body: '#3a4a5a', tunic: '#3a7a8e', accent: '#a8f0ff' }, name: '달빛 레이저 궁수', short: '레이저궁',
              plus: '초승달 레이저 활 · 관통 · 치명타 25% ×2.4 · 사거리 +40 · 공격 15% 빠름',
              add: { range: 40 }, faster: 0.85, ab: { crit: { chance: 0.25, mul: 2.4 } },
-             shot: 'laser', castFx: 'laserhit', atkFx: 'moonflash', arrive: 'moon' }
+             shot: 'laser', castFx: 'laserhit', atkFx: 'moonflash', arrive: 'moon' },
+  // 4.15 삼국지의 신화: 관우가 청룡을 거느린 군신이 된다
+  guanyu:  { look: { shape: 'azureguan', tunic: '#1f6a4a', accent: '#5affc0', grow: 0.95 }, name: '청룡 군신', short: '청룡군신',
+             plus: '등 뒤를 휘감는 청룡 · 빛의 언월도 범위 +35 · 갑주 25% · 맞은 적 1.5초 둔화 · 청룡언월 일섬 3.4배 · 기절 1.2초',
+             add: { areaRadius: 35 }, ab: { armor: 0.25, slow: 1.5 }, active: { mul: 3.4, stun: 1.2, desc: '가장 가까운 적 주변을 청룡과 함께 베어 피해 · 1.2초 기절 · 밀쳐 냄.' },
+             castFx: 'dragonslash', arrive: 'dragon' }
 };
 
 /* 4.4 3진의 시련: 레벨 20 · 금화에 더해 병종마다 다른 조건 둘을 채워야 3진할 수 있다.
@@ -2695,7 +2882,8 @@ const EVO2_TRIALS = {
   thor:     [{ t: 'speed', stage: 42, sec: 95 }, { t: 'dmg', id: 'thor', n: 2000000 }],
   merlin:   [{ t: 'perfect', stage: 45 }, { t: 'event', n: 4 }],
   valkyrie: [{ t: 'speed', stage: 27, sec: 64 }, { t: 'perfect', stage: 29 }],
-  artemis:  [{ t: 'series', name: '활 계열', ids: ['artemis', 'archer', 'longbow', 'venom'], lv: 20 }, { t: 'dmg', id: 'artemis', n: 1500000 }]
+  artemis:  [{ t: 'series', name: '활 계열', ids: ['artemis', 'archer', 'longbow', 'venom'], lv: 20 }, { t: 'dmg', id: 'artemis', n: 1500000 }],
+  guanyu:   [{ t: 'stars', from: 60, to: 70 }, { t: 'dmg', id: 'guanyu', n: 3500000 }]   // 4.15
 };
 function _trialNum(n) { return n >= 1e6 ? (Math.round(n / 1e5) / 10) + 'M' : n >= 1e4 ? Math.round(n / 1e3) + 'k' : String(Math.round(n)); }
 /* 시련 하나의 진행: { done, text(조건), prog(지금 상태) } */
@@ -2947,12 +3135,12 @@ function unitFor(save, id) {
  *   다 키운 공략 편성으로도 30곳 중 절반 남짓만 넘는다 (`npm run balance` 가 검사).
  * ======================================================================= */
 // 4.4: 3진이 생긴 뒤로 도전이 쉬워졌다 — 적 ×3.5 → 4.1 (바닥 5 → 6.2), 요새 ×2 → 2.2, 보스 체력 ×2.6 → 2.9
-const HARDCORE = { enemyMul: 4.1, fortMul: 2.2, castleMul: 0.6, cmdMul: 1.5, reward: 3, stones: 5, stunResist: 0.3,
+const HARDCORE = { enemyMul: 4.6, fortMul: 2.4, castleMul: 0.6, cmdMul: 1.5, reward: 3, stones: 5, stunResist: 0.3,
                    // 3.19: 하드코어 보스는 따로 더 억세다. 다 키운 영웅 편성이 필살을 몰아 쓰면 10~20초 만에 녹았다
-                   boss: { hp: 2.9, atk: 1.15 },
+                   boss: { hp: 3.3, atk: 1.2 },   // 4.15: 더 억세게
                    fury: { per30: 0.15, max: 1.5 },   // 3.1: 오래 끌수록 새로 나오는 적이 억세진다 (최대 2.5배)
                    // 앞쪽 전장도 모질게: 적 배율과 요새 체력에 바닥을 깐다 (2막 초입 수준)
-                   mulFloor: 6.2, fortFloor: 50000,
+                   mulFloor: 6.9, fortFloor: 50000,
                    twists: ['blitz', 'horde', 'ironclad', 'curse'] };
 /* 4.4 각성 경계: 도전(하드코어 · 이벤트)에서는 편성한 3진 하나마다 적이 6%씩 억세진다 (3진은 체력·공격 ×1.35) */
 const AWAKEN_TAX = 0.06;

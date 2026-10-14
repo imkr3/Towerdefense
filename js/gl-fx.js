@@ -963,6 +963,36 @@ class GLFx {
         }
         break;
       }
+      /* 4.15 청룡 군신: 비취 초승달을 따라 늘어선 빛 · 흩어지는 용 비늘 */
+      case 'dragonslash': {
+        const hot = [0.9, 1, 0.95], dir = opt.dir || 1;
+        for (let i = 0, n = N(22); i < n; i++) {
+          const a = -1.3 + i / (n - 1) * 1.9;
+          this.add(x + Math.cos(a) * R * 0.7 * dir, y - 30 * sc + Math.sin(a) * R * 0.7, 0, 0, 0.3, 9 * sc, 2 * sc, i % 3 ? col : hot, 1, 1.2, a + Math.PI / 2, 0, 0, 1.3);
+        }
+        for (let i = 0, n = N(20); i < n; i++) {
+          const a = rnd(-Math.PI, 0), sp = rnd(120, 320) * sc;
+          this.add(x, y - 24 * sc, Math.cos(a) * sp, Math.sin(a) * sp, rnd(0.4, 0.8), rnd(4, 7) * sc, 2 * sc, i % 2 ? col : hot, 0.95, 1.6, a, rnd(-5, 5), 380, 1.6);
+        }
+        this.add(x, y - 24 * sc, 0, 0, 0.2, 14 * sc, 80 * sc * big, hot, 0.6, 1, 0, 0, 0, 1.3);
+        break;
+      }
+      /* 4.15 청룡언월 일섬 (관우): 거대한 초승달 빛 + 비늘 폭발 */
+      case 'dragonblade': {
+        this.emit('dragonslash', x, y, opt);
+        this.emit('shockwave', x, y, opt);
+        break;
+      }
+      /* 4.15 동남풍 (제갈량): 위로 감아 오르는 바람 + 불티 */
+      case 'eastwind': {
+        const wind = [0.92, 0.97, 1], fire = [1, 0.55, 0.2];
+        for (let i = 0, n = N(60); i < n; i++) {
+          const a = rnd(0, TAU), rr = rnd(0.2, 1) * R;
+          this.add(x + Math.cos(a) * rr, y - 10 * sc, -Math.sin(a) * 220 * sc, -rnd(60, 200) * sc, rnd(0.6, 1.1), rnd(4, 8) * sc, 2 * sc, i % 3 ? wind : fire, 0.7, 2, a, 0, -60, 1.5);
+        }
+        this.emit('firestorm', x, y, opt);
+        break;
+      }
       /* 달빛 레이저 궁수: 초승달 섬광 · 꿰뚫고 가는 빛 조각 */
       case 'laserhit': {
         const hot = [0.92, 1, 1], dir = opt.dir || 1;

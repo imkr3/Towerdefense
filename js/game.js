@@ -56,7 +56,8 @@ const FX_LIMIT = 200;        // 이펙트가 무한정 쌓이지 않게
 const X3_FX_LIMIT = 12;      // 4.3 3진 연출(포연·광선·사이렌)이 한꺼번에 떠 있을 수 있는 수
 // 3진의 타격 연출 → 땅에 남는 Canvas 연출 (연기 · 흙 · 갈라진 땅 · 눈더미 · 그을린 자국)
 const X3_GROUND = { shellblast: 'boom', rocketpunch: 'quake', dronestrike: 'smoke', dozerpush: 'dirtwave', snowburst: 'frost', railhit: 'railscar',
-                    mechstaff: 'quake', boltstrike: 'railscar', solarburn: 'sunscar' };   // 4.7
+                    mechstaff: 'quake', boltstrike: 'railscar', solarburn: 'sunscar',   // 4.7
+                    dragonslash: 'quake' };   // 4.15
 const REINFORCE_FIRST = 10;  // 대본 웨이브가 끝나고 첫 증원까지
 const REINFORCE_MIN = 3.0;   // 증원 간격 하한
 const REINFORCE_STEP = 0.06; // 증원 한 번마다 적이 세지는 폭
@@ -562,6 +563,7 @@ class Battle {
     else if (sub === 'bike') { this.shake = Math.max(this.shake, 5); sfx('thunder'); }
     else if (sub === 'holo') sfx('holo');
     else if (sub === 'moon') sfx('laser');
+    else if (sub === 'dragon') { this.shake = Math.max(this.shake, 5); sfx('saber'); }   // 4.15 청룡 군신
     if (sub === 'jetdive' || sub === 'cloudjet') this.shake = Math.max(this.shake, 4);
   }
   /* 공격하는 순간: 전차 포구의 섬광·연기 고리, 비행접시가 내리쏘는 광선 */
@@ -610,6 +612,7 @@ class Battle {
     else if (kind === 'boltstrike') { this.shake = Math.max(this.shake, 5); sfx('thunder'); }
     else if (kind === 'divestrike') { this.shake = Math.max(this.shake, 3); sfx('jet'); }
     else if (kind === 'holoburst') sfx('holo');
+    else if (kind === 'dragonslash') { this.shake = Math.max(this.shake, 3); sfx('saber'); }
     const ground = X3_GROUND[kind];
     if (!ground) return;
     if (this.x3Live() >= X3_FX_LIMIT) return;
@@ -741,6 +744,20 @@ class Battle {
 
   tick(dt) {
     this.time += dt;
+    // 4.15 7막 모래폭풍: every 초마다 dur 초 동안 모래가 불어 원거리 사거리가 줄어든다 (양쪽 모두). 2초 전에 알린다.
+    const sto = this.stage.storm;
+    if (sto) {
+      const ph = this.time - sto.first, k = ph >= 0 ? ph % sto.every : -1;
+      const was = this.storming;
+      this.storming = k >= 0 && k < sto.dur;
+      if (this.storming && !was) { this.announce('모래폭풍! 원거리 사거리가 줄어듭니다', 2.2); sfx('siren'); }
+      const soon = ph >= -2 && (ph < 0 ? true : sto.every - k <= 2);
+      if (soon && !this.storming && !this.stormWarned) { this.stormWarned = true; this.announce('모래폭풍이 다가옵니다', 1.6); }
+      if (this.storming) this.stormWarned = false;
+    }
+
+    // 4.15 도전 '파라오의 모래시계': 제한 시간 · 모래시계 토템
+    if (this.stage.hourglass) this.hourglassTick(this.stage.hourglass, dt);
 
     // 전투가 길어지면 자금이 더 빨리 찬다. 적도 증원으로 계속 불어나므로
     // 이쪽 보급이 더 가파르게 올라야 교착이 풀린다.
@@ -1220,6 +1237,41 @@ class Battle {
       this.announce('기관차가 성채를 들이받았습니다', 2.4);
       this.shake = 16; sfx('boom');
     }
+  }
+
+  /* ---- 4.15 도전: 파라오의 모래시계 ----
+   * 시작할 때 전장 at(아군 성채 0 ~ 요새 1) 자리에 모래시계 토템을 세운다. every 초마다 모래시계가 뒤집히고,
+   * 그때 살아 있는 토템 하나마다 요새가 최대 체력의 heal 만큼 아문다. limit 초가 지나면 모래가 다 떨어져 패배. */
+  hourglassLeft() { const hg = this.stage.hourglass; return hg ? Math.max(0, hg.limit - this.time) : Infinity; }
+  hourglassTick(hg, dt) {
+    if (!this.hgInit) {
+      this.hgInit = true; this.hgFlip = hg.every;
+      for (const fr of hg.at) {
+        const m = this.spawnEnemy(hg.id, ALLY_BASE_X + (ENEMY_BASE_X - ALLY_BASE_X) * fr);
+        this.fx.push({ type: 'spawn', x: m.x, row: m.row, t: 0.5, life: 0.5, grand: true, color: '#ffd23a' });
+      }
+    }
+    const left = hg.limit - this.time;
+    if (left <= 20 && !this.hgWarned) { this.hgWarned = true; this.announce('모래가 20초 남았습니다', 2); sfx('siren'); }
+    if (left <= 0) {
+      if (!this.allyCastle.dead && !this.enemyCastle.dead) {
+        this.allyCastle.takeDamage(this.allyCastle.hp + 1);
+        this.announce('모래시계의 모래가 다 떨어졌습니다', 2.4);
+        this.shake = 12; sfx('boom');
+      }
+      return;
+    }
+    this.hgFlip -= dt;
+    if (this.hgFlip > 0) return;
+    this.hgFlip = hg.every;
+    let n = 0;
+    for (const e of this.enemies) if (!e.dead && e.kind === hg.id) { n++; this.fx.push({ type: 'aura', x: e.x, row: e.row, r: 90, t: 0.6, life: 0.6, color: '#ffd23a' }); }
+    const c = this.enemyCastle;
+    if (!n || c.dead) { this.announce('모래시계가 뒤집혔다 · 토템이 없어 요새가 아물지 못합니다', 1.8); return; }
+    c.hp = Math.min(c.maxHp, c.hp + c.maxHp * hg.heal * n);
+    this.announce('모래시계가 뒤집혔다 · 요새 +' + Math.round(hg.heal * n * 100) + '%', 2);
+    this.fx.push({ type: 'aura', x: c.x, row: 1, r: 160, t: 0.8, life: 0.8, color: '#ffd23a' });
+    sfx('zap');
   }
 
   /* ---- 4.6 도전: 그림자 가면무도회 ----
@@ -1860,7 +1912,7 @@ class Battle {
 
   findTarget(f, foes, foeCastle) {
     if (f.ab.noAttack) return null;
-    const reach = f.attackRange + f.radius;
+    const reach = f.attackRange * (this.storming && f.s.ranged ? this.stage.storm.range : 1) + f.radius;   // 4.15 모래폭풍
     // 성벽 파괴병: 병사는 거들떠보지 않고 성채만 노린다
     if (f.ab.sapper) {
       return (!foeCastle.dead && (foeCastle.x - f.x) * f.dir <= reach + foeCastle.radius) ? foeCastle : null;

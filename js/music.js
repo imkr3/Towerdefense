@@ -1219,7 +1219,164 @@ const BGM_TRACKS = {
       'F6*3 Eb6*1 C6*2 Ab5*2 F5*8', 'G5*2 B5*2 D6*4 G6*8', 'C6*3 D6*1 Eb6*2 G6*2 C7*8', 'B6*8 G6*8'] },
     { chords: 'Ab Bb Cm Cm Fm G Cm Cm', lead: 'synlead', dbl: 'gtrlead', int: 3, cm: ['C5*16', 'D5*16', 'Eb5*16', 'Eb5*16', 'C5*16', 'B4*16', 'C5*16', 'C5*16'], cmi: 'choir', mel: [
       'Eb6*4 Ab6*4 C6*8', 'F6*4 Bb6*4 D6*8', 'G6*3 F6*1 Eb6*2 C6*2 G5*8', 'C6*2 Eb6*2 G6*4 C7*8',
-      'Ab6*4 F6*2 C6*2 Ab5*8', 'G6*4 D6*2 B5*2 G5*8', 'C6*2 Eb6*2 G6*2 C7*2 G6*8', 'C6*12 .*4'] }] }
+      'Ab6*4 F6*2 C6*2 Ab5*8', 'G6*4 D6*2 B5*2 G5*8', 'C6*2 Eb6*2 G6*2 C7*2 G6*8', 'C6*12 .*4'] }] },
+  /* 4.15 7막 '모래폭풍 사막': 말숨 리듬의 다르부카와 우드 오스티나토가 흐르는 sands 반주 (히자즈 선법) */
+  hotdunes: { bpm: 124, style: 'sands', sections: [          // 71 뜨거운 모래언덕: 마 히자즈
+    { chords: 'E E F E Am F E E', lead: 'oboe', int: 1, mel: [
+      'E5*2 F5*2 G#5*2 A5*2 B5*8', 'C6*2 B5*2 A5*2 G#5*2 E5*8', 'F5*4 A5*4 C6*8', 'B5*2 A5*2 G#5*2 F5*2 E5*8',
+      'A5*2 B5*2 C6*4 E6*8', 'D6*2 C6*2 A5*4 F5*8', 'G#5*2 A5*2 B5*2 A5*2 G#5*2 F5*2 E5*4', 'E5*12 .*4'] },
+    { chords: 'Am Dm E E F Dm E E', lead: 'flute', dbl: 'oboe', int: 2, mel: [
+      'A5*4 C6*4 E6*8', 'F6*4 D6*2 A5*2 F5*8', 'E6*2 F6*2 E6*2 D6*2 B5*8', 'G#5*4 B5*4 E6*8',
+      'F6*2 E6*2 C6*4 A5*8', 'D6*2 F6*2 A6*4 F6*8', 'E6*2 D6*2 C6*2 B5*2 G#5*2 F5*2 E5*4', 'E5*8 B4*8'] }] },
+
+  mummyvale: { bpm: 108, style: 'sands', sections: [         // 72 미라의 골짜기: 무덤처럼 어둑한 라단조
+    { chords: 'Dm Dm Eb Dm Gm A Dm Dm', lead: 'oboe', int: 1, mel: [
+      'D5*4 F5*2 E5*2 D5*8', 'A4*2 D5*2 F5*4 A5*8', 'G5*2 F5*2 Eb5*4 Bb4*8', 'D5*2 F5*2 A5*4 D6*8',
+      'Bb5*4 A5*2 G5*2 D5*8', 'C#5*2 E5*2 A5*4 G5*4 E5*4', 'F5*2 E5*2 D5*2 C#5*2 D5*8', 'D5*12 .*4'] },
+    { chords: 'Gm A Dm Bb Gm Eb A A', lead: 'strings', dbl: 'oboe', int: 2, mel: [
+      'G5*4 Bb5*4 D6*8', 'A5*2 C#6*2 E6*4 C#6*8', 'D6*4 F6*2 E6*2 D6*8', 'F6*4 D6*2 Bb5*2 F5*8',
+      'G5*2 Bb5*2 D6*4 G6*8', 'G6*2 F6*2 Eb6*4 Bb5*8', 'A5*4 C#6*4 E6*8', 'E6*8 C#6*8'] }] },
+
+  scorpnest: { bpm: 140, style: 'sands', sections: [         // 73 전갈 왕의 둥지: 독침처럼 찌르는 가 히자즈
+    { chords: 'A A Bb A Dm Bb A A', lead: 'oboe', int: 2, mel: [
+      'A5*2 Bb5*2 C#6*2 D6*2 E6*8', 'E6*2 D6*2 C#6*2 Bb5*2 A5*8', 'D6*4 F6*4 Bb5*8', 'C#6*2 E6*2 A6*4 E6*8',
+      'D6*2 F6*2 A6*4 F6*8', 'G6*2 F6*2 D6*4 Bb5*8', 'C#6*2 D6*2 E6*2 D6*2 C#6*2 Bb5*2 A5*4', 'A5*12 .*4'] },
+    { chords: 'Dm Gm A A Bb Gm A A', lead: 'strings', dbl: 'flute', int: 3, mel: [
+      'F6*4 D6*2 A5*2 F5*8', 'G5*2 Bb5*2 D6*4 G6*8', 'E6*2 C#6*2 A5*4 E6*8', 'A6*4 G6*2 F6*2 E6*8',
+      'D6*4 F6*4 Bb6*8', 'G6*4 D6*2 Bb5*2 G5*8', 'A5*2 Bb5*2 C#6*2 E6*2 A6*8', 'A6*12 .*4'] }] },
+
+  wormdunes: { bpm: 100, style: 'sands', sections: [         // 74 모래벌레의 사구: 땅 밑에서 울리는 사단조
+    { chords: 'Gm Gm Ab Gm Cm Ab D D', lead: 'horn', int: 1, mel: [
+      'G4*4 Bb4*4 D5*8', 'D5*2 C5*2 Bb4*4 G4*8', 'Ab4*4 C5*4 Eb5*8', 'D5*4 Bb4*4 G4*8',
+      'C5*4 Eb5*4 G5*8', 'F5*2 Eb5*2 C5*4 Ab4*8', 'F#4*4 A4*4 D5*8', 'D5*12 .*4'] },
+    { chords: 'Cm D Gm Eb Cm Ab D D', lead: 'strings', dbl: 'horn', int: 2, mel: [
+      'Eb5*4 G5*4 C6*8', 'D5*2 F#5*2 A5*4 D6*8', 'Bb5*4 D6*2 C6*2 Bb5*8', 'G5*4 Bb5*4 Eb6*8',
+      'C6*4 G5*2 Eb5*2 C5*8', 'Ab5*2 C6*2 Eb6*4 C6*8', 'A5*4 F#5*4 D5*8', 'D5*8 F#5*8'] }] },
+
+  mirage: { bpm: 112, style: 'sands', sections: [            // 75 신기루 오아시스: 아른거리는 라 히자즈
+    { chords: 'D Eb D Cm D Eb Gm D', lead: 'flute', int: 1, mel: [
+      'F#5*4 G5*2 A5*2 D6*8', 'Bb5*2 A5*2 G5*4 Eb5*8', 'A5*4 F#5*4 D5*8', 'Eb5*2 G5*2 C6*4 G5*8',
+      'D6*2 C6*2 A5*4 F#5*8', 'G5*2 Bb5*2 Eb6*4 Bb5*8', 'Bb5*4 A5*2 G5*2 D5*8', 'D5*12 .*4'] },
+    { chords: 'Gm Cm D D Eb Cm D D', lead: 'celesta', dbl: 'flute', int: 2, mel: [
+      'Bb5*2 D6*2 G6*4 D6*8', 'C6*2 Eb6*2 G6*4 Eb6*8', 'F#6*4 Eb6*2 D6*2 A5*8', 'D6*4 C6*2 Bb5*2 A5*8',
+      'G5*2 Bb5*2 Eb6*4 G6*8', 'G6*2 Eb6*2 C6*4 G5*8', 'A5*2 Bb5*2 A5*2 G5*2 F#5*2 Eb5*2 D5*4', 'D5*16'] }] },
+
+  sphinxgate: { bpm: 120, style: 'sands', sections: [        // 76 스핑크스의 문: 수수께끼 같은 다 히자즈
+    { chords: 'C Db C Fm C Db Bbm C', lead: 'choir', int: 1, mel: [
+      'C5*4 Db5*4 E5*8', 'F5*2 E5*2 Db5*4 Ab4*8', 'G5*4 E5*4 C5*8', 'Ab5*4 F5*2 C5*2 F5*8',
+      'E5*2 F5*2 G5*4 C6*8', 'Db6*4 Ab5*4 F5*8', 'Bb5*2 Ab5*2 F5*4 Db5*8', 'C5*12 .*4'] },
+    { chords: 'Fm Bbm C C Ab Db C C', lead: 'oboe', dbl: 'strings', int: 2, mel: [
+      'Ab5*4 C6*4 F6*8', 'F6*2 Db6*2 Bb5*4 F5*8', 'G5*2 Ab5*2 G5*2 F5*2 E5*8', 'C6*4 Bb5*2 G5*2 E5*8',
+      'Eb5*4 Ab5*4 C6*8', 'F6*4 Db6*2 Ab5*2 F5*8', 'E5*2 F5*2 G5*2 Ab5*2 G5*2 F5*2 E5*4', 'C5*12 .*4'] }] },
+
+  kingsvalley: { bpm: 132, style: 'sands', sections: [       // 77 왕가의 계곡: 위엄 있는 가단조
+    { chords: 'Am Am F E Am Dm E E', lead: 'horn', int: 1, mel: [
+      'A4*2 C5*2 E5*4 A5*8', 'G#5*2 A5*2 B5*4 E5*8', 'F5*4 A5*4 C6*8', 'B5*4 G#5*4 E5*8',
+      'C6*2 B5*2 A5*4 E5*8', 'D5*2 F5*2 A5*4 D6*8', 'B5*2 C6*2 B5*2 A5*2 G#5*2 F5*2 E5*4', 'E5*12 .*4'] },
+    { chords: 'F G Am Am Dm E Am Am', lead: 'trumpet', dbl: 'strings', int: 2, mel: [
+      'A5*4 C6*4 F6*8', 'B5*4 D6*4 G6*8', 'E6*4 C6*2 B5*2 A5*8', 'C6*2 E6*2 A6*4 E6*8',
+      'F6*4 D6*2 A5*2 F5*8', 'G#5*2 B5*2 E6*4 B5*8', 'C6*2 B5*2 A5*2 G#5*2 A5*8', 'A5*12 .*4'] }] },
+
+  glassdesert: { bpm: 104, style: 'sands', sections: [       // 78 유리 사막: 반짝이는 올림바단조
+    { chords: 'F#m D E F#m Bm D C# C#', lead: 'celesta', int: 1, mel: [
+      'F#5*4 A5*4 C#6*8', 'D6*4 A5*4 F#5*8', 'E5*2 G#5*2 B5*4 E6*8', 'C#6*4 A5*2 F#5*2 C#5*8',
+      'B4*2 D5*2 F#5*4 B5*8', 'A5*4 F#5*4 D5*8', 'C#5*2 F5*2 G#5*4 C#6*8', 'C#6*12 .*4'] },
+    { chords: 'D E F#m F#m Bm C# F#m F#m', lead: 'oboe', dbl: 'celesta', int: 2, mel: [
+      'A5*4 D6*4 F#6*8', 'B5*4 E6*4 G#6*8', 'A6*4 F#6*2 C#6*2 A5*8', 'C#6*2 F#6*2 A6*4 F#6*8',
+      'D6*4 B5*4 F#5*8', 'G#5*2 C#6*2 F6*4 C#6*8', 'F#5*2 A5*2 C#6*4 F#6*8', 'F#6*12 .*4'] }] },
+
+  stormeye7: { bpm: 150, style: 'sands', sections: [         // 79 모래폭풍의 눈: 휘몰아치는 마 히자즈
+    { chords: 'E F E Dm E F Dm E', lead: 'oboe', int: 2, mel: [
+      'E5*2 F5*2 G#5*2 B5*2 E6*4 D6*4', 'F6*2 E6*2 D6*2 C6*2 A5*8', 'G#5*2 B5*2 E6*4 B5*8', 'A5*2 D6*2 F6*4 D6*8',
+      'E6*2 F6*2 E6*2 D6*2 B5*4 G#5*4', 'A5*2 C6*2 F6*4 C6*8', 'D6*2 F6*2 A6*4 F6*8', 'G#6*8 E6*8'] },
+    { chords: 'Am Dm E E F Dm E E', lead: 'strings', dbl: 'oboe', int: 3, mel: [
+      'C6*4 E6*4 A6*8', 'A6*4 F6*2 D6*2 A5*8', 'B5*2 G#5*2 E5*4 B5*8', 'E6*4 F6*2 E6*2 D6*8',
+      'C6*4 F6*4 A6*8', 'F6*4 D6*2 A5*2 F5*8', 'G#5*2 A5*2 B5*2 C6*2 D6*2 C6*2 B5*4', 'E6*12 .*4'] }] },
+
+  pharaoh: { bpm: 136, style: 'sands', sections: [           // 80 모래폭풍의 파라오: 왕좌를 향한 라 히자즈
+    { chords: 'D Eb D Gm Cm Eb D D', lead: 'horn', int: 2, mel: [
+      'D5*2 Eb5*2 F#5*2 G5*2 A5*8', 'Bb5*2 A5*2 G5*4 Eb5*8', 'F#5*4 A5*4 D6*8', 'D6*2 Bb5*2 G5*4 D5*8',
+      'Eb5*2 G5*2 C6*4 G5*8', 'Bb5*4 G5*2 Eb5*2 Bb4*8', 'A4*2 D5*2 F#5*4 A5*8', 'D5*12 .*4'] },
+    { chords: 'Gm Cm D D Eb Cm D D', lead: 'trumpet', dbl: 'strings', int: 3, mel: [
+      'D6*4 Bb5*2 G5*2 D6*8', 'Eb6*4 C6*2 G5*2 Eb6*8', 'F#6*4 Eb6*2 D6*2 A5*8', 'D6*2 F#6*2 A6*4 F#6*8',
+      'G6*4 Eb6*2 Bb5*2 G5*8', 'C6*2 Eb6*2 G6*4 Eb6*8', 'A5*2 Bb5*2 C6*2 Bb5*2 A5*2 G5*2 F#5*4', 'D6*12 .*4'] }] },
+
+  boss_scorpking: { bpm: 162, style: 'grand', sections: [      // 전갈 왕: 꼬리를 치켜든 가 히자즈
+    { chords: 'A A Bb A', lead: 'lowbrass', int: 1, mel: [
+      'A3*2 A3*2 Bb3*2 A3*2 C#4*4 E4*4', 'A3*2 C#4*2 E4*4 A4*8', 'Bb3*2 D4*2 F4*4 Bb3*8', 'A3*4 C#4*4 E4*8'] },
+    { chords: 'Dm Bb A A Dm Gm A A', lead: 'horn', int: 2, mel: [
+      'D6*2 F6*2 A6*2 F6*2 D6*4 A5*4', 'Bb5*2 D6*2 F6*4 D6*8', 'C#6*2 E6*2 A6*4 E6*8', 'A6*2 G6*2 F6*2 E6*2 C#6*8',
+      'F6*2 A6*2 D7*4 A6*8', 'G6*2 D6*2 Bb5*4 D6*8', 'E6*2 C#6*2 A5*4 E6*8', 'A6*8 C#6*8'] },
+    { chords: 'Bb C Dm Dm Gm A Dm A', lead: 'trumpet', int: 3, cm: ['F5*16', 'G5*16', 'A5*16', 'A5*16', 'Bb5*16', 'A5*16', 'A5*16', 'A5*16'], cmi: 'choir', mel: [
+      'D6*2 D6*2 F6*2 A6*2 Bb6*8', 'E6*2 E6*2 G6*2 Bb6*2 C7*8', 'F6*4 D6*2 A5*2 F5*8', 'A5*2 D6*2 F6*4 A6*8',
+      'G6*4 D6*4 Bb5*8', 'A6*4 E6*2 C#6*2 A5*8', 'F6*4 E6*2 D6*2 A5*8', 'A5*12 .*4'] }] },
+
+  boss_sphinx: { bpm: 152, style: 'grand', sections: [         // 스핑크스: 풀리지 않는 다 히자즈
+    { chords: 'C C Db C', lead: 'lowbrass', int: 1, mel: [
+      'C3*4 Db3*2 E3*2 G3*8', 'F3*2 E3*2 Db3*4 C3*8', 'Db3*4 F3*4 Ab3*8', 'G3*4 E3*4 C3*8'] },
+    { chords: 'Fm Db C C Fm Bbm C C', lead: 'horn', int: 2, mel: [
+      'C6*2 F6*2 Ab6*2 F6*2 C6*4 Ab5*4', 'Db6*2 F6*2 Ab6*4 F6*8', 'E6*2 G6*2 C7*4 G6*8', 'C7*2 Bb6*2 Ab6*2 G6*2 E6*8',
+      'F6*2 Ab6*2 C7*4 Ab6*8', 'Bb6*2 F6*2 Db6*4 F6*8', 'G6*2 E6*2 C6*4 G6*8', 'C7*8 E6*8'] },
+    { chords: 'Ab Bb C C Db Bbm C C', lead: 'trumpet', int: 3, cm: ['C5*16', 'D5*16', 'E5*16', 'E5*16', 'F5*16', 'F5*16', 'E5*16', 'C5*16'], cmi: 'choir', mel: [
+      'Eb6*4 Ab6*4 C7*8', 'F6*4 Bb6*4 D7*8', 'G6*4 E6*2 C6*2 G5*8', 'C6*2 E6*2 G6*4 C7*8',
+      'Ab6*4 F6*2 Db6*2 Ab5*8', 'Bb5*4 Db6*2 F6*2 Bb6*8', 'G6*4 F6*2 E6*2 Db6*8', 'C6*12 .*4'] }] },
+
+  boss_sandpharaoh: { bpm: 160, style: 'grand', sections: [    // 모래폭풍의 파라오: 피라미드가 무너지는 라 히자즈
+    { chords: 'D D Eb D', lead: 'lowbrass', int: 1, mel: [
+      'D3*2 D3*2 Eb3*2 D3*2 F#3*4 A3*4', 'D3*2 F#3*2 A3*4 D4*8', 'Eb3*2 G3*2 Bb3*4 Eb4*8', 'D4*4 A3*4 F#3*8'] },
+    { chords: 'Gm Eb D D Cm Eb D D', lead: 'horn', int: 2, mel: [
+      'D6*2 G6*2 Bb6*2 G6*2 D6*4 Bb5*4', 'Eb6*2 G6*2 Bb6*4 G6*8', 'F#6*2 A6*2 D7*4 A6*8', 'D7*2 C7*2 Bb6*2 A6*2 F#6*8',
+      'Eb6*2 G6*2 C7*4 G6*8', 'Bb6*2 G6*2 Eb6*4 G6*8', 'A6*2 F#6*2 D6*4 A6*8', 'D7*8 F#6*8'] },
+    { chords: 'Eb F Gm Gm Cm D Gm D', lead: 'trumpet', int: 3, cm: ['G5*16', 'A5*16', 'Bb5*16', 'Bb5*16', 'G5*16', 'F#5*16', 'G5*16', 'F#5*16'], cmi: 'choir', mel: [
+      'G6*4 Bb6*4 Eb6*8', 'A6*4 C7*4 F6*8', 'Bb6*4 G6*2 D6*2 Bb5*8', 'D6*2 G6*2 Bb6*4 D7*8',
+      'C7*4 G6*2 Eb6*2 C6*8', 'A6*4 F#6*2 D6*2 A5*8', 'G6*4 F#6*2 G6*2 D6*8', 'D6*12 .*4'] }] },
+
+  finale6: { bpm: 146, style: 'grand', sections: [             // 7막의 끝: 마 히자즈의 결전에서 마장조의 새벽으로
+    { chords: 'E F E Dm Am F E E', lead: 'choir', int: 1, mel: [
+      'B4*4 E5*4 B4*8', 'C5*4 A4*4 F4*8', 'G#4*6 B4*2 E5*8', 'F5*4 D5*4 A4*8',
+      'C5*4 E5*4 A5*8', 'A5*4 F5*4 C5*8', 'G#4*4 B4*4 E5*8', 'E5*12 .*4'] },
+    { chords: 'Am Dm E E F Dm E E', lead: 'horn', int: 2, mel: [
+      'A5*2 E5*2 C5*2 E5*2 A5*4 C6*4', 'A5*2 F5*2 D5*2 F5*2 A5*8', 'G#5*2 E5*2 B4*2 E5*2 G#5*8', 'B5*4 G#5*4 E5*8',
+      'C6*2 A5*2 F5*4 A5*8', 'D6*2 A5*2 F5*4 D6*8', 'B5*2 G#5*2 E5*4 B5*8', 'E6*8 B5*8'] },
+    { chords: 'F G Am Am Dm E Am E', lead: 'trumpet', int: 3, cm: ['A5*16', 'B5*16', 'C6*16', 'C6*16', 'A5*16', 'G#5*16', 'A5*16', 'G#5*16'], cmi: 'choir', mel: [
+      'C6*4 A5*4 F5*8', 'D6*4 B5*4 G5*8', 'E6*4 C6*2 A5*2 E5*8', 'A5*2 C6*2 E6*4 C6*8',
+      'F6*4 D6*4 A5*8', 'E6*4 B5*2 G#5*2 E5*8', 'A5*4 C6*4 E6*8', 'G#5*4 B5*4 E6*8'] },
+    { chords: 'E A B E C#m A B E', lead: 'trumpet', int: 3, mel: [
+      'G#5*4 B5*4 E6*8', 'A5*4 C#6*4 E6*8', 'B5*4 D#6*4 F#6*8', 'E6*2 G#6*2 B6*4 G#6*8',
+      'C#6*2 E6*2 G#6*4 C#7*8', 'A6*4 E6*4 C#6*8', 'D#6*2 F#6*2 B6*4 F#6*8', 'E6*12 .*4'] }] },
+
+  hc_desert: { bpm: 174, style: 'grand', sections: [           // 7막 하드코어: 가 히자즈에서 라단조로 몰아친다
+    { chords: 'A Bb A Dm', lead: 'horn', int: 1, mel: [
+      'A4*4 C#5*4 E5*8', 'F5*4 D5*4 Bb4*8', 'C#5*4 E5*4 A5*8', 'A5*8 F5*8'] },
+    { chords: 'Dm Bb A A Gm Bb A A', lead: 'trumpet', int: 2, mel: [
+      'A5*2 D6*2 F6*2 A6*2 G6*4 F6*4', 'F6*2 D6*2 Bb5*2 D6*2 F6*8', 'E6*2 C#6*2 A5*2 C#6*2 E6*8', 'A6*4 G6*2 F6*2 E6*8',
+      'D6*2 G6*2 Bb6*4 G6*8', 'F6*2 D6*2 Bb5*4 D6*8', 'C#6*4 E6*4 A6*8', 'A6*8 E6*8'] },
+    { chords: 'Bb C Dm Dm Gm A Dm A', lead: 'strings', int: 3, cm: ['F5*16', 'G5*16', 'A5*16', 'A5*16', 'G5*16', 'A5*16', 'F5*16', 'E5*16'], cmi: 'choir', mel: [
+      'D6*4 F6*4 Bb6*8', 'E6*4 G6*4 C7*8', 'F6*4 A6*2 D7*2 A6*8', 'D7*4 A6*4 F6*8',
+      'Bb6*4 G6*2 D6*2 Bb5*8', 'C#6*2 E6*2 A6*4 E6*8', 'F6*6 E6*2 D6*8', 'C#6*4 E6*4 A6*8'] }] },
+
+  /* 4.15 도전 '파라오의 모래시계': 빠르고 신나는 사막 록(sandrush) */
+  sandclock: { bpm: 182, style: 'sandrush', wet: 0.2, sections: [  // E8 모래시계 전장: 모래가 쏟아지는 마 히자즈
+    { chords: 'E E F E Am Am F E', lead: 'synlead', int: 2, mel: [
+      'E5*2 F5*2 G#5*2 B5*2 E6*2 D6*2 B5*4', 'E5*2 G#5*2 B5*2 D6*2 B5*8', 'F5*2 A5*2 C6*2 F6*2 E6*2 C6*2 A5*4', 'G#5*2 B5*2 E6*4 B5*8',
+      'A5*2 C6*2 E6*2 A6*2 G#6*2 E6*2 C6*4', 'A5*2 E6*2 C6*4 A5*8', 'F5*2 A5*2 C6*2 A5*2 F6*8', 'E6*4 F6*2 E6*2 D6*2 C6*2 B5*4'] },
+    { chords: 'Dm E Am F Dm F E E', lead: 'gtrlead', dbl: 'trumpet', int: 3, mel: [
+      'F6*4 D6*4 A5*8', 'G#6*4 E6*4 B5*8', 'A6*4 E6*2 C6*2 A5*8', 'C6*2 F6*2 A6*4 F6*8',
+      'D6*4 F6*4 A6*8', 'C7*4 A6*2 F6*2 C6*8', 'B6*4 G#6*2 E6*2 B5*8', 'F6*8 E6*8'] },
+    { chords: 'Am F E E Am Dm E E', lead: 'synlead', dbl: 'gtrlead', int: 3, cm: ['A4*16', 'A4*16', 'G#4*16', 'B4*16', 'C5*16', 'A4*16', 'G#4*16', 'B4*16'], cmi: 'choir', mel: [
+      'E6*2 E6*2 C6*2 E6*2 A6*4 E6*4', 'F6*2 A6*2 C7*4 A6*8', 'G#6*2 F6*2 E6*4 B5*8', 'E6*2 G#6*2 B6*4 G#6*8',
+      'A6*4 C7*4 E6*8', 'F6*4 D6*4 A5*8', 'B5*2 C6*2 D6*2 C6*2 B5*2 A5*2 G#5*4', 'E6*12 .*4'] }] },
+
+  boss_anubis: { bpm: 190, style: 'sandrush', wet: 0.2, sections: [ // 아누비스: 심판의 저울이 기우는 사 히자즈
+    { chords: 'G G Ab G', lead: 'gtr', int: 2, mel: [
+      'G4*2 G4*2 Ab4*2 G4*2 B4*2 D5*2 G5*4', 'F5*2 Eb5*2 D5*2 C5*2 B4*8', 'Ab4*2 C5*2 Eb5*4 Ab5*8', 'G5*4 D5*4 B4*8'] },
+    { chords: 'Cm Ab G G Cm Fm G G', lead: 'synlead', dbl: 'gtrlead', int: 3, mel: [
+      'C6*2 Eb6*2 G6*2 Eb6*2 C6*4 G5*4', 'Ab5*2 C6*2 Eb6*4 C6*8', 'B5*2 D6*2 G6*4 D6*8', 'G6*2 F6*2 Eb6*2 D6*2 B5*8',
+      'Eb6*2 G6*2 C7*4 G6*8', 'F6*2 Ab6*2 C7*4 Ab6*8', 'G6*2 Ab6*2 G6*2 F6*2 D6*8', 'G6*8 B5*8'] },
+    { chords: 'Ab Bb Cm Cm Fm G Cm G', lead: 'synlead', dbl: 'trumpet', int: 3, cm: ['C5*16', 'D5*16', 'Eb5*16', 'Eb5*16', 'C5*16', 'B4*16', 'C5*16', 'B4*16'], cmi: 'choir', mel: [
+      'Eb6*4 Ab6*4 C6*8', 'F6*4 Bb6*4 D6*8', 'G6*3 F6*1 Eb6*2 C6*2 G5*8', 'C6*2 Eb6*2 G6*4 C7*8',
+      'Ab6*4 F6*2 C6*2 Ab5*8', 'B5*2 D6*2 G6*4 B6*8', 'C7*4 G6*2 Eb6*2 C6*8', 'B5*4 D6*4 G6*8'] }] }
+
 
 };
 
@@ -1251,7 +1408,10 @@ const BGM_GAIN = {
   railrush: 0.77, boss_train: 0.95, masquerade: 1.08, boss_masklord: 1.24,
   // 4.11 6막 (렌더해 재서 맞춤)
   fairyring: 1.43, sporevale: 1.7, mushcourt: 1.66, wispmarsh: 1.12, treehall: 1.0, moonpalace: 1.28, satyrfeast: 1.02, unicornmeadow: 1.05,
-  forestheart: 1.0, elderking: 1.06, boss_mushking: 0.96, boss_faequeen: 0.99, boss_eldertree: 0.93, finale5: 0.99, hc_fey: 0.94
+  forestheart: 1.0, elderking: 1.06, boss_mushking: 0.96, boss_faequeen: 0.99, boss_eldertree: 0.93, finale5: 0.99, hc_fey: 0.94,
+  // 4.15 7막 · 도전 E8 (렌더해 재서 맞춤)
+  hotdunes: 1.10, mummyvale: 1.42, scorpnest: 0.92, wormdunes: 1.30, mirage: 1.26, sphinxgate: 1.16, kingsvalley: 1.32, glassdesert: 1.45,
+  stormeye7: 0.96, pharaoh: 0.96, boss_scorpking: 0.93, boss_sphinx: 0.95, boss_sandpharaoh: 0.92, finale6: 0.98, hc_desert: 0.93, boss_anubis: 0.93, sandclock: 0.68
 };
 
 /* 3.17 보스곡 리믹스 → 3.20 배틀 록 재편곡. 보스곡 · 마지막 전장 · 이벤트 보스 · 하드코어 곡 전부.
@@ -1265,7 +1425,8 @@ const BGM_ROCK = ['boss_lich', 'boss_troll', 'boss_frostgiant', 'boss_drake', 'b
   'hc_iron', 'hc_storm', 'hc_abyss', 'hc_boss',
   'boss_stormgriffin', 'boss_cloudking', 'boss_skylord', 'finale3', 'hc_sky',
   'boss_raptorqueen', 'boss_quetzal', 'boss_jungletyrant', 'finale4', 'hc_jungle',
-  'boss_mushking', 'boss_faequeen', 'boss_eldertree', 'finale5', 'hc_fey'];
+  'boss_mushking', 'boss_faequeen', 'boss_eldertree', 'finale5', 'hc_fey',
+  'boss_scorpking', 'boss_sphinx', 'boss_sandpharaoh', 'finale6', 'hc_desert'];
 BGM_ROCK.forEach(k => {
   const tr = BGM_TRACKS[k];
   tr.style = 'rock'; tr.wet = 0.2;
@@ -1284,7 +1445,7 @@ BGM_ROCK.forEach(k => {
 function stageMusic(stage, hard) {
   if (stage && stage.endless) return 'endless';
   // 3.19 하드코어: 막마다 신나고 빠른 전용 곡 (1막 · 2막 · 3막 · 4.0 4막)
-  if (hard) { const i = STAGES.indexOf(stage); return typeof ACT6_FROM !== 'undefined' && i >= ACT6_FROM ? 'hc_fey' : typeof ACT5_FROM !== 'undefined' && i >= ACT5_FROM ? 'hc_jungle' : typeof ACT4_FROM !== 'undefined' && i >= ACT4_FROM ? 'hc_sky' : i >= ACT3_FROM ? 'hc_abyss' : i >= 15 ? 'hc_storm' : 'hc_iron'; }
+  if (hard) { const i = STAGES.indexOf(stage); return typeof ACT7_FROM !== 'undefined' && i >= ACT7_FROM ? 'hc_desert' : typeof ACT6_FROM !== 'undefined' && i >= ACT6_FROM ? 'hc_fey' : typeof ACT5_FROM !== 'undefined' && i >= ACT5_FROM ? 'hc_jungle' : typeof ACT4_FROM !== 'undefined' && i >= ACT4_FROM ? 'hc_sky' : i >= ACT3_FROM ? 'hc_abyss' : i >= 15 ? 'hc_storm' : 'hc_iron'; }
   return (stage && stage.music && BGM_TRACKS[stage.music]) ? stage.music : 'meadow';
 }
 function bossTrack(stage, bossId, hard) {
