@@ -3267,6 +3267,8 @@ function hardcoreEnemyMul(st) { const m = st.enemyMul || 1; return Math.max(HARD
 function hardcoreFortHp(st) { return Math.max(Math.round(st.baseHp * HARDCORE.fortMul), HARDCORE.fortFloor); }
 function hardcoreMods(st, i) {
   const base = (st && st.mods) || [];
+  // 4.18: 이미 특성이 둘 이상인 전장엔 더 얹지 않는다 — 중갑 · 저주 · 질주가 셋 겹친 막의 끝 전장은 다 키워도 넘을 수 없었다
+  if (base.length >= 2) return base.slice();
   const tw = HARDCORE.twists;
   for (let k = 0; k < tw.length; k++) {
     const m = tw[(i + k) % tw.length];

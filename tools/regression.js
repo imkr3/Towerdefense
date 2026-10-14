@@ -1723,7 +1723,8 @@ test('4.15: the Pharaoh\'s Hourglass — totems heal the fort on each turn, and 
 });
 test('4.15: hardcore hits harder', () => {
   const H = vm.runInContext('({HARDCORE})', ctx);
-  assert.ok(H.HARDCORE.enemyMul >= 4.6 && H.HARDCORE.fortMul >= 2.4 && H.HARDCORE.boss.hp >= 3.3 && H.HARDCORE.mulFloor >= 6.9);
+  // 4.18: 앞쪽 전장 배율은 그대로 억세게 · 보스 체력은 7막 끝 보스를 넘을 수 있게 낮췄다 (뒤쪽 전장은 hardcoreEnemyMul 이 누그러뜨림)
+  assert.ok(H.HARDCORE.enemyMul >= 4.6 && H.HARDCORE.fortMul >= 2.4 && H.HARDCORE.boss.hp >= 1.3 && H.HARDCORE.mulFloor >= 6.9);
 });
 
 test('4.17: upgrading keeps the detail pane where it was; chapter tabs scroll instead of squeezing', () => {
