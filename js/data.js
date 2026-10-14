@@ -2255,7 +2255,17 @@ EVENT_STAGES.push(
             W(66,'mummy',8,.7), W(88,'scorpion',3,2.5), W(110,'scarab',8,.8), W(132,'sandmage',3,2.5), W(156,'mummy',10,.6),
             W(180,'sandworm',2,4)] }
 );
-EVENT_STAGES.forEach((st, k) => { st.eventIndex = k; st.opening = 'rush'; });
+/* 4.18: 다 키운 편성이면 도전 여덟이 모두 성채 100% 로 끝났다 (하드코어보다 쉽다는 말이 맞았다).
+ * 도전을 더 억세게: 적 배율 · 보스 체력에 곱한다.
+   * 도전마다 여유가 달라(앞의 다섯은 넉넉, 뒤의 셋은 빠듯) 따로 맞춘다: [적 배율, 보스 체력] */
+const EVENT_TOUGH = { eclipse: [1.7, 1.7], titan: [2, 2], fleet: [1.7, 1.7], rift: [1.4, 1.4], demonking: [1.6, 1.6],
+                      train: [1.2, 1.2], masque: [1.2, 1.2], hourglass: [1.2, 1.2] };
+EVENT_STAGES.forEach((st, k) => {
+  st.eventIndex = k; st.opening = 'rush';
+  const tg = EVENT_TOUGH[st.event.id] || [1, 1];
+  st.enemyMul = Math.round(st.enemyMul * tg[0] * 100) / 100;
+  if (st.bossMul) st.bossMul = Object.assign({}, st.bossMul, { hp: Math.round(st.bossMul.hp * tg[1] * 100) / 100 });
+});
 function eventOpen(s, k) { return !!EVENT_STAGES[k] && (s.cleared || 0) >= EVENT_STAGES[k].event.unlock; }
 function eventCount(s) { let n = 0; for (const st of EVENT_STAGES) if (s.events && s.events[st.event.id]) n++; return n; }
 
@@ -2473,6 +2483,7 @@ const ACHIEVEMENTS = [
   { id:'campaign80',name:'모래폭풍을 건넌 자',desc:'80전장 모두 돌파 (7막 모래폭풍 사막)',gold:50000,stone:30,test:s=>s.cleared>=80 },
   { id:'trainStop',name:'기관차를 멈춘 자',desc:'도전 \'폭주 기관차\' 돌파',gold:15000,stone:15,test:s=>!!(s.events && s.events.train) },
   { id:'unmasked',name:'가면을 벗긴 자',desc:'도전 \'그림자 가면무도회\' 돌파',gold:15000,stone:15,test:s=>!!(s.events && s.events.masque) },
+  { id:'ultimate',name:'궁극에 이른 자',desc:'병종 하나를 4진',gold:30000,stone:20,test:s=>Object.keys(s.evo3 || {}).length >= 1 },
   { id:'timeDefier',name:'시간을 거스른 자',desc:'도전 \'파라오의 모래시계\' 돌파',gold:20000,stone:20,test:s=>!!(s.events && s.events.hourglass) },
   { id: 'endless10',name: '끝없는 전장',  desc: '무한 전장 10웨이브 돌파',       gold: 2000, stone: 3,
     test: s => (s.endlessBest || 0) >= 10 },
@@ -3011,6 +3022,62 @@ function applyEvo2(r, e) {
   r.evoMinus = '출진 비용 +' + Math.round((EVO2_PRICE.cost - 1) * 100) + '% · 쿨타임 +' + Math.round((EVO2_PRICE.cooldown - 1) * 100) + '%';
 }
 
+/* =======================================================================
+ *  4.18 4진 (궁극). 3진을 마친 병종 가운데 둘만 — 레벨 25(사관학교로 연 상한)에서 한 번 더.
+ *  3진 위에 얹는다. 체력·공격이 다시 오르고(영웅 ×1.15 · 전장 병종 ×1.3) 능력이 크게 바뀐다.
+ *  대가: 출진 비용 · 쿨타임 +15% (3진 대가 위에). 시련 둘. 기본 · 진화 · 3진 · 4진 어느 형태로든 되돌려 쓸 수 있다.
+ * ======================================================================= */
+const EVO3_LEVEL = 25;
+const EVO3_STAT = 1.3, EVO3_STAT_HERO = 1.15;
+const EVO3_PRICE = { cost: 1.15, cooldown: 1.15 };
+function evo3Cost(u) { return Math.round(30000 + (u.cost || 0) * 60); }
+const EVOLUTIONS3 = {
+  // 멀린: 다시 마법사의 모습으로 — 별빛 로브 · 초승달 모자 · 은하를 담은 수정 지팡이. 돕는 법사이자 딜러.
+  merlin:  { look: { shape: 'starmerlin', body: '#ece6f4', tunic: '#1c1f5a', accent: '#ffd76a', grow: 1.05 }, name: '별의 대현자 멀린', short: '별의대현자',
+             plus: '별똥별 포격 · 범위 +35 · 사거리 +40 · 공격 20% 빠름 · 별빛이 3번 튕김 · 별의 낙인 (받는 피해 +20%) · 주변 아군 공격력 +12% · 별의 심판 4.2배 · 2.6초 정지 · 주변 아군 보호막 · 가속',
+             add: { areaRadius: 35, range: 40 }, faster: 0.8,
+             ab: { chain: { n: 3, fall: 0.5, range: 160 }, sunmark: { vuln: 0.2, dur: 3 }, rally: { atk: 0.12, radius: 260 }, stun: { chance: 0.25, dur: 0.9 } },
+             active: { name: '별의 심판', kind: 'astral', mul: 4.2, stun: 2.6, slow: 8, radius: 290, ally: { barrier: 260, haste: { mul: 0.7, dur: 6 }, radius: 340 },
+                       desc: '하늘에서 별을 떨어뜨려 가장 가까운 적 주변에 큰 피해 · 2.6초 정지 · 8초 둔화, 주변 아군에게 보호막과 6초 가속.' },
+             shot: 'star', castFx: 'starfall', atkFx: 'starsigil', arrive: 'stargate' },
+  // 공성 전차: 미래 무기를 단 반중력 전차 — 쌍열 플라즈마 포 · 측면 미사일 포드 · 근접 방어 레이저 · 에너지 방벽.
+  catapult:{ look: { shape: 'hovertank', body: '#dfe6ee', tunic: '#3a4a5e', accent: '#5ad8ff', grow: 1.05 }, name: '플라즈마 기동전차', short: '플라즈마전차',
+             plus: '반중력 부양 · 쌍열 플라즈마 포 범위 +30 · 사거리 +60 · 공격 15% 빠름 · 플라즈마 화상 · 보스·중장갑에게 1.5배 · 세 번째 포격마다 미사일 4발 · 갑주 45% · 초당 60 수리',
+             add: { areaRadius: 30, range: 60 }, faster: 0.85,
+             ab: { armor: 0.45, regen: 60, burn: { dps: 90, dur: 4 }, breaker: 1.5, salvo: { every: 3, n: 4, mul: 0.55, radius: 60 } },
+             shot: 'plasma', castFx: 'plasmablast', atkFx: 'plasmamuzzle', arrive: 'hoverdrop' }
+};
+const EVO3_TRIALS = {
+  merlin:   [{ t: 'event', n: 6 }, { t: 'dmg', id: 'merlin', n: 6000000 }],
+  catapult: [{ t: 'stars', from: 70, to: 80 }, { t: 'dmg', id: 'catapult', n: 8000000 }]
+};
+function evo3Trials(s, id) { return (EVO3_TRIALS[id] || []).map(c => Object.assign({ c: c }, trialState(s, c))); }
+function evo3TrialsDone(s, id) { return evo3Trials(s, id).every(x => x.done); }
+function applyEvo3(r, e) {
+  r.evo3 = true;
+  r.name = e.name;
+  r.short = e.short || e.name;
+  const st = r.gacha ? EVO3_STAT_HERO : EVO3_STAT;
+  r.hp = Math.round(r.hp * st);
+  r.atk = Math.round(r.atk * st);
+  r.cost = Math.round(r.cost * EVO3_PRICE.cost / 5) * 5;
+  if (r.cooldown) r.cooldown = _r2(r.cooldown * EVO3_PRICE.cooldown);
+  r.evoPlus = e.plus;
+  r.abText = (r.base.abText ? r.base.abText + ' · ' : '') + '✸ ' + e.plus;
+  if (e.add) for (const k in e.add) r[k] = (r[k] || 0) + e.add[k];
+  if (e.faster) r.interval = _r2(r.interval * e.faster);
+  if (e.ab) _mergeAb(r, e.ab);
+  if (e.look) {
+    r.shape = e.look.shape;
+    for (const k of ['body', 'accent', 'tunic']) if (e.look[k]) r[k] = e.look[k];
+    r.scale = _r2((r.base && r.base.scale || 1) * 1.16 * (e.look.grow || 1));
+    r.bigEvo = true;
+  }
+  for (const k of ['shot', 'castFx', 'atkFx', 'healFx', 'arrive']) if (e[k]) r[k] = e[k];
+  if (e.active && r.active) Object.assign(r.active, e.active);
+  r.evoMinus = '출진 비용 +' + Math.round((EVO2_PRICE.cost * EVO3_PRICE.cost - 1) * 100) + '% · 쿨타임 +' + Math.round((EVO2_PRICE.cooldown * EVO3_PRICE.cooldown - 1) * 100) + '%';
+}
+
 /* 레벨이 오를 때 체력·공격 말고 좋아지는 것들. k = 레벨 - 1 */
 function growUnit(r, lv) {
   const k = Math.max(0, (lv || 1) - 1);
@@ -3130,8 +3197,9 @@ function resolveUnit(u, lv, evo) {
   lv = Math.max(1, lv || 1);
   const ev = !!(evo && EVOLUTIONS[u.id] && lv >= EVO_LEVEL);
   // 4.1: evo === 2 면 3진 (2진을 대가 없이 얹은 위에 3진)
-  const ev2 = ev && evo === 2 && !!EVOLUTIONS2[u.id] && lv >= EVO2_LEVEL;
-  const key = u.id + '|' + lv + '|' + (ev2 ? 2 : ev ? 1 : 0);
+  const ev2 = ev && (evo === 2 || evo === 3) && !!EVOLUTIONS2[u.id] && lv >= EVO2_LEVEL;
+  const ev3 = ev2 && evo === 3 && !!EVOLUTIONS3[u.id] && lv >= EVO3_LEVEL;   // 4.18 4진은 3진 위에
+  const key = u.id + '|' + lv + '|' + (ev3 ? 3 : ev2 ? 2 : ev ? 1 : 0);
   if (_resolved[key]) return _resolved[key];
   const r = Object.assign({}, u);
   r.base = u;
@@ -3140,6 +3208,7 @@ function resolveUnit(u, lv, evo) {
   if (u.active) r.active = Object.assign({}, u.active);
   if (ev) applyEvolution(r, EVOLUTIONS[u.id], ev2);
   if (ev2) applyEvo2(r, EVOLUTIONS2[u.id]);
+  if (ev3) applyEvo3(r, EVOLUTIONS3[u.id]);
   growUnit(r, lv);
   heroBuild(r);
   _resolved[key] = r;
@@ -3154,18 +3223,24 @@ function usesEvo2(save, id) {
   return !!(save && save.evo2 && save.evo2[id] === true && save.evo && save.evo[id] !== undefined &&
             EVOLUTIONS2[id] && (save.levels && save.levels[id] || 1) >= EVO2_LEVEL);
 }
-/* 형태 고르기 (훈련소 · 편성 공용). form: 'base' | 'evo' | 'evo2' */
+/* 4.18 4진을 쓰는가: 3진을 쓰고 있고, 4진을 마쳤고 켜 두었고, 레벨 25 이상 */
+function usesEvo3(save, id) {
+  return !!(usesEvo2(save, id) && save.evo3 && save.evo3[id] === true && EVOLUTIONS3[id] && (save.levels && save.levels[id] || 1) >= EVO3_LEVEL);
+}
+/* 형태 고르기 (훈련소 · 편성 공용). form: 'base' | 'evo' | 'evo2' | 'evo3' */
 function setEvoForm(save, id, form) {
   if (!save.evo2) save.evo2 = {};
+  if (!save.evo3) save.evo3 = {};
   save.evo[id] = form !== 'base';
-  if (save.evo2[id] !== undefined) save.evo2[id] = form === 'evo2';
+  if (save.evo2[id] !== undefined) save.evo2[id] = form === 'evo2' || form === 'evo3';
+  if (save.evo3[id] !== undefined) save.evo3[id] = form === 'evo3';
 }
-/* 지금 쓰는 형태: 0 기본 · 1 진화 · 2 3진 */
-function evoForm(save, id) { return usesEvo2(save, id) ? 2 : usesEvo(save, id) ? 1 : 0; }
+/* 지금 쓰는 형태: 0 기본 · 1 진화 · 2 3진 · 3 4진 */
+function evoForm(save, id) { return usesEvo3(save, id) ? 3 : usesEvo2(save, id) ? 2 : usesEvo(save, id) ? 1 : 0; }
 function unitFor(save, id) {
   const u = UNIT_BY_ID[id];
   const f = evoForm(save, id);
-  return resolveUnit(u, (save && save.levels && save.levels[id]) || 1, f === 2 ? 2 : f === 1);
+  return resolveUnit(u, (save && save.levels && save.levels[id]) || 1, f >= 2 ? f : f === 1);
 }
 
 /* =======================================================================
@@ -3179,14 +3254,16 @@ function unitFor(save, id) {
 // 4.4: 3진이 생긴 뒤로 도전이 쉬워졌다 — 적 ×3.5 → 4.1 (바닥 5 → 6.2), 요새 ×2 → 2.2, 보스 체력 ×2.6 → 2.9
 const HARDCORE = { enemyMul: 4.6, fortMul: 2.4, castleMul: 0.6, cmdMul: 1.5, reward: 3, stones: 5, stunResist: 0.3,
                    // 3.19: 하드코어 보스는 따로 더 억세다. 다 키운 영웅 편성이 필살을 몰아 쓰면 10~20초 만에 녹았다
-                   boss: { hp: 3.3, atk: 1.2 },   // 4.15: 더 억세게
+                   boss: { hp: 2, atk: 1.2 },     // 4.18: 3.3 → 2 (7막 끝 보스 셋이 다 키워도 넘을 수 없었다)
                    fury: { per30: 0.15, max: 1.5 },   // 3.1: 오래 끌수록 새로 나오는 적이 억세진다 (최대 2.5배)
                    // 앞쪽 전장도 모질게: 적 배율과 요새 체력에 바닥을 깐다 (2막 초입 수준)
-                   mulFloor: 6.9, fortFloor: 50000,
+                   mulFloor: 6.9, fortFloor: 50000, soft: 4, sally: 0.5,
                    twists: ['blitz', 'horde', 'ironclad', 'curse'] };
 /* 4.4 각성 경계: 도전(하드코어 · 이벤트)에서는 편성한 3진 하나마다 적이 6%씩 억세진다 (3진은 체력·공격 ×1.35) */
 const AWAKEN_TAX = 0.06;
-function hardcoreEnemyMul(st) { return Math.max((st.enemyMul || 1) * HARDCORE.enemyMul, HARDCORE.mulFloor); }
+/* 4.18: 전장 배율이 큰 뒤쪽 전장은 하드코어 배율이 누그러진다 (m / (1 + m/soft)). 예전엔 7막(배율 16~59)에 ×4.6 을 그대로 곱해
+ * ×270 까지 올라 다 키운 편성도 30초 안에 성채가 무너졌다 — 어려운 게 아니라 깰 수 없었다. 앞쪽 전장은 거의 그대로다. */
+function hardcoreEnemyMul(st) { const m = st.enemyMul || 1; return Math.max(HARDCORE.enemyMul * m / (1 + m / HARDCORE.soft), HARDCORE.mulFloor); }
 function hardcoreFortHp(st) { return Math.max(Math.round(st.baseHp * HARDCORE.fortMul), HARDCORE.fortFloor); }
 function hardcoreMods(st, i) {
   const base = (st && st.mods) || [];

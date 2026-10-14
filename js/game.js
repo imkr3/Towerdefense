@@ -57,7 +57,8 @@ const X3_FX_LIMIT = 12;      // 4.3 3진 연출(포연·광선·사이렌)이 �
 // 3진의 타격 연출 → 땅에 남는 Canvas 연출 (연기 · 흙 · 갈라진 땅 · 눈더미 · 그을린 자국)
 const X3_GROUND = { shellblast: 'boom', rocketpunch: 'quake', dronestrike: 'smoke', dozerpush: 'dirtwave', snowburst: 'frost', railhit: 'railscar',
                     mechstaff: 'quake', boltstrike: 'railscar', solarburn: 'sunscar',   // 4.7
-                    dragonslash: 'quake' };   // 4.15
+                    dragonslash: 'quake',   // 4.15
+                    starfall: 'starscar', plasmablast: 'plasmascar' };   // 4.18
 const REINFORCE_FIRST = 10;  // 대본 웨이브가 끝나고 첫 증원까지
 const REINFORCE_MIN = 3.0;   // 증원 간격 하한
 const REINFORCE_STEP = 0.06; // 증원 한 번마다 적이 세지는 폭
@@ -564,6 +565,8 @@ class Battle {
     else if (sub === 'holo') sfx('holo');
     else if (sub === 'moon') sfx('laser');
     else if (sub === 'dragon') { this.shake = Math.max(this.shake, 5); sfx('saber'); }   // 4.15 청룡 군신
+    else if (sub === 'stargate') { this.shake = Math.max(this.shake, 4); sfx('holo'); }   // 4.18 별의 대현자
+    else if (sub === 'hoverdrop') { this.shake = Math.max(this.shake, 8); sfx('boom'); }   // 4.18 플라즈마 기동전차
     if (sub === 'jetdive' || sub === 'cloudjet') this.shake = Math.max(this.shake, 4);
   }
   /* 공격하는 순간: 전차 포구의 섬광·연기 고리, 비행접시가 내리쏘는 광선 */
@@ -574,11 +577,21 @@ class Battle {
     else if (kind === 'railflash') sfx('rail');
     else if (kind === 'solarray') sfx('solar');
     else if (kind === 'moonflash') sfx('laser');
+    else if (kind === 'starsigil') sfx('holo');
+    else if (kind === 'plasmamuzzle') sfx('rail');
     if (this.x3Live() >= X3_FX_LIMIT) return;
     if (kind === 'solarray') {                          // 4.7 태양 위성: 하늘에서 과녁으로 내리꽂는 빛기둥 (과녁 자리)
       const tx = target && target.x !== undefined ? target.x : f.x + f.dir * f.attackRange;
       this.fx.push({ type: 'x3', kind: 'solarray', x: tx, row: target && target.row !== undefined ? target.row : f.row, r: f.s.areaRadius || 90,
                      dir: f.dir, scale: sc, color: f.s.accent, t: 0.6, life: 0.6 });
+      return;
+    }
+    if (kind === 'starsigil') {                         // 4.18 별의 대현자: 발밑 마법진 · 지팡이 끝 별 문양 (몸 단위)
+      this.fx.push({ type: 'x3', kind: 'starsigil', x: f.x, ox: 6 * sc, h: 66 * sc, row: f.row, dir: f.dir, scale: sc, color: f.s.accent, t: 0.7, life: 0.7 });
+      return;
+    }
+    if (kind === 'plasmamuzzle') {                      // 4.18 플라즈마 포: 포구 앞에 모였다 터지는 푸른 고리 (몸 단위)
+      this.fx.push({ type: 'x3', kind: 'plasmamuzzle', x: f.x, ox: 76 * sc, h: 44 * sc, row: f.row, dir: f.dir, scale: sc, color: f.s.accent, t: 0.55, life: 0.55 });
       return;
     }
     if (kind === 'moonflash') {                         // 4.7 레이저 활: 시위 자리의 초승달 섬광 (몸 단위)
@@ -613,6 +626,8 @@ class Battle {
     else if (kind === 'divestrike') { this.shake = Math.max(this.shake, 3); sfx('jet'); }
     else if (kind === 'holoburst') sfx('holo');
     else if (kind === 'dragonslash') { this.shake = Math.max(this.shake, 3); sfx('saber'); }
+    else if (kind === 'starfall') { this.shake = Math.max(this.shake, 3); sfx('zap'); }
+    else if (kind === 'plasmablast') { this.shake = Math.max(this.shake, 6); sfx('boom'); }
     const ground = X3_GROUND[kind];
     if (!ground) return;
     if (this.x3Live() >= X3_FX_LIMIT) return;
@@ -686,6 +701,14 @@ class Battle {
         }
       }
       this._chaining = false;
+      // 4.18 별의 심판: 적을 치고, 시전자 둘레 아군에게 보호막과 가속을 건다 (돕는 법사이자 딜러)
+      if (a.ally) {
+        for (const m of this.allies) if (!m.dead && Math.abs(m.x - f.x) <= a.ally.radius) {
+          if (a.ally.barrier) m.giveBarrier(a.ally.barrier * f.abMul);
+          if (a.ally.haste) { m.hasteMul = m.hasteT > 0 ? Math.min(m.hasteMul, a.ally.haste.mul) : a.ally.haste.mul; m.hasteT = Math.max(m.hasteT, a.ally.haste.dur); }
+        }
+        this.fx.push({ type: 'aura', x: f.x, row: f.row, r: a.ally.radius, t: 0.8, life: 0.8, color: f.s.accent });
+      }
       // 여의봉 강타: 분신이 곧바로 튀어나온다
       if (a.clones && f.ab.summon) {
         const u = UNIT_BY_ID[f.ab.summon.id];
@@ -2020,6 +2043,7 @@ class Battle {
         color: f.s.accent, dmg: r.dmg, crit: r.crit, src: f, toCastle: !!target.isCastle,
         area: f.s.area, areaRadius: f.s.areaRadius, dir: f.dir
       });
+      if (f.ab.salvo) this.fireSalvo(f, r.dmg, foes);
     } else {
       const cx = f.x + f.dir * f.attackRange * 0.6;
       if (f.s.area) this.areaHit(r.dmg, cx, f.s.areaRadius, foes, foeCastle, f, r.crit, f.side === 'ally' || !!target.isCastle);
@@ -2029,6 +2053,25 @@ class Battle {
                      dir: f.dir, t: 0.22, life: 0.22, sty: 'melee', st: f.s, color: f.s.accent });
       sfx(f.s.area ? 'hit' : 'slash');
     }
+  }
+
+  /* 4.18 플라즈마 기동전차: every 번째 포격마다 측면 포드에서 미사일 n 발이 차례로 솟아 사거리 안의 적(보스 · 단단한 적 먼저)에게 꽂힌다 */
+  fireSalvo(f, dmg, foes) {
+    const sv = f.ab.salvo;
+    f.salvoN = (f.salvoN || 0) + 1;
+    if (f.salvoN % sv.every) return;
+    const reach = f.attackRange * 1.1, pool = [];
+    for (const e of foes) if (!e.dead && !e.burrowed && Math.abs(e.x - f.x) <= reach) pool.push(e);
+    if (!pool.length) return;
+    pool.sort((a, b) => (b.boss ? 1 : 0) - (a.boss ? 1 : 0) || b.hp - a.hp);
+    for (let k = 0; k < sv.n; k++) {
+      const e = pool[k % pool.length];
+      this.shots.push({ x: f.x - f.dir * 10, y0: f.row, tx: e.x + (k - (sv.n - 1) / 2) * 12, side: f.side, t: -k * 0.09,
+                        dur: 0.55 + Math.abs(e.x - f.x) / 1400, color: f.s.accent, dmg: dmg * sv.mul, crit: false, src: f,
+                        missile: true, area: true, areaRadius: sv.radius, dir: f.dir, toCastle: false });
+    }
+    f.podT = 0.6;                                     // 그림: 미사일 포드 덮개가 열린다
+    sfx('rocket');
   }
 
   /* 성벽 파괴병: 성채에 닿으면 짊어진 화약을 터뜨린다. 보상도 없다. */
@@ -2298,7 +2341,8 @@ class Battle {
       const ab = (s.src && s.src.ab) || {};
       const foes = this.foesOf(s.side);
       const castle = this.castleOf(s.side);
-      if (s.src) this.castFx(s.src, s.tx, s.y0, s.crit);
+      if (s.missile) { if (this.fx.length < FX_LIMIT * 0.7) this.fx.push({ type: 'cast', kind: 'missilehit', x: s.tx, row: s.y0, color: s.color, r: s.areaRadius, big: false, dir: s.dir, t: 0.4, life: 0.4 }); sfx('hit'); }
+      else if (s.src) this.castFx(s.src, s.tx, s.y0, s.crit);
       if (ab.pierce) { this.pierceHit(s); continue; }
       if (s.area) {
         this.areaHit(s.dmg, s.tx, s.areaRadius, foes, castle, s.src, s.crit, s.side === 'ally' || s.toCastle);
@@ -2420,7 +2464,9 @@ class Battle {
         a.kbTimer = Math.max(a.kbTimer, 0.42);
       }
       sy.group.forEach(([id, n]) => {
-        for (let k = 0; k < n; k++) this.spawnEnemy(id, ENEMY_SPAWN_X - k * 24 - Math.random() * 20);
+        // 4.18 하드코어: 수비대도 하드코어 배율을 받으니 머릿수는 줄인다 (다 키운 편성 40명이 몇 초 만에 쓸려 나갔다)
+        const cnt = this.hard ? Math.max(1, Math.round(n * HARDCORE.sally)) : n;
+        for (let k = 0; k < cnt; k++) this.spawnEnemy(id, ENEMY_SPAWN_X - k * 24 - Math.random() * 20);
       });
       this.fx.push({ type: 'cast', kind: 'shockwave', x: c.x - 60, row: 1, color: '#ffb45a', r: 260,
                      big: true, dir: -1, t: 0.7, life: 0.7 });

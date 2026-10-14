@@ -963,6 +963,39 @@ class GLFx {
         }
         break;
       }
+      /* 4.18 별의 대현자 착탄: 위에서 꽂히는 금빛 줄기 · 사방으로 튀는 별 조각 · 퍼지는 금빛 고리 */
+      case 'starfall': {
+        const gold = [1, 0.85, 0.42], hot = [1, 0.97, 0.85], vio = [0.8, 0.6, 1];
+        for (let i = 0, n = N(12); i < n; i++) this.add(x + rnd(-6, 6) * sc, y - (150 - i * 11) * sc, 0, 0, 0.22, 8 * sc, 2 * sc, hot, 0.9, 1, Math.PI / 2, 0, 0, 1.3);
+        for (let i = 0, n = N(28); i < n; i++) { const a = rnd(-Math.PI, 0), sp = rnd(140, 380) * sc;
+          this.add(x, y - 18 * sc, Math.cos(a) * sp, Math.sin(a) * sp, rnd(0.4, 0.8), rnd(3, 6) * sc, 1.5 * sc, i % 3 ? gold : vio, 1, 2, a, rnd(-6, 6), 420, 1.7); }
+        for (let i = 0, n = N(30); i < n; i++) { const a = i / n * TAU; this.add(x, y - 2 * sc, Math.cos(a) * R * 2, Math.sin(a) * R * 0.5, 0.45, 6 * sc, 2 * sc, gold, 0.8, 1.3, a, 0, 0, 1.3); }
+        this.add(x, y - 18 * sc, 0, 0, 0.22, 14 * sc, 80 * sc * big, hot, 0.7, 1, 0, 0, 0, 1.3);
+        break;
+      }
+      /* 4.18 플라즈마 착탄: 하얀 섬광 · 푸른 플라즈마 구름 · 사방으로 튀는 전기 불티 */
+      case 'plasmablast': {
+        const hot = [0.92, 1, 1];
+        this.add(x, y - 16 * sc, 0, 0, 0.25, 20 * sc, 110 * sc * big, hot, 0.85, 1, 0, 0, 0, 1.2);
+        for (let i = 0, n = N(40); i < n; i++) { const a = rnd(-Math.PI, 0.2), sp = rnd(180, 520) * sc;
+          this.add(x, y - 16 * sc, Math.cos(a) * sp, Math.sin(a) * sp, rnd(0.2, 0.5), rnd(3, 6) * sc, 1, i % 2 ? col : hot, 1, 3, a, 0, 300, 2); }
+        for (let i = 0, n = N(24); i < n; i++) { const a = i / n * TAU; this.add(x, y - 2 * sc, Math.cos(a) * R * 2.4, Math.sin(a) * R * 0.5, 0.4, 8 * sc, 2 * sc, col, 0.8, 1.4, a, 0, 0, 1.3); }
+        break;
+      }
+      /* 4.18 미사일 착탄: 작은 불덩이와 불티 */
+      case 'missilehit': {
+        const fire = [1, 0.6, 0.22], hot = [1, 0.95, 0.75];
+        this.add(x, y - 10 * sc, 0, 0, 0.2, 10 * sc, 46 * sc, hot, 0.8, 1, 0, 0, 0, 1.3);
+        for (let i = 0, n = N(12); i < n; i++) { const a = rnd(-Math.PI, 0), sp = rnd(120, 300) * sc;
+          this.add(x, y - 10 * sc, Math.cos(a) * sp, Math.sin(a) * sp, rnd(0.25, 0.5), rnd(3, 5) * sc, 1, i % 2 ? fire : hot, 1, 2.4, a, 0, 500, 2); }
+        break;
+      }
+      /* 4.18 별의 심판 (멀린 4진): 별 다섯이 꽂히고 거대한 금빛 고리 */
+      case 'astral': {
+        for (let i = 0; i < 5; i++) this.emit('starfall', x + (i - 2) * R * 0.35, y, opt);
+        this.emit('holy', x, y, opt);
+        break;
+      }
       /* 4.15 청룡 군신: 비취 초승달을 따라 늘어선 빛 · 흩어지는 용 비늘 */
       case 'dragonslash': {
         const hot = [0.9, 1, 0.95], dir = opt.dir || 1;

@@ -1733,4 +1733,58 @@ test('4.17: upgrading keeps the detail pane where it was; chapter tabs scroll in
   assert.ok(main.indexOf('tabs.scrollLeft') >= 0, 'selected tab scrolled into view');
 });
 
+/* ---------------- 4.18 4진 · 하드코어 · 도전 ---------------- */
+test('4.18: two units ascend (4th form) — drawn, translated, with their own effects, stronger than the 3rd', () => {
+  const X = vm.runInContext('({EVOLUTIONS2, EVOLUTIONS3, EVO3_TRIALS, EVO3_LEVEL, usesEvo3, setEvoForm, evoForm, unitFor})', ctx);
+  const read = f => fs.readFileSync(path.join(__dirname, '../js/' + f), 'utf8');
+  const render = read('render.js'), i18n = read('i18n.js'), gl = read('gl-fx.js');
+  assert.deepEqual(Object.keys(X.EVOLUTIONS3).sort(), ['catapult', 'merlin']);
+  for (const id in X.EVOLUTIONS3) {
+    const e = X.EVOLUTIONS3[id];
+    assert.ok(X.EVOLUTIONS2[id], id + ' has a 3rd form');
+    assert.ok(render.indexOf("case '" + e.look.shape + "':") >= 0, id + ' drawn');
+    assert.ok(render.indexOf("case '" + e.arrive + "'") >= 0, id + ' arrival drawn');
+    assert.ok(gl.indexOf("case '" + e.castFx + "':") >= 0 && render.indexOf("case '" + e.castFx + "':") >= 0, id + ' impact in WebGL and Canvas');
+    assert.ok(render.indexOf("shot === '" + e.shot + "'") >= 0, id + ' projectile');
+    assert.ok(render.indexOf("case '" + e.atkFx + "':") >= 0, id + ' attack effect');
+    for (const k of [e.name, e.short, e.plus]) assert.ok(i18n.indexOf("'" + k + "'") >= 0 || i18n.indexOf(k + "':") >= 0, id + ' translated: ' + k.slice(0, 20));
+    assert.equal(X.EVO3_TRIALS[id].length, 2);
+    const a = G.resolveUnit(U[id], 27, 2), b = G.resolveUnit(U[id], 27, 3), low = G.resolveUnit(U[id], X.EVO3_LEVEL - 1, 3);
+    assert.ok(b.evo3 && b.evo2 && b.hp > a.hp && b.atk > a.atk && b.range > a.range && b.cost > a.cost, id + ' stronger and pricier');
+    assert.ok(!low.evo3, 'needs level ' + X.EVO3_LEVEL);
+    const sv = { levels: { [id]: 27 }, evo: { [id]: true }, evo2: { [id]: true }, evo3: { [id]: true } };
+    assert.equal(X.evoForm(sv, id), 3); assert.equal(X.unitFor(sv, id).shape, e.look.shape);
+    X.setEvoForm(sv, id, 'evo2'); assert.equal(X.evoForm(sv, id), 2);
+    X.setEvoForm(sv, id, 'evo3'); assert.equal(X.evoForm(sv, id), 3);
+    X.setEvoForm(sv, id, 'base'); assert.equal(X.evoForm(sv, id), 0);
+  }
+  const m = G.resolveUnit(U.merlin, 27, 3);
+  assert.ok(m.ab.chain && m.ab.sunmark && m.ab.rally && m.active.ally, 'Merlin deals damage and supports');
+});
+test('4.18: the plasma tank fires a missile salvo every third shot; Merlin\'s ultimate shields and hastes allies', () => {
+  const b = battle(); const tk = b.makeAlly(G.resolveUnit(U.catapult, 27, 3), 400); b.allies.push(tk);
+  const foe = b.spawnEnemy('ogre', 700); foe.hp = foe.maxHp = 1e7;
+  for (let i = 0; i < 3; i++) b.attack(tk, foe, b.enemies, b.enemyCastle);
+  const ms = b.shots.filter(x => x.missile); assert.equal(ms.length, tk.ab.salvo.n, 'salvo of ' + tk.ab.salvo.n);
+  assert.ok(ms.every(x => x.dmg > 0 && x.area));
+  for (let i = 0; i < 120; i++) b.updateShots(1 / 30);
+  assert.ok(foe.hp < foe.maxHp, 'missiles land');
+  const s = save(); s.owned.merlin = true; s.levels.merlin = 27; s.evo = { merlin: true }; s.evo2 = { merlin: true }; s.evo3 = { merlin: true }; s.loadout = ['merlin', 'spear'];
+  const c = new Battle(5, s); c.update(1 / 30);
+  const mer = c.makeAlly(c.stats('merlin'), 500); c.allies.push(mer); const pal = c.makeAlly(U.spear, 520); c.allies.push(pal);
+  c.spawnEnemy('ogre', 640); c.heroCooldowns.merlin = 0; c.heroGlobalCd = 0;
+  assert.ok(c.useHeroActive('merlin'), 'cast');
+  assert.ok(pal.barrier > 0 && pal.hasteT > 0, 'ally shield + haste');
+});
+test('4.18: save keeps 4th forms only where the 3rd exists; hardcore saturates on late stages; challenges are tougher', () => {
+  const main = fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8');
+  assert.ok(/s\.evo3 = evo3;/.test(main) && /EVOLUTIONS3\[k\] && evo2\[k\] !== undefined/.test(main));
+  const H = vm.runInContext('({HARDCORE, hardcoreEnemyMul, EVENT_STAGES, EVENT_TOUGH})', ctx);
+  const late = STAGES.reduce((a, st) => (st.enemyMul || 1) > (a.enemyMul || 1) ? st : a, STAGES[0]);
+  assert.ok(H.hardcoreEnemyMul(late) < late.enemyMul * H.HARDCORE.enemyMul * 0.5, 'late hardcore no longer ×4.6 of an already huge multiplier');
+  assert.ok(H.hardcoreEnemyMul(STAGES[0]) >= H.HARDCORE.mulFloor, 'early floor kept');
+  assert.ok(H.HARDCORE.sally < 1, 'smaller hardcore garrisons');
+  for (const st of H.EVENT_STAGES) assert.ok((H.EVENT_TOUGH[st.event.id] || [1])[0] > 1, st.event.id + ' tougher');
+});
+
 console.log(count + ' regression checks passed');

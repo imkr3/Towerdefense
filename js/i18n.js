@@ -981,6 +981,18 @@ const I18N_EN = {
   '모래가 20초 남았습니다': '20 seconds of sand left', '모래시계의 모래가 다 떨어졌습니다': 'The hourglass has run out of sand',
   '모래시계가 뒤집혔다 · 토템이 없어 요새가 아물지 못합니다': 'The hourglass turned · no totems left, so the fort can\'t heal',
   '시간을 거스른 자': 'Time Defier', '도전 \'파라오의 모래시계\' 돌파': 'Clear the \'Pharaoh\'s Hourglass\' challenge',
+  /* ---------------- 4.18 4진 (궁극) ---------------- */
+  '별의 대현자 멀린': 'Merlin, Sage of the Stars', '별의대현자': 'Star Sage',
+  '별똥별 포격 · 범위 +35 · 사거리 +40 · 공격 20% 빠름 · 별빛이 3번 튕김 · 별의 낙인 (받는 피해 +20%) · 주변 아군 공격력 +12% · 별의 심판 4.2배 · 2.6초 정지 · 주변 아군 보호막 · 가속':
+    'Shooting-star barrage · area +35 · range +40 · attacks 20% faster · starlight bounces 3 times · star brand (foes take +20%) · nearby allies +12% attack · Judgment of the Stars ×4.2 · 2.6s freeze · shields and hastes nearby allies',
+  '별의 심판': 'Judgment of the Stars',
+  '하늘에서 별을 떨어뜨려 가장 가까운 적 주변에 큰 피해 · 2.6초 정지 · 8초 둔화, 주변 아군에게 보호막과 6초 가속.': 'Drops stars from the sky around the nearest foe for heavy damage · 2.6s freeze · 8s slow, and gives nearby allies a shield and 6s of haste.',
+  '플라즈마 기동전차': 'Plasma Assault Tank', '플라즈마전차': 'Plasma Tank',
+  '반중력 부양 · 쌍열 플라즈마 포 범위 +30 · 사거리 +60 · 공격 15% 빠름 · 플라즈마 화상 · 보스·중장갑에게 1.5배 · 세 번째 포격마다 미사일 4발 · 갑주 45% · 초당 60 수리':
+    'Anti-grav hover · twin plasma cannon area +30 · range +60 · attacks 15% faster · plasma burn · ×1.5 vs bosses and heavy armor · 4 missiles every third shot · 45% armor · repairs 60/s',
+  '✸ 4진': '✸ Ascend', '4진': 'Ascend', ' 4진 완료!': ' ascended!', '4진 시련을 먼저 마치세요': 'Finish the ascension trials first',
+  '✸ 4진 · 💰 ': '✸ Ascend · 💰 ', '레벨 25에 4진': 'Ascends at Lv 25', '· 대가: 3진보다 출진 비용 · 쿨타임 +15%': '· Trade-off: deploy cost · cooldown +15% over the awakened form',
+  '궁극에 이른 자': 'Ultimate Form', '병종 하나를 4진': 'Ascend one unit',
   /* ---------------- 4.16 무한 전장 개편 ---------------- */
   '정말로 끝이 없습니다. 웨이브마다 적이 가파르게 강해지고, 3웨이브마다 1~7막의 전장 보스와 도전 보스가 섞여 옵니다 (12웨이브마다 둘). 곡은 나온 보스의 곡으로 바뀝니다. 성채가 무너질 때까지!': 'Truly endless. Foes grow steeply stronger each wave, and every 3 waves a boss arrives — campaign bosses from Acts 1–7 mixed with challenge bosses (two at once every 12). The music follows whichever boss is on the field. Hold until your castle falls!',
   '끝이 없는 전장. 웨이브마다 적이 가파르게 강해지고, 3웨이브마다 전장 보스와 도전 보스가 섞여 옵니다. 성채가 무너질 때까지!': 'A battle without end. Foes grow steeply stronger each wave, and every 3 waves a campaign or challenge boss joins in. Until your castle falls!',
@@ -1160,6 +1172,7 @@ const I18N_EN_PATTERNS = [
   [/✪ (.+?) 3진 시련을 마치면 3진할 수 있습니다/g, '✪ $1 can awaken once its trials are done'],
   [/3진 시련 (\d+) \/ (\d+) · 훈련소에서 확인/g, 'Awakening trials $1 / $2 · see the Training Grounds'],
   [/✪ 3진 시련 (\d+) \/ (\d+)/g, '✪ Awakening trials $1 / $2'],
+  [/✸ 4진 시련 (\d+) \/ (\d+)/g, '✸ Ascension trials $1 / $2'], [/✸ 시련 (\d+) \/ (\d+)/g, '✸ Trials $1 / $2'],   // 4.18
   [/✪ 시련 (\d+) \/ (\d+)/g, '✪ Trials $1 / $2'],
   [/전장 (\d+) 돌파 · (\d+)초 안에/g, 'Clear stage $1 within $2s'],
   [/전장 (\d+) 돌파 · 성채 100%/g, 'Clear stage $1 with the castle at 100%'],
@@ -1300,7 +1313,7 @@ function i18nStart() {
 
 if (I18N.lang === 'en') {
   // 4.2: 3진 표(EVOLUTIONS2)도 — 빠져 있어 3진 능력 글이 반쯤만 번역됐다
-  [UNITS, ENEMIES, STAGES, EVENT_STAGES, EXPEDITIONS, SEASONS, MISSION_DEFS, ACHIEVEMENTS, UPGRADES, COMMAND, RARITY, STAGE_MODS, OPENINGS, EVOLUTIONS, EVOLUTIONS2, EVO_LABELS, STAT_LABELS]
+  [UNITS, ENEMIES, STAGES, EVENT_STAGES, EXPEDITIONS, SEASONS, MISSION_DEFS, ACHIEVEMENTS, UPGRADES, COMMAND, RARITY, STAGE_MODS, OPENINGS, EVOLUTIONS, EVOLUTIONS2, EVOLUTIONS3, EVO_LABELS, STAT_LABELS]
     .forEach(o => i18nData(o, 0));
   // 무한 전장은 부를 때마다 새로 만든다
   const makeEndlessKo = makeEndlessStage;

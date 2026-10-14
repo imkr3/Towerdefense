@@ -1507,3 +1507,15 @@ body{background:var(--bg0);color:var(--tx)}
 .chapter-tab .ch-name,.chapter-tab .ch-sub,.chapter-tab .ch-star{white-space:nowrap;overflow:visible;text-overflow:clip}
 @media(max-width:1000px){.chapter-tab .ch-sub{display:none}}
 @media(max-width:780px){.chapter-tab{flex-direction:column;align-items:center;gap:0}}
+
+/* 4.18 4진 (✸): 금빛 · 보라 무지갯빛 */
+.evo-box.evo4{border-color:#ffd76a55}
+.evo-box.evo4 b{background:linear-gradient(90deg,#ffe9a0,#e9b8ff,#9ff6ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.evo-box.evo4.ready{border-color:#ffd76a;background:linear-gradient(100deg,#3a2a12cc,#2a1a3acc);box-shadow:0 0 0 1px #ffd76a33,0 0 18px #ffd76a33}
+.evo-box.evo4.done{border-style:solid;border-color:#ffd76a66}
+.evo-box.evo4.done.on{background:linear-gradient(100deg,#3a2a12aa,#2a1a3aaa)}
+.evo-form.f4.sel{background:linear-gradient(180deg,#fff2c0,#d8a0ff);color:#2a1440}
+.btn.evo3-btn{background:linear-gradient(180deg,#fff0b8,#e0a4ff);color:#2a1440;border-color:#ffd76a}
+.unit-card.evolved3{border-color:#ffd76a99;box-shadow:0 0 0 1px #ffd76a44,0 0 18px #c88aff33,var(--panel-shadow)}
+.unit-card.evolved3 .unit-ico{border-color:#ffd76a;box-shadow:0 0 12px #ffd76a77}
+.unit-tile.evolved3 canvas{filter:drop-shadow(0 0 5px #ffd76acc) drop-shadow(0 0 9px #c88aff88)}

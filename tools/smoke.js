@@ -403,7 +403,7 @@ async function runSize(browser, size) {
     const miss = await page.evaluate(() => {
       const out = new Set(); const chk = x => { if (typeof x === 'string' && /[가-힣]/.test(x) && /[가-힣]/.test(t(x))) out.add(x); };
       for (const u of UNITS) { chk(u.name); chk(u.short); chk(u.role); chk(u.abText); chk(u.desc); if (u.active) { chk(u.active.name); chk(u.active.desc); } }
-      for (const E of [EVOLUTIONS, EVOLUTIONS2]) for (const k in E) { chk(E[k].name); chk(E[k].short); chk(E[k].plus); }
+      for (const E of [EVOLUTIONS, EVOLUTIONS2, EVOLUTIONS3]) for (const k in E) { chk(E[k].name); chk(E[k].short); chk(E[k].plus); if (E[k].active) { chk(E[k].active.name); chk(E[k].active.desc); } }
       for (const k in ENEMIES) { const e = ENEMIES[k]; chk(e.name); chk(e.abText); if (e.special) chk(e.special.name); (e.phases || []).forEach(q => { chk(q.name); if (q.special) chk(q.special.name); }); }
       STAGES.concat(EVENT_STAGES).forEach(s => { chk(s.name); chk(s.hint); if (s.event) chk(s.event.mech); });
       ACHIEVEMENTS.forEach(a => { chk(a.name); chk(a.desc); }); SEASONS.forEach(s => { chk(s.name); chk(s.sub); chk(s.desc); });

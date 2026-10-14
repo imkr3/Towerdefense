@@ -47,7 +47,7 @@ function loadEngine(seed) {
     vm.runInContext(src, ctx, { filename: f });
   }
   return vm.runInContext(
-    '({Battle, STAGES, EVENT_STAGES, EXPEDITIONS, makeEndlessStage, MOD_COUNTERS, recommendDeck, UNITS, UNIT_BY_ID, ROSTER_UNITS, LOADOUT_MAX, HERO_SLOT_MAX, unitLevelCap, unitTrainCost, UPGRADES, EVO_LEVEL, EVOLUTIONS, EVOLUTIONS2})',
+    '({Battle, STAGES, EVENT_STAGES, EXPEDITIONS, makeEndlessStage, MOD_COUNTERS, recommendDeck, UNITS, UNIT_BY_ID, ROSTER_UNITS, LOADOUT_MAX, HERO_SLOT_MAX, unitLevelCap, unitTrainCost, UPGRADES, EVO_LEVEL, EVOLUTIONS, EVOLUTIONS2, EVOLUTIONS3})',
     ctx);
 }
 
@@ -192,8 +192,11 @@ function runStage(g, index, upLv, unitLv, trace, gacha, basic, opt) {
   // 4.1: 레벨 20 을 넘긴 전장 병종은 3진까지 마쳤다고 본다
   const evo2 = {};
   if (!process.env.SIM_NOEVO && !process.env.SIM_NOEVO2 && Math.min(unitLv, cap) >= 20) g.UNITS.forEach(u => { if (g.EVOLUTIONS2 && g.EVOLUTIONS2[u.id]) evo2[u.id] = true; });
+  // 4.18: 레벨 25 를 넘긴 병종은 4진까지 마쳤다고 본다
+  const evo3 = {};
+  if (!process.env.SIM_NOEVO && !process.env.SIM_NOEVO2 && Math.min(unitLv, cap) >= 25) g.UNITS.forEach(u => { if (g.EVOLUTIONS3 && g.EVOLUTIONS3[u.id]) evo3[u.id] = true; });
   const save = {
-    cleared: index, coins: 0, levels: levels, loadout: loadout, stars: {}, owned: owned, evo: evo, evo2: evo2,
+    cleared: index, coins: 0, levels: levels, loadout: loadout, stars: {}, owned: owned, evo: evo, evo2: evo2, evo3: evo3,
     upgrades: {
       wallet: upLv, income: upLv, power: upLv, vitality: upLv, castle: upLv,
       logistics: upLv, treasury: upLv, spoils: upLv,
@@ -204,7 +207,7 @@ function runStage(g, index, upLv, unitLv, trace, gacha, basic, opt) {
 
   const b = enStage ? new g.Battle(0, save, enStage)
           : evStage ? new g.Battle(g.STAGES.length + (exStage ? g.EVENT_STAGES.length + opt.expedition : opt.event), save, evStage)
-                    : new g.Battle(index, save, null, { hard: !!SIM_HARD });
+                    : new g.Battle(index, save, null, { hard: !!(SIM_HARD || opt.hard) });
   const dt = 1 / 30;
   let t = 0, nextLog = 20;
   const timed = !!opt.timed;
