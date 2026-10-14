@@ -2143,7 +2143,8 @@ STAGES[39].bossMusic = 'finale2';               // 3막의 끝은 따로 한 곡
 STAGES[ACT5_FROM - 1].bossMusic = 'finale3';      // 4막의 끝 (4.0)
 STAGES[ACT6_FROM - 1].bossMusic = 'finale4';      // 5막의 끝 (4.6)
 STAGES[ACT7_FROM - 1].bossMusic = 'finale5';      // 6막의 끝 (4.11)
-STAGES[STAGES.length - 1].bossMusic = 'finale6';   // 7막의 끝 (4.15)
+STAGES[STAGES.length - 1].bossMusic = 'finale6';
+STAGES[79].hardSoft = 0.8; STAGES[79].hardBoss = 0.7;   // 4.18 하드코어 7막의 끝: 되살아나는 파라오 앞에서 다 키운 편성도 무너졌다 — 이 전장만 배율을 조금 덜어 준다   // 7막의 끝 (4.15)
 
 /* 전장 길이. 예전엔 모두 2000 이라 병사가 적과 부딪히기까지 40초 넘게 걸어야 했다.
  * 초반은 짧게 붙고, 뒤로 갈수록·보스 전장일수록 조금씩 길어진다. */
@@ -3263,7 +3264,7 @@ const HARDCORE = { enemyMul: 4.6, fortMul: 2.4, castleMul: 0.6, cmdMul: 1.5, rew
 const AWAKEN_TAX = 0.06;
 /* 4.18: 전장 배율이 큰 뒤쪽 전장은 하드코어 배율이 누그러진다 (m / (1 + m/soft)). 예전엔 7막(배율 16~59)에 ×4.6 을 그대로 곱해
  * ×270 까지 올라 다 키운 편성도 30초 안에 성채가 무너졌다 — 어려운 게 아니라 깰 수 없었다. 앞쪽 전장은 거의 그대로다. */
-function hardcoreEnemyMul(st) { const m = st.enemyMul || 1; return Math.max(HARDCORE.enemyMul * m / (1 + m / HARDCORE.soft), HARDCORE.mulFloor); }
+function hardcoreEnemyMul(st) { const m = st.enemyMul || 1; return Math.max(HARDCORE.enemyMul * m / (1 + m / HARDCORE.soft) * (st.hardSoft || 1), HARDCORE.mulFloor); }
 function hardcoreFortHp(st) { return Math.max(Math.round(st.baseHp * HARDCORE.fortMul), HARDCORE.fortFloor); }
 function hardcoreMods(st, i) {
   const base = (st && st.mods) || [];
