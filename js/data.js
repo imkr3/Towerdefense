@@ -1790,7 +1790,7 @@ STAGES.push(
     W(12,'scorpion',4,1.2),W(24,'scorpking',1),W(48,'scarab',7,.5),W(74,'dunerider',3,1.6),W(100,'scorpion',5,1.1),W(128,'sandmage',2,4),W(156,'scarab',9,.45),W(186,'scorpion',6,1)]},
   {name:'모래벌레의 사구',hint:'모래벌레는 땅속으로 다가와 솟구칩니다 · 전열 뒤를 비우지 마세요',baseHp:330000,money:810,rate:103,reward:10600,enemyMul:23,waves:[
     W(12,'scarab',6,.5),W(20,'sandworm',1),W(42,'dunerider',3,1.6),W(66,'sandworm',2,4),W(92,'scorpion',4,1.2),W(118,'sandmage',2,4),W(146,'sandworm',2,4),W(176,'mummy',7,.8),W(206,'scarab',9,.45)]},
-  {name:'신기루 오아시스',hint:'약탈자는 빠르게 달려와 쏩니다 · 넉백 면역 방패와 저격으로',baseHp:340000,money:815,rate:104,reward:10800,enemyMul:22,mods:['blitz'],waves:[
+  {name:'신기루 오아시스',hint:'약탈자는 빠르게 달려와 쏩니다 · 넉백 면역 방패와 저격으로',baseHp:340000,money:815,rate:104,reward:10800,enemyMul:21,mods:['blitz'],waves:[
     W(12,'dunerider',3,1.4),W(22,'scarab',7,.5),W(44,'dunerider',4,1.3),W(68,'sandmage',2,3),W(94,'scorpion',5,1.1),W(120,'dunerider',5,1.2),W(146,'mummy',6,.9),W(174,'dunerider',5,1.2),W(204,'scarab',10,.4)]},
   {name:'★ 스핑크스의 문',hint:'수수께끼의 모래에 묶이면 둔화 · 태양 광선 예고를 피하고 왕명으로 버티세요',baseHp:250000,money:825,rate:105,reward:11800,boss:true,enemyMul:18,waves:[
     W(12,'mummy',5,1),W(26,'sphinx',1),W(50,'dunerider',4,1.4),W(76,'scorpion',5,1.1),W(104,'sandmage',2,4),W(132,'mummy',7,.8),W(162,'scarab',10,.4),W(194,'sandworm',2,4)]},
@@ -1800,7 +1800,7 @@ STAGES.push(
     W(12,'scorpion',5,1.1),W(22,'sandworm',1),W(46,'scorpion',5,1.1),W(72,'mummy',7,.8),W(98,'sandworm',2,4),W(124,'scorpion',6,1),W(152,'sandmage',2,4),W(180,'sandworm',2,4),W(210,'dunerider',5,1.2)]},
   {name:'모래폭풍의 눈',hint:'사막의 모든 군단 · 근접 전열 · 정화 · 범위를 함께',baseHp:340000,money:845,rate:108,reward:11800,enemyMul:38,mods:['horde','curse'],waves:[
     W(12,'scarab',8,.45),W(22,'mummy',5,1),W(44,'dunerider',4,1.4),W(68,'sandworm',2,4),W(92,'sandmage',2,4),W(118,'scorpion',5,1.1),W(144,'scarab',10,.4),W(172,'mummy',8,.7),W(202,'dunerider',5,1.2),W(232,'sandworm',2,4)]},
-  {name:'★ 모래폭풍의 파라오',hint:'파라오는 한 번 다시 일어납니다 · 사암 예고를 피하고, 포효엔 왕명과 필살을',baseHp:280000,money:860,rate:110,reward:13000,boss:true,enemyMul:16,waves:[
+  {name:'★ 모래폭풍의 파라오',hint:'파라오는 한 번 다시 일어납니다 · 사암 예고를 피하고, 포효엔 왕명과 필살을',baseHp:280000,money:860,rate:110,reward:13000,boss:true,enemyMul:15,waves:[
     W(12,'scorpion',4,1.2),W(26,'sandpharaoh',1),W(52,'scarab',9,.45),W(80,'sandworm',2,4),W(110,'mummy',7,.8),W(140,'sandmage',3,3),W(170,'dunerider',5,1.2),W(200,'scorpion',6,1),W(232,'scarab',12,.4),W(262,'sandworm',3,3)]}
 );
 STAGES.slice(ACT7_FROM).forEach(st => { st.storm = SANDSTORM; });
@@ -1901,7 +1901,7 @@ const HARD_STAGE_MODS = {
   // 6막 (4.11)
   63: ['giantslayer'], 66: ['curse', 'giantslayer'], 69: ['ironclad', 'curse'],
   // 7막 (4.15)
-  73: ['giantslayer'], 79: ['blitz']
+  73: ['giantslayer'], 79: ['ironclad', 'blitz']
 };
 STAGES.forEach((st, i) => { if (!st.mods && HARD_STAGE_MODS[i]) st.mods = HARD_STAGE_MODS[i]; });
 // 전설·신화 풀이 넓어질수록 몰아 넣기만 한 편성도 두루 갖춘다. 조합이 필요한
@@ -2145,7 +2145,7 @@ STAGES[ACT6_FROM - 1].bossMusic = 'finale4';      // 5막의 끝 (4.6)
 STAGES[ACT7_FROM - 1].bossMusic = 'finale5';      // 6막의 끝 (4.11)
 STAGES[STAGES.length - 1].bossMusic = 'finale6';
 STAGES.forEach((st, i) => { if (i < 50) st.hardRatio = i === 37 ? 1 : 1.3; });   // 4.18 하드코어 적 배율 바닥: 1~5막은 전장의 1.3배 이상 (38전장 기습은 1배), 6~7막은 0.8배 이상 — 다 키운 편성이 겨우 넘는 곳이라 요새·성채·보스·특성으로 어렵게
-STAGES[79].hardSoft = 0.65; STAGES[79].hardBoss = 0.7; STAGES[75].hardSoft = 0.85; STAGES[75].hardBoss = 0.75;   // 4.18 하드코어 7막의 끝: 되살아나는 파라오 앞에서 다 키운 편성도 무너졌다 — 이 전장만 배율을 조금 덜어 준다   // 7막의 끝 (4.15)
+STAGES[79].hardMods = ['blitz', 'curse']; STAGES[79].hardSoft = 0.65; STAGES[79].hardBoss = 0.7; STAGES[75].hardSoft = 0.85; STAGES[75].hardBoss = 0.75;   // 4.18 하드코어 7막의 끝: 되살아나는 파라오 앞에서 다 키운 편성도 무너졌다 — 이 전장만 배율을 조금 덜어 준다   // 7막의 끝 (4.15)
 
 /* 전장 길이. 예전엔 모두 2000 이라 병사가 적과 부딪히기까지 40초 넘게 걸어야 했다.
  * 초반은 짧게 붙고, 뒤로 갈수록·보스 전장일수록 조금씩 길어진다. */
@@ -3268,6 +3268,7 @@ const AWAKEN_TAX = 0.06;
 function hardcoreEnemyMul(st) { const m = st.enemyMul || 1; return Math.max(Math.max(HARDCORE.enemyMul * m / (1 + m / HARDCORE.soft), m * (st.hardRatio || HARDCORE.minRatio)) * (st.hardSoft || 1), HARDCORE.mulFloor); }
 function hardcoreFortHp(st) { return Math.max(Math.round(st.baseHp * HARDCORE.fortMul), HARDCORE.fortFloor); }
 function hardcoreMods(st, i) {
+  if (st && st.hardMods) return st.hardMods.slice();   // 4.18: 하드코어에서만 따로 (진군 특성은 그대로)
   const base = (st && st.mods) || [];
   // 4.18: 이미 특성이 둘 이상인 전장엔 더 얹지 않는다 — 중갑 · 저주 · 질주가 셋 겹친 막의 끝 전장은 다 키워도 넘을 수 없었다
   if (base.length >= 2) return base.slice();
