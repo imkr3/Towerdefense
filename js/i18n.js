@@ -981,6 +981,9 @@ const I18N_EN = {
   '모래가 20초 남았습니다': '20 seconds of sand left', '모래시계의 모래가 다 떨어졌습니다': 'The hourglass has run out of sand',
   '모래시계가 뒤집혔다 · 토템이 없어 요새가 아물지 못합니다': 'The hourglass turned · no totems left, so the fort can\'t heal',
   '시간을 거스른 자': 'Time Defier', '도전 \'파라오의 모래시계\' 돌파': 'Clear the \'Pharaoh\'s Hourglass\' challenge',
+  /* ---------------- 4.16 무한 전장 개편 ---------------- */
+  '정말로 끝이 없습니다. 웨이브마다 적이 가파르게 강해지고, 3웨이브마다 1~7막의 전장 보스와 도전 보스가 섞여 옵니다 (12웨이브마다 둘). 곡은 나온 보스의 곡으로 바뀝니다. 성채가 무너질 때까지!': 'Truly endless. Foes grow steeply stronger each wave, and every 3 waves a boss arrives — campaign bosses from Acts 1–7 mixed with challenge bosses (two at once every 12). The music follows whichever boss is on the field. Hold until your castle falls!',
+  '끝이 없는 전장. 웨이브마다 적이 가파르게 강해지고, 3웨이브마다 전장 보스와 도전 보스가 섞여 옵니다. 성채가 무너질 때까지!': 'A battle without end. Foes grow steeply stronger each wave, and every 3 waves a campaign or challenge boss joins in. Until your castle falls!',
   /* ---------------- 4.6 도전: 폭주 기관차 · 그림자 가면무도회 ---------------- */
   '폭주 기관차': 'Runaway Locomotive', '그림자 가면무도회': 'Shadow Masquerade',
   '멈추지 않는 기관차 · 성채에 닿으면 패배 · 둔화·기절로만 늦출 수 있다 · 경적 뒤 돌진': 'An unstoppable engine · lose if it reaches your castle · only slows and stuns delay it · charges after the whistle',
@@ -1182,6 +1185,7 @@ const I18N_EN_PATTERNS = [
   [/전장 병력 가득 · (\d+)명까지/g, 'Field full · up to $1'],
   [/ · 동시 출진 (\d+)명까지/g, ' · up to $1 on the field'],
   [/ · 요새 결계 \((\d+)웨이브부터 함락 가능\)/g, ' · fort ward (can fall from wave $1)'],
+  [/보스 웨이브 · /g, 'Boss wave · '], [/다음 보스 (\d+)웨이브 · /g, 'Next boss: wave $1 · '], [/ 외 1(?= ·|$)/g, ' +1'], [/전장엔 (\d+)명까지/g, 'field holds up to $1'],   // 4.16
   [/(\d+)웨이브를 넘기면 적 요새를 무너뜨려 끝낼 수 있습니다!/g, 'Past wave $1 you can topple the enemy fort to finish!'],
   [/(\d+)전장 돌파 후/g, 'Clear stage $1 first'],
   [/(\d+)전장을 돌파하면 열립니다\./g, 'Clear stage $1 to unlock.'],

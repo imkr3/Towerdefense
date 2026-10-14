@@ -93,7 +93,7 @@ const RUSH_MUL = 2.0;        // 근접 전열이 통째로 비어 있으면 적�
  * - 보스 격노: 캠페인 보스가 나온 뒤 BOSS_ENRAGE_T 초가 지나도 살아 있으면 공격·속도가 오른다.
  *   보스를 뒤로 미뤄 두고 잡몹만 쓸어 담던 싸움을 끝낸다.
  * - 격앙(fury): 하드코어와 2막에서는 싸움이 길어질수록 새로 나오는 적이 더 억세진다. */
-const ENDLESS_FORT_WAVE = 25;
+
 const OVERTIME_T = 240;          // 3.2.1 장기전: 이 시간이 지나면 (격앙이 없는 전장도) 새 적이 억세진다
 const OVERTIME_RATE = 0.12;      // 30초마다 +12%, 상한 없음 — 버티기만 하는 싸움도 결국 끝난다
 const TURRET_IDLE = 2.5;         // 포탑: 이만큼 놀면 앞으로 옮긴다
@@ -809,8 +809,8 @@ class Battle {
       }
     }
     if (this.stage.infinite) this.extendEndless();
-    // 무한 전장의 요새: ENDLESS_FORT_WAVE 웨이브까지는 결계로 버틴다. 그 뒤로는 무너뜨리면 '요새 함락'
-    if (this.endless) this.enemyCastle.floor = this.currentWave() < ENDLESS_FORT_WAVE ? this.enemyCastle.maxHp * WARD_FLOOR : 0;
+    // 4.16 무한 전장의 요새는 끝까지 결계로 버틴다 — 정말로 끝이 없다
+    if (this.endless) this.enemyCastle.floor = this.enemyCastle.maxHp * WARD_FLOOR;
     this.tickReinforce(dt);
     this.checkEnrage();
     if (!this.endless && !this.fury && !this.overtimeSaid && this.time > OVERTIME_T) {
@@ -936,7 +936,9 @@ class Battle {
     // 보스는 이제 반드시 쓰러뜨려야 하니, 전장 배율을 그대로 받으면 뒤쪽 보스가 끝없이 버틴다.
     // 배율을 누그러뜨려 받는다 (보스 자체 배율 BOSS_HP_MUL 은 따로 곱한다).
     if (spec.boss && this.stage.bossId && !this.endless && total > 1) total = Math.pow(total, BOSS_MUL_EXP);
-    const buff = total > 1 ? { hp: total, atk: total } : null;
+    let buff = total > 1 ? { hp: total, atk: total } : null;
+    // 4.16 무한 전장의 보스: 체력·공격을 기준값 쪽으로 당겨 맞춘 뒤 웨이브 배율을 곱한다
+    if (this.endless && spec.boss) { const nb = endlessBossNorm(spec), m = Math.max(1, total); buff = { hp: m * nb.hp, atk: m * nb.atk }; }
     const f = new Fighter(st, 'enemy', atX !== undefined ? atX : ENEMY_SPAWN_X - Math.random() * 40, buff);
     f.gold = spec.gold || 0;
     f.kind = id;
@@ -954,7 +956,7 @@ class Battle {
       if (this.hard) { f.maxHp = Math.round(f.maxHp * HARDCORE.boss.hp); f.hp = f.maxHp; f.atk = Math.round(f.atk * HARDCORE.boss.atk); }
       f.baseAtk = f.atk;
     }
-    if (f.boss) { this.bossAlert = 2.6; this.bossName = spec.name; this.shake = 10; sfx('bossIn'); f.bornT = this.time; }
+    if (f.boss) { this.bossAlert = 2.6; this.bossName = spec.name; this.shake = 10; sfx('bossIn'); f.bornT = this.time; this.bossSeq = (this.bossSeq || 0) + 1; this.lastBossKind = id; }
     if (f.ab.burrow) { f.burrowed = true; this.burrowers.push(f); return f; }
     this.enemies.push(f);
     return f;
@@ -1078,9 +1080,10 @@ class Battle {
       const best = this.save.endlessBest || 0;
       this.newRecord = this.wavesCleared > best;
       if (this.newRecord) this.save.endlessBest = this.wavesCleared;
-      // 웨이브 수에 따른 보상
-      this.coins += this.wavesCleared * 120;
-      this.stoneGain = Math.floor(this.wavesCleared / 5);
+      // 웨이브 수에 따른 보상 (4.16: 뒤 웨이브일수록 더 · 쓰러뜨린 보스마다 덤)
+      const W = this.wavesCleared;
+      this.coins += W * 100 + W * W * 6 + (this.bossKills || 0) * 400;
+      this.stoneGain = Math.floor(W / 4) + Math.floor((this.bossKills || 0) / 3);
       if (result === 'win') {                    // 요새 함락: 웨이브 보상 1.5배 + 소환석 2
         this.fortFell = true;
         this.coins = Math.round(this.coins * 1.5);
@@ -1837,7 +1840,7 @@ class Battle {
           const tx = front + (i - (n - 1) / 2) * (a.gap || 130) + (Math.random() - 0.5) * 40;
           this.queueStrike(f, {
             x: Math.max(120, Math.min(WORLD - 120, tx)),
-            r: a.radius || 110, dmg: a.dmg || 300,
+            r: a.radius || 110, dmg: (a.dmg || 300) * (this.endless ? Math.sqrt(Math.max(1, f.mul || 1)) : 1),   // 4.16 무한 전장은 웨이브만큼 아프다
             warn: (a.warn || 1.0) + i * 0.12,
             burn: a.burn, poison: a.poison, stun: a.stun, kind: a.kind || 'firestorm'
           });
@@ -1912,7 +1915,7 @@ class Battle {
 
   findTarget(f, foes, foeCastle) {
     if (f.ab.noAttack) return null;
-    const reach = f.attackRange * (this.storming && f.s.ranged ? this.stage.storm.range : 1) + f.radius;   // 4.15 모래폭풍
+    const reach = f.attackRange * (this.storming && f.s.ranged && this.stage.storm ? this.stage.storm.range : 1) + f.radius;   // 4.15 모래폭풍
     // 성벽 파괴병: 병사는 거들떠보지 않고 성채만 노린다
     if (f.ab.sapper) {
       return (!foeCastle.dead && (foeCastle.x - f.x) * f.dir <= reach + foeCastle.radius) ? foeCastle : null;

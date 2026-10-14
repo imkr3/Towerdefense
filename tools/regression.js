@@ -51,9 +51,14 @@ test('A projectile kill on the winning tick earns its reward', () => {
 test('Battle rewards cannot be claimed twice', () => {
   const b=battle();b.finish('win');const coins=b.save.coins;b.finish('win');assert.equal(b.save.coins,coins);
 });
-test('45 endless waves include nine bosses in the correct groups', () => {
+test('4.16: endless brings a boss every 3 waves (stage, stage, challenge…) and two every 12', () => {
   const st=makeEndlessStage(45);assert.equal(new Set(st.waves.map(w=>w.wave)).size,45);
-  const bosses=st.waves.filter(w=>E[w.e].boss);assert.equal(bosses.length,9);assert.equal(bosses[0].wave,4);assert.equal(bosses[8].wave,44);
+  const bosses=st.waves.filter(w=>E[w.e].boss);assert.equal(bosses.length,15+3);assert.equal(bosses[0].wave,2);assert.equal(bosses[bosses.length-1].wave,44);
+  const X=vm.runInContext('({ENDLESS_STAGE_BOSSES,ENDLESS_EVENT_BOSSES,endlessBossAt})',ctx);
+  assert.deepEqual([0,1,2,3,4,5].map(X.endlessBossAt),['lich','troll','vampire','frostgiant','drake','titan']);
+  assert.ok(!X.ENDLESS_EVENT_BOSSES.includes('irontrain'),'the train would end the run at once');
+  for(const id of X.ENDLESS_STAGE_BOSSES.concat(X.ENDLESS_EVENT_BOSSES))assert.ok(E[id]&&E[id].boss,id);
+  assert.equal(st.waves.filter(w=>E[w.e].boss&&w.wave===11).length,2,'pair at wave 12');
 });
 test('Endless progress requires all enemies and summons in a wave to die', () => {
   const b=battle({endless:true,baseHp:99999,money:0,rate:0,waves:[{t:0,e:'lich',n:1,gap:1,wave:0},{t:99,e:'goblin',n:1,gap:1,wave:1}]});
@@ -398,7 +403,10 @@ test('The single campaign boss is much stronger; endless bosses are not', () => 
   assert.equal(t.maxHp, Math.round(Math.round(E.troll.hp * Math.pow(STAGES[9].enemyMul, BOSS_MUL_EXP)) * BOSS_HP_MUL));
   assert.ok(t.maxHp > E.troll.hp * 2);
   const en = new Battle(0, save(), makeEndlessStage()); const t2 = en.spawnEnemy('troll', 900);
-  assert.equal(t2.maxHp, E.troll.hp);
+  const nb = vm.runInContext('endlessBossNorm(ENEMIES.troll)', ctx);
+  assert.equal(t2.maxHp, Math.round(E.troll.hp * nb.hp), '4.16: endless bosses are pulled toward a common size, not campaign-boosted');
+  const big = en.spawnEnemy('sandpharaoh', 900), small = en.spawnEnemy('lich', 900);
+  assert.ok(big.maxHp > small.maxHp && big.maxHp / small.maxHp < E.sandpharaoh.hp / E.lich.hp / 2, 'the gap between act-1 and act-7 bosses shrinks');
 });
 test('Reinforcements never bring a boss back', () => {
   const b = new Battle(29, save());
@@ -852,12 +860,27 @@ test('Deploy-zone shelling never hits the castle itself', () => {
   const c = b.spawnEnemy('ghostcaptain', 1200); b.bossAct(c, E.ghostcaptain.special);
   const hp = b.allyCastle.hp; b.updatePending(5); assert.equal(b.allyCastle.hp, hp);
 });
-test('Endless: the fort holds until wave 25, then falling it ends the run as a win', () => {
+test('4.16: endless is truly endless — the fort never falls; the run ends only when your castle does', () => {
   const s = save(); s.stats = {}; const b = new Battle(0, s, makeEndlessStage());
   b.update(1 / 30); b.enemyCastle.takeDamage(1e12); b.update(1 / 30);
-  assert.equal(b.state, 'play'); assert.ok(b.wardUp(), 'warded early');
-  b.currentWave = () => 25; b.update(1 / 30); b.enemyCastle.takeDamage(1e12); b.update(1 / 30);
-  assert.equal(b.state, 'win'); assert.equal(b.fortFell, true); assert.ok(b.stoneGain >= 2);
+  assert.equal(b.state, 'play'); assert.ok(b.wardUp(), 'warded');
+  b.currentWave = () => 99; b.update(1 / 30); b.enemyCastle.takeDamage(1e12); b.update(1 / 30);
+  assert.equal(b.state, 'play', 'still warded at wave 99');
+  b.wavesDone = () => 20; b.bossKills = 6; const c0 = s.coins || 0;
+  b.allyCastle.takeDamage(1e12); b.update(1 / 30);
+  assert.equal(b.state, 'over'); assert.ok(s.coins - c0 >= 20 * 100 + 400 * 6, 'paid per wave and per boss'); assert.ok(b.stoneGain >= 5 + 2);
+});
+test('4.16: endless switches to each boss\'s own song', () => {
+  const ctxm = vm.createContext({ console, Math, JSON, setTimeout, setInterval, clearInterval });
+  for (const f of ['js/data.js', 'js/audio.js', 'js/music.js']) vm.runInContext(fs.readFileSync(path.join(__dirname, '..', f), 'utf8'), ctxm);
+  const M = vm.runInContext('({bossTrack, BGM_TRACKS, ENDLESS_BOSSES})', ctxm), en = { endless: true };
+  assert.equal(M.bossTrack(en, 'ghostcaptain'), 'boss_ghostfleet'); assert.equal(M.bossTrack(en, 'jackalgod'), 'boss_anubis');
+  assert.equal(M.bossTrack(en, 'leviathan'), 'finale2'); assert.equal(M.bossTrack(en, 'sandpharaoh'), 'boss_sandpharaoh');
+  const songs = new Set(M.ENDLESS_BOSSES.map(id => M.bossTrack(en, id)));
+  for (const t of songs) assert.ok(M.BGM_TRACKS[t], t);
+  assert.ok(songs.size >= 25, 'almost every boss has its own song: ' + songs.size);
+  const main = fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8');
+  assert.ok(main.indexOf("endlessTrack = 'endless'; BGM.play('endless')") >= 0, 'back to the endless song once the bosses fall');
 });
 
 test('Overtime: a stalled battle without fury slowly toughens new foes so it always ends', () => {

@@ -2310,29 +2310,71 @@ const ENDLESS_POOL = [
   { id: 'jailer',   from: 11 }, { id: 'chrono',   from: 13 },
   { id: 'souleater', from: 14 }
 ];
-const ENDLESS_BOSSES = ['lich', 'troll', 'frostgiant', 'drake', 'warlord'];
+/* 4.16: 2막~7막과 도전의 적도 차례로 풀려 섞인다 (tier = 웨이브 ÷ 2) */
+ENDLESS_POOL.push(
+  { id: 'hellhound', from: 3 },  { id: 'plaguer', from: 3 },
+  { id: 'clawcrab', from: 5 },   { id: 'nagaspear', from: 5 }, { id: 'jelly', from: 5 },   { id: 'eel', from: 5 },
+  { id: 'deepone', from: 6 },    { id: 'siren', from: 6 },     { id: 'tidecaller', from: 6 }, { id: 'seahook', from: 6 }, { id: 'orccatapult', from: 6 },
+  { id: 'harpy', from: 7 },      { id: 'griffinrider', from: 7 }, { id: 'stormwisp', from: 7 }, { id: 'warchief', from: 7 },
+  { id: 'windcaller', from: 8 }, { id: 'skycannon', from: 8 }, { id: 'cloudgiant', from: 8 }, { id: 'siegeram', from: 8 },
+  { id: 'lizardman', from: 9 },  { id: 'raptor', from: 9 },    { id: 'poisontoad', from: 9 }, { id: 'vineshaman', from: 9 },
+  { id: 'stoneidol', from: 10 }, { id: 'triceratops', from: 10 }, { id: 'pixie', from: 10 }, { id: 'sporecap', from: 10 },
+  { id: 'wisp', from: 11 },      { id: 'satyr', from: 11 },    { id: 'treant', from: 11 },   { id: 'unicorn', from: 11 },
+  { id: 'scarab', from: 12 },    { id: 'scorpion', from: 12 }, { id: 'dunerider', from: 12 }, { id: 'mummy', from: 12 },
+  { id: 'sandmage', from: 13 },  { id: 'sandworm', from: 13 }, { id: 'dancer', from: 13 },   { id: 'coalstoker', from: 13 }
+);
 
-/* 무한 전장 적 배율. 웨이브마다 7%씩 붙고, 25웨이브를 넘기면 거기에
- * 웨이브당 4%씩 곱으로 불어난다. 상한이 없으니 언젠가는 반드시 무너진다. */
+/* =======================================================================
+ *  4.16 무한 전장 전면 개편
+ *  - 정말로 끝이 없다: 적 요새는 무너지지 않고, 아군 성채가 무너질 때까지 이어진다.
+ *  - 대신 오래 끌지 않는다: 적이 웨이브마다 가파르게(곱으로) 세지고 웨이브 간격도 짧다.
+ *  - 3웨이브마다 보스: 캠페인 전장 보스 둘 뒤에 도전 보스 하나 — 1막부터 7막까지, 도전 보스는 차례로.
+ *    12웨이브마다는 보스 둘이 한꺼번에 (전장 보스 + 도전 보스).
+ *  - 보스 체력·공격은 기준값 쪽으로 반쯤 당겨 맞춘다(k): 1막 보스도 끝까지 위협이 되고, 7막 보스만 압도하지 않게.
+ *  - 곡은 그 보스의 곡으로 바뀐다 (music.js endlessBossTrack).
+ * ======================================================================= */
+const ENDLESS_STAGE_BOSSES = ['lich', 'troll', 'frostgiant', 'drake', 'spiderqueen', 'warlord', 'kraken', 'tidequeen', 'leviathan',
+  'stormgriffin', 'cloudking', 'skylord', 'raptorqueen', 'quetzal', 'jungletyrant', 'mushking', 'faequeen', 'eldertree',
+  'scorpking', 'sphinx', 'sandpharaoh'];
+const ENDLESS_EVENT_BOSSES = ['vampire', 'titan', 'ghostcaptain', 'voidlord', 'demonking', 'masklord', 'jackalgod'];   // 기관차는 성채에 닿으면 끝이라 뺀다
+const ENDLESS_BOSSES = ENDLESS_STAGE_BOSSES.concat(ENDLESS_EVENT_BOSSES);
+const ENDLESS_BOSS = { every: 3, pair: 12, hp: 12000, atk: 520, k: 0.6 };
+/* k 번째 보스 자리(0부터): 전장 보스 · 전장 보스 · 도전 보스 … */
+function endlessBossAt(k) {
+  if (k % 3 === 2) return ENDLESS_EVENT_BOSSES[Math.floor(k / 3) % ENDLESS_EVENT_BOSSES.length];
+  return ENDLESS_STAGE_BOSSES[(k - Math.floor((k + 1) / 3)) % ENDLESS_STAGE_BOSSES.length];
+}
+/* 보스 체력·공격 보정 (적 배율과 따로 곱한다) */
+function endlessBossNorm(spec) {
+  return { hp: Math.pow(ENDLESS_BOSS.hp / spec.hp, ENDLESS_BOSS.k), atk: Math.pow(ENDLESS_BOSS.atk / Math.max(1, spec.atk), ENDLESS_BOSS.k) };
+}
+
+/* 무한 전장 적 배율: 웨이브마다 곱으로 불어난다. 상한이 없으니 언젠가는 반드시 무너진다. */
+const ENDLESS_RAMP = { base: 1.1, lin: 0.03 };
 function endlessMul(w) {
-  return (1 + 0.07 * w) * Math.pow(1.04, Math.max(0, w - 25));
+  return Math.pow(ENDLESS_RAMP.base, w) * (1 + ENDLESS_RAMP.lin * w);
 }
 
 /* 무한 전장 w 번째 웨이브(0부터). t 초에 시작한다.
- * 적 종류는 웨이브가 지날수록 넓어지고, 5웨이브마다 보스가 함께 온다. */
+ * 막 풀린 적 무리 + 예전 적 무리 둘이 함께 오고, 3웨이브마다 보스가 섞인다. */
 function endlessWave(w, t) {
   const tier = Math.floor(w / 2);
   const pool = ENDLESS_POOL.filter(e => e.from <= tier);
-  const pick = pool[(w * 7 + 3) % pool.length].id;
-  const n = 3 + Math.min(9, Math.floor(w / 2));
-  const gap = Math.max(0.55, 1.6 - w * 0.03);
+  const fresh = pool.filter(e => e.from >= tier - 3);
+  const a = (fresh.length ? fresh : pool)[(w * 7 + 3) % (fresh.length || pool.length)].id;
+  const b = pool[(w * 5 + 1) % pool.length].id;
+  const n = 4 + Math.min(8, Math.floor(w / 3));
+  const gap = Math.max(0.45, 1.3 - w * 0.03);
   const mul = endlessMul(w);
-  const waves = [Object.assign(W(t, pick, n, gap), { wave: w, mul: mul })];
-  if ((w + 1) % 5 === 0) {
-    const bi = (Math.floor((w + 1) / 5) - 1) % ENDLESS_BOSSES.length;
-    waves.push(Object.assign(W(t + 4, ENDLESS_BOSSES[bi], 1), { wave: w, mul: mul }));
+  const tag = x => Object.assign(x, { wave: w, mul: mul });
+  const waves = [tag(W(t, a, n, gap)), tag(W(t + 2, b, Math.ceil(n / 2), gap))];
+  if ((w + 1) % ENDLESS_BOSS.every === 0) {
+    const k = (w + 1) / ENDLESS_BOSS.every - 1, id = endlessBossAt(k);
+    waves.push(tag(W(t + 3, id, 1)));
+    if ((w + 1) % ENDLESS_BOSS.pair === 0)            // 보스 둘: 앞서 쓰러뜨린 전장 보스 하나가 함께 돌아온다
+      waves.push(tag(W(t + 6, ENDLESS_STAGE_BOSSES[Math.floor(k / 2) % ENDLESS_STAGE_BOSSES.length], 1)));
   }
-  return { waves: waves, next: t + Math.max(7, 16 - w * 0.25) };
+  return { waves: waves, next: t + Math.max(9, 14 - w * 0.12) };
 }
 
 /* 무한 전장. 웨이브 수를 주면 그만큼 미리 적어 두고(검사용),
@@ -2347,7 +2389,7 @@ function makeEndlessStage(waveCount) {
   }
   return {
     name: '무한 전장', endless: true, infinite: !waveCount, len: 1250, look: 'endless',
-    baseHp: 2000000,           // 3.2.1: 부술 수 있다 — 무너뜨리면 '요새 함락' 으로 끝나고 보상이 1.5배
+    baseHp: 2000000,           // 4.16: 무너지지 않는다 (끝없는 결계) — 아군 성채가 무너질 때까지
     money: 320, rate: 40, reward: 0,
     waves: waves
   };

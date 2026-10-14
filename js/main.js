@@ -3,7 +3,7 @@
  * ======================================================================= */
 
 
-const APP_VERSION = '4.15.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
+const APP_VERSION = '4.16.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
 
 function defaultSave() {
   const lv = {};
@@ -512,7 +512,7 @@ function renderStageDetail(i) {
   const ch = CHAPTERS[mapChapter];
   if (ch.endless || i < 0) {
     box.innerHTML = ch.endless
-      ? '<div class="sd-name">무한 전장</div><p class="sd-hint">웨이브가 끝없이 몰려옵니다. 웨이브마다 적이 강해지고, 5웨이브마다 보스가 등장합니다. 25웨이브를 넘기면 적 요새를 무너뜨려 끝낼 수 있습니다!</p>'
+      ? '<div class="sd-name">무한 전장</div><p class="sd-hint">정말로 끝이 없습니다. 웨이브마다 적이 가파르게 강해지고, 3웨이브마다 1~7막의 전장 보스와 도전 보스가 섞여 옵니다 (12웨이브마다 둘). 곡은 나온 보스의 곡으로 바뀝니다. 성채가 무너질 때까지!</p>'
       : '<div class="sd-name">' + ch.name + ' · ' + ch.sub + '</div><p class="sd-hint">이전 장을 먼저 돌파해야 합니다.</p>';
     const fb = document.createElement('button');
     fb.className = 'btn ghost sd-formation';
@@ -610,7 +610,7 @@ function renderEndlessSlot() {
   el.className = 'endless-card';
   el.innerHTML =
     '<div class="e-title">무한 전장</div>' +
-    '<div class="e-sub">끝없는 웨이브. 웨이브마다 적이 강해집니다. ' + ENDLESS_FORT_WAVE + '웨이브를 넘기면 적 요새를 무너뜨려 끝낼 수 있습니다!</div>' +
+    '<div class="e-sub">끝이 없는 전장. 웨이브마다 적이 가파르게 강해지고, 3웨이브마다 전장 보스와 도전 보스가 섞여 옵니다. 성채가 무너질 때까지!</div>' +
     '<div class="e-best">최고 기록 <b>' + (save.endlessBest || 0) + '</b> 웨이브</div>' +
     '<button class="btn primary e-btn">도전</button>';
   el.querySelector('.e-btn').addEventListener('click', () => startEndless());
@@ -1463,6 +1463,12 @@ function drawBanner(sn) {
 }
 
 /* ------------------------------ 전투 ------------------------------ */
+/* 4.16 무한 전장 HUD: 지금이 보스 웨이브인지, 다음 보스는 언제 누구인지 */
+function endlessBossHint(cw) {
+  const ev = ENDLESS_BOSS.every, next = Math.ceil(cw / ev) * ev, id = endlessBossAt(next / ev - 1);
+  const pair = next % ENDLESS_BOSS.pair === 0 ? ' 외 1' : '';
+  return next === cw ? '보스 웨이브 · ' + ENEMIES[id].name + pair : '다음 보스 ' + next + '웨이브 · ' + ENEMIES[id].name + pair;
+}
 function startEndless() {
   battle = new Battle(0, save, makeEndlessStage());
   $('#scr-battle').classList.remove('hardcore');
@@ -1510,6 +1516,7 @@ function beginBattle() {
   $('#btn-pause').textContent = '❚❚';
   bossMusic = false;
   bossMusicT = 0;
+  endlessTrack = 'endless'; endlessCalm = 0; endlessPre = 0; endlessSeq = 0;
   BGM.play(stageMusic(battle.stage, battle.hard));
   BGM.prefetch([battle.stage.bossId ? bossTrack(battle.stage, battle.stage.bossId, battle.hard) : null, 'victory', 'defeat']);
   setPaused(false);
@@ -1667,12 +1674,11 @@ function updateHud() {
   hudStyle(hudEl('#ally-hp'), 'width', pct1(allyPct));
   hudStyle(hudEl('#enemy-hp'), 'width', pct1(enemyPct));
   hudText(hudEl('#ally-hp-txt'), Math.ceil(allyPct) + '%');
-  hudText(hudEl('#enemy-hp-txt'), Math.ceil(enemyPct) + '%');
+  hudText(hudEl('#enemy-hp-txt'), battle.endless ? '∞' : Math.ceil(enemyPct) + '%');   // 4.16 무한 전장의 요새는 무너지지 않는다
   hudClass(hudEl('#castle-status'), 'critical', allyPct < 30);
   // 적이 언제 나오는지는 알려 주지 않는다. 무한 전장만 몇 웨이브째인지 보여 준다.
   const preview = battle.endless
-    ? '웨이브 ' + battle.currentWave() + ' · 적 ×' + endlessMul(battle.currentWave() - 1).toFixed(1) +
-      (battle.wardUp() ? ' · 요새 결계 (' + ENDLESS_FORT_WAVE + '웨이브부터 함락 가능)' : '')
+    ? '웨이브 ' + battle.currentWave() + ' · 적 ×' + endlessMul(battle.currentWave() - 1).toFixed(1) + ' · ' + endlessBossHint(battle.currentWave())
     : battle.expWard && battle.wardUp() ? '원정 결계 · 수레와 적이 다 나올 때까지 요새가 버팁니다'
     : (battle.wardUp() ? '보스의 결계 · 보스를 쓰러뜨려야 요새가 무너집니다'
       : (battle.reinforcing() ? '적 증원 중' : ''));
@@ -1956,7 +1962,7 @@ function showEndlessResult() {
 }
 
 /* ------------------------------ 루프 ------------------------------ */
-let bossMusic = false, bossMusicT = 0;
+let bossMusic = false, bossMusicT = 0, endlessTrack = 'endless', endlessCalm = 0, endlessPre = 0, endlessSeq = 0;
 /* 3.5: 화면 주사율이 90·120Hz 인 폰은 requestAnimationFrame 이 그만큼 자주 와서
  * 같은 장면을 두 배로 그리느라 뜨거워졌다. 60fps(절전은 30fps)로 묶는다. */
 const FRAME_MIN_MS = { auto: 14, high: 14, low: 30 };
@@ -1996,7 +2002,21 @@ function loop(ts) {
   renderer.render(battle, dt, (paused || modal) ? dt * 0.4 : dt);
   updateHud();
   // 보스가 서면 곡을 바꾼다. 매 프레임 적을 훑을 필요는 없다.
-  if (!bossMusic && battle.state === 'play' && (bossMusicT -= dt) <= 0) {
+  // 4.16 무한 전장: 새 보스가 올 때마다 그 보스의 곡으로, 보스가 다 쓰러지고 4초 뒤엔 무한 전장 곡으로 돌아간다.
+  if (battle.endless) {
+    if (battle.state === 'play' && (bossMusicT -= dt) <= 0) {
+      bossMusicT = 0.5;
+      const boss = battle.aliveBoss();
+      const cw = battle.currentWave(), nb = Math.ceil(cw / ENDLESS_BOSS.every) * ENDLESS_BOSS.every;   // 다음 보스 곡은 미리 녹음해 둔다
+      if (nb !== endlessPre) { endlessPre = nb; BGM.prefetch([bossTrack(battle.stage, endlessBossAt(nb / ENDLESS_BOSS.every - 1))]); }
+      // 보스가 나오는 순간 그 보스의 곡으로 (금방 쓰러져도 한 번은 울린다) · 보스가 없는 채로 4초가 지나면 무한 전장 곡으로
+      if ((battle.bossSeq || 0) !== endlessSeq) {
+        endlessSeq = battle.bossSeq; endlessCalm = -6;   // 바뀐 곡은 적어도 몇 초는 들려준다
+        const tr = bossTrack(battle.stage, battle.lastBossKind); if (tr !== endlessTrack) { endlessTrack = tr; BGM.play(tr); }
+      } else if (boss) endlessCalm = Math.min(endlessCalm, 0);
+      else if (endlessTrack !== 'endless' && (endlessCalm += 0.5) >= 4) { endlessTrack = 'endless'; BGM.play('endless'); }
+    }
+  } else if (!bossMusic && battle.state === 'play' && (bossMusicT -= dt) <= 0) {
     bossMusicT = 0.5;
     const boss = battle.aliveBoss();
     if (boss) { bossMusic = true; BGM.play(bossTrack(battle.stage, boss.kind, battle.hard)); }

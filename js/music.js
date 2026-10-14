@@ -1448,7 +1448,15 @@ function stageMusic(stage, hard) {
   if (hard) { const i = STAGES.indexOf(stage); return typeof ACT7_FROM !== 'undefined' && i >= ACT7_FROM ? 'hc_desert' : typeof ACT6_FROM !== 'undefined' && i >= ACT6_FROM ? 'hc_fey' : typeof ACT5_FROM !== 'undefined' && i >= ACT5_FROM ? 'hc_jungle' : typeof ACT4_FROM !== 'undefined' && i >= ACT4_FROM ? 'hc_sky' : i >= ACT3_FROM ? 'hc_abyss' : i >= 15 ? 'hc_storm' : 'hc_iron'; }
   return (stage && stage.music && BGM_TRACKS[stage.music]) ? stage.music : 'meadow';
 }
+/* 4.16 무한 전장: 나온 보스의 곡 — 자기 곡이 있으면 그 곡, 없으면 그 보스가 나오던 전장(도전 · 막의 끝)의 곡 */
+function endlessBossTrack(id) {
+  if (BGM_TRACKS['boss_' + id]) return 'boss_' + id;
+  if (typeof EVENT_STAGES !== 'undefined') for (const st of EVENT_STAGES) if (st.bossId === id && st.bossMusic && BGM_TRACKS[st.bossMusic]) return st.bossMusic;
+  if (typeof STAGES !== 'undefined') for (const st of STAGES) if (st.bossId === id && st.bossMusic && BGM_TRACKS[st.bossMusic]) return st.bossMusic;
+  return 'hc_boss';
+}
 function bossTrack(stage, bossId, hard) {
+  if (stage && stage.endless) return endlessBossTrack(bossId);
   if (hard) return 'hc_boss';                                     // 3.19 하드코어 보스는 모두 이 곡
   if (stage && stage.finale) return 'finale';
   if (stage && stage.bossMusic && BGM_TRACKS[stage.bossMusic]) return stage.bossMusic;   // 이벤트 보스

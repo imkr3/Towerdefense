@@ -47,7 +47,7 @@ function loadEngine(seed) {
     vm.runInContext(src, ctx, { filename: f });
   }
   return vm.runInContext(
-    '({Battle, STAGES, EVENT_STAGES, EXPEDITIONS, MOD_COUNTERS, recommendDeck, UNITS, UNIT_BY_ID, ROSTER_UNITS, LOADOUT_MAX, HERO_SLOT_MAX, unitLevelCap, unitTrainCost, UPGRADES, EVO_LEVEL, EVOLUTIONS, EVOLUTIONS2})',
+    '({Battle, STAGES, EVENT_STAGES, EXPEDITIONS, makeEndlessStage, MOD_COUNTERS, recommendDeck, UNITS, UNIT_BY_ID, ROSTER_UNITS, LOADOUT_MAX, HERO_SLOT_MAX, unitLevelCap, unitTrainCost, UPGRADES, EVO_LEVEL, EVOLUTIONS, EVOLUTIONS2})',
     ctx);
 }
 
@@ -149,8 +149,10 @@ function styleLoadout(g, index, ranged, campaignOnly) {
 function runStage(g, index, upLv, unitLv, trace, gacha, basic, opt) {
   opt = opt || {};
   const exStage = opt.expedition !== undefined ? g.EXPEDITIONS[opt.expedition] : null;   // 3.7 금화 원정
-  const evStage = opt.event !== undefined ? g.EVENT_STAGES[opt.event] : exStage;
-  if (exStage) index = exStage.expedition.unlock - 1;   // 원정: 열리는 시점의 병종으로
+  const enStage = opt.endless !== undefined ? g.makeEndlessStage() : null;            // 4.16 무한 전장
+  const evStage = opt.event !== undefined ? g.EVENT_STAGES[opt.event] : exStage || enStage;
+  if (enStage) index = Math.max(19, Math.min(g.STAGES.length - 1, opt.endless));   // 무한: 그 전장까지 연 상태로
+  else if (exStage) index = exStage.expedition.unlock - 1;   // 원정: 열리는 시점의 병종으로
   else if (evStage) index = g.STAGES.length - 1;        // 이벤트: 캠페인을 다 연 상태로 본다
   const academy = Math.min(5, Math.floor(upLv / 2));
   const cap = g.unitLevelCap(index, academy);
@@ -171,10 +173,10 @@ function runStage(g, index, upLv, unitLv, trace, gacha, basic, opt) {
     : (gacha === 'ranged' || gacha === 'melee') ? styleLoadout(g, index, gacha === 'ranged')
     : gacha === 'rangedbase' ? styleLoadout(g, index, true, true)
     : gacha === 'combo' ? comboLoadout(g, index)
-    : gacha === 'counter' ? (evStage ? evStage.event.deck.slice() : counterLoadout(g, index))
+    : gacha === 'counter' ? (evStage && evStage.event ? evStage.event.deck.slice() : counterLoadout(g, index))
     : (typeof gacha === 'string' && gacha.indexOf('with:') === 0)
       ? unlocked.slice().sort((a, b) => b.cost - a.cost).slice(0, g.LOADOUT_MAX - 1).map(u => u.id).concat([gacha.slice(5)])
-    : gacha === 'smart' ? (g.STAGES[index].mods ? counterLoadout(g, index) : unlocked.slice()
+    : gacha === 'smart' ? (g.STAGES[index].mods && !enStage ? counterLoadout(g, index) : unlocked.slice()
         .sort((a, b) => b.cost - a.cost).slice(0, g.LOADOUT_MAX).map(u => u.id))
     : gacha ? gachaLoadout(g, index)
     : unlocked.slice()
@@ -200,12 +202,13 @@ function runStage(g, index, upLv, unitLv, trace, gacha, basic, opt) {
     }
   };
 
-  const b = evStage ? new g.Battle(g.STAGES.length + (exStage ? g.EVENT_STAGES.length + opt.expedition : opt.event), save, evStage)
+  const b = enStage ? new g.Battle(0, save, enStage)
+          : evStage ? new g.Battle(g.STAGES.length + (exStage ? g.EVENT_STAGES.length + opt.expedition : opt.event), save, evStage)
                     : new g.Battle(index, save, null, { hard: !!SIM_HARD });
   const dt = 1 / 30;
   let t = 0, nextLog = 20;
   const timed = !!opt.timed;
-  while (b.state === 'play' && t < 420) {
+  while (b.state === 'play' && t < (enStage ? 1800 : 420)) {
     let boss = null;
     if (timed) for (const e of b.enemies) if (e.boss && !e.dead) { boss = e; break; }
     const shelling = timed && b.pending.some(p => p.side === 'enemy' && p.t < 2.6 && Math.abs(p.x - b.allyCastle.x) < 520);
@@ -230,7 +233,8 @@ function runStage(g, index, upLv, unitLv, trace, gacha, basic, opt) {
     }
   }
   return {
-    stage: exStage ? 'G' + (opt.expedition + 1) : evStage ? 'E' + (opt.event + 1) : index + 1,
+    stage: enStage ? '∞' : exStage ? 'G' + (opt.expedition + 1) : evStage ? 'E' + (opt.event + 1) : index + 1,
+    waves: enStage ? b.wavesDone() : 0, bossKills: b.bossKills || 0,
     name: (evStage || g.STAGES[index]).name,
     win: b.state === 'win',
     seconds: Math.round(t),
@@ -339,6 +343,10 @@ const SMART_ACT5 = { up: 10, lv: 24, slower: 1.25 };     // 4.6: 다 키우면 �
 const ACT6_ENTRY = { up: 10, lv: 22, min: 3, max: 7 };   // 4.11: 5막을 끝내고 조금 더 키운 수준이면 절반쯤
 const ACT6_LOW = { up: 10, lv: 20, max: 4 };              // 4.11: 5막 입구 수준으론 몇 곳만
 const SMART_ACT6 = { up: 10, lv: 24, slower: 1.05 };     // 4.11: 다 키우면 전부, 5막보다 오래
+const ENDLESS_EXPECT = [                                  // 4.16 무한 전장: 끝은 없지만 오래 끌지 않는다 (편성: 그 전장까지 연 공략 편성)
+  { up: 4, lv: 10, at: 20, min: 7, max: 15, sec: 300 },    // 열린 무렵: 10웨이브 안팎 · 5분 안
+  { up: 10, lv: 27, at: 80, min: 20, max: 34, sec: 540 }   // 다 키우면 20~30웨이브 · 9분 안
+];
 const ACT7_ENTRY = { up: 10, lv: 24, min: 3, max: 7 };   // 4.15: 6막을 끝낸 수준이면 절반쯤
 const ACT7_LOW = { up: 10, lv: 22, max: 4 };              // 4.15: 6막 입구 수준으론 몇 곳만
 const SMART_ACT7 = { up: 10, lv: 27, slower: 1.05 };     // 4.15: 상한(22+사관학교 5)까지 키우면 전부, 6막보다 오래
@@ -594,6 +602,12 @@ function check() {
     else if (r.legend > X.max) { console.error(`  ✗ ${tag} — 전설만으로 넘는다`); failed++; }
     else console.log(`  ✓ ${tag}`);
   }
+  // 4.16 무한 전장: 끝이 없다 — 보스를 섞어 가파르게 세지니 다 키워도 몇 분 안에 무너진다
+  for (const X of ENDLESS_EXPECT) {
+    const r = runStage(loadEngine(12345), 0, X.up, X.lv, false, 'smart', false, { endless: X.at - 1 });
+    const tag = `무한 전장 (강화 ${X.up}/Lv${X.lv}/전장 ${X.at}) ${r.waves}웨이브 · ${r.seconds}초 · 보스 ${r.bossKills} (기대 ${X.min}~${X.max}웨이브 · ${X.sec}초 안)`;
+    if (r.waves < X.min || r.waves > X.max || r.seconds > X.sec || r.win) { console.error('  ✗ ' + tag); failed++; } else console.log('  ✓ ' + tag);
+  }
   // 3.7 금화 원정: 열리는 무렵 전력이면 거의 늘 이기고, 금화는 그 무렵 전장을 다시 도는 것보다 낫되 지나치지 않게
   for (let k = 0; k < EXP_EXPECT.length; k++) {
     const X = EXP_EXPECT[k];
@@ -660,6 +674,13 @@ if (args[0] === '--event') {
   for (const k of ks) {
     const r = runEvent(k, upLv, unitLv);
     console.log('  E' + (k + 1) + ' ' + g.EVENT_STAGES[k].name.padEnd(8) + '  공략 ' + r.naive + '/' + EVENT_SEEDS.length + ' · 타이밍 ' + r.timed + '/' + EVENT_SEEDS.length + ' · 전설만(타이밍) ' + r.legend + '/' + EVENT_SEEDS.length);
+  }
+} else if (args[0] === '--endless') {
+  // node tools/sim.js --endless [강화] [Lv] [연 전장] [편성 smart|legend|basic] [seed,...]   4.16 무한 전장: 몇 웨이브 · 몇 초 버티나
+  const upLv = +(args[1] || 10), unitLv = +(args[2] || 20), at = +(args[3] || 79), deck = args[4] || 'smart';
+  for (const sd of (args[5] || '12345,98765').split(',').map(Number)) {
+    const r = runStage(loadEngine(sd), 0, upLv, unitLv, false, deck === 'basic' ? false : deck, deck === 'basic', { endless: at - 1 });
+    console.log(`  무한 (강화 ${upLv}/Lv${unitLv}/전장 ${at}/${deck}/seed ${sd}) ${r.waves}웨이브 · ${r.seconds}초 · 보스 ${r.bossKills} · 금화 ${r.coins}`);
   }
 } else if (args[0] === '--etune') {
   // node tools/sim.js --etune <번호> <강화> <Lv> <배율,...> [보스체력배,...]
