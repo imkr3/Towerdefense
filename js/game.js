@@ -49,6 +49,7 @@ function sfx(name) {
 const BOSS_PUSH_TAKEN = 0.35;
 const BOSS_SHOVE_GAP = 1;          // 4.23 보스가 병사의 밀치기에 다시 밀릴 수 있기까지 (초)
 const BOSS_ENTRY_GAP = 400;        // 4.23 보스 등장 충격파: 아군을 보스에게서 이만큼(+0~80) 떨어뜨린다
+const BOSS_ENTRY_GAP_CAMPAIGN = 260;   //       진군 · 무한 전장
 const BOSS_ENTRY_FLY = 0.65;       //       날아가는 시간 (초)
 const HOLD_GAP = 12;          // 밀려나도 자기 요새 바로 앞에서 멈춘다 (근접 병사가 닿는 자리)
 const BOSS_THROW = { first: 2, every: 4.5, range: 340, mul: 0.25, radius: 70 };
@@ -1016,10 +1017,12 @@ class Battle {
    * 피해는 없다. 붙박이(hold)만 그 자리에 남는다. 날아가는 동안은 넉백과 같아 싸우지 못한다. */
   bossEntry(boss) {
     const bx = boss.x;
+    // 진군은 조금 덜 멀리 (충격파에 밀려 다시 걸어오는 동안 보스 전장이 꽤 어려워졌다) — 하드코어 · 도전은 보정에 반영된 거리 그대로
+    const gap = this.hard || this.event ? BOSS_ENTRY_GAP : BOSS_ENTRY_GAP_CAMPAIGN;
     let n = 0;
     for (const a of this.allies) {
       if (a.dead || a.ab.hold || a.burrowed) continue;
-      const tx = Math.min(a.x, bx - BOSS_ENTRY_GAP - Math.random() * 80);
+      const tx = Math.min(a.x, bx - gap - Math.random() * 80);
       const d = a.x - Math.max(ALLY_BASE_X + HOLD_GAP, tx);
       if (d <= 4) continue;
       a.flyV = d / BOSS_ENTRY_FLY; a.flyT = BOSS_ENTRY_FLY; a.kbTimer = Math.max(a.kbTimer, BOSS_ENTRY_FLY);
