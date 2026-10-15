@@ -1122,7 +1122,7 @@ const I18N_EN = {
   '기절 저항': 'Stun resist', '엄호 없음 · 원거리 병사 앞에 근접 병사를 세우세요': 'No cover · put melee troops in front of your ranged units', '기절 대신 둔화와 화력, 파쇄로': 'use slows, raw damage and breakers instead of stuns',
   '기절 면역 · 기절 대신 둔화와 화력, 파쇄로': 'Stun immune · use slows, raw damage and breakers instead of stuns', '하드코어 도전': 'Challenge Hardcore',
   '하드코어 · ': 'Hardcore · ', '적이 훨씬 모질다': 'Foes are far tougher',
-  '적 체력·공격': 'Enemy HP & ATK', '왕명 느림': "slower King's Command", '특성 +': 'Trait +', '특성 −': 'Trait −', '★3이 아닌 전장으로': 'Next stage below ★3', '요새': 'Fort', '성채': 'Castle',
+  '적 체력·공격': 'Enemy HP & ATK', '왕명 느림': "slower King's Command", '특성 +': 'Trait +', '특성 −': 'Trait −', '만렙(Lv30) 기준': 'tuned for max level (Lv30)', '★3이 아닌 전장으로': 'Next stage below ★3', '요새': 'Fort', '성채': 'Castle',
   /* 적 도감의 대응법 (예전부터 번역이 빠져 있던 것까지) */
   '보스 · 왕명을 아껴 폭격 후 회복': "Boss · save the King's Command to recover after barrages",
   '중장갑 · 중독과 화상으로 지속 피해': 'Heavy armor · wear it down with poison and burn',
@@ -1194,6 +1194,7 @@ const I18N_EN_PATTERNS = [
   [/([\d.]+)초마다/g, 'every $1s'],
   [/받은 피해 ([\d.]+[kM]?) · 출진 (\d+)/g, 'Taken $1 · Deployed $2'],
   [/외 (\d+)종/g, '+$1 more'],
+  [/ \(사관학교로 (\d+)까지\)/g, ' (Academy raises it to $1)'],   // 4.20
   [/★3 조건 · 성채 90% 이상 남기기 \(이번 (\d+)%\)/g, '★3 needs the castle at 90%+ (this time $1%)'],
   [/★3이 아닌 전장 (\d+)곳/g, '$1 stages below ★3'],
   [/ 외 (\d+)개/g, ' +$1 more'], [/⏫ \+(\d+)단계/g, '⏫ +$1 lv'],   // 4.19

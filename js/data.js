@@ -2621,7 +2621,7 @@ const COMMAND = {
 };
 
 /* -------------------- 병종 레벨 -------------------- */
-const UNIT_LEVEL_HARD_CAP = 22;   // 4.0: 15 → 20 (사관학교까지 25) — 4막에서 더 키울 자리 · 4.15: 22 (27) — 7막
+const UNIT_LEVEL_HARD_CAP = 25;   // 4.0: 15 → 20 (사관학교까지 25) — 4막에서 더 키울 자리 · 4.15: 22 (27) — 7막 · 4.20: 25 (30) — 만렙 30 으로 통일
 const UNIT_LEVEL_BASE_CAP = 5;
 const UNIT_LEVEL_GAIN = 0.10;
 
@@ -3265,7 +3265,7 @@ const HARDCORE = { enemyMul: 4.6, fortMul: 2.4, castleMul: 0.6, cmdMul: 1.5, rew
 const AWAKEN_TAX = 0.06;
 /* 4.18: 전장 배율이 큰 뒤쪽 전장은 하드코어 배율이 누그러진다 (m / (1 + m/soft)). 예전엔 7막(배율 16~59)에 ×4.6 을 그대로 곱해
  * ×270 까지 올라 다 키운 편성도 30초 안에 성채가 무너졌다 — 어려운 게 아니라 깰 수 없었다. 앞쪽 전장은 거의 그대로다. */
-function hardcoreEnemyMul(st) { const m = st.enemyMul || 1; return Math.max(Math.max(HARDCORE.enemyMul * m / (1 + m / HARDCORE.soft), m * (st.hardRatio || HARDCORE.minRatio)) * (st.hardSoft || 1), HARDCORE.mulFloor); }
+function hardcoreEnemyMul(st) { const m = st.enemyMul || 1; return Math.max(Math.max(HARDCORE.enemyMul * m / (1 + m / HARDCORE.soft), m * (st.hardRatio || HARDCORE.minRatio)) * (st.hardSoft || 1), HARDCORE.mulFloor) * (st.hardTune || 1); }   // 4.20 hardTune: 만렙 기준 전장별 보정
 function hardcoreFortHp(st) { return Math.max(Math.round(st.baseHp * HARDCORE.fortMul), HARDCORE.fortFloor); }
 function hardcoreMods(st, i) {
   if (st && st.hardMods) return st.hardMods.slice();   // 4.18: 하드코어에서만 따로 (진군 특성은 그대로)

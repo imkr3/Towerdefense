@@ -587,7 +587,7 @@ function renderStageDetail(i) {
     // 글자 조각마다 따로 감싸 둔다 — 영어일 때 조각이 통째로 번역된다
     const w = k => '<i>' + k + '</i>';
     hc.innerHTML = '<div class="sd-hard-txt"><b>' + (save.hard[i] ? '💀 하드코어 돌파 완료' : '💀 하드코어') + '</b>' +
-      '<span>' + w('적 체력·공격') + ' ×' + (hardcoreEnemyMul(st) / (st.enemyMul || 1)).toFixed(1) +
+      '<span>' + w('만렙(Lv30) 기준') + ' · ' + w('적 체력·공격') + ' ×' + (hardcoreEnemyMul(st) / (st.enemyMul || 1)).toFixed(1) +
       ' · ' + w('요새') + ' ' + fmtNum(hardcoreFortHp(st)) +
       ' · ' + w('성채') + ' ' + Math.round(HARDCORE.castleMul * 100) + '% · ' + w('왕명 느림') + ' · ' + w('격앙') +
       (extra.length ? ' · ' + w('특성 +') + extra.map(w).join('·') : '') +
@@ -969,7 +969,7 @@ function trainingHeader() {
   const cap = unitLevelCap(save.cleared, save.upgrades.academy);
   $('#train-cap').innerHTML =
     '레벨 상한 <b>' + cap + '</b>' +
-    (cap < hardCap ? ' (전장을 돌파하면 상승)' : ' (최대)') +
+    (cap < hardCap ? ' (전장을 돌파하면 상승)' : hardCap < UNIT_LEVEL_HARD_CAP + UPGRADES.academy.max ? ' (사관학교로 ' + (UNIT_LEVEL_HARD_CAP + UPGRADES.academy.max) + '까지)' : ' (최대)') +
     ' · 편성 <b>' + save.loadout.length + ' / ' + LOADOUT_MAX + '</b>' +
     ' <span class="hint">전투 카드는 편성한 병종만 나옵니다</span>';
 }

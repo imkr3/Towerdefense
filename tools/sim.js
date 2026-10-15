@@ -47,7 +47,7 @@ function loadEngine(seed) {
     vm.runInContext(src, ctx, { filename: f });
   }
   return vm.runInContext(
-    '({Battle, STAGES, EVENT_STAGES, EXPEDITIONS, makeEndlessStage, MOD_COUNTERS, recommendDeck, UNITS, UNIT_BY_ID, ROSTER_UNITS, LOADOUT_MAX, HERO_SLOT_MAX, unitLevelCap, unitTrainCost, UPGRADES, EVO_LEVEL, EVOLUTIONS, EVOLUTIONS2, EVOLUTIONS3})',
+    '({Battle, STAGES, EVENT_STAGES, EXPEDITIONS, makeEndlessStage, MOD_COUNTERS, recommendDeck, UNITS, UNIT_BY_ID, ROSTER_UNITS, LOADOUT_MAX, HERO_SLOT_MAX, unitLevelCap, unitTrainCost, UPGRADES, EVO_LEVEL, EVOLUTIONS, EVOLUTIONS2, EVOLUTIONS3, hardcoreMods, HARDCORE, recommendDeck})',
     ctx);
 }
 
@@ -155,11 +155,16 @@ function runStage(g, index, upLv, unitLv, trace, gacha, basic, opt) {
   else if (exStage) index = exStage.expedition.unlock - 1;   // 원정: 열리는 시점의 병종으로
   else if (evStage) index = g.STAGES.length - 1;        // 이벤트: 캠페인을 다 연 상태로 본다
   const academy = Math.min(5, Math.floor(upLv / 2));
-  const cap = g.unitLevelCap(index, academy);
+  // 4.20 만렙 기준(opt.full): 전장을 다 연 계정으로 — 병종 · 레벨 상한 · 편성은 끝까지 연 상태, 싸우는 곳만 index
+  const rIdx = opt.full ? g.STAGES.length - 1 : index;
+  const cap = g.unitLevelCap(opt.full ? g.STAGES.length : index, academy);
   const levels = {};
   g.UNITS.forEach(u => { levels[u.id] = Math.min(unitLv, cap); });
 
-  const unlocked = g.ROSTER_UNITS.filter(u => u.unlockStage <= index + 1);
+  const unlocked = g.ROSTER_UNITS.filter(u => u.unlockStage <= rIdx + 1);
+  // 4.20: 하드코어면 공략 편성도 하드코어 특성(덧붙는 특성 포함)을 받아친다
+  const isHard = !!(SIM_HARD || opt.hard) && !evStage;
+  const fStage = isHard ? Object.assign({}, g.STAGES[index], { mods: g.hardcoreMods(g.STAGES[index], index) }) : g.STAGES[index];
   const loadout = Array.isArray(gacha) ? gacha.slice()      // 3.6: 편성을 직접 넘길 수도 있다
     : basic ? basicLoadout(g)
     : gacha === 'legend' ? legendLoadout(g)
@@ -170,15 +175,17 @@ function runStage(g, index, upLv, unitLv, trace, gacha, basic, opt) {
           .sort((a, b) => ({ UR: 0, SSR: 1, SR: 2 }[a.rarity] - { UR: 0, SSR: 1, SR: 2 }[b.rarity]) || (b.cost - a.cost))
           .slice(0, g.LOADOUT_MAX).map(u => u.id)
     : (typeof gacha === 'string' && gacha.indexOf('mono:') === 0) ? [gacha.slice(5)]
-    : (gacha === 'ranged' || gacha === 'melee') ? styleLoadout(g, index, gacha === 'ranged')
-    : gacha === 'rangedbase' ? styleLoadout(g, index, true, true)
-    : gacha === 'combo' ? comboLoadout(g, index)
-    : gacha === 'counter' ? (evStage && evStage.event ? evStage.event.deck.slice() : counterLoadout(g, index))
+    : (gacha === 'ranged' || gacha === 'melee') ? styleLoadout(g, rIdx, gacha === 'ranged')
+    : gacha === 'rangedbase' ? styleLoadout(g, rIdx, true, true)
+    : gacha === 'combo' ? comboLoadout(g, rIdx)
+    : gacha === 'rec' ? g.recommendDeck({ cleared: rIdx + 1, levels: levels, owned: Object.fromEntries(g.UNITS.filter(u => u.gacha).map(u => [u.id, 1])) },
+                                        evStage && evStage.event ? evStage : fStage)   // 4.20 게임의 '추천 편성' 그대로
+    : gacha === 'counter' ? (evStage && evStage.event ? evStage.event.deck.slice() : counterLoadout(g, rIdx, fStage))
     : (typeof gacha === 'string' && gacha.indexOf('with:') === 0)
       ? unlocked.slice().sort((a, b) => b.cost - a.cost).slice(0, g.LOADOUT_MAX - 1).map(u => u.id).concat([gacha.slice(5)])
-    : gacha === 'smart' ? (g.STAGES[index].mods && !enStage ? counterLoadout(g, index) : unlocked.slice()
+    : gacha === 'smart' ? (fStage && fStage.mods && fStage.mods.length && !enStage ? counterLoadout(g, rIdx, fStage) : unlocked.slice()
         .sort((a, b) => b.cost - a.cost).slice(0, g.LOADOUT_MAX).map(u => u.id))
-    : gacha ? gachaLoadout(g, index)
+    : gacha ? gachaLoadout(g, rIdx)
     : unlocked.slice()
       .sort((a, b) => b.cost - a.cost)
       .slice(0, g.LOADOUT_MAX)
@@ -196,7 +203,7 @@ function runStage(g, index, upLv, unitLv, trace, gacha, basic, opt) {
   const evo3 = {};
   if (!process.env.SIM_NOEVO && !process.env.SIM_NOEVO2 && Math.min(unitLv, cap) >= 25) g.UNITS.forEach(u => { if (g.EVOLUTIONS3 && g.EVOLUTIONS3[u.id]) evo3[u.id] = true; });
   const save = {
-    cleared: index, coins: 0, levels: levels, loadout: loadout, stars: {}, owned: owned, evo: evo, evo2: evo2, evo3: evo3,
+    cleared: opt.full ? g.STAGES.length : index, coins: 0, levels: levels, loadout: loadout, stars: {}, owned: owned, evo: evo, evo2: evo2, evo3: evo3,
     upgrades: {
       wallet: upLv, income: upLv, power: upLv, vitality: upLv, castle: upLv,
       logistics: upLv, treasury: upLv, spoils: upLv,
