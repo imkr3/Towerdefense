@@ -1938,4 +1938,50 @@ test('4.23: starfall hits the clumps by max-HP ratio, seal locks the priciest ca
   assert.equal(boss.frenzyT, 0); assert.ok(Math.abs(boss.rateMul - r0) < 1e-9 && Math.abs(boss.speedMul - s0) < 1e-9, 'restored');
 });
 
+test('4.24: a crowded fx list keeps strike warnings and trims old effects instead', () => {
+  const b = battle(), FX_LIMIT = vm.runInContext('FX_LIMIT', ctx);
+  b.fx.push({ type: 'warn', x: 500, r: 100, t: 2, life: 2 }, { type: 'doom', x: 500, row: 1, t: 2, life: 2 });
+  for (let i = 0; i < FX_LIMIT + 50; i++) b.fx.push({ type: 'hit', x: 500, row: 1, t: 1, life: 1 });
+  b.updateFx(0.001);
+  assert.equal(b.fx.length, FX_LIMIT);
+  assert.ok(b.fx.some(e => e.type === 'warn') && b.fx.some(e => e.type === 'doom'), 'warnings kept');
+});
+test('4.24: warnings count down in battle time (fast-forward, pause)', () => {
+  const b = battle(); b.speed = 3;
+  const w = { type: 'warn', x: 500, r: 100, t: 1, life: 1 }, h = { type: 'hit', x: 500, row: 1, t: 1, life: 1 };
+  b.fx.push(w, h); b.update(0.1);
+  assert.ok(Math.abs(w.t - 0.7) < 1e-6, 'warn follows 3x: ' + w.t); assert.ok(Math.abs(h.t - 0.9) < 1e-6, 'sparks stay real-time');
+  b.updateFx(0.1, 0); assert.ok(Math.abs(w.t - 0.7) < 1e-6, 'paused warn waits');
+});
+test('4.24: a shortened knockback drops the rest of the boss-entry flight', () => {
+  const b = battle(), e = new Fighter(E.goblin, 'enemy', 1500);
+  e.flyV = 1500; e.flyT = 0.5; e.kbTimer = 0.02;
+  b.step([e], [], b.allyCastle, 1 / 30, false);
+  assert.equal(e.flyT, 0);
+  e.kbTimer = 0.1; const x0 = e.x; b.step([e], [], b.allyCastle, 1 / 30, false);
+  assert.ok(Math.abs(Math.abs(e.x - x0) - 150 / 30) < 1e-6, 'ordinary knockback speed');
+});
+test('4.24: a weaker haste or the command does not override a stronger haste', () => {
+  const b = battle(), a = b.makeAlly(U.spear, 500); b.allies.push(a);
+  a.hasteT = 5; a.hasteMul = 0.4; b.money = 99999; b.cmdCd = 0; b.cmdT = 0;
+  assert.ok(b.useCommand()); assert.equal(a.hasteMul, 0.4); assert.ok(a.hasteT >= 5 - 1e-9);
+  const C = vm.runInContext('COMMAND', ctx); a.hasteT = 0; a.hasteMul = 1; b.cmdCd = 0; b.cmdT = 0;
+  assert.ok(b.useCommand()); assert.equal(a.hasteMul, C.hasteMul, 'no haste → command haste');
+});
+test('4.24: boss summons inherit the boss multiplier (endless waves, reinforcements)', () => {
+  const b = battle(), boss = b.spawnEnemy('lich', 1500, 3);
+  const n0 = b.enemies.length; b.bossAct(boss, { t: 'summon', id: 'goblin', n: 1 });
+  const m = b.enemies.slice(n0).find(e => e.kind === 'goblin'), ref = b.spawnEnemy('goblin', 1500, 3);
+  assert.ok(m && Math.abs(m.maxHp - ref.maxHp) < 1e-6, 'summoned goblin hp ' + (m && m.maxHp) + ' vs ' + ref.maxHp);
+});
+test('4.24: a charmed hero cannot cast its active', () => {
+  const hero = UNITS.find(u => u.active && !u.active.barrier && !u.active.haste);
+  const s = save(); s.loadout = [hero.id]; s.owned = { [hero.id]: true };
+  const b = new Battle(0, s, { baseHp: 10000, money: 9999, rate: 0, waves: [], reward: 0 });
+  const f = b.makeAlly(U[hero.id], 900); b.allies.push(f); b.enemies.push(new Fighter(E.goblin, 'enemy', 950));
+  b.heroCooldowns = {}; b.heroGlobalCd = 0;
+  assert.ok(b.canHeroActive(hero.id), "hero can cast before the charm");
+  f.charmT = 2; assert.equal(b.canHeroActive(hero.id), false);
+});
+
 console.log(count + ' regression checks passed');

@@ -55,6 +55,8 @@ function normalizeSave(raw) {
     s.upgrades = Object.assign(d.upgrades, s.upgrades || {});
     s.levels = Object.assign(d.levels, s.levels || {});
     s.cleared = Math.max(0, Math.min(STAGES.length, s.cleared | 0));
+    // 4.24: 업데이트로 사라진 일일 임무는 빼 둔다 (검사에서 막으면 저장 전체를 못 읽었다)
+    if (s.daily && Array.isArray(s.daily.list)) s.daily.list = s.daily.list.filter(m => missionById(m.id));
     // 밸런스 패치로 상한이 바뀌어도 이미 획득한 레벨은 보존한다.
     UNITS.forEach(u => {
       s.levels[u.id] = Math.max(1, Math.floor(s.levels[u.id]) || 1);
@@ -164,6 +166,7 @@ function show(id) {
   if (id === 'scr-gacha') renderGacha();
   if (id === 'scr-quest') { checkAchievements(); renderQuest(); }
   if (id === 'scr-battle' && renderer) renderer.resize();
+  if (id === 'scr-title' || id === 'scr-battle') wakeLoop();
   if (id !== 'scr-battle') BGM.play(SCREEN_MUSIC[id] || 'map');
 }
 
@@ -1281,6 +1284,7 @@ function buildUnitCard(u) {
             if (save.loadout.length <= 1) { toast('최소 1개 병종은 편성해야 합니다'); return; }
             save.loadout = save.loadout.filter(id => id !== u.id);
           } else {
+            if (!heroRoom(u.id)) return;
             save.loadout.push(u.id);
           }
           saveGame(save);
@@ -1344,8 +1348,6 @@ function applyTrainingFilter() {
     el.setAttribute('aria-pressed', String(el.dataset.filter === trainingFilter));
   });
   if (!selShown) trainSel = first;
-  const n = $$('#units-list .unit-tile:not([hidden])').length;
-  const cnt = $('#training-count'); if (cnt) cnt.textContent = n + '종';
   showTrainingDetail();
 }
 
@@ -1706,7 +1708,7 @@ let autoTimer = 0;
 let playAccum = 0;
 let resultTimer = null;
 function canBattleInput() {
-  return battle && battle.state === 'play' && !paused && !$('.modal.show') &&
+  return battle && battle.state === 'play' && !paused && !openModals.length &&
     $('#scr-battle').classList.contains('active');
 }
 function setPaused(value) {
@@ -2082,11 +2084,20 @@ let battleScr = null;
 // 3.10: 매 프레임 문서 전체를 선택자로 훑지 않는다. 살아 있는 목록이라 창이 열리고 닫히면 저절로 바뀐다.
 const openModals = document.getElementsByClassName('modal show');
 const resultEl = document.getElementById('result');
-function loop(ts) {
+/* 4.24: 타이틀 · 전투 화면이 아니면 프레임 루프를 쉰다 (진군도 · 상점 · 훈련소에서 매 화면 주사율마다 깨어나던 것).
+ * show() 가 두 화면으로 돌아올 때 다시 깨운다. */
+let loopOn = false;
+function wakeLoop() {
+  if (loopOn) return;
+  loopOn = true; lastTs = 0;
   requestAnimationFrame(loop);
-  if (!lastTs) lastTs = ts;
+}
+function loop(ts) {
   battleScr = battleScr || $('#scr-battle');
   const inBattle = !titleAnim.on && battle && battleScr.classList.contains('active');
+  if (!titleAnim.on && !inBattle) { loopOn = false; return; }
+  requestAnimationFrame(loop);
+  if (!lastTs) lastTs = ts;
   const modal = inBattle && openModals.length > 0;
   const idle = inBattle && (paused || modal || battle.state !== 'play');
   const minMs = Math.max(FRAME_MIN_MS[Settings.get('quality')] || 14,
@@ -2105,7 +2116,7 @@ function loop(ts) {
     battle.update(dt);
     if (battle.state === 'play') playAccum += dt;
   }
-  else battle.updateFx(dt * 0.4);
+  else battle.updateFx(dt * 0.4, 0);
   renderer.idle = idle;           // 일부러 늦춘 프레임은 품질 판단에 넣지 않는다
   renderer.render(battle, dt, (paused || modal) ? dt * 0.4 : dt);
   updateHud();
@@ -2550,7 +2561,9 @@ function init() {
   $('#btn-fix').addEventListener('click', () => {
     $('#result').classList.remove('show');
     $('#btn-retry').textContent = '다시 도전';
-    const idx = !battle ? null : battle.expedition ? 'exp:' + battle.expIndex : (!battle.endless && !battle.event ? battle.stageIndex : null);
+    // 4.24: 하드코어 · 도전 · 무한 전장도 고친 뒤 같은 전장으로 다시 나간다 (예전엔 하드코어가 진군판으로 나갔다)
+    const idx = !battle ? null : battle.expedition ? 'exp:' + battle.expIndex : battle.event ? 'event:' + battle.eventIndex
+      : battle.endless ? 'endless' : battle.hard ? 'hard:' + battle.stageIndex : battle.stageIndex;
     show('scr-map');                       // 편성에서 '뒤로' 가면 진군도로 (전투 화면이 아니라)
     openFormation(idx);
   });
@@ -2597,7 +2610,7 @@ function init() {
   });
   window.addEventListener('keydown', e => {
     if (e.repeat || e.ctrlKey || e.metaKey || e.altKey || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
-    if (!battle || battle.state !== 'play' || !$('#scr-battle').classList.contains('active') || $('.modal.show')) return;
+    if (!battle || battle.state !== 'play' || !$('#scr-battle').classList.contains('active') || openModals.length) return;
     if (e.code === 'Space') { e.preventDefault(); $('#btn-pause').click(); return; }
     if (!canBattleInput()) return;
     if (/^[0-9]$/.test(e.key)) { e.preventDefault(); const i = (Number(e.key) + 9) % 10; if (cardEls[i]) cardEls[i].click(); }
@@ -2606,7 +2619,7 @@ function init() {
     if (e.key.toLowerCase() === 'a') $('#btn-auto').click();
     if (e.key.toLowerCase() === 'f') { renderer.dragUntil = 0; }
   });
-  requestAnimationFrame(loop);
+  wakeLoop();
 }
 
 document.addEventListener('DOMContentLoaded', init);

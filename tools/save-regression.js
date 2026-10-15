@@ -117,4 +117,12 @@ test('4.4: trial records are cleaned when a save is loaded',()=>{
   ctx.raw=old;const fresh=vm.runInContext('normalizeSave(raw)',ctx);
   assert.deepEqual(JSON.parse(JSON.stringify([fresh.best,fresh.perfect,fresh.life])),[{},{},{}],'old saves start empty');
 });
+test('4.24: a daily mission removed by an update does not lock the save',()=>{
+  const {store:s,data}=fixture();data.set(s.key,JSON.stringify({...old,daily:{date:'x',list:[{id:'gone-mission',got:1,claimed:false}]}}));
+  assert.equal(s.read().cleared,13);assert.equal(s.blocked,false);
+});
+test('4.24: the slot list shows a slot whose primary is broken but backup is fine',()=>{
+  const {store:s,data}=fixture();data.set(s.keyOf(2),'broken');data.set(s.keyOf(2)+'-backup',JSON.stringify(old));
+  assert.equal(s.peek(2).cleared,13);data.delete(s.keyOf(2)+'-backup');assert.equal(s.peek(2).broken,true);
+});
 console.log(n+' save protection checks passed');

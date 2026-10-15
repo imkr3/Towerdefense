@@ -357,6 +357,10 @@ const I18N_EN = {
   '획득 골드 💰 ': 'Gold 💰 ', '  ·  남은 성채 ': '  ·  Castle ', '  (별 보너스 ': '  (star bonus ', '  ·  소환석 🔮 ': '  ·  Stones 🔮 ', '소환석 🔮 +': 'Summon Stones 🔮 +',
   '무한 전장 · 최고 ': 'Endless · best ', '최대 강화 완료': 'Fully upgraded', ' 골드로 강화': ' gold to upgrade',
   '기록을 초기화했습니다': 'Progress reset', '진행도와 소환한 병종이 모두 삭제됩니다. 정말 초기화하시겠습니까?': 'All progress and summoned units will be erased. Really delete?',
+  '게임 저장 데이터가 아닙니다.': 'This is not game save data.', '백업은 1MB 이하의 JSON 파일이어야 합니다.': 'Backups must be JSON files of 1MB or less.',
+  '지원하지 않는 백업 버전입니다.': 'Unsupported backup version.', '진화 데이터 오류': 'Invalid evolution data', '3진 데이터 오류': 'Invalid awakening data',
+  '4진 데이터 오류': 'Invalid ascension data', '편성 데이터 오류': 'Invalid squad data', '일일 임무 데이터 오류': 'Invalid daily mission data',
+  '저장 항목 형식 오류: ': 'Invalid save field: ', '저장 숫자 오류: ': 'Invalid save number: ', '저장 능력치 오류: ': 'Invalid save stat: ',
   '진행도 복원': 'Restore progress', '진행도를 복원했습니다.': 'Progress restored.', '이전 자동 백업으로 진행도를 복구했습니다.': 'Recovered progress from the previous auto-backup.',
   '남아 있는 이전 백업이 없습니다.': 'No previous backup left.', '이전 백업을 읽지 못했습니다.': "Couldn't read the previous backup.",
   '백업 파일을 읽지 못했습니다. 다른 파일을 선택해 주세요.': "Couldn't read that backup. Pick another file.",
@@ -1178,6 +1182,11 @@ const I18N_EN_HTML = {
 
 /* 숫자가 붙은 말. 구절 치환보다 먼저 한다. */
 const I18N_EN_PATTERNS = [
+  // 4.24 숫자가 낀 안내
+  [/^(\d+)개 칸을 채웠습니다$/g, 'Filled $1 slots'],
+  [/추천 편성 (\d+)개 병종을 넣었습니다/g, 'Added $1 recommended units'],
+  [/^전장 (\d+)개 돌파 · 골드 (\d+) · 소환석 (\d+)/g, '$1 stages cleared · $2 gold · $3 stones'],
+  [/^복원하지 않았습니다: /g, 'Not restored: '],
   // 4.4 3진 시련
   [/✪ 3진 시련 달성 · /g, '✪ Trial cleared · '],
   [/그림자 가면: (.+?) 봉인/g, 'Shadow Mask: $1 sealed'],   // 4.6

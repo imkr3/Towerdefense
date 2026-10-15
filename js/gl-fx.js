@@ -97,6 +97,15 @@ class GLFx {
     // 합성식이 포화형이어서 1 을 넘겨도 흰 덩어리로 터지지는 않는다.
     this.gain = 1.15;
     this.ok = this._init();
+    // 4.24: GPU 가 컨텍스트를 잃으면(앱 전환 · 드라이버 재시작) 2D 그리기로 물러났다가, 돌아오면 다시 만든다.
+    // 예전엔 ok 가 그대로 참이라 그 뒤로 필살 연출이 아무것도 그려지지 않았다.
+    if (canvas.addEventListener) {
+      canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); this.ok = false; this.count = 0; });
+      canvas.addEventListener('webglcontextrestored', () => {
+        this.ok = this._init();
+        if (this.ok) this.resize(this.w, this.h, this.dpr);
+      });
+    }
   }
 
   _init() {

@@ -57,6 +57,7 @@ const BOSS_THROW = { first: 2, every: 4.5, range: 340, mul: 0.25, radius: 70 };
 let _visSeed = 1234567;
 function visRand() { _visSeed = (_visSeed * 1103515245 + 12345) & 0x7fffffff; return _visSeed / 0x7fffffff; }
 const FX_LIMIT = 200;        // 이펙트가 무한정 쌓이지 않게
+const FX_KEEP = { warn: 1, doom: 1, taxwarn: 1, chargeline: 1 };   // 4.24: 넘쳐도 버리지 않는 예고
 const X3_FX_LIMIT = 12;      // 4.3 3진 연출(포연·광선·사이렌)이 한꺼번에 떠 있을 수 있는 수
 // 3진의 타격 연출 → 땅에 남는 Canvas 연출 (연기 · 흙 · 갈라진 땅 · 눈더미 · 그을린 자국)
 const X3_GROUND = { shellblast: 'boom', rocketpunch: 'quake', dronestrike: 'smoke', dozerpush: 'dirtwave', snowburst: 'frost', railhit: 'railscar',
@@ -670,13 +671,15 @@ class Battle {
     return this.allies.find(f=>!f.dead && !f.summoned && f.s.id===id) || null;
   }
   heroTarget(f) {
-    return this.enemies.filter(e=>!e.dead && Math.abs(e.x-f.x)<=f.attackRange+180)
-      .sort((a,b)=>Math.abs(a.x-f.x)-Math.abs(b.x-f.x))[0] || null;
+    // 4.24: 가장 가까운 적 하나만 — 매 프레임 카드마다 걸러 정렬하던 배열을 만들지 않는다
+    let best=null, bd=f.attackRange+180;
+    for(const e of this.enemies){ if(e.dead) continue; const d=Math.abs(e.x-f.x); if(d<=bd&&(!best||d<Math.abs(best.x-f.x))){best=e;bd=d;} }
+    return best;
   }
   canHeroActive(id) {
     const f=this.heroCaster(id), u=this.stats(id);
     return !!(this.state==='play' && u && u.active && this.roster.some(r=>r.id===id) && f &&
-      f.stunT<=0 && f.kbTimer<=0 && (this.heroCooldowns[id]||0)<=0 && this.heroGlobalCd<=0 &&
+      f.stunT<=0 && f.kbTimer<=0 && f.charmT<=0 && (this.heroCooldowns[id]||0)<=0 && this.heroGlobalCd<=0 &&
       (u.active.barrier || u.active.haste || this.heroTarget(f)));
   }
   /* 3.14: 자동 출진이 필살도 쓸 때 — 안개(흡수)·반사 결계·핵이 닫힌 보스 앞에선 아낀다 */
@@ -762,8 +765,8 @@ class Battle {
     }
     for (const a of this.allies) {
       a.heal(a.maxHp * this.cmdHeal);
+      a.hasteMul = a.hasteT > 0 ? Math.min(a.hasteMul, COMMAND.hasteMul) : COMMAND.hasteMul;
       a.hasteT = Math.max(a.hasteT, COMMAND.hasteDur);
-      a.hasteMul = COMMAND.hasteMul;
       a.stunT = 0;
       a.slowT = 0;
       this.fx.push({ type: 'rally', x: a.x, row: a.row, t: 0.6, life: 0.6 });
@@ -777,12 +780,13 @@ class Battle {
   update(dtRaw) {
     if (this.state !== 'play') { this.updateFx(dtRaw); return; }
     let remaining = Math.max(0, Math.min(0.1, dtRaw)) * this.speed;
+    const simDt = remaining;
     while (remaining > 1e-8 && this.state === 'play') {
       const step = Math.min(1 / 30, remaining);
       this.tick(step);
       remaining -= step;
     }
-    this.updateFx(dtRaw);
+    this.updateFx(dtRaw, simDt);
   }
 
   tick(dt) {
@@ -1463,13 +1467,15 @@ class Battle {
       }
 
       // 기절
-      if (f.stunT > 0) { f.stunT -= dt; continue; }
+      // 4.24: 돌진 준비 중 기절해도 준비 시간은 흐른다 (돌진은 제 시각에 떨어지는데 보스만 뒤늦게 멈춰 있었다)
+      if (f.stunT > 0) { f.stunT -= dt; if (f.windT > 0) f.windT -= dt; continue; }
       if (f.windT > 0) { f.windT -= dt; continue; }        // 4.21 돌진 준비: 제자리에서 힘을 모은다
 
       // 넉백
       if (f.kbTimer > 0) {
         f.kbTimer -= dt;
         if (f.flyT > 0) { f.flyT -= dt; f.x -= f.dir * f.flyV * dt; } else f.x -= f.dir * 150 * dt;
+        if (f.kbTimer <= 0) f.flyT = 0;               // 4.24: 날아가던 중 맞아 넉백이 짧아져도 남은 비행은 버린다
         f.x = Math.max(60, Math.min(WORLD - 60, f.x));
         this.holdLine(f);
         continue;
@@ -1658,8 +1664,8 @@ class Battle {
       for (const m of mates) {
         if (m.dead || m === f) continue;
         if (Math.abs(m.x - f.x) > ab.radius) continue;
+        m.hasteMul = m.hasteT > 0 ? Math.min(m.hasteMul, ab.haste.mul) : ab.haste.mul;   // 4.24: 더 센 가속을 덮지 않는다
         m.hasteT = Math.max(m.hasteT, ab.haste.dur);
-        m.hasteMul = ab.haste.mul;
       }
       f.auraPulse = 0.5;
       this.fx.push({ type: 'aura', x: f.x, row: f.row, r: ab.radius,
@@ -1688,7 +1694,7 @@ class Battle {
             this.allies.push(m);
           }
         } else {
-          const m = this.spawnEnemy(ab.summon.id, sx); m.summoned = true; m.wave = f.wave;
+          const m = this.spawnEnemy(ab.summon.id, sx, f.mul); m.summoned = true; m.wave = f.wave;   // 4.24: 증원 · 무한 배율을 물려받는다
         }
       }
       this.fx.push({ type: 'spawn', x: f.x - f.dir * 24, row: f.row, t: 0.4, life: 0.4 });
@@ -1843,7 +1849,7 @@ class Battle {
             const u = UNIT_BY_ID[a.id];
             if (u && this.roomForSummon()) { const m = this.makeAlly(u, sx, f); m.summoned = true; this.allies.push(m); }
           } else {
-            const m = this.spawnEnemy(a.id, sx); m.summoned = true; m.wave = f.wave;
+            const m = this.spawnEnemy(a.id, sx, f.mul); m.summoned = true; m.wave = f.wave;
           }
           this.fx.push({ type: 'spawn', x: sx, row: f.row, t: 0.4, life: 0.4 });
         }
@@ -2606,15 +2612,33 @@ class Battle {
       if (hit) this.hitOne(s.dmg, hit, s.src, s.crit);
       this.fx.push({ type: s.crit ? 'crit' : 'hit', x: hit ? hit.x : s.tx, row: hit ? (hit.row ?? s.y0) : s.y0, dir: s.dir, t: 0.22, life: 0.22, sty: 'shoot', color: s.color });
     }
-    this.shots = this.shots.filter(s => !s.done);
+    // 4.24: 그 자리에서 당겨 담는다 (매 틱 새 배열을 만들지 않는다)
+    const sh = this.shots; let n = 0;
+    for (let i = 0; i < sh.length; i++) if (!sh[i].done) sh[n++] = sh[i];
+    sh.length = n;
   }
 
-  updateFx(dt) {
-    for (const e of this.fx) e.t -= dt;
-    this.fx = this.fx.filter(e => e.t > 0);
-    if (this.fx.length > FX_LIMIT) this.fx.splice(0, this.fx.length - FX_LIMIT);
-    this.dmgFxCount = 0;
-    for (const e of this.fx) if (e.type === 'dmg') this.dmgFxCount++;
+  /* simDt: 예고(FX_KEEP)는 전투 시간으로 흐른다 — 2배속 · 3배속에서도 예고가 끝나는 순간 떨어지고, 멈춘 동안엔 그대로 */
+  updateFx(dt, simDt) {
+    if (simDt === undefined) simDt = dt;
+    const fx = this.fx; let n = 0, dmg = 0;
+    for (let i = 0; i < fx.length; i++) {
+      const e = fx[i];
+      e.t -= FX_KEEP[e.type] ? simDt : dt;
+      if (e.t > 0) { fx[n++] = e; if (e.type === 'dmg') { dmg++; if (e.bump > 0) e.bump = Math.max(0, e.bump - dt); } }
+    }
+    fx.length = n;
+    // 넘치면 오래된 것부터 버리되 낙하 · 돌진 · 사형 선고 예고는 남긴다 (붐비는 판에서 예고 없이 맞았다)
+    if (n > FX_LIMIT) {
+      let drop = n - FX_LIMIT, w = 0;
+      for (let i = 0; i < n; i++) {
+        const e = fx[i];
+        if (drop > 0 && !FX_KEEP[e.type]) { drop--; if (e.type === 'dmg') dmg--; continue; }
+        fx[w++] = e;
+      }
+      fx.length = w;
+    }
+    this.dmgFxCount = dmg;
     if (this.state !== 'play') this.resultTime = (this.resultTime || 0) + dt;
   }
 
