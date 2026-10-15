@@ -1032,6 +1032,9 @@ const ENEMIES = {
   golem:    { name: '돌 골렘', body: '#8a8880', accent: '#5f5d56', tunic: '#767469', shape: 'golem',
               hp: 10200, atk: 390, range: 78, speed: 17, interval: 2.6, kb: 1, gold: 120, scale: 1.5,
               ab: { kbImmune: true, push: 30, armor: 0.25 } },
+  wardtotem: { name: '수호 토템', body: '#3a4a6a', accent: '#ffd76a', tunic: '#22304a', shape: 'wardtotem',   // 4.21 보스 각인
+              hp: 1000, atk: 0, range: 0, speed: 0, interval: 3, kb: 1, gold: 0, scale: 1.1,
+              ab: { hold: true, noAttack: true, kbImmune: true } },
   totem:    { name: '저주 토템', body: '#6b4b2a', accent: '#c98ae0', tunic: '#4a3520', shape: 'totem',
               hp: 1800, atk: 0, range: 0, speed: 0, interval: 3, kb: 1, gold: 70,
               ab: { haste: { mul: 0.75, dur: 4 }, radius: 260, interval: 4, hold: true, noAttack: true } },
@@ -2160,6 +2163,36 @@ const HARD_TUNE = [
   4.24, 2.24, 1.26, 2.04, 1.24, 1.58, 2.19, 2.11, 1.49, 1.49    // 71~80
 ];
 STAGES.forEach((st, i) => { st.hardTune = HARD_TUNE[i]; });
+
+/* 4.21 보스 각인: 하드코어 · 도전에서 보스가 제 고유 기술 말고 둘을 더 쓴다. 모두 예고가 있고, 받아칠 길이 있다.
+ * (진군 · 무한 전장의 보스는 그대로) */
+const BOSS_AFFIXES = {
+  charge: { t: 'charge', name: '돌진', icon: '➶', cd: 15, first: 9, warn: 1.6, dist: 320, dmgMul: 2.5, push: 70, stun: 0.6,
+            desc: '붉은 길을 그은 뒤 내달려 길 위의 병사를 크게 치고 밀쳐 낸다' },
+  clone:  { t: 'clone', name: '분신', icon: '👥', cd: 24, first: 12, n: 2, hp: 0.07, atk: 0.35, life: 9, heal: 0.06,
+            desc: '분신 둘 — 9초 안에 못 베면 분신마다 보스 체력이 6% 찬다' },
+  totem:  { t: 'totem', name: '수호 토템', icon: '🗿', cd: 28, first: 10, n: 2, hp: 0.05, cut: 0.5,
+            desc: '보스 뒤에 토템 둘 — 하나라도 서 있으면 보스가 받는 피해 절반 (사거리 긴 병종 · 범위 공격으로)' },
+  doom:   { t: 'doom', name: '사형 선고', icon: '☠', cd: 17, first: 8, delay: 4, ratio: 0.85,
+            desc: '가장 강한 아군 하나에 낙인 — 4초 뒤 최대 체력 85% 피해 (보호막 · 회복 · 왕명으로 버틴다)' },
+  tax:    { t: 'tax', name: '군자금 탈취', icon: '💸', cd: 21, first: 14, delay: 3, ratio: 0.5,
+            desc: '3초 뒤 쌓인 군자금 절반을 빼앗는다 — 그 전에 출진시켜라' },
+  pull:   { t: 'pull', name: '끌어당김', icon: '🌀', cd: 19, first: 11, r: 380, warn: 1.3, radius: 150, dmgMul: 2,
+            desc: '앞의 병사를 보스 앞으로 끌어당긴 뒤 내려찍는다 — 뒷줄 원거리도 끌려온다' }
+};
+const AFFIX_KEYS = Object.keys(BOSS_AFFIXES);
+const EVENT_AFFIX = { eclipse: ['clone', 'doom'], titan: ['charge', 'pull'], fleet: ['tax', 'totem'], rift: ['pull', 'clone'],
+                      demonking: ['doom', 'totem'], train: ['doom', 'tax'], masque: ['clone', 'doom'], hourglass: ['totem', 'pull'] };
+/* 이 전장의 보스가 쓰는 각인 (하드코어 보스 전장은 짝 15가지를 돌려 가며 — 이웃한 보스 전장끼리 겹치지 않게) */
+function bossAffixes(stage, idx, hard) {
+  if (stage && stage.event) return EVENT_AFFIX[stage.event.id] || [];
+  if (!hard || !stage || !stage.boss || !stage.bossId) return [];
+  let k = 0;
+  for (let i = 0; i < idx && i < STAGES.length; i++) if (STAGES[i].boss && STAGES[i].bossId) k++;
+  const pairs = [];
+  for (let a = 0; a < AFFIX_KEYS.length; a++) for (let b = a + 1; b < AFFIX_KEYS.length; b++) pairs.push([AFFIX_KEYS[a], AFFIX_KEYS[b]]);
+  return pairs[(k * 7 + 2) % pairs.length];
+}
 
 /* 전장 길이. 예전엔 모두 2000 이라 병사가 적과 부딪히기까지 40초 넘게 걸어야 했다.
  * 초반은 짧게 붙고, 뒤로 갈수록·보스 전장일수록 조금씩 길어진다. */

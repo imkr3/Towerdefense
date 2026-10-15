@@ -602,6 +602,8 @@ function renderStageDetail(i) {
     hb.addEventListener('click', () => startBattle(i, true));
     hc.appendChild(hb);
     box.appendChild(hc);
+    const aff = bossAffixes(st, i, true);            // 4.21 하드코어 보스의 각인
+    if (aff.length) { const ab = document.createElement('div'); ab.innerHTML = affixBlock(aff); box.appendChild(ab.firstChild); }
   }
   const foes = document.createElement('div');
   foes.className = 'sd-foes';
@@ -783,6 +785,15 @@ function eventDeck(k) {
   return out;
 }
 
+/* 4.21 보스 각인 안내: 이 전장의 보스가 더 쓰는 기술 둘 */
+function affixBlock(keys) {
+  if (!keys || !keys.length) return '';
+  return '<div class="sd-affix"><b class="sd-afx-h">보스 각인</b>' + keys.map(k => {
+    const a = BOSS_AFFIXES[k];
+    return '<div class="sd-afx"><i>' + a.icon + '</i><span><b>' + a.name + '</b> <em>' + a.desc + '</em></span></div>';
+  }).join('') + '</div>';
+}
+
 function renderEventDetail(k) {
   const st = EVENT_STAGES[k], ev = st.event, boss = ENEMIES[st.bossId];
   const box = $('#stage-detail');
@@ -794,11 +805,12 @@ function renderEventDetail(k) {
     '<div class="sd-name">' + st.name + '</div>' +
     '<div class="sd-stars">' + starMarks(done) + '</div>' +
     '<div class="sd-event"><b>' + boss.name + '</b><span>' + boss.abText + '</span><small>공략 · ' + ev.mech + '</small></div>' +
+    affixBlock(bossAffixes(st, k, false)) +
     (st.mods ? '<div class="sd-mods">' + st.mods.map(m => {
       const d = STAGE_MODS[m];
       return '<div class="sd-mod" style="--mc:' + d.color + '"><b>' + d.name + '</b><span>' + d.desc + '</span></div>';
     }).join('') + '</div>' : '') +
-    '<div class="sd-deck"><b>권장 전력</b> 병영 강화 최대 · 병종 Lv15 · 진화</div>' +
+    '<div class="sd-deck"><b>권장 전력</b> 만렙(Lv30) 기준 · 병영 강화 최대 · 진화 전부</div>' +
     '<div class="sd-deck"><b>추천 편성</b> ' + ev.deck.map(id => UNIT_BY_ID[id].short || UNIT_BY_ID[id].name).join(' · ') + '</div>' +
     '<div class="sd-meta">' +
       '<span>적 요새 ' + st.baseHp.toLocaleString() + '</span>' +

@@ -406,7 +406,7 @@ async function runSize(browser, size) {
       for (const E of [EVOLUTIONS, EVOLUTIONS2, EVOLUTIONS3]) for (const k in E) { chk(E[k].name); chk(E[k].short); chk(E[k].plus); if (E[k].active) { chk(E[k].active.name); chk(E[k].active.desc); } }
       for (const k in ENEMIES) { const e = ENEMIES[k]; chk(e.name); chk(e.abText); if (e.special) chk(e.special.name); (e.phases || []).forEach(q => { chk(q.name); if (q.special) chk(q.special.name); }); }
       STAGES.concat(EVENT_STAGES).forEach(s => { chk(s.name); chk(s.hint); if (s.event) chk(s.event.mech); });
-      ACHIEVEMENTS.forEach(a => { chk(a.name); chk(a.desc); }); SEASONS.forEach(s => { chk(s.name); chk(s.sub); chk(s.desc); });
+      ACHIEVEMENTS.forEach(a => { chk(a.name); chk(a.desc); }); for (const k in BOSS_AFFIXES) { chk(BOSS_AFFIXES[k].name); chk(BOSS_AFFIXES[k].desc); }   // 4.21 SEASONS.forEach(s => { chk(s.name); chk(s.sub); chk(s.desc); });
       return [...out];
     });
     if (miss.length) failures.push('영어 번역이 빠진 문구 ' + miss.length + '개: ' + JSON.stringify(miss.slice(0, 8)));

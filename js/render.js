@@ -738,6 +738,24 @@ class Renderer {
       ctx.stroke();
       ctx.globalAlpha = 1;
     }
+    if (f.guardCut > 0) {                                  // 4.21 수호 토템이 지키는 동안: 금빛 방패 고리
+      const pulse = 0.85 + Math.sin(clk * 6) * 0.15;
+      ctx.globalAlpha = 0.22 * pulse;
+      ctx.fillStyle = '#ffd76a';
+      ctx.beginPath(); ctx.ellipse(0, -40 * s, 46 * s, 58 * s, 0, 0, 7); ctx.fill();
+      ctx.globalAlpha = 0.8 * pulse;
+      ctx.strokeStyle = '#fff0b8'; ctx.lineWidth = 2.2 * s;
+      ctx.setLineDash([7 * s, 5 * s]); ctx.lineDashOffset = -clk * 30 * s;
+      ctx.beginPath(); ctx.ellipse(0, -40 * s, 48 * s, 60 * s, 0, 0, 7); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+    }
+    if (f.windT > 0) {                                     // 4.21 돌진 준비: 발밑에서 붉은 흙먼지가 일고 몸이 앞으로 쏠린다
+      ctx.globalAlpha = 0.5 + Math.sin(clk * 20) * 0.2;
+      ctx.strokeStyle = '#ff5a3c'; ctx.lineWidth = 3 * s;
+      for (let i = 0; i < 3; i++) { const k = ((clk * 2.4 + i / 3) % 1); ctx.beginPath(); ctx.ellipse(-k * 30 * s, 1, (16 + k * 26) * s, (4 + k * 6) * s, 0, 0, 7); ctx.stroke(); }
+      ctx.globalAlpha = 1;
+    }
     if (f.exposedT > 0) {                                  // 약점 노출: 핵 자리에 금빛 과녁
       const pulse = 0.75 + Math.sin(clk * 10) * 0.25;
       ctx.strokeStyle = '#ffd35a'; ctx.lineWidth = 3 * s;
@@ -1176,6 +1194,27 @@ class Renderer {
     }
   }
 
+  /* 4.21 보스 각인 '수호 토템': 토템에서 보스로 흐르는 금빛 줄기 — 무엇을 먼저 부숴야 하는지 보이게 */
+  drawGuardBeams(battle) {
+    const ctx = this.ctx, cs = this.cs;
+    for (const e of battle.enemies) {
+      const o = e.guardOf;
+      if (e.dead || !o || o.dead) continue;
+      const x1 = this.screenX(e.x), y1 = this.rowY(e.row) - 62 * cs * e.scale;
+      const x2 = this.screenX(o.x), y2 = this.rowY(o.row) - 46 * cs * o.scale;
+      if (Math.max(x1, x2) < -40 || Math.min(x1, x2) > this.w + 40) continue;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.strokeStyle = 'rgba(255,215,106,.22)'; ctx.lineWidth = 9 * cs;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.quadraticCurveTo((x1 + x2) / 2, Math.min(y1, y2) - 40 * cs, x2, y2); ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,240,190,.75)'; ctx.lineWidth = 2.2 * cs;
+      ctx.setLineDash([10 * cs, 8 * cs]); ctx.lineDashOffset = -(this.clock || 0) * 70 * cs;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.quadraticCurveTo((x1 + x2) / 2, Math.min(y1, y2) - 40 * cs, x2, y2); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
+  }
+
   drawFx(battle) {
     const ctx = this.ctx, cs = this.cs;
     for (const e of battle.fx) {
@@ -1330,6 +1369,68 @@ class Renderer {
           ctx.lineTo(x + (e.dir || 1) * Math.cos(a) * d, y + Math.sin(a) * d);
           ctx.stroke();
         }
+      } else if (e.type === 'chargeline') {           // 4.21 돌진 예고: 바닥에 붉은 길 + 흐르는 화살 표시
+        const x2 = this.screenX(e.x2), gy = this.rowY(1) + 6 * cs, lo = Math.min(x, x2), w = Math.abs(x2 - x), dir = x2 < x ? -1 : 1;
+        const blink = 0.55 + 0.45 * Math.abs(Math.sin((1 - p) * 14));
+        ctx.save();
+        ctx.globalAlpha = 0.22 * blink; ctx.fillStyle = e.color;
+        ctx.fillRect(lo, gy - 13 * cs, w, 26 * cs);
+        ctx.globalAlpha = 0.8 * blink; ctx.strokeStyle = e.color; ctx.lineWidth = 2.4 * cs;
+        ctx.strokeRect(lo, gy - 13 * cs, w, 26 * cs);
+        ctx.lineWidth = 3 * cs;
+        const n = Math.max(2, Math.floor(w / (46 * cs)));
+        for (let i = 0; i < n; i++) {
+          const k = ((i + (1 - p) * 3) % n) / n, cx = x + dir * w * k;
+          ctx.globalAlpha = 0.9 * blink * Math.sin(k * Math.PI);
+          ctx.beginPath(); ctx.moveTo(cx - dir * 8 * cs, gy - 9 * cs); ctx.lineTo(cx + dir * 4 * cs, gy); ctx.lineTo(cx - dir * 8 * cs, gy + 9 * cs); ctx.stroke();
+        }
+        ctx.restore();
+      } else if (e.type === 'doom') {                  // 4.21 사형 선고: 머리 위 붉은 해골과 줄어드는 시계 고리
+        const tg = e.tgt;
+        if (tg && !tg.dead) {
+          const tx = this.screenX(tg.x), ty = this.rowY(tg.row) - ((X3_TOP[tg.s.shape] || 72) + 26) * cs * (tg.scale || 1);
+          const beat = 1 + Math.max(0, Math.sin((1 - p) * (8 + (1 - p) * 30))) * 0.15;
+          ctx.save();
+          ctx.globalAlpha = 0.18; ctx.fillStyle = '#ff3c5a';
+          ctx.fillRect(tx - 10 * cs, ty, 20 * cs, this.rowY(tg.row) - ty);
+          ctx.globalAlpha = 0.95;
+          ctx.strokeStyle = '#ff3c5a'; ctx.lineWidth = 3 * cs;
+          ctx.beginPath(); ctx.arc(tx, ty, 16 * cs, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * p); ctx.stroke();
+          ctx.translate(tx, ty); ctx.scale(beat, beat);
+          ctx.fillStyle = '#f2e6e6';
+          ctx.beginPath(); ctx.arc(0, -2 * cs, 9 * cs, 0, 7); ctx.fill();
+          ctx.fillRect(-5 * cs, 4 * cs, 10 * cs, 6 * cs);
+          ctx.fillStyle = '#7a0f20';
+          ctx.beginPath(); ctx.arc(-3.4 * cs, -2 * cs, 2.6 * cs, 0, 7); ctx.arc(3.4 * cs, -2 * cs, 2.6 * cs, 0, 7); ctx.fill();
+          ctx.fillRect(-3 * cs, 6 * cs, 1.4 * cs, 4 * cs); ctx.fillRect(1.6 * cs, 6 * cs, 1.4 * cs, 4 * cs);
+          ctx.restore();
+        }
+      } else if (e.type === 'taxwarn') {               // 4.21 군자금 탈취 예고: 성채 위 금화에 붉은 경고 고리 + 남은 초
+        const gy = this.rowY(1) - 120 * cs, blink = 0.5 + 0.5 * Math.abs(Math.sin((1 - p) * 12));
+        ctx.save();
+        ctx.globalAlpha = 0.95; ctx.fillStyle = '#ffd35a';
+        ctx.beginPath(); ctx.ellipse(x, gy, 13 * cs, 11 * cs, 0, 0, 7); ctx.fill();
+        ctx.fillStyle = '#a8761a'; ctx.font = 'bold ' + Math.round(13 * cs) + 'px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('$', x, gy + 1 * cs);
+        ctx.globalAlpha = blink; ctx.strokeStyle = '#ff4a3a'; ctx.lineWidth = 3 * cs;
+        ctx.beginPath(); ctx.arc(x, gy, 20 * cs + (1 - blink) * 6 * cs, 0, 7); ctx.stroke();
+        ctx.globalAlpha = 1; ctx.fillStyle = '#ff7a6a'; ctx.font = 'bold ' + Math.round(15 * cs) + 'px sans-serif';
+        ctx.lineWidth = 3 * cs; ctx.strokeStyle = 'rgba(0,0,0,.6)';
+        ctx.strokeText(String(Math.ceil(e.t)), x, gy - 30 * cs); ctx.fillText(String(Math.ceil(e.t)), x, gy - 30 * cs);
+        ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+        ctx.restore();
+      } else if (e.type === 'pullwave') {              // 4.21 끌어당김: 보스 쪽으로 빨려 드는 고리와 화살
+        const gy = this.rowY(1) - 30 * cs, R = e.r * this.zoom;
+        ctx.save();
+        ctx.strokeStyle = e.color || '#c06aff'; ctx.lineWidth = 3 * cs;
+        for (let i = 0; i < 4; i++) {
+          const k = ((1 - p) * 1.6 + i / 4) % 1, d = R * (1 - k);
+          ctx.globalAlpha = 0.8 * k * p;
+          ctx.beginPath(); ctx.ellipse(x + e.dir * d * 0.5, gy, d * 0.5, 34 * cs * (1 - k * 0.5), 0, 0, 7); ctx.stroke();
+          const cx = x + e.dir * d;
+          ctx.beginPath(); ctx.moveTo(cx + e.dir * 10 * cs, gy - 12 * cs); ctx.lineTo(cx, gy); ctx.lineTo(cx + e.dir * 10 * cs, gy + 12 * cs); ctx.stroke();
+        }
+        ctx.restore();
       } else if (e.type === 'warn') {
         // 낙하 예고: 원이 좁혀들며 곧 떨어질 자리를 알려준다
         const r = e.r * this.zoom;
@@ -2942,6 +3043,7 @@ class Renderer {
     else if (onScreen <= CROWD_OFF) this.crowded = false;
     const ink = MODEL.ink;
     if (this.crowded) MODEL.ink = false;
+    this.drawGuardBeams(battle);                     // 4.21 수호 토템 → 보스 빛줄기 (병사 뒤에)
     for (const f of all) this.drawFighter(f);
     MODEL.ink = ink;
     if (battle.burrowers) for (const b of battle.burrowers) this.drawBurrow(b);
@@ -8128,6 +8230,37 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
       break;
     }
 
+    case 'wardtotem': {                                       // 4.21 수호 토템: 두 층 돌 제단 위에 떠서 도는 금테 수정 · 룬 고리
+      const t = MODEL.time, hov = Math.sin(t * 2.2 + (S.phase || 0)) * 3 * s, glow = S.flash ? '#fff' : acc;
+      ctx.fillStyle = F3('#5a5448');                           // 넓은 제단 두 층
+      ctx.beginPath(); ctx.moveTo(-24 * s, 0); ctx.lineTo(-20 * s, -9 * s); ctx.lineTo(20 * s, -9 * s); ctx.lineTo(24 * s, 0); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = F3('#7a7262');
+      ctx.beginPath(); ctx.moveTo(-16 * s, -9 * s); ctx.lineTo(-13 * s, -17 * s); ctx.lineTo(13 * s, -17 * s); ctx.lineTo(16 * s, -9 * s); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = F3('#c9a227'); ctx.fillRect(-13 * s, -19 * s, 26 * s, 2.4 * s);
+      ctx.save(); ctx.translate(0, hov);
+      const cy = -50 * s;
+      ctx.fillStyle = F3('#8fd4ee');                           // 떠 있는 마름모 수정
+      ctx.beginPath(); ctx.moveTo(0, cy - 28 * s); ctx.lineTo(14 * s, cy); ctx.lineTo(0, cy + 22 * s); ctx.lineTo(-14 * s, cy); ctx.closePath(); ctx.fill();
+      if (!S.flash) { ctx.save(); ctx._skipInk = true;
+        ctx.fillStyle = 'rgba(255,255,255,.35)';                 // 빛 받는 면
+        ctx.beginPath(); ctx.moveTo(0, cy - 28 * s); ctx.lineTo(-14 * s, cy); ctx.lineTo(0, cy + 2 * s); ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = '#ffe9a0'; ctx.lineWidth = 1.6 * s;   // 금테
+        ctx.beginPath(); ctx.moveTo(0, cy - 28 * s); ctx.lineTo(14 * s, cy); ctx.lineTo(0, cy + 22 * s); ctx.lineTo(-14 * s, cy); ctx.closePath(); ctx.stroke();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.fillStyle = glow; ctx.globalAlpha = 0.6 + Math.sin(t * 4) * 0.3;   // 가운데 룬이 숨 쉬듯
+        ctx.beginPath(); ctx.arc(0, cy, 4.5 * s, 0, 7); ctx.fill();
+        ctx.globalAlpha = 0.25; ctx.beginPath(); ctx.arc(0, cy, 18 * s + Math.sin(t * 5) * 3 * s, 0, 7); ctx.fill();
+        ctx.globalAlpha = 0.5;                                   // 제단으로 흐르는 빛
+        ctx.fillRect(-1.5 * s, cy + 22 * s, 3 * s, (-19 - (cy / s + 22)) * s - hov);
+        ctx.restore(); ctx._skipInk = false;
+        ctx.save(); ctx._skipInk = true; ctx.strokeStyle = glow; ctx.lineWidth = 1.6 * s;   // 도는 룬 고리
+        ctx.globalAlpha = 0.7; ctx.beginPath(); ctx.ellipse(0, cy + 4 * s, 24 * s, 7 * s, 0, 0, 7); ctx.stroke();
+        for (let i = 0; i < 4; i++) { const a = t * 1.8 + i * Math.PI / 2, px = Math.cos(a) * 24 * s, py = cy + 4 * s + Math.sin(a) * 7 * s;
+          ctx.globalAlpha = Math.sin(a) > 0 ? 0.95 : 0.4; ctx.fillStyle = glow; ctx.fillRect(px - 2.2 * s, py - 2.2 * s, 4.4 * s, 4.4 * s); }
+        ctx.restore(); ctx._skipInk = false; }
+      ctx.restore();
+      break;
+    }
     case 'totem': {
       ctx.fillStyle = col;
       ctx.fillRect(-13 * s, -64 * s, 26 * s, 64 * s);

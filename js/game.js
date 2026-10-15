@@ -238,6 +238,7 @@ class Fighter {
     dmg = Math.max(0, dmg);
     // 핵: 평소엔 거의 막고, 약점이 드러난 동안에만 몇 배로 들어간다
     if (this.ab.core) dmg *= this.exposedT > 0 ? this.ab.core.mul : (1 - this.ab.core.armor);
+    if (this.guardCut > 0) dmg *= 1 - this.guardCut;                  // 4.21 수호 토템이 선 동안
     if (this.vulnT > 0) dmg *= this.vulnMul;                          // 낙인
     if (this.ab.armor && !pierceArmor) dmg *= (1 - Math.min(0.75, this.ab.armor));   // 두꺼운 갑주
     if (this.barrier > 0) {
@@ -979,6 +980,11 @@ class Battle {
       if (this.hard) { f.maxHp = Math.round(f.maxHp * HARDCORE.boss.hp * (this.stage.hardBoss || 1)); f.hp = f.maxHp; f.atk = Math.round(f.atk * HARDCORE.boss.atk); }
       f.baseAtk = f.atk;
     }
+    // 4.21 보스 각인: 하드코어 · 도전의 보스는 기술 둘을 더 쓴다
+    if (f.boss && this.stage.bossId && !this.endless && (this.hard || this.event)) {
+      const keys = bossAffixes(this.stage, this.stageIndex, this.hard);
+      if (keys.length) f.affixes = keys.map(k => ({ k: k, a: BOSS_AFFIXES[k], cd: BOSS_AFFIXES[k].first }));
+    }
     if (f.boss) { this.bossAlert = 2.6; this.bossName = spec.name; this.shake = 10; sfx('bossIn'); f.bornT = this.time; this.bossSeq = (this.bossSeq || 0) + 1; this.lastBossKind = id; }
     if (f.ab.burrow) { f.burrowed = true; this.burrowers.push(f); return f; }
     this.enemies.push(f);
@@ -1397,7 +1403,16 @@ class Battle {
       }
 
       // 보스 패턴
-      if (f.s.phases || f.s.special) this.bossTick(f, dt);
+      if (f.s.phases || f.s.special || f.affixes) this.bossTick(f, dt);
+      if (f.cloneOf || f.guardOf) {                          // 4.21 분신 · 수호 토템: 주인이 쓰러지면 함께 사라진다, 분신은 시간이 다 되면 보스에게 돌아간다
+        const o = f.cloneOf || f.guardOf;
+        if (f.cloneOf) f.cloneT -= dt;
+        if (o.dead || (f.cloneOf && f.cloneT <= 0)) {
+          if (!o.dead && f.cloneOf) { o.heal(o.maxHp * f.cloneHeal); this.fx.push({ type: 'aura', x: o.x, row: o.row, r: 110, t: 0.6, life: 0.6, color: '#c06aff' }); this.announce('분신이 보스에게 돌아갔다', 1.6); }
+          this.fx.push({ type: 'poof', x: f.x, row: f.row, t: 0.45, life: 0.45, color: f.cloneOf ? '#c06aff' : '#ffd76a', big: true });
+          f.exploded = true; f.hp = 0; f.dead = true; continue;
+        }
+      }
       if (f.ab.mask && !isAlly) this.maskTick(f, dt);       // 4.6 가면 군주
       if (f.ab.glamour) {                                    // 4.11 홀림불: 가까이 선 적이 있으면 장막이 걷힌 모습 (그리기용)
         let near = false;
@@ -1407,6 +1422,7 @@ class Battle {
 
       // 기절
       if (f.stunT > 0) { f.stunT -= dt; continue; }
+      if (f.windT > 0) { f.windT -= dt; continue; }        // 4.21 돌진 준비: 제자리에서 힘을 모은다
 
       // 넉백
       if (f.kbTimer > 0) {
@@ -1715,6 +1731,17 @@ class Battle {
         this.bossAct(f, sp);
       }
     }
+    if (f.guardCut > 0 || f.affixes) {                 // 4.21 수호 토템이 하나라도 서 있으면 받는 피해가 준다
+      f.guardCut = 0;
+      for (const e of this.enemies) if (!e.dead && e.guardOf === f) { f.guardCut = e.wardCut || 0; break; }
+    }
+    if (f.affixes) {                                   // 4.21 보스 각인
+      for (const ax of f.affixes) {
+        if (f.stunT > 0 || f.windT > 0) continue;
+        ax.cd -= dt;
+        if (ax.cd <= 0) { ax.cd = ax.a.cd; this.bossAct(f, ax.a); }
+      }
+    }
   }
 
   announce(name, dur) {
@@ -1856,6 +1883,75 @@ class Battle {
         sfx('bossIn');
         break;
       }
+      /* ---- 4.21 보스 각인 ---- */
+      case 'charge': {                     // 돌진: 붉은 길 예고 → 내달려 길 위를 쓸고 밀쳐 낸다
+        const dist = a.dist || 320;
+        const x1 = f.side === 'enemy' ? Math.max(this.allyCastle.x + 70, f.x + f.dir * dist) : Math.min(this.enemyCastle.x - 70, f.x + f.dir * dist);
+        f.windT = a.warn || 1.6;
+        this.pending.push({ t: f.windT, side: f.side, charge: true, src: f, x: x1, r: 0, dmg: f.atk * (a.dmgMul || 2.5), push: a.push || 70, stun: a.stun, row: f.row });
+        this.fx.push({ type: 'chargeline', x: f.x, x2: x1, row: f.row, t: f.windT, life: f.windT, color: '#ff5a3c' });
+        sfx('bossIn');
+        break;
+      }
+      case 'clone': {                      // 분신: 약한 보스 둘 — 시간 안에 못 베면 보스에게 돌아가 체력을 채운다
+        const st = Object.assign({}, f.s, { boss: false, phases: null, special: null, ab: { kbImmune: true }, gold: 0 });
+        for (let i = 0; i < (a.n || 2); i++) {
+          const c = this.spawnShadow(st, f.x + f.dir * (60 + i * 46), 1);
+          c.maxHp = c.hp = Math.max(1, Math.round(f.maxHp * (a.hp || 0.07)));
+          c.atk = c.baseAtk = Math.round(f.atk * (a.atk || 0.35));
+          c.scale = c.baseScale = f.scale * 0.78; c.radius = 26 * c.scale;
+          c.cloneOf = f; c.cloneT = a.life || 9; c.cloneHeal = a.heal || 0.06; c.kind = 'bossclone'; c.row = (f.row + 1 + i) % 3;
+        }
+        break;
+      }
+      case 'totem': {                      // 수호 토템: 보스 뒤에 박혀 서 있는 동안 보스가 받는 피해를 줄인다
+        let have = 0;
+        for (const e of this.enemies) if (!e.dead && e.guardOf === f) have++;
+        for (let i = have; i < (a.n || 2); i++) {
+          const x = Math.max(80, Math.min(WORLD - 80, f.x - f.dir * (110 + i * 80)));
+          const t = new Fighter(ENEMIES.wardtotem, f.side, x, null);
+          t.maxHp = t.hp = Math.max(1, Math.round(f.maxHp * (a.hp || 0.05)));
+          t.gold = 0; t.kind = 'wardtotem'; t.summoned = true; t.guardOf = f; t.wardCut = a.cut || 0.5; t.row = i % 3; t.side = f.side; t.dir = f.dir;
+          f.guardCut = Math.max(f.guardCut || 0, t.wardCut);
+          this.enemies.push(t);
+          this.fx.push({ type: 'spawn', x: x, row: t.row, t: 0.5, life: 0.5, grand: true, color: '#ffd76a' });
+        }
+        break;
+      }
+      case 'doom': {                       // 사형 선고: 가장 강한 아군 하나에 낙인 — 시간이 되면 큰 피해
+        let tgt = null, best = -1;
+        for (const e of foes) {
+          if (e.dead || e.summoned || e.burrowed) continue;
+          const v = ((e.s.cost || 0) + 1) * e.maxHp;
+          if (v > best) { best = v; tgt = e; }
+        }
+        if (!tgt) break;
+        this.pending.push({ t: a.delay || 4, side: f.side, doom: true, src: f, tgt: tgt, ratio: a.ratio || 0.85, x: tgt.x, r: 0, row: tgt.row });
+        this.fx.push({ type: 'doom', tgt: tgt, x: tgt.x, row: tgt.row, t: a.delay || 4, life: a.delay || 4 });
+        this.announce('사형 선고: ' + tgt.s.name, 2.2);
+        break;
+      }
+      case 'tax': {                        // 군자금 탈취: 몇 초 뒤 쌓인 군자금을 빼앗는다
+        if (f.side !== 'enemy') break;
+        this.pending.push({ t: a.delay || 3, side: f.side, tax: true, src: f, ratio: a.ratio || 0.5, x: this.allyCastle.x, r: 0, row: 1 });
+        this.fx.push({ type: 'taxwarn', x: this.allyCastle.x + 40, row: 1, t: a.delay || 3, life: a.delay || 3 });
+        this.announce('군자금 탈취 ' + (a.delay || 3) + '초 전! 지금 출진하라', 2.2);
+        break;
+      }
+      case 'pull': {                       // 끌어당김: 앞의 병사를 보스 앞으로 끌어온 뒤 내려찍는다
+        const r = a.r || 380;
+        for (const e of foes) {
+          if (e.dead || e.burrowed || e.ab.kbImmune || e.ab.hold) continue;
+          const d = (e.x - f.x) * f.dir;
+          if (d < 0 || d > r) continue;
+          e.x = Math.max(60, Math.min(WORLD - 60, f.x + f.dir * (40 + Math.random() * 60)));
+          e.kbTimer = 0; e.stun(0.5);
+        }
+        this.fx.push({ type: 'pullwave', x: f.x, row: f.row, r: r, dir: f.dir, t: 0.7, life: 0.7, color: f.s.accent });
+        this.queueStrike(f, { x: Math.max(120, Math.min(WORLD - 120, f.x + f.dir * 80)), r: a.radius || 150, dmg: f.atk * (a.dmgMul || 2),
+                              warn: a.warn || 1.3, kind: 'shockwave' });
+        break;
+      }
       case 'meteor': {                     // 예고 후 떨어지는 폭격
         const n = a.n || 3;
         const front = this.frontline();
@@ -1873,6 +1969,46 @@ class Battle {
     }
   }
 
+  /* 4.21 보스 각인의 예고가 끝났을 때. 크게 터졌으면 true (흔들림 · 폭음) */
+  resolveAffix(s) {
+    const f = s.src;
+    if (!f || f.dead) return false;                  // 보스가 먼저 쓰러지면 없던 일
+    if (s.charge) {
+      const x0 = f.x, x1 = (s.x - x0) * f.dir > 0 ? s.x : x0;
+      const lo = Math.min(x0, x1), hi = Math.max(x0, x1);
+      for (const e of this.foesOf(f.side)) {
+        if (e.dead || e.burrowed || e.x + e.radius < lo || e.x - e.radius > hi) continue;
+        e.takeDamage(s.dmg);
+        if (!e.ab.kbImmune && !e.ab.hold) { e.x = Math.max(60, Math.min(WORLD - 60, x1 + f.dir * (24 + Math.random() * s.push))); e.kbTimer = 0.3; }
+        if (s.stun) e.stun(s.stun);
+      }
+      const castle = this.castleOf(f.side);
+      if (!castle.dead && Math.abs(castle.x - x1) <= castle.radius + 50) castle.takeDamage(s.dmg * 0.5);
+      f.x = x1;
+      this.fx.push({ type: 'cast', kind: 'shockwave', x: x1, row: f.row, color: '#ff5a3c', r: 140, big: true, dir: f.dir, t: 0.6, life: 0.6 });
+      this.fx.push({ type: 'boom', x: x1, r: 110, t: 0.32, life: 0.32 });
+      return true;
+    }
+    if (s.doom) {
+      const tg = s.tgt;
+      if (!tg || tg.dead) return false;
+      tg.takeDamage(tg.maxHp * s.ratio, true);
+      this.fx.push({ type: 'cast', kind: 'runes', x: tg.x, row: tg.row, color: '#ff3c5a', r: 90, big: true, dir: 1, t: 0.6, life: 0.6 });
+      this.fx.push({ type: 'boom', x: tg.x, r: 70, t: 0.32, life: 0.32 });
+      return true;
+    }
+    if (s.tax) {
+      const got = Math.floor(this.money * s.ratio);
+      if (got <= 0) { this.announce('빼앗길 군자금이 없다!', 1.4); return false; }
+      this.money -= got;
+      this.fx.push({ type: 'coin', x: this.allyCastle.x + 40, row: 1, v: -got, t: 1.1, life: 1.1 });
+      this.announce('군자금 -' + got, 1.6);
+      sfx('zap');
+      return false;
+    }
+    return false;
+  }
+
   /* 예고 표시를 띄우고, 시간이 되면 그 자리에 내리꽂는다.
    * 무작정 터지지 않으니 피할 틈이 있다. */
   queueStrike(f, o) {
@@ -1888,10 +2024,11 @@ class Battle {
 
   updatePending(dt) {
     if (!this.pending.length) return;
-    let landed = false;
+    let landed = false, quiet = false;      // quiet: 터지지 않고 끝난 예고(군자금 탈취 등)도 목록에서 빼야 한다
     for (const s of this.pending) {
       s.t -= dt;
       if (s.t > 0) continue;
+      if (s.charge || s.doom || s.tax) { s.done = true; quiet = true; if (this.resolveAffix(s)) landed = true; continue; }   // 4.21 보스 각인
       s.done = landed = true;
       const foes = this.foesOf(s.side);
       const castle = this.castleOf(s.side);
@@ -1924,6 +2061,7 @@ class Battle {
         this.announce('약점 노출! 지금 집중 공격', 2.2);
       }
     }
+    if (quiet && !landed) this.pending = this.pending.filter(s => !s.done);
     if (landed) {
       this.pending = this.pending.filter(s => !s.done);
       this.shake = Math.max(this.shake, 12);

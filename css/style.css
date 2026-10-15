@@ -1532,3 +1532,11 @@ body{background:var(--bg0);color:var(--tx)}
 .star-hunt b{color:#fff}
 /* 4.19: 전투가 끝난 뒤의 알림(업적 달성 등)은 결과 카드의 숫자를 가리지 않게 맨 위로 */
 body:has(#result.show) .toast{top:calc(6px + var(--st))}
+
+/* 4.21 보스 각인 안내 */
+.sd-affix{margin:6px 0;padding:6px 9px;border-radius:9px;border:1px solid #ff6a5a55;background:linear-gradient(90deg,#3a141680,#22141c40)}
+.sd-afx-h{display:block;font-size:11px;color:#ff9a8a;letter-spacing:.06em;margin-bottom:2px}
+.sd-afx{display:flex;gap:7px;align-items:flex-start;font-size:11.5px;line-height:1.35;margin-top:3px}
+.sd-afx i{font-style:normal;flex:0 0 auto;width:18px;text-align:center}
+.sd-afx b{color:#ffd0c4}
+.sd-afx em{font-style:normal;color:#d8c8cc}

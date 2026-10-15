@@ -1803,4 +1803,53 @@ test('4.20: max level is 30 everywhere; hardcore is tuned per stage for a max-le
   assert.ok(/만렙\(Lv30\) 기준/.test(main), 'hardcore panel says it is tuned for max level');
 });
 
+/* ---------------- 4.21 보스 각인 ---------------- */
+test('4.21: hardcore / challenge bosses carry two affixes (campaign and endless bosses do not)', () => {
+  const A = vm.runInContext('({BOSS_AFFIXES, bossAffixes, EVENT_STAGES})', ctx);
+  let n = 0;
+  STAGES.forEach((st, i) => {
+    const k = A.bossAffixes(st, i, true);
+    if (st.boss && st.bossId) { n++; assert.equal(k.length, 2, 'stage ' + (i + 1)); assert.notEqual(k[0], k[1]); k.forEach(x => assert.ok(A.BOSS_AFFIXES[x])); }
+    else assert.equal(k.length, 0);
+    assert.equal(A.bossAffixes(st, i, false).length, 0, 'campaign untouched');
+  });
+  assert.ok(n >= 20, 'boss stages ' + n);
+  for (const ev of A.EVENT_STAGES) assert.equal(A.bossAffixes(ev, 0, false).length, 2, ev.event.id);
+  const bi = STAGES.findIndex(st => st.boss && st.bossId);
+  const h = new Battle(bi, save(), null, { hard: true }), c = new Battle(bi, save());
+  const hb = h.spawnEnemy(STAGES[bi].bossId, 1200), cb = c.spawnEnemy(STAGES[bi].bossId, 1200);
+  assert.equal(hb.affixes.length, 2); assert.ok(!cb.affixes, 'campaign boss plain');
+});
+test('4.21: affixes — fund heist fires once, death mark hits the strongest, totems halve damage, clones return, charge sweeps', () => {
+  const A = vm.runInContext('({BOSS_AFFIXES})', ctx).BOSS_AFFIXES;
+  const bi = STAGES.findIndex(st => st.boss && st.bossId);
+  const b = new Battle(bi, save(), null, { hard: true });
+  const boss = b.spawnEnemy(STAGES[bi].bossId, 1200); boss.affixes = null; boss.s = Object.assign({}, boss.s, { special: null, phases: null });
+  const run = sec => { for (let i = 0; i < sec * 30; i++) { b.updatePending(1 / 30); b.step(b.enemies, b.allies, b.allyCastle, 1 / 30, false); } };
+  // 군자금 탈취: 한 번만 빼앗고 목록에서 빠진다
+  b.money = 1000; b.bossAct(boss, A.tax); run(A.tax.delay + 0.5);
+  assert.equal(b.money, 500, 'half taken once'); assert.equal(b.pending.filter(p => p.tax).length, 0);
+  // 사형 선고: 가장 강한(비싼) 아군에게
+  const cheap = b.makeAlly(U.spear, 600), big = b.makeAlly(U.knight, 620); b.allies.push(cheap, big);
+  b.bossAct(boss, A.doom); run(A.doom.delay + 0.3);
+  assert.ok(big.dead || big.hp <= big.maxHp * (1 - A.doom.ratio) + 1, 'knight branded'); assert.equal(cheap.hp, cheap.maxHp);
+  // 수호 토템: 서 있으면 보스가 받는 피해 절반
+  b.bossAct(boss, A.totem); b.bossTick(boss, 1 / 30);
+  const tots = b.enemies.filter(e => e.guardOf === boss); assert.equal(tots.length, 2);
+  assert.equal(boss.guardCut, A.totem.cut);
+  const h0 = boss.hp; boss.takeDamage(1000); assert.ok(Math.abs(h0 - boss.hp - 1000 * (1 - A.totem.cut) * (1 - Math.min(0.75, boss.ab.armor || 0))) < 2);
+  tots.forEach(t => { t.hp = 0; t.dead = true; }); b.enemies = b.enemies.filter(e => !e.dead); b.bossTick(boss, 1 / 30); assert.equal(boss.guardCut, 0);
+  // 분신: 시간이 다 되면 보스에게 돌아가 체력을 채운다
+  boss.hp = boss.maxHp * 0.5; b.bossAct(boss, A.clone);
+  assert.equal(b.enemies.filter(e => e.cloneOf === boss).length, 2);
+  const hp1 = boss.hp; run(A.clone.life + 0.5);
+  assert.equal(b.enemies.filter(e => e.cloneOf === boss && !e.dead).length, 0, 'clones gone');
+  assert.ok(boss.hp > hp1, 'boss healed by returning clones');
+  // 돌진: 앞으로 내달리고 길 위의 병사가 다친다
+  const sp = b.makeAlly(U.spear, boss.x - 150); b.allies.push(sp);
+  const x0 = boss.x; b.bossAct(boss, A.charge); assert.ok(boss.windT > 0);
+  b.updatePending(A.charge.warn + 0.1);
+  assert.ok(boss.x < x0 - 100, 'charged forward'); assert.ok(sp.hp < sp.maxHp, 'trampled');
+});
+
 console.log(count + ' regression checks passed');

@@ -981,6 +981,16 @@ const I18N_EN = {
   '모래가 20초 남았습니다': '20 seconds of sand left', '모래시계의 모래가 다 떨어졌습니다': 'The hourglass has run out of sand',
   '모래시계가 뒤집혔다 · 토템이 없어 요새가 아물지 못합니다': 'The hourglass turned · no totems left, so the fort can\'t heal',
   '시간을 거스른 자': 'Time Defier', '도전 \'파라오의 모래시계\' 돌파': 'Clear the \'Pharaoh\'s Hourglass\' challenge',
+  /* ---------------- 4.21 보스 각인 ---------------- */
+  '보스 각인': 'Boss traits', '돌진': 'Charge', '수호 토템': 'Ward Totem', '사형 선고': 'Death Mark', '군자금 탈취': 'Fund Heist', '끌어당김': 'Pull',
+  '붉은 길을 그은 뒤 내달려 길 위의 병사를 크게 치고 밀쳐 낸다': 'Marks a red lane, then charges down it, smashing and shoving every soldier in the way',
+  '분신 둘 — 9초 안에 못 베면 분신마다 보스 체력이 6% 찬다': 'Two clones — each one left standing after 9s heals the boss 6%',
+  '보스 뒤에 토템 둘 — 하나라도 서 있으면 보스가 받는 피해 절반 (사거리 긴 병종 · 범위 공격으로)': 'Two totems behind the boss — while any stands the boss takes half damage (use long range or area attacks)',
+  '가장 강한 아군 하나에 낙인 — 4초 뒤 최대 체력 85% 피해 (보호막 · 회복 · 왕명으로 버틴다)': 'Brands your strongest unit — 85% of its max HP as damage after 4s (survive with shields, heals or the Command)',
+  '3초 뒤 쌓인 군자금 절반을 빼앗는다 — 그 전에 출진시켜라': 'Steals half your banked war funds after 3s — spend them first',
+  '앞의 병사를 보스 앞으로 끌어당긴 뒤 내려찍는다 — 뒷줄 원거리도 끌려온다': 'Drags soldiers in front up to the boss, then slams — even the back-line ranged get pulled',
+  '분신이 보스에게 돌아갔다': 'The clone returned to the boss', '빼앗길 군자금이 없다!': 'No war funds to steal!',
+  '만렙(Lv30) 기준 · 병영 강화 최대 · 진화 전부': 'Max level (Lv30) · barracks maxed · every evolution',
   /* ---------------- 4.18 4진 (궁극) ---------------- */
   '별의 대현자 멀린': 'Merlin, Sage of the Stars', '별의대현자': 'Star Sage',
   '별똥별 포격 · 범위 +35 · 사거리 +40 · 공격 20% 빠름 · 별빛이 3번 튕김 · 별의 낙인 (받는 피해 +20%) · 주변 아군 공격력 +12% · 별의 심판 4.2배 · 2.6초 정지 · 주변 아군 보호막 · 가속':
@@ -1197,6 +1207,7 @@ const I18N_EN_PATTERNS = [
   [/ \(사관학교로 (\d+)까지\)/g, ' (Academy raises it to $1)'],   // 4.20
   [/★3 조건 · 성채 90% 이상 남기기 \(이번 (\d+)%\)/g, '★3 needs the castle at 90%+ (this time $1%)'],
   [/★3이 아닌 전장 (\d+)곳/g, '$1 stages below ★3'],
+  [/사형 선고: (.+)/g, 'Death mark: $1'], [/군자금 탈취 (\d+)초 전! 지금 출진하라/g, 'Fund heist in $1s! Deploy now'], [/군자금 -(\d+)/g, 'War funds -$1'],   // 4.21
   [/ 외 (\d+)개/g, ' +$1 more'], [/⏫ \+(\d+)단계/g, '⏫ +$1 lv'],   // 4.19
   [/필살 (\d+)개 동시 발동/g, '$1 actives fired at once'],
   [/전장 병력 가득 · (\d+)명까지/g, 'Field full · up to $1'],
