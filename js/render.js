@@ -1458,6 +1458,18 @@ class Renderer {
         ctx.beginPath();
         ctx.ellipse(x, gy, r * (0.15 + p * 0.85), r * 0.32 * (0.15 + p * 0.85), 0, 0, 7);
         ctx.stroke();
+        if (e.star && p < 0.5) {                          // 4.23 유성우: 마지막 순간 하늘에서 별이 비스듬히 떨어진다
+          const q = 1 - p / 0.5, sy = gy - (1 - q) * 320 * cs, sx = x + (1 - q) * 140 * cs;
+          ctx.globalAlpha = 0.35 + 0.5 * q;
+          const gr = ctx.createLinearGradient(sx, sy, sx + 70 * cs, sy - 160 * cs);
+          gr.addColorStop(0, '#fff3c4'); gr.addColorStop(1, 'rgba(255,120,60,0)');
+          ctx.strokeStyle = gr; ctx.lineWidth = 7 * cs; ctx.lineCap = 'round';
+          ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx + 70 * cs, sy - 160 * cs); ctx.stroke();
+          ctx.globalAlpha = 0.9;
+          ctx.fillStyle = '#fff6d8';
+          ctx.beginPath(); ctx.arc(sx, sy, 7 * cs, 0, 7); ctx.fill();
+          ctx.lineCap = 'butt';
+        }
         ctx.globalAlpha = 1;
       } else if (e.type === 'boom') {
         this.glOnce(e, 'burst', x, y, '#ffb45a', e.r * this.zoom);

@@ -2011,7 +2011,7 @@ class Battle {
         const cand = xs.map(x => [x, score(x)]).sort((p, q) => q[1] - p[1]);
         for (const [x] of cand) { if (picks.length >= (a.n || 4)) break; if (picks.every(p => Math.abs(p - x) >= rad * 2)) picks.push(x); }
         picks.forEach((x, i) => this.queueStrike(f, { x: Math.max(120, Math.min(WORLD - 120, x)), r: rad, ratio: a.ratio || 0.22, dmg: 0,
-                                                     warn: (a.warn || 1.8) + i * 0.15, kind: 'firestorm', noCastle: true }));
+                                                     warn: (a.warn || 1.8) + i * 0.15, kind: 'firestorm', noCastle: true, star: true }));
         break;
       }
       case 'seal': {                       // 4.23 봉인: 가장 비싼 출진 카드 둘을 잠깐 묶는다
@@ -2029,8 +2029,8 @@ class Battle {
         if (f.frenzyT > 0) break;
         f.frenzyT = a.dur || 7; f.frenzyRate = a.rate || 0.6; f.frenzySpeed = a.speed || 1.4;
         f.rateMul *= f.frenzyRate; f.speedMul *= f.frenzySpeed;
-        this.fx.push({ type: 'cast', kind: 'firestorm', x: f.x, row: f.row, color: '#ff6b3c', r: 110, big: true, dir: f.dir, t: 0.6, life: 0.6 });
-        this.shake = Math.max(this.shake, 8);
+        this.fx.push({ type: 'aura', x: f.x, row: f.row, r: 100, t: 0.6, life: 0.6, color: '#ff6b3c' });   // 몸을 가리지 않게 작게 — 광폭은 몸에 감기는 불꽃으로 보인다
+        this.shake = Math.max(this.shake, 6);
         break;
       }
       case 'meteor': {                     // 예고 후 떨어지는 폭격
@@ -2105,7 +2105,7 @@ class Battle {
       expose: o.expose, src: o.expose ? f : null, noCastle: !!o.noCastle,
       by: f.side === 'ally' ? (f.creditTo || f.s.id) : null
     });
-    this.fx.push({ type: 'warn', x: o.x, r: o.r, t: o.warn, life: o.warn,
+    this.fx.push({ type: 'warn', x: o.x, r: o.r, t: o.warn, life: o.warn, star: !!o.star,
                    color: f.side === 'ally' ? '#6fc0ff' : '#e0503c' });
   }
 

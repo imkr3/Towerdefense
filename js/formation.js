@@ -235,7 +235,7 @@ function renderFormationPool() {
     return;
   }
   box._sig = sig;
-  const keep = box.scrollTop;
+  const keep = scrollMemo(box);
   box.innerHTML = '';
   const frag = document.createDocumentFragment();
   list.forEach(u => {
@@ -258,7 +258,7 @@ function renderFormationPool() {
   });
   box.appendChild(frag);
   if (!list.length) { box.innerHTML = '<p class="pool-empty">해당하는 병종이 없습니다</p>'; box._sig = ''; }
-  box.scrollTop = keep;
+  if (keep) box.scrollTop = keep;   // 4.23: 0 이면 건드리지 않는다 (쓰기만으로도 배치를 한 번 더 했다)
 }
 
 /* 편성에서도 진화 형태를 바꾼다. 진화를 마친 병종이면 기본 ⇄ 진화 (⇄ 4.1 3진), 아직이면 안내만. */

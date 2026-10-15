@@ -393,6 +393,21 @@ function trailPoint(k, n) {
   return { x: x, y: y };
 }
 
+/* 4.23: 옆으로 밀리는 탭 줄에서 고른 탭이 보이게 가운데로 (그리기가 끝난 다음 프레임에 부른다) */
+function revealTab(tabs, on) {
+  if (!on || !tabs.isConnected || tabs.scrollWidth <= tabs.clientWidth + 1) return;
+  const a = tabs.getBoundingClientRect(), r = on.getBoundingClientRect();
+  if (r.left < a.left || r.right > a.right) tabs.scrollLeft = Math.max(0, tabs.scrollLeft + (r.left + r.right) / 2 - (a.left + a.right) / 2);
+}
+/* 4.23: 목록의 스크롤 위치를 스크롤할 때 적어 둔다 — 다시 그리기 직전에 scrollTop 을 읽으면 바뀐 화면 전체를 한 번 더 배치했다 */
+function scrollMemo(box) {
+  if (!box._memo) {
+    box._memo = true; box._scroll = box.scrollTop; box._scrollL = box.scrollLeft;
+    box.addEventListener('scroll', () => { box._scroll = box.scrollTop; box._scrollL = box.scrollLeft; }, { passive: true });
+  }
+  return box._scroll || 0;
+}
+
 function renderMap() {
   $('#map-coins').textContent = fmtNum(save.coins);
   updateQuestBadge();
@@ -442,15 +457,9 @@ function renderMap() {
     });
     tabs.appendChild(b);
   });
-  // 4.17: 탭이 많아 옆으로 밀리므로 고른 장이 늘 보이게
-  const onTab = tabs.children[mapChapter];
-  if (onTab) { const l = onTab.offsetLeft, r = l + onTab.offsetWidth; if (l < tabs.scrollLeft || r > tabs.scrollLeft + tabs.clientWidth) tabs.scrollLeft = Math.max(0, l - (tabs.clientWidth - onTab.offsetWidth) / 2); }
-  // 4.2: 좁은 화면에서 탭 줄이 밀리면 고른 탭이 보이게
-  if (tabs.scrollWidth > tabs.clientWidth + 1) {
-    const on = tabs.querySelector('.on');
-    if (on) { const x = on.getBoundingClientRect().left - tabs.getBoundingClientRect().left + tabs.scrollLeft;
-      tabs.scrollLeft = Math.max(0, x - (tabs.clientWidth - on.offsetWidth) / 2); }
-  }
+  // 4.17 / 4.2: 탭이 많아 옆으로 밀리므로 고른 막이 늘 보이게.
+  // 4.23: 다음 프레임에 한 번만 잰다 — 막 만든 탭을 그 자리에서 재면 지도 화면 전체를 두 번 배치했다 (진군도 열기가 무거웠다)
+  requestAnimationFrame(() => revealTab(tabs, tabs.querySelector('.chapter-tab.on')));
 
   const ch = CHAPTERS[mapChapter];
   const list = $('#stage-list');
@@ -1010,7 +1019,7 @@ function allyTile(u) {
 function renderTraining() {
   trainingHeader();
   const box = $('#units-list');
-  const keep = box.scrollTop;
+  const keep = scrollMemo(box);
   box.innerHTML = '';
   const frag = document.createDocumentFragment();
   for (const u of trainSorted(trainUnits())) frag.appendChild(allyTile(u));
@@ -1458,7 +1467,7 @@ function renderGacha() {
 
   // 시즌 탭
   const tabs = $('#season-tabs');
-  const tabScroll = tabs.scrollLeft;   // 4.10: 다시 그려도 옆으로 넘긴 자리를 지킨다
+  scrollMemo(tabs); const tabScroll = tabs._scrollL || 0;   // 4.10: 다시 그려도 옆으로 넘긴 자리를 지킨다
   tabs.innerHTML = '';
   SEASONS.forEach(sn => {
     const b = document.createElement('button');
@@ -1473,13 +1482,9 @@ function renderGacha() {
     });
     tabs.appendChild(b);
   });
-  tabs.scrollLeft = tabScroll;
-  // 고른 시즌 탭이 화면 밖이면 보이게 (좁은 화면에서 여덟 번째 탭 · 저장된 시즌으로 다시 열 때)
-  const on = tabs.querySelector('.season-tab.on');
-  if (on) {
-    const a = tabs.getBoundingClientRect(), r = on.getBoundingClientRect();
-    if (r.left < a.left || r.right > a.right) tabs.scrollLeft += (r.left + r.right) / 2 - (a.left + a.right) / 2;
-  }
+  if (tabScroll) tabs.scrollLeft = tabScroll;
+  // 고른 시즌 탭이 화면 밖이면 보이게 (좁은 화면에서 여덟 번째 탭 · 저장된 시즌으로 다시 열 때) — 4.23: 다음 프레임에 한 번만 잰다
+  requestAnimationFrame(() => revealTab(tabs, tabs.querySelector('.season-tab.on')));
 
   const sn = seasonById(save.season);
   $('#banner-title').textContent = sn.name;
