@@ -159,7 +159,7 @@ function show(id) {
   if (id === 'scr-title') { resizeTitle(); refreshTitleBadges(); }
   if (id === 'scr-map') renderMap();
   if (id === 'scr-shop') renderShop();
-  if (id === 'scr-units') renderTraining();
+  if (id === 'scr-units') { detailShown = null; renderTraining(); }
   if (id === 'scr-formation') renderFormation();
   if (id === 'scr-gacha') renderGacha();
   if (id === 'scr-quest') { checkAchievements(); renderQuest(); }
@@ -1025,9 +1025,10 @@ function renderTraining() {
     frag.appendChild(el);
   }
   box.appendChild(frag);
-  box.scrollTop = keep;
   renderTrainingSort();
   applyTrainingFilter();
+  // 4.22: 스크롤은 맨 끝에 한 번만 (타일 221칸을 붙이자마자 스크롤을 만지면 레이아웃을 여러 번 새로 계산했다)
+  if (keep) box.scrollTop = keep;
 }
 
 /* 4.10: 훈련 · 진화 · 편성 버튼은 그 병종 타일과 상세 칸만 고친다.
@@ -1055,8 +1056,8 @@ function showTrainingDetail() {
   const pane = $('#unit-detail');
   if (!pane) return;
   // 4.17: 같은 병종을 훈련 · 진화하고 다시 그릴 때는 스크롤을 그대로 둔다 (누를 때마다 맨 위로 튀어 다시 내려야 했다)
-  const same = detailShown === trainSel, keep = pane.scrollTop;
-  const outer = pane.closest('.screen'), keepOuter = outer ? outer.scrollTop : 0;
+  const same = detailShown === trainSel, keep = same ? pane.scrollTop : 0;
+  const outer = pane.closest('.screen'), keepOuter = same && outer ? outer.scrollTop : 0;
   detailShown = trainSel;
   pane.innerHTML = '';
   $$('#units-list .unit-tile').forEach(el => el.classList.toggle('sel', el.dataset.unit === trainSel));
