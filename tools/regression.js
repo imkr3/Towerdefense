@@ -1581,7 +1581,7 @@ test('4.11: Act 6 adds ten fey-wood stages with three bosses, new looks, music a
   assert.equal(STAGES[59].bossMusic, 'finale4'); assert.equal(STAGES[69].bossMusic, 'finale5');
   const M = vm.runInContext('({ACHIEVEMENTS, stageMusic: typeof stageMusic === "function" ? stageMusic : null})', ctx);
   assert.ok(M.ACHIEVEMENTS.some(a => a.id === 'campaign70' && a.test({ cleared: 70 }) && !a.test({ cleared: 69 })));
-  assert.ok(/name: '6막', sub: '홀린 요정 숲', from: 60, to: 70/.test(fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8')), 'map chapter');
+  assert.ok(/name: '7막', sub: '홀린 요정 숲', from: 60, to: 70/.test(fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8')), 'map chapter');
 });
 test('4.11: fey foes are drawn and translated; boss-stage garrisons come from the act\'s own army', () => {
   const render = fs.readFileSync(path.join(__dirname, '../js/render.js'), 'utf8'), i18n = fs.readFileSync(path.join(__dirname, '../js/i18n.js'), 'utf8');
@@ -1662,7 +1662,7 @@ test('4.15: Act 7 adds ten sandstorm stages with three bosses, new looks, music 
   assert.equal(STAGES[69].bossMusic, 'finale5'); assert.equal(STAGES[79].bossMusic, 'finale6');
   const M = vm.runInContext('({ACHIEVEMENTS})', ctx);
   assert.ok(M.ACHIEVEMENTS.some(a => a.id === 'campaign80' && a.test({ cleared: 80 }) && !a.test({ cleared: 79 })));
-  assert.ok(/name: '7막', sub: '모래폭풍 사막', from: 70, to: 80/.test(fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8')), 'map chapter');
+  assert.ok(/name: '8막', sub: '모래폭풍 사막', from: 70, to: 80/.test(fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8')), 'map chapter');
   const i18n = fs.readFileSync(path.join(__dirname, '../js/i18n.js'), 'utf8');
   for (const id of ['scorpion', 'mummy', 'sandworm', 'dunerider', 'sandmage', 'scarab', 'scarablet', 'scorpking', 'sphinx', 'sandpharaoh', 'hourglass', 'jackalgod']) {
     assert.ok(render.indexOf("case '" + E[id].shape + "'") >= 0, id + ' drawn');
@@ -1815,7 +1815,7 @@ test('4.21: hardcore / challenge bosses carry two affixes (campaign and endless 
     assert.equal(A.bossAffixes(st, i, false).length, 0, 'campaign untouched');
   });
   assert.ok(n >= 20, 'boss stages ' + n);
-  for (const ev of A.EVENT_STAGES) assert.equal(A.bossAffixes(ev, 0, false).length, 2, ev.event.id);
+  for (const ev of A.EVENT_STAGES) { const k = A.bossAffixes(ev, 0, false); assert.equal(k.length, 3, ev.event.id); assert.equal(new Set(k).size, 3); }   // 4.23: 도전은 셋
   const bi = STAGES.findIndex(st => st.boss && st.bossId);
   const h = new Battle(bi, save(), null, { hard: true }), c = new Battle(bi, save());
   const hb = h.spawnEnemy(STAGES[bi].bossId, 1200), cb = c.spawnEnemy(STAGES[bi].bossId, 1200);
@@ -1877,6 +1877,59 @@ test('4.22: clone heals fade, totems stand in reach, ranged soldiers shoot totem
   boss.x = 1200; const sp = b.makeAlly(U.spear, 1200 - 5); b.allies.push(sp);
   b.bossAct(boss, A.charge); b.updatePending(A.charge.warn + 0.1);
   assert.ok(boss.x <= 1200 + 0.01, 'no backward charge: ' + boss.x);
+});
+
+/* ---------------- 4.23 ---------------- */
+test('4.23: acts are named 1막~8막 (no 장 mixed in)', () => {
+  const src = fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8');
+  for (let n = 1; n <= 8; n++) assert.ok(new RegExp("name: '" + n + "막'").test(src), 'act ' + n);
+  assert.ok(!/name: '\d장'/.test(src), 'no chapter names left');
+});
+test('4.23: hardcore boss stages each get a different affix pair; new affixes are used', () => {
+  const A = vm.runInContext('({bossAffixes})', ctx);
+  const seen = new Set(), used = new Set();
+  STAGES.forEach((st, i) => { if (st.boss && st.bossId) { const k = A.bossAffixes(st, i, true); seen.add(k.join('+')); k.forEach(x => used.add(x)); } });
+  assert.equal(seen.size, STAGES.filter(st => st.boss && st.bossId).length, 'all pairs differ');
+  for (const k of ['starfall', 'seal', 'frenzy']) assert.ok(used.has(k), k);
+});
+test('4.23: boss entry blast throws allies back; drill pushes no longer stagger-lock a boss', () => {
+  const bi = STAGES.findIndex(st => st.boss && st.bossId);
+  const b = new Battle(bi, save(), null, { hard: true });
+  const bx = b.enemyCastle.x - 60;
+  const near = b.makeAlly(U.spear, bx - 100), far = b.makeAlly(U.archer, bx - 600), tank = b.makeAlly(U.knight, bx - 150); b.allies.push(near, far, tank);
+  const boss = b.spawnEnemy(STAGES[bi].bossId, bx);
+  assert.ok(near.flyT > 0 && near.kbTimer > 0 && tank.flyT > 0, 'thrown'); assert.equal(far.flyT, 0, 'far untouched');
+  let k = 0; while (near.flyT > 0 && k++ < 60) b.step(b.allies, b.enemies, b.enemyCastle, 1 / 30, true);
+  assert.ok(near.x <= bx - 400 + 8 && near.x >= bx - 480 - 8, 'landed ' + near.x); assert.equal(near.hp, near.maxHp, 'no damage');
+  // 밀치기(드릴 창병): 보스는 1초에 한 번만 밀리고 넉백(공격 끊김)은 없다
+  const dr = b.makeAlly(U.spear, boss.x - 60); dr.ab = Object.assign({}, dr.ab, { push: 40 }); boss.ab = Object.assign({}, boss.ab, { dodge: 0 });
+  boss.x = bx - 300; boss.kbTimer = 0; boss.shoveT = 0; b.time = 100;
+  const x0 = boss.x;
+  for (let i = 0; i < 10; i++) { b.time += 0.1; b.hitOne(1, boss, dr, false); assert.equal(boss.kbTimer, 0, 'no stagger'); }
+  const moved = boss.x - x0;
+  assert.ok(moved > 0 && moved <= 2 * 40 * 0.6 * 0.35 + 0.01, 'shoved at most twice in 1s: ' + moved);
+});
+test('4.23: starfall hits the clumps by max-HP ratio, seal locks the priciest cards, a stun breaks frenzy', () => {
+  const A = vm.runInContext('({BOSS_AFFIXES})', ctx).BOSS_AFFIXES;
+  const bi = STAGES.findIndex(st => st.boss && st.bossId);
+  const b = new Battle(bi, save(), null, { hard: true });
+  const boss = b.spawnEnemy(STAGES[bi].bossId, 1400); boss.affixes = null; boss.s = Object.assign({}, boss.s, { special: null, phases: null });
+  const clump = [600, 610, 620].map(x => b.makeAlly(U.knight, x)); b.allies.push(...clump);
+  b.bossAct(boss, A.starfall);
+  const strikes = b.pending.filter(p => p.ratio === A.starfall.ratio);
+  assert.ok(strikes.length >= 1 && strikes.some(p => Math.abs(p.x - 610) <= A.starfall.radius), 'aimed at the clump');
+  for (let i = 0; i < 90; i++) b.updatePending(1 / 30);
+  clump.forEach(k => assert.ok(k.hp <= k.maxHp * (1 - A.starfall.ratio) + 1, 'starfall hit'));
+  // 봉인: 가장 비싼 카드 둘
+  const ids = b.roster.map(r => r.id).sort((p, q) => b.stats(q).cost - b.stats(p).cost);
+  b.bossAct(boss, A.seal);
+  assert.ok(b.sealed[ids[0]] > 0 && b.sealed[ids[1]] > 0, 'priciest sealed'); if (ids[2]) assert.ok(!(b.sealed[ids[2]] > 0));
+  // 광폭: 빨라졌다가, 기절하면 풀린다
+  const r0 = boss.rateMul, s0 = boss.speedMul;
+  b.bossAct(boss, A.frenzy); assert.ok(boss.rateMul < r0 && boss.speedMul > s0 && boss.frenzyT > 0);
+  boss.stunImm = 0; boss.ab = Object.assign({}, boss.ab, { stunImmune: false, unshakable: false }); boss.stun(2);
+  b.bossTick(boss, 1 / 30);
+  assert.equal(boss.frenzyT, 0); assert.ok(Math.abs(boss.rateMul - r0) < 1e-9 && Math.abs(boss.speedMul - s0) < 1e-9, 'restored');
 });
 
 console.log(count + ' regression checks passed');

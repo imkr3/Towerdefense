@@ -2179,12 +2179,20 @@ const BOSS_AFFIXES = {
   tax:    { t: 'tax', name: '군자금 탈취', icon: '💸', cd: 21, first: 14, delay: 3, ratio: 0.5,
             desc: '3초 뒤 쌓인 군자금 절반을 빼앗는다 — 그 전에 출진시켜라' },
   pull:   { t: 'pull', name: '끌어당김', icon: '🌀', cd: 19, first: 11, r: 380, warn: 1.3, radius: 150, ratio: 0.3,
-            desc: '앞의 병사를 보스 앞으로 끌어당긴 뒤 내려찍는다(최대 체력 30%) — 뒷줄 원거리도 끌려온다' }
+            desc: '앞의 병사를 보스 앞으로 끌어당긴 뒤 내려찍는다(최대 체력 30%) — 뒷줄 원거리도 끌려온다' },
+  // 4.23 각인 셋 더
+  starfall: { t: 'starfall', name: '유성우', icon: '☄', cd: 20, first: 13, n: 4, warn: 1.8, radius: 85, ratio: 0.22,
+            desc: '아군이 모인 자리 넷에 붉은 원 — 1.8초 뒤 유성이 떨어져 최대 체력 22% 피해 (회복 · 보호막 · 흩어진 전열로 버틴다)' },
+  seal:   { t: 'seal', name: '봉인', icon: '⛓', cd: 23, first: 15, n: 2, dur: 7,
+            desc: '가장 비싼 출진 카드 둘을 7초 동안 묶는다 — 값싼 병종도 섞어 두어라' },
+  frenzy: { t: 'frenzy', name: '광폭', icon: '🔥', cd: 22, first: 16, dur: 7, rate: 0.6, speed: 1.4,
+            desc: '7초 동안 공격 · 이동이 빨라진다 — 기절시키면 바로 풀린다' }
 };
 const AFFIX_KEYS = Object.keys(BOSS_AFFIXES);
-const EVENT_AFFIX = { eclipse: ['clone', 'doom'], titan: ['charge', 'pull'], fleet: ['tax', 'totem'], rift: ['pull', 'clone'],
-                      demonking: ['doom', 'totem'], train: ['doom', 'tax'], masque: ['clone', 'doom'], hourglass: ['totem', 'pull'] };
-/* 이 전장의 보스가 쓰는 각인 (하드코어 보스 전장은 짝 15가지를 돌려 가며 — 이웃한 보스 전장끼리 겹치지 않게) */
+// 4.23 도전의 보스는 각인 셋 (새 각인 하나씩 더). 가면무도회는 제 기믹이 봉인이라 봉인 각인은 주지 않는다
+const EVENT_AFFIX = { eclipse: ['clone', 'doom', 'starfall'], titan: ['charge', 'pull', 'frenzy'], fleet: ['tax', 'totem', 'seal'], rift: ['pull', 'clone', 'seal'],
+                      demonking: ['doom', 'totem', 'frenzy'], train: ['doom', 'tax', 'starfall'], masque: ['clone', 'doom', 'frenzy'], hourglass: ['totem', 'pull', 'starfall'] };
+/* 이 전장의 보스가 쓰는 각인 (하드코어 보스 전장은 짝 36가지 중 28가지를 돌려 가며 — 4.23: 보폭 13 이라 전장마다 다른 짝) */
 function bossAffixes(stage, idx, hard) {
   if (stage && stage.event) return EVENT_AFFIX[stage.event.id] || [];
   if (!hard || !stage || !stage.boss || !stage.bossId) return [];
@@ -2192,7 +2200,7 @@ function bossAffixes(stage, idx, hard) {
   for (let i = 0; i < idx && i < STAGES.length; i++) if (STAGES[i].boss && STAGES[i].bossId) k++;
   const pairs = [];
   for (let a = 0; a < AFFIX_KEYS.length; a++) for (let b = a + 1; b < AFFIX_KEYS.length; b++) pairs.push([AFFIX_KEYS[a], AFFIX_KEYS[b]]);
-  return pairs[(k * 7 + 2) % pairs.length];
+  return pairs[(k * 13 + 2) % pairs.length];
 }
 
 /* 전장 길이. 예전엔 모두 2000 이라 병사가 적과 부딪히기까지 40초 넘게 걸어야 했다.
@@ -2313,11 +2321,12 @@ EVENT_STAGES.push(
 // 4.22: 분신이 돌아올 때마다 덜 채우게 되어(끝나지 않는 판 막기) 분신 도전(월식 · 균열 · 가면무도회)이 쉬워져 다시 올렸다 · 토템 원거리 우선으로 마왕도 조금
 const EVENT_TOUGH = { eclipse: [2.341, 2.341], titan: [1.6, 1.6], fleet: [2.49, 2.49], rift: [1.538, 1.587], demonking: [1.807, 1.807],
                       train: [1.285, 1.285], masque: [1.938, 1.938], hourglass: [1.08, 1.08] };
+const EVENT_BOSS_HP = 1.6;   // 4.23 도전 보스 체력을 따로 더 (보스가 생각보다 빨리 녹았다) — 잡몹 · 공격은 EVENT_TOUGH 로 맞춘다
 EVENT_STAGES.forEach((st, k) => {
   st.eventIndex = k; st.opening = 'rush';
   const tg = EVENT_TOUGH[st.event.id] || [1, 1];
   st.enemyMul = Math.round(st.enemyMul * tg[0] * 100) / 100;
-  if (st.bossMul) st.bossMul = Object.assign({}, st.bossMul, { hp: Math.round(st.bossMul.hp * tg[1] * 100) / 100 });
+  if (st.bossMul) st.bossMul = Object.assign({}, st.bossMul, { hp: Math.round(st.bossMul.hp * tg[1] * EVENT_BOSS_HP * 100) / 100 });
 });
 function eventOpen(s, k) { return !!EVENT_STAGES[k] && (s.cleared || 0) >= EVENT_STAGES[k].event.unlock; }
 function eventCount(s) { let n = 0; for (const st of EVENT_STAGES) if (s.events && s.events[st.event.id]) n++; return n; }
@@ -2530,10 +2539,10 @@ const ACHIEVEMENTS = [
     test: s => Object.keys(EVOLUTIONS2).filter(id => !UNIT_BY_ID[id].gacha).every(id => s.evo2 && s.evo2[id] !== undefined) },   // 4.7: 전장 병종 열 (소환 영웅은 따로)
   { id: 'awakenHero', name: '신들의 신형 장비', desc: '소환 영웅 하나를 3진',      gold: 12000, stone: 10,
     test: s => Object.keys(EVOLUTIONS2).some(id => UNIT_BY_ID[id].gacha && s.evo2 && s.evo2[id] !== undefined) },
-  { id:'campaign50',name:'하늘에 오른 자',desc:'50전장 모두 돌파 (4막 천공 요새)',gold:20000,stone:15,test:s=>s.cleared>=50 },
-  { id:'campaign60',name:'밀림의 왕',desc:'60전장 모두 돌파 (5막 잊힌 밀림)',gold:30000,stone:20,test:s=>s.cleared>=60 },
-  { id:'campaign70',name:'숲을 깨운 자',desc:'70전장 모두 돌파 (6막 홀린 요정 숲)',gold:40000,stone:25,test:s=>s.cleared>=70 },
-  { id:'campaign80',name:'모래폭풍을 건넌 자',desc:'80전장 모두 돌파 (7막 모래폭풍 사막)',gold:50000,stone:30,test:s=>s.cleared>=80 },
+  { id:'campaign50',name:'하늘에 오른 자',desc:'50전장 모두 돌파 (5막 천공 요새)',gold:20000,stone:15,test:s=>s.cleared>=50 },
+  { id:'campaign60',name:'밀림의 왕',desc:'60전장 모두 돌파 (6막 잊힌 밀림)',gold:30000,stone:20,test:s=>s.cleared>=60 },
+  { id:'campaign70',name:'숲을 깨운 자',desc:'70전장 모두 돌파 (7막 홀린 요정 숲)',gold:40000,stone:25,test:s=>s.cleared>=70 },
+  { id:'campaign80',name:'모래폭풍을 건넌 자',desc:'80전장 모두 돌파 (8막 모래폭풍 사막)',gold:50000,stone:30,test:s=>s.cleared>=80 },
   { id:'trainStop',name:'기관차를 멈춘 자',desc:'도전 \'폭주 기관차\' 돌파',gold:15000,stone:15,test:s=>!!(s.events && s.events.train) },
   { id:'unmasked',name:'가면을 벗긴 자',desc:'도전 \'그림자 가면무도회\' 돌파',gold:15000,stone:15,test:s=>!!(s.events && s.events.masque) },
   { id:'ultimate',name:'궁극에 이른 자',desc:'병종 하나를 4진',gold:30000,stone:20,test:s=>Object.keys(s.evo3 || {}).length >= 1 },
@@ -3307,7 +3316,7 @@ function unitFor(save, id) {
 // 4.4: 3진이 생긴 뒤로 도전이 쉬워졌다 — 적 ×3.5 → 4.1 (바닥 5 → 6.2), 요새 ×2 → 2.2, 보스 체력 ×2.6 → 2.9
 const HARDCORE = { enemyMul: 4.6, fortMul: 2.4, castleMul: 0.6, cmdMul: 1.5, reward: 3, stones: 5, stunResist: 0.3,
                    // 3.19: 하드코어 보스는 따로 더 억세다. 다 키운 영웅 편성이 필살을 몰아 쓰면 10~20초 만에 녹았다
-                   boss: { hp: 2, atk: 1.2 },     // 4.18: 3.3 → 2 (7막 끝 보스 셋이 다 키워도 넘을 수 없었다)
+                   boss: { hp: 3.2, atk: 1.2 },   // 4.18: 3.3 → 2 (7막 끝 보스 셋이 다 키워도 넘을 수 없었다) · 4.23: 3.2 — 보스가 너무 빨리 녹았다 (전장별 보정으로 승률은 맞춘다)
                    fury: { per30: 0.15, max: 1.5 },   // 3.1: 오래 끌수록 새로 나오는 적이 억세진다 (최대 2.5배)
                    // 앞쪽 전장도 모질게: 적 배율과 요새 체력에 바닥을 깐다 (2막 초입 수준)
                    mulFloor: 6.9, fortFloor: 50000, soft: 4, sally: 0.5, minRatio: 0.8,

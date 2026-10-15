@@ -350,18 +350,19 @@ function renderQuest(tab) {
 let questTab = 'daily';
 
 /* ------------------------------ 지도 ------------------------------ */
-/* 30개 전장을 긴 목록으로 늘어놓던 것을 장(章) 단위 진군로로 바꿨다.
- * 한 장에 10개, 화면 하나에 다 들어가고 스크롤이 없다. 전장을 누르면 오른쪽에
- * 정보가 뜨고, 거기서 편성을 고치거나 바로 출진한다. */
+/* 30개 전장을 긴 목록으로 늘어놓던 것을 막 단위 진군로로 바꿨다.
+ * 한 막에 10개, 화면 하나에 다 들어가고 스크롤이 없다. 전장을 누르면 오른쪽에
+ * 정보가 뜨고, 거기서 편성을 고치거나 바로 출진한다.
+ * 4.23: '1장 · 2장 · 2막 · 3막 …' 으로 섞여 있던 이름을 1막~8막으로 맞췄다 (탭 하나 = 10전장 = 한 막). */
 const CHAPTERS = [
-  { name: '1장', sub: '국경 전선', from: 0, to: 10 },
-  { name: '2장', sub: '왕도 수호', from: 10, to: 20 },
-  { name: '2막', sub: '신화의 끝', from: 20, to: 30 },
-  { name: '3막', sub: '심연의 바다', from: 30, to: 40 },
-  { name: '4막', sub: '천공 요새', from: 40, to: 50 },
-  { name: '5막', sub: '잊힌 밀림', from: 50, to: 60 },
-  { name: '6막', sub: '홀린 요정 숲', from: 60, to: 70 },
-  { name: '7막', sub: '모래폭풍 사막', from: 70, to: 80 },
+  { name: '1막', sub: '국경 전선', from: 0, to: 10 },
+  { name: '2막', sub: '왕도 수호', from: 10, to: 20 },
+  { name: '3막', sub: '신화의 끝', from: 20, to: 30 },
+  { name: '4막', sub: '심연의 바다', from: 30, to: 40 },
+  { name: '5막', sub: '천공 요새', from: 40, to: 50 },
+  { name: '6막', sub: '잊힌 밀림', from: 50, to: 60 },
+  { name: '7막', sub: '홀린 요정 숲', from: 60, to: 70 },
+  { name: '8막', sub: '모래폭풍 사막', from: 70, to: 80 },
   { name: '무한', sub: '끝없는 웨이브', endless: true },
   { name: '원정', sub: '금화 원정', expedition: true },
   { name: '이벤트', sub: '극악 도전', event: true }
@@ -546,8 +547,8 @@ function renderStageDetail(i) {
   const ch = CHAPTERS[mapChapter];
   if (ch.endless || i < 0) {
     box.innerHTML = ch.endless
-      ? '<div class="sd-name">무한 전장</div><p class="sd-hint">정말로 끝이 없습니다. 웨이브마다 적이 가파르게 강해지고, 3웨이브마다 1~7막의 전장 보스와 도전 보스가 섞여 옵니다 (12웨이브마다 둘). 곡은 나온 보스의 곡으로 바뀝니다. 성채가 무너질 때까지!</p>'
-      : '<div class="sd-name">' + ch.name + ' · ' + ch.sub + '</div><p class="sd-hint">이전 장을 먼저 돌파해야 합니다.</p>';
+      ? '<div class="sd-name">무한 전장</div><p class="sd-hint">정말로 끝이 없습니다. 웨이브마다 적이 가파르게 강해지고, 3웨이브마다 1~8막의 전장 보스와 도전 보스가 섞여 옵니다 (12웨이브마다 둘). 곡은 나온 보스의 곡으로 바뀝니다. 성채가 무너질 때까지!</p>'
+      : '<div class="sd-name">' + ch.name + ' · ' + ch.sub + '</div><p class="sd-hint">이전 막을 먼저 돌파해야 합니다.</p>';
     const fb = document.createElement('button');
     fb.className = 'btn ghost sd-formation';
     fb.textContent = '편성';
@@ -1681,7 +1682,7 @@ function onCardTap(u) {
     toast(cd > 0 ? u.active.name + ' · ' + cd + '초 남음' : u.active.name + ' · 대상 없음');
     return;
   }
-  if (battle.sealed[u.id] > 0) { toast('가면 군주가 봉인한 카드입니다 · ' + Math.ceil(battle.sealed[u.id]) + '초'); return; }
+  if (battle.sealed[u.id] > 0) { toast('봉인된 카드입니다 · ' + Math.ceil(battle.sealed[u.id]) + '초'); return; }
   if (battle.cooldowns[u.id] > 0) { toast('재사용 대기 중입니다'); return; }
   if (battle.money < u.cost) { toast('군자금이 부족합니다'); return; }
   if (!battle.deploy(u.id)) {

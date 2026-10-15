@@ -275,10 +275,10 @@ const I18N_EN = {
   '왕국 방어선 · 전 30 전장': 'Realm Defense · 30 battlefields',
   '왕국 진군도': 'Campaign Map', '타이틀로': 'To title', '장 선택': 'Chapters', '설정': 'Settings',
   '국경 전선': 'Border Front', '왕도 수호': 'Royal Capital', '신화의 끝': 'End of Myths', '끝없는 웨이브': 'Endless waves',
-  '1장': 'Ch.1', '2장': 'Ch.2', '2막': 'Act 2', '무한': 'Endless',
+  '1막': 'Act 1', '2막': 'Act 2', '무한': 'Endless',
   '짧은 전장': 'Short field', '보통 전장': 'Medium field', '긴 전장': 'Long field',
   '보스 전장': 'Boss stage', '출진 ▶': 'March ▶', '잠김': 'Locked',
-  '이전 장을 먼저 돌파해야 합니다.': 'Clear the previous chapter first.',
+  '이전 막을 먼저 돌파해야 합니다.': 'Clear the previous act first.',
   '웨이브가 끝없이 몰려옵니다. 웨이브마다 적이 강해지고, 5웨이브마다 보스가 등장합니다. 성채가 무너지기 전까지 최대한 버텨 보세요!': 'The waves never stop. Foes grow stronger each wave, and a boss arrives every 5. How long can your castle hold?',
   '끝없는 웨이브. 웨이브마다 적이 강해집니다. 성채가 무너질 때까지 버텨 내세요!': 'Endless waves, each stronger than the last. Hold until your castle falls.',
   '🔒 무한 전장은 20전장을 모두 돌파하면 열립니다': '🔒 Endless opens after clearing all 20 stages',
@@ -841,7 +841,7 @@ const I18N_EN = {
   '아서왕 전설': 'Arthurian Legend',
   '성검이 다시 뽑히고, 원탁에 둘러앉았던 기사들이 왕국의 부름에 응합니다.': 'The holy sword is drawn once more, and the knights of the Round Table answer the kingdom\'s call.',
   '하늘에 오른 자': 'Sky Ascendant',
-  '50전장 모두 돌파 (4막 천공 요새)': 'Clear all 50 battlefields (Act 4 Sky Citadel)',
+  '50전장 모두 돌파 (5막 천공 요새)': 'Clear all 50 battlefields (Act 5 Sky Citadel)',
   '하늘도 꺾지 못한 왕국': 'A Realm Even Heaven Can\'t Break',
   '하드코어 전장 50곳 모두 돌파': 'Clear all 50 hardcore battlefields',
   '4막': 'Act 4',
@@ -856,7 +856,7 @@ const I18N_EN = {
   /* ---------------- 4.6 5막 '잊힌 밀림' ---------------- */
   '왕국 방어선 · 전 60 전장': 'Realm Defense · 60 battlefields',
   '5막': 'Act 5', '잊힌 밀림': 'Forgotten Jungle',
-  '밀림의 왕': 'King of the Jungle', '60전장 모두 돌파 (5막 잊힌 밀림)': 'Clear all 60 battlefields (Act 5 Forgotten Jungle)',
+  '밀림의 왕': 'King of the Jungle', '60전장 모두 돌파 (6막 잊힌 밀림)': 'Clear all 60 battlefields (Act 6 Forgotten Jungle)',
   '도마뱀 전사': 'Lizardman', '비늘 방패 · 15% 회피 · 흡혈 15%': 'Scale shield · 15% dodge · lifesteal 15%',
   '랩터': 'Raptor', '무리 사냥 · 아주 빠름 · 전열을 뛰어넘어 원거리 병사를 덮칩니다': 'Pack hunter · very fast · leaps the front line onto ranged troops',
   '독두꺼비': 'Poison Toad', '독 침 · 범위 중독 70/초 · 정화로 해제': 'Venom spit · area poison 70/s · cleansed by healers',
@@ -884,7 +884,7 @@ const I18N_EN = {
   /* ---------------- 4.11 6막 '홀린 요정 숲' ---------------- */
   '왕국 방어선 · 전 70 전장': 'Realm Defense · 70 battlefields',
   '6막': 'Act 6', '홀린 요정 숲': 'Bewitched Fey Wood',
-  '숲을 깨운 자': 'Wakener of the Wood', '70전장 모두 돌파 (6막 홀린 요정 숲)': 'Clear all 70 battlefields (Act 6 Bewitched Fey Wood)',
+  '숲을 깨운 자': 'Wakener of the Wood', '70전장 모두 돌파 (7막 홀린 요정 숲)': 'Clear all 70 battlefields (Act 7 Bewitched Fey Wood)',
   '장난꾸러기 요정': 'Mischief Pixie', '요정 가루 · 35% 회피 · 아주 빠름 · 떼로 날아듭니다': 'Fairy dust · 35% dodge · very fast · flies in swarms',
   '독버섯 병사': 'Sporecap Soldier', '버섯 갓 · 갑주 15% · 쓰러지면 포자가 터져 둘레를 중독 (85/초)': 'Mushroom cap · 15% armor · bursts into spores on death, poisoning nearby troops (85/s)',
   '나무 정령': 'Treant', '나무 몸 · 갑주 25% · 초당 90 회복 · 화상이면 재생 멈춤 · 넉백 면역': 'Wooden body · 25% armor · regenerates 90/s · burning stops it · knockback immune',
@@ -915,8 +915,8 @@ const I18N_EN = {
   '고목왕은 화상 없이는 계속 자랍니다 · 열매 예고를 피하고, 뿌리가 흔들리면 왕명과 필살을': 'The Elder King keeps regrowing unless burned · dodge the marked fruit, and answer the root quake with your Command and ULTs',
   /* ---------------- 4.15 7막 '모래폭풍 사막' · 시즌 삼국지 · 도전 '파라오의 모래시계' ---------------- */
   '왕국 방어선 · 전 80 전장': 'Realm Defense · 80 battlefields',
-  '7막': 'Act 7', '모래폭풍 사막': 'Sandstorm Desert',
-  '모래폭풍을 건넌 자': 'Storm Crosser', '80전장 모두 돌파 (7막 모래폭풍 사막)': 'Clear all 80 battlefields (Act 7 Sandstorm Desert)',
+  '7막': 'Act 7', '8막': 'Act 8', '모래폭풍 사막': 'Sandstorm Desert',
+  '모래폭풍을 건넌 자': 'Storm Crosser', '80전장 모두 돌파 (8막 모래폭풍 사막)': 'Clear all 80 battlefields (Act 8 Sandstorm Desert)',
   '모래폭풍! 원거리 사거리가 줄어듭니다': 'Sandstorm! Ranged reach is shortened', '모래폭풍이 다가옵니다': 'A sandstorm is coming',
   '거대 전갈': 'Giant Scorpion', '독침 · 갑주 25% · 중독 70/초': 'Venom stinger · 25% armor · poison 70/s',
   '미라 병사': 'Mummy Soldier', '붕대 몸 · 한 번 쓰러져도 체력 50% 로 다시 일어남': 'Wrapped body · rises once more at 50% HP after falling',
@@ -990,6 +990,11 @@ const I18N_EN = {
   '3초 뒤 쌓인 군자금 절반을 빼앗는다 — 그 전에 출진시켜라': 'Steals half your banked war funds after 3s — spend them first',
   '앞의 병사를 보스 앞으로 끌어당긴 뒤 내려찍는다(최대 체력 30%) — 뒷줄 원거리도 끌려온다': 'Drags soldiers in front up to the boss, then slams (30% of max HP) — even the back-line ranged get pulled',
   '분신이 보스에게 돌아갔다': 'The clone returned to the boss', '빼앗길 군자금이 없다!': 'No war funds to steal!',
+  /* 4.23 각인 셋 더 · 보스 등장 충격파 */
+  '유성우': 'Starfall', '봉인': 'Seal', '광폭': 'Frenzy', '광폭이 풀렸다!': 'Frenzy broken!',
+  '아군이 모인 자리 넷에 붉은 원 — 1.8초 뒤 유성이 떨어져 최대 체력 22% 피해 (회복 · 보호막 · 흩어진 전열로 버틴다)': 'Red circles on your four thickest clumps — stars fall 1.8s later for 22% of max HP (heals, shields and a spread-out line help)',
+  '가장 비싼 출진 카드 둘을 7초 동안 묶는다 — 값싼 병종도 섞어 두어라': 'Locks your two priciest cards for 7s — keep some cheap units in the deck',
+  '7초 동안 공격 · 이동이 빨라진다 — 기절시키면 바로 풀린다': 'Attacks and moves faster for 7s — a stun breaks it at once',
   '만렙(Lv30) 기준 · 병영 강화 최대 · 진화 전부': 'Max level (Lv30) · barracks maxed · every evolution',
   /* ---------------- 4.18 4진 (궁극) ---------------- */
   '별의 대현자 멀린': 'Merlin, Sage of the Stars', '별의대현자': 'Star Sage',
@@ -1004,7 +1009,7 @@ const I18N_EN = {
   '✸ 4진 · 💰 ': '✸ Ascend · 💰 ', '레벨 25에 4진': 'Ascends at Lv 25', '· 대가: 3진보다 출진 비용 · 쿨타임 +15%': '· Trade-off: deploy cost · cooldown +15% over the awakened form',
   '궁극에 이른 자': 'Ultimate Form', '병종 하나를 4진': 'Ascend one unit',
   /* ---------------- 4.16 무한 전장 개편 ---------------- */
-  '정말로 끝이 없습니다. 웨이브마다 적이 가파르게 강해지고, 3웨이브마다 1~7막의 전장 보스와 도전 보스가 섞여 옵니다 (12웨이브마다 둘). 곡은 나온 보스의 곡으로 바뀝니다. 성채가 무너질 때까지!': 'Truly endless. Foes grow steeply stronger each wave, and every 3 waves a boss arrives — campaign bosses from Acts 1–7 mixed with challenge bosses (two at once every 12). The music follows whichever boss is on the field. Hold until your castle falls!',
+  '정말로 끝이 없습니다. 웨이브마다 적이 가파르게 강해지고, 3웨이브마다 1~8막의 전장 보스와 도전 보스가 섞여 옵니다 (12웨이브마다 둘). 곡은 나온 보스의 곡으로 바뀝니다. 성채가 무너질 때까지!': 'Truly endless. Foes grow steeply stronger each wave, and every 3 waves a boss arrives — campaign bosses from Acts 1–8 mixed with challenge bosses (two at once every 12). The music follows whichever boss is on the field. Hold until your castle falls!',
   '끝이 없는 전장. 웨이브마다 적이 가파르게 강해지고, 3웨이브마다 전장 보스와 도전 보스가 섞여 옵니다. 성채가 무너질 때까지!': 'A battle without end. Foes grow steeply stronger each wave, and every 3 waves a campaign or challenge boss joins in. Until your castle falls!',
   /* ---------------- 4.6 도전: 폭주 기관차 · 그림자 가면무도회 ---------------- */
   '폭주 기관차': 'Runaway Locomotive', '그림자 가면무도회': 'Shadow Masquerade',
@@ -1177,7 +1182,7 @@ const I18N_EN_PATTERNS = [
   [/✪ 3진 시련 달성 · /g, '✪ Trial cleared · '],
   [/그림자 가면: (.+?) 봉인/g, 'Shadow Mask: $1 sealed'],   // 4.6
   [/모래시계가 뒤집혔다 · 요새 \+(\d+)%/g, 'The hourglass turned · fort +$1%'],   // 4.15
-  [/가면 군주가 봉인한 카드입니다 · (\d+)초/g, 'Sealed by the Mask Lord · $1s'],
+  [/가면 군주가 봉인한 카드입니다 · (\d+)초/g, 'Sealed by the Mask Lord · $1s'], [/봉인된 카드입니다 · (\d+)초/g, 'Card sealed · $1s'], [/^봉인: (.+)/g, 'Sealed: $1'],   // 4.23
   [/✪ (.+?) 시련 완료! 레벨 20 이면 훈련소에서 3진/g, '✪ $1 trials complete! Awaken at Lv 20 in the Training Grounds'],
   [/✪ (.+?) 3진 시련을 마치면 3진할 수 있습니다/g, '✪ $1 can awaken once its trials are done'],
   [/3진 시련 (\d+) \/ (\d+) · 훈련소에서 확인/g, 'Awakening trials $1 / $2 · see the Training Grounds'],

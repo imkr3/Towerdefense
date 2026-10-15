@@ -645,7 +645,8 @@ class Renderer {
     const hop = won ? Math.abs(Math.sin(this.clock * 7 + f.bob)) * 9 * this.cs : 0;
     // 넉백: 뒤로 튕기며 살짝 뜬다
     const kbK = f.kbTimer > 0 ? Math.min(1, f.kbTimer / 0.42) : 0;
-    const kbLift = kbK > 0 ? Math.sin(kbK * Math.PI) * 7 * this.cs : 0;
+    // 4.23 보스 등장 충격파: 크게 포물선을 그리며 날아간다
+    const kbLift = f.flyT > 0 ? Math.sin(Math.min(1, f.flyT / 0.65) * Math.PI) * 34 * this.cs : kbK > 0 ? Math.sin(kbK * Math.PI) * 7 * this.cs : 0;
     // 4.3 탈것 3진(전차·구급 마차·비행접시)은 걷지 않는다. 키 큰 3진은 체력바·표식을 더 위로, 넓은 3진은 그림자를 넓게
     const vehicle = !!X3_VEHICLE[f.s.shape], wk = X3_WIDE[f.s.shape] || 1;
     const top = (X3_TOP[f.s.shape] || 72) * s;
@@ -748,6 +749,19 @@ class Renderer {
       ctx.setLineDash([7 * s, 5 * s]); ctx.lineDashOffset = -clk * 30 * s;
       ctx.beginPath(); ctx.ellipse(0, -40 * s, 48 * s, 60 * s, 0, 0, 7); ctx.stroke();
       ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+    }
+    if (f.frenzyT > 0) {                                   // 4.23 광폭: 붉은 불꽃이 몸을 휘감고 위로 솟는다
+      const pulse = 0.75 + Math.sin(clk * 14) * 0.25;
+      ctx.globalAlpha = 0.28 * pulse;
+      ctx.fillStyle = '#ff5a2a';
+      ctx.beginPath(); ctx.ellipse(0, -40 * s, 44 * s, 60 * s, 0, 0, 7); ctx.fill();
+      ctx.globalAlpha = 0.85 * pulse;
+      ctx.fillStyle = '#ffb347';
+      for (let i = 0; i < 5; i++) {
+        const k = (clk * 1.6 + i / 5) % 1, px = Math.sin(i * 2.1 + clk * 3) * 30 * s, py = -10 * s - k * 90 * s;
+        ctx.beginPath(); ctx.moveTo(px - 4 * s * (1 - k), py); ctx.lineTo(px, py - 12 * s * (1 - k)); ctx.lineTo(px + 4 * s * (1 - k), py); ctx.fill();
+      }
       ctx.globalAlpha = 1;
     }
     if (f.windT > 0) {                                     // 4.21 돌진 준비: 발밑에서 붉은 흙먼지가 일고 몸이 앞으로 쏠린다

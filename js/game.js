@@ -47,6 +47,9 @@ function sfx(name) {
 
 /* 4.12 보스: 밀치기는 1/3 만 먹고, 근접 보스는 칠 적이 없으면 던진다 */
 const BOSS_PUSH_TAKEN = 0.35;
+const BOSS_SHOVE_GAP = 1;          // 4.23 보스가 병사의 밀치기에 다시 밀릴 수 있기까지 (초)
+const BOSS_ENTRY_GAP = 400;        // 4.23 보스 등장 충격파: 아군을 보스에게서 이만큼(+0~80) 떨어뜨린다
+const BOSS_ENTRY_FLY = 0.65;       //       날아가는 시간 (초)
 const HOLD_GAP = 12;          // 밀려나도 자기 요새 바로 앞에서 멈춘다 (근접 병사가 닿는 자리)
 const BOSS_THROW = { first: 2, every: 4.5, range: 340, mul: 0.25, radius: 70 };
 /* 4.13 보기 전용 난수: 효과의 흔들림 · 위치에만 쓴다. Math.random 을 쓰면 효과를 바꿀 때마다 전투 결과가 흔들린다 */
@@ -200,6 +203,9 @@ class Fighter {
     // 4.21 보스 각인
     this.affixes = null; this.windT = 0; this.guardCut = 0; this.guardOf = null; this.wardCut = 0;
     this.cloneOf = null; this.cloneT = 0; this.cloneHeal = 0; this.cloneReturns = 0;
+    // 4.23 보스 등장 충격파로 날아가는 속도(0 이면 보통 넉백) · 보스가 밀치기에 다시 밀릴 수 있는 때
+    this.flyV = 0; this.flyT = 0; this.shoveT = 0;
+    this.frenzyT = 0; this.frenzyRate = 1; this.frenzySpeed = 1;   // 4.23 광폭 각인
   }
 
   /* 기절. 면역 중이거나 부동심이면 걸리지 않는다. 걸렸으면 true */
@@ -1000,10 +1006,27 @@ class Battle {
       const keys = bossAffixes(this.stage, this.stageIndex, this.hard);
       if (keys.length) f.affixes = keys.map(k => ({ k: k, a: BOSS_AFFIXES[k], cd: BOSS_AFFIXES[k].first }));
     }
-    if (f.boss) { this.bossAlert = 2.6; this.bossName = spec.name; this.shake = 10; sfx('bossIn'); f.bornT = this.time; this.bossSeq = (this.bossSeq || 0) + 1; this.lastBossKind = id; }
+    if (f.boss) { this.bossAlert = 2.6; this.bossName = spec.name; this.shake = 10; sfx('bossIn'); f.bornT = this.time; this.bossSeq = (this.bossSeq || 0) + 1; this.lastBossKind = id; this.bossEntry(f); }
     if (f.ab.burrow) { f.burrowed = true; this.burrowers.push(f); return f; }
     this.enemies.push(f);
     return f;
+  }
+
+  /* 4.23 보스 등장 충격파: 요새 앞에 붙어 성채만 두들기던 병사들을 보스에게서 멀리 날려 보내고 시작한다.
+   * 피해는 없다. 붙박이(hold)만 그 자리에 남는다. 날아가는 동안은 넉백과 같아 싸우지 못한다. */
+  bossEntry(boss) {
+    const bx = boss.x;
+    let n = 0;
+    for (const a of this.allies) {
+      if (a.dead || a.ab.hold || a.burrowed) continue;
+      const tx = Math.min(a.x, bx - BOSS_ENTRY_GAP - Math.random() * 80);
+      const d = a.x - Math.max(ALLY_BASE_X + HOLD_GAP, tx);
+      if (d <= 4) continue;
+      a.flyV = d / BOSS_ENTRY_FLY; a.flyT = BOSS_ENTRY_FLY; a.kbTimer = Math.max(a.kbTimer, BOSS_ENTRY_FLY);
+      n++;
+    }
+    this.fx.push({ type: 'cast', kind: 'shockwave', x: bx, row: boss.row, color: '#ffcf6a', r: 260, big: true, dir: -1, t: 0.7, life: 0.7 });
+    if (n) this.shake = Math.max(this.shake, 14);
   }
 
   /* 하데스의 명계: 근처에서 쓰러진 적을 해골 병사로 일으킨다.
@@ -1443,7 +1466,7 @@ class Battle {
       // 넉백
       if (f.kbTimer > 0) {
         f.kbTimer -= dt;
-        f.x -= f.dir * 150 * dt;
+        if (f.flyT > 0) { f.flyT -= dt; f.x -= f.dir * f.flyV * dt; } else f.x -= f.dir * 150 * dt;
         f.x = Math.max(60, Math.min(WORLD - 60, f.x));
         this.holdLine(f);
         continue;
@@ -1751,6 +1774,13 @@ class Battle {
       f.guardCut = 0;
       for (const e of this.enemies) if (!e.dead && e.guardOf === f) { f.guardCut = e.wardCut || 0; break; }
     }
+    if (f.frenzyT > 0) {                               // 4.23 광폭: 시간이 다 되거나 기절하면 풀린다
+      f.frenzyT -= dt;
+      if (f.frenzyT <= 0 || f.stunT > 0) {
+        if (f.stunT > 0) { this.announce('광폭이 풀렸다!', 1.4); this.fx.push({ type: 'poof', x: f.x, row: f.row, t: 0.45, life: 0.45, color: '#ff6b3c', big: true }); }
+        f.frenzyT = 0; f.rateMul /= f.frenzyRate; f.speedMul /= f.frenzySpeed; f.frenzyRate = f.frenzySpeed = 1;
+      }
+    }
     if (f.affixes) {                                   // 4.21 보스 각인
       for (const ax of f.affixes) {
         if (f.stunT > 0 || f.windT > 0) continue;
@@ -1963,11 +1993,44 @@ class Battle {
           const d = (e.x - f.x) * f.dir;
           if (d < 0 || d > r) continue;
           e.x = Math.max(60, Math.min(WORLD - 60, f.x + f.dir * (40 + Math.random() * 130)));   // 한 점에 뭉치지 않게 흩어 놓는다
-          e.kbTimer = 0; e.stun(0.5);
+          e.kbTimer = 0; e.flyT = 0; e.stun(0.5);
         }
         this.fx.push({ type: 'pullwave', x: f.x, row: f.row, r: r, dir: f.dir, t: 0.7, life: 0.7, color: f.s.accent });
         this.queueStrike(f, { x: Math.max(120, Math.min(WORLD - 120, f.x + f.dir * 80)), r: a.radius || 150, ratio: a.ratio || 0.3, dmg: 0,
                               warn: a.warn || 1.3, kind: 'shockwave', noCastle: true });
+        break;
+      }
+      case 'starfall': {                   // 4.23 유성우: 아군이 모인 자리에 예고 → 최대 체력 비율 피해
+        const xs = [];
+        for (const e of foes) if (!e.dead && !e.burrowed && !e.isCastle) xs.push(e.x);
+        if (!xs.length) break;
+        xs.sort((p, q) => p - q);
+        const rad = a.radius || 85, picks = [];
+        // 가장 붐비는 자리부터: 둘레 rad 안의 병사 수가 많은 곳, 이미 고른 곳과는 2rad 떨어지게
+        const score = x => { let n = 0; for (const v of xs) if (Math.abs(v - x) <= rad) n++; return n; };
+        const cand = xs.map(x => [x, score(x)]).sort((p, q) => q[1] - p[1]);
+        for (const [x] of cand) { if (picks.length >= (a.n || 4)) break; if (picks.every(p => Math.abs(p - x) >= rad * 2)) picks.push(x); }
+        picks.forEach((x, i) => this.queueStrike(f, { x: Math.max(120, Math.min(WORLD - 120, x)), r: rad, ratio: a.ratio || 0.22, dmg: 0,
+                                                     warn: (a.warn || 1.8) + i * 0.15, kind: 'firestorm', noCastle: true }));
+        break;
+      }
+      case 'seal': {                       // 4.23 봉인: 가장 비싼 출진 카드 둘을 잠깐 묶는다
+        if (f.side !== 'enemy') break;
+        const ids = this.roster.map(r => r.id).filter(id => !(this.sealed[id] > 0) && this.stats(id))
+          .sort((p, q) => this.stats(q).cost - this.stats(p).cost).slice(0, a.n || 2);
+        if (!ids.length) break;
+        for (const id of ids) this.sealed[id] = a.dur || 7;
+        this.announce('봉인: ' + ids.map(id => this.stats(id).name).join(' · '), 2.2);
+        this.fx.push({ type: 'aura', x: f.x, row: f.row, r: 120, t: 0.6, life: 0.6, color: '#9aa7ff' });
+        sfx('zap');
+        break;
+      }
+      case 'frenzy': {                     // 4.23 광폭: 잠깐 빨라진다 — 기절시키면 풀린다
+        if (f.frenzyT > 0) break;
+        f.frenzyT = a.dur || 7; f.frenzyRate = a.rate || 0.6; f.frenzySpeed = a.speed || 1.4;
+        f.rateMul *= f.frenzyRate; f.speedMul *= f.frenzySpeed;
+        this.fx.push({ type: 'cast', kind: 'firestorm', x: f.x, row: f.row, color: '#ff6b3c', r: 110, big: true, dir: f.dir, t: 0.6, life: 0.6 });
+        this.shake = Math.max(this.shake, 8);
         break;
       }
       case 'meteor': {                     // 예고 후 떨어지는 폭격
@@ -2400,9 +2463,17 @@ class Battle {
       target.resistFx = false;
     }
     if (ab.push && !target.ab.kbImmune && !target.isCastle) {
-      target.x += src.dir * ab.push * 0.01 * 60 * (target.boss ? BOSS_PUSH_TAKEN : 1);
-      this.holdLine(target);
-      target.kbTimer = Math.max(target.kbTimer, 0.12);
+      if (!target.boss) {
+        target.x += src.dir * ab.push * 0.01 * 60;
+        this.holdLine(target);
+        target.kbTimer = Math.max(target.kbTimer, 0.12);
+      } else if (this.time >= target.shoveT) {
+        // 4.23 보스는 버틴다: 밀치기는 1초에 한 번만, 밀려도 공격은 끊기지 않는다.
+        // 예전엔 드릴 창병이 여럿 붙어 칠 때마다 0.12초씩 넉백이 걸려 보스가 거의 때리지 못하고 뒤로만 밀렸다
+        target.x += src.dir * ab.push * 0.01 * 60 * BOSS_PUSH_TAKEN;
+        this.holdLine(target);
+        target.shoveT = this.time + BOSS_SHOVE_GAP;
+      }
     }
     if (ab.weaken) {                              // 액막이: 이 적이 주는 피해가 준다
       target.weakT = Math.max(target.weakT, ab.weaken.dur);
