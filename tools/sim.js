@@ -334,9 +334,12 @@ const EXP_EXPECT = [
   { up: 5, lv: 9,  min: 4, minRate: 650, maxRate: 1400 },
   { up: 8, lv: 12, min: 4, minRate: 1800, maxRate: 3000 }
 ];
-/* 4.18 도전 전장: '하드코어에 비해 도전이 쉽다' 해서 다 올렸다 — 이제 끝까지 키워야(Lv27) 넘고, 중간 전력(Lv20)으론 거의 못 넘는다.
- * 3.2~4.15 의 'Lv15 막 내기 · 타이밍' 과 4.6 의 'Lv24 반타작' 검사는 그 전력으로 아예 못 넘게 되어 이 둘로 바꿨다. */
-const EVENT_MAX = { up: 10, lv: 27, timedMin: 6 };   // 다 키운 공략 편성 + 타이밍: 10판 중 6판 이상
+/* 4.18 도전 전장: '하드코어에 비해 도전이 쉽다' 해서 다 올렸다.
+ * 4.20: 하드코어 · 도전 모두 '만렙 기준' — 강화 10 · Lv30 · 전장을 다 연 계정의 가장 잘 맞는 편성(+타이밍)이 반쯤 이긴다.
+ * 판마다 운이 갈리므로 한 곳에 0 · 10 이 아니고, 모두 합쳐 30~70% 안이면 통과. 중간 전력(Lv20)으론 도전을 못 넘는다. */
+const FULL_SEEDS = [101, 202, 303, 404, 505, 606, 707, 808, 909, 1010].map(x => x * 31);
+const HARD_FULL = { up: 10, lv: 30, stages: [1, 9, 18, 27, 36, 45, 54, 63, 72, 80], decks: ['combo', 'smart', 'rec'], min: 1, max: 9, sumMin: 0.3, sumMax: 0.7 };
+const EVENT_FULL = { up: 10, lv: 30, decks: ['counter', 'combo', 'rec'], min: 1, max: 9, sumMin: 0.3, sumMax: 0.7 };
 const EVENT_MID = { up: 10, lv: 20, timedMax: 2 };   // 중간 전력: 10판 중 2판 이하
 const ACT3_ENTRY = { up: 10, lv: 14, min: 2, max: 5 };   // 3.3
 const SMART_ACT3 = { up: 10, lv: 18 };
@@ -354,7 +357,6 @@ const ENDLESS_EXPECT = [                                  // 4.16 무한 전장:
 const ACT7_ENTRY = { up: 10, lv: 24, min: 3, max: 7 };   // 4.15: 6막을 끝낸 수준이면 절반쯤
 const ACT7_LOW = { up: 10, lv: 22, max: 4 };              // 4.15: 6막 입구 수준으론 몇 곳만
 const SMART_ACT7 = { up: 10, lv: 27, slower: 1.05 };     // 4.15: 상한(22+사관학교 5)까지 키우면 전부, 6막보다 오래
-const HARD_MODE = { up: 10, lv: 15, min: 12, max: 20, bossMax: 6 };   // 하드코어 기대치 (3.1)
 const LEGEND_PROOF_MAX = 1;      // 전설만 편성이 이길 수 있는 최대 판 수
 const COUNTER_MIN = 4;           // 공략 편성이 이겨야 하는 최소 판 수
 
@@ -575,20 +577,8 @@ function check() {
     else if (t7 < t6 * SMART_ACT7.slower) { console.error(`  ✗ 7막이 6막보다 어렵지 않다: ${Math.round(t7)}초 vs ${Math.round(t6)}초 (seed ${seed})`); failed++; }
     else console.log(`  ✓ 7막 공략 편성 완주 · 6막의 ${(t7 / t6).toFixed(2)}배 걸림 (seed ${seed})`);
   }
-  // 3.1: 하드코어는 확실히 어렵다. 다 키운 공략 편성으로도 절반 남짓, 보스 전장은 대부분 막힌다.
-  {
-    SIM_HARD = true;
-    const g = loadEngine(12345), rows = [];
-    for (let i = 0; i < g.STAGES.length; i++) rows.push(runStage(g, i, HARD_MODE.up, HARD_MODE.lv, false, 'smart'));
-    SIM_HARD = false;
-    const wins = rows.filter(r => r.win).length;
-    const bossWins = rows.filter(r => r.win && g.STAGES[r.stage - 1].boss).length;
-    const bosses = rows.filter(r => g.STAGES[r.stage - 1].boss).length;
-    const tag = `하드코어 (강화 ${HARD_MODE.up}/Lv${HARD_MODE.lv} 공략 편성) ${wins}/${g.STAGES.length} · 보스 전장 ${bossWins}/${bosses}`;
-    if (wins < HARD_MODE.min || wins > HARD_MODE.max) { console.error(`  ✗ ${tag} — 기대 ${HARD_MODE.min}~${HARD_MODE.max}`); failed++; }
-    else if (bossWins > HARD_MODE.bossMax) { console.error(`  ✗ ${tag} — 보스 전장이 너무 쉽다 (최대 ${HARD_MODE.bossMax})`); failed++; }
-    else console.log(`  ✓ ${tag}`);
-  }
+  // 4.20: 하드코어는 만렙 기준 — 가장 잘 맞는 편성으로 반쯤 (전장마다 hardTune 으로 맞췄다)
+  failed += checkHardFull();
   failed += checkEvents();
   // 4.16 무한 전장: 끝이 없다 — 보스를 섞어 가파르게 세지니 다 키워도 몇 분 안에 무너진다
   for (const X of ENDLESS_EXPECT) {
@@ -653,16 +643,39 @@ function runEvent(k, upLv, unitLv, seeds, tweak) {
   return r;
 }
 
-function checkEvents() {
-  let failed = 0;
-  const n = loadEngine(12345).EVENT_STAGES.length;
-  const timed = (k, X) => EVENT_SEEDS.reduce((w, sd) => w + (runStage(loadEngine(sd), 0, X.up, X.lv, false, 'counter', false, { event: k, timed: true }).win ? 1 : 0), 0);
-  for (let k = 0; k < n; k++) {
-    const hi = timed(k, EVENT_MAX), mid = timed(k, EVENT_MID);
-    const tag = `도전 E${k + 1} 공략 편성 + 타이밍 — 강화 ${EVENT_MAX.up}/Lv${EVENT_MAX.lv} ${hi}/${EVENT_SEEDS.length} · Lv${EVENT_MID.lv} ${mid}/${EVENT_SEEDS.length}`;
-    if (hi < EVENT_MAX.timedMin) { console.error(`  ✗ ${tag} — 다 키워도 못 넘는다 (최소 ${EVENT_MAX.timedMin})`); failed++; }
-    else if (mid > EVENT_MID.timedMax) { console.error(`  ✗ ${tag} — 중간 전력으로 넘는다 (최대 ${EVENT_MID.timedMax})`); failed++; }
+/* 4.20: 편성마다 씨앗 10판 승수 → 가장 높은 편성의 승수 */
+function bestOf(decks, run) {
+  const w = {};
+  for (const d of decks) w[d] = FULL_SEEDS.reduce((n, sd) => n + (run(d, sd) ? 1 : 0), 0);
+  const best = Math.max(...Object.values(w));
+  return { w, best, deck: decks.find(d => w[d] === best) };
+}
+function judgeFull(label, X, rows) {
+  let failed = 0, sum = 0;
+  for (const r of rows) {
+    sum += r.best;
+    const tag = `${label} ${r.name} 만렙(강화 ${X.up}/Lv${X.lv}) 최선 ${r.deck} ${r.best}/${FULL_SEEDS.length}`;
+    if (r.best < X.min) { console.error(`  ✗ ${tag} — 만렙으로도 거의 못 넘는다`); failed++; }
+    else if (r.best > X.max) { console.error(`  ✗ ${tag} — 만렙이면 거의 늘 넘는다`); failed++; }
     else console.log(`  ✓ ${tag}`);
+  }
+  const rate = sum / (rows.length * FULL_SEEDS.length), tag = `${label} 만렙 기준 승률 ${Math.round(rate * 100)}% (기대 ${X.sumMin * 100}~${X.sumMax * 100}%)`;
+  if (rate < X.sumMin || rate > X.sumMax) { console.error('  ✗ ' + tag); failed++; } else console.log('  ✓ ' + tag);
+  return failed;
+}
+function checkHardFull() {
+  const rows = HARD_FULL.stages.map(s => Object.assign({ name: 'S' + s }, bestOf(HARD_FULL.decks, (d, sd) =>
+    runStage(loadEngine(sd), s - 1, HARD_FULL.up, HARD_FULL.lv, false, d, false, { timed: true, hard: true, full: true }).win)));
+  return judgeFull('하드코어', HARD_FULL, rows);
+}
+function checkEvents() {
+  const n = loadEngine(12345).EVENT_STAGES.length, rows = [];
+  for (let k = 0; k < n; k++) rows.push(Object.assign({ name: 'E' + (k + 1) }, bestOf(EVENT_FULL.decks, (d, sd) =>
+    runStage(loadEngine(sd), 0, EVENT_FULL.up, EVENT_FULL.lv, false, d, false, { event: k, timed: true }).win)));
+  let failed = judgeFull('도전', EVENT_FULL, rows);
+  for (let k = 0; k < n; k++) {
+    const mid = EVENT_SEEDS.reduce((w, sd) => w + (runStage(loadEngine(sd), 0, EVENT_MID.up, EVENT_MID.lv, false, 'counter', false, { event: k, timed: true }).win ? 1 : 0), 0);
+    if (mid > EVENT_MID.timedMax) { console.error(`  ✗ 도전 E${k + 1} 중간 전력(Lv${EVENT_MID.lv}) ${mid}/${EVENT_SEEDS.length} — 넘는다`); failed++; }
   }
   return failed;
 }
@@ -700,6 +713,9 @@ if (args[0] === '--event') {
 } else if (args[0] === '--echeck') {
   // node tools/sim.js --echeck   4.18 도전 전장 검사만
   process.exitCode = checkEvents() ? 1 : 0;
+} else if (args[0] === '--hcheck') {
+  // node tools/sim.js --hcheck   4.20 하드코어 만렙 기준 검사만
+  process.exitCode = checkHardFull() ? 1 : 0;
 } else if (args[0] === '--check') {
   check();
 } else if (args[0] === '--tune') {
@@ -766,11 +782,11 @@ if (args[0] === '--event') {
     console.log('  + ' + id.padEnd(14) + w + '  (' + (w - base >= 0 ? '+' : '') + (w - base) + ')');
   }
 } else if (args[0] === '--hardcore') {
-  // node tools/sim.js --hardcore [강화Lv] [병종Lv] [시작] [끝]   공략 편성으로 하드코어
+  // node tools/sim.js --hardcore [강화Lv] [병종Lv] [시작] [끝] [편성]   하드코어 (4.20: 만렙 기준 — 전장을 다 연 계정)
   SIM_HARD = true;
-  const upLv = +(args[1] || 10), unitLv = +(args[2] || 15), from = +(args[3] || 0), to = +(args[4] || 30);
+  const upLv = +(args[1] || 10), unitLv = +(args[2] || 30), from = +(args[3] || 0), to = +(args[4] || 80);
   const g = loadEngine(12345), rows = [];
-  for (let i = from; i < to; i++) rows.push(runStage(g, i, upLv, unitLv, false, 'smart'));
+  for (let i = from; i < to; i++) rows.push(runStage(g, i, upLv, unitLv, false, args[5] || 'combo', false, { timed: true, full: true }));
   printTable(rows, upLv, unitLv);
 } else if (args[0] === '--style') {
   // node tools/sim.js --style <강화> <Lv> [시작] [끝]   원거리만 · 근접만 · 공략 편성

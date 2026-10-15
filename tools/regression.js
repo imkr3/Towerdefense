@@ -1782,10 +1782,25 @@ test('4.18: save keeps 4th forms only where the 3rd exists; hardcore saturates o
   assert.ok(/s\.evo3 = evo3;/.test(main) && /EVOLUTIONS3\[k\] && evo2\[k\] !== undefined/.test(main));
   const H = vm.runInContext('({HARDCORE, hardcoreEnemyMul, EVENT_STAGES, EVENT_TOUGH})', ctx);
   const late = STAGES.reduce((a, st) => (st.enemyMul || 1) > (a.enemyMul || 1) ? st : a, STAGES[0]);
-  assert.ok(H.hardcoreEnemyMul(late) < late.enemyMul * H.HARDCORE.enemyMul * 0.5, 'late hardcore no longer ×4.6 of an already huge multiplier');
+  assert.ok(H.hardcoreEnemyMul(late) > late.enemyMul, 'late hardcore still harder than the campaign');   // 4.20: 만렙 기준 보정 뒤로는 포화가 아니라 전장별 hardTune
   assert.ok(H.hardcoreEnemyMul(STAGES[0]) >= H.HARDCORE.mulFloor, 'early floor kept');
   assert.ok(H.HARDCORE.sally < 1, 'smaller hardcore garrisons');
   for (const st of H.EVENT_STAGES) assert.ok((H.EVENT_TOUGH[st.event.id] || [1])[0] > 1, st.event.id + ' tougher');
+});
+
+/* ---------------- 4.20 만렙 30 · 만렙 기준 하드코어 · 도전 ---------------- */
+test('4.20: max level is 30 everywhere; hardcore is tuned per stage for a max-level account, enemies never much softer than the campaign', () => {
+  const D = vm.runInContext('({unitLevelCap, UNIT_LEVEL_HARD_CAP, UPGRADES, HARD_TUNE, hardcoreEnemyMul})', ctx);
+  assert.strictEqual(D.unitLevelCap(STAGES.length, D.UPGRADES.academy.max), 30, 'cap 30 with the academy maxed');
+  assert.strictEqual(D.UNIT_LEVEL_HARD_CAP + D.UPGRADES.academy.max, 30);
+  assert.strictEqual(D.HARD_TUNE.length, STAGES.length, 'one tune per stage');
+  STAGES.forEach((st, i) => {
+    assert.ok(st.hardTune > 0 && isFinite(st.hardTune), 'stage ' + (i + 1) + ' tuned');
+    // 7막 끝 몇 곳은 진군도 만렙이어야 겨우 넘는 곳이라 적 능력치만은 진군과 비슷 (성채 · 요새 · 보스 · 특성 · 격앙이 하드코어를 만든다)
+    assert.ok(D.hardcoreEnemyMul(st) >= (st.enemyMul || 1) * 0.9, 'stage ' + (i + 1) + ' hardcore enemies not softer than the campaign');
+  });
+  const main = fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8');
+  assert.ok(/만렙\(Lv30\) 기준/.test(main), 'hardcore panel says it is tuned for max level');
 });
 
 console.log(count + ' regression checks passed');
