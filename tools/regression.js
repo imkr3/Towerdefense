@@ -1797,7 +1797,8 @@ test('4.20: max level is 30 everywhere; hardcore is tuned per stage for a max-le
   STAGES.forEach((st, i) => {
     assert.ok(st.hardTune > 0 && isFinite(st.hardTune), 'stage ' + (i + 1) + ' tuned');
     // 7막 끝 몇 곳은 진군도 만렙이어야 겨우 넘는 곳이라 적 능력치만은 진군과 비슷 (성채 · 요새 · 보스 · 특성 · 격앙이 하드코어를 만든다)
-    assert.ok(D.hardcoreEnemyMul(st) >= (st.enemyMul || 1) * 0.9, 'stage ' + (i + 1) + ' hardcore enemies not softer than the campaign');
+    // 4.21: 보스 전장은 보스 각인이 어려움을 맡아 능력치는 진군보다 조금 낮을 수 있다
+    assert.ok(D.hardcoreEnemyMul(st) >= (st.enemyMul || 1) * (st.boss && st.bossId ? 0.7 : 0.9), 'stage ' + (i + 1) + ' hardcore enemies not much softer than the campaign');
   });
   const main = fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8');
   assert.ok(/만렙\(Lv30\) 기준/.test(main), 'hardcore panel says it is tuned for max level');
