@@ -2310,8 +2310,9 @@ EVENT_STAGES.push(
    * 도전마다 여유가 달라(앞의 다섯은 넉넉, 뒤의 셋은 빠듯) 따로 맞춘다: [적 배율, 보스 체력] */
 // 4.20: 만렙(Lv30 · 강화 10) 기준으로 다시 — 가장 잘 맞는 편성 + 타이밍 공략의 승률이 50% 안팎 (하드코어와 같은 기준)
 // 4.21: 보스 각인을 더하고 승률 목표를 30% 안팎으로 — 각인이 무거운 곳(거신 · 균열 · 모래시계)은 능력치를 오히려 덜었다
-const EVENT_TOUGH = { eclipse: [1.76, 1.76], titan: [1.6, 1.6], fleet: [2.49, 2.49], rift: [1.25, 1.29], demonking: [1.78, 1.78],
-                      train: [1.285, 1.285], masque: [1.9, 1.9], hourglass: [1.08, 1.08] };
+// 4.22: 분신이 돌아올 때마다 덜 채우게 되어(끝나지 않는 판 막기) 분신 도전(월식 · 균열 · 가면무도회)이 쉬워져 다시 올렸다 · 토템 원거리 우선으로 마왕도 조금
+const EVENT_TOUGH = { eclipse: [2.341, 2.341], titan: [1.6, 1.6], fleet: [2.49, 2.49], rift: [1.538, 1.587], demonking: [1.807, 1.807],
+                      train: [1.285, 1.285], masque: [1.938, 1.938], hourglass: [1.08, 1.08] };
 EVENT_STAGES.forEach((st, k) => {
   st.eventIndex = k; st.opening = 'rush';
   const tg = EVENT_TOUGH[st.event.id] || [1, 1];

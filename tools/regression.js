@@ -1853,5 +1853,30 @@ test('4.21: affixes — fund heist fires once, death mark hits the strongest, to
   b.updatePending(A.charge.warn + 0.1);
   assert.ok(boss.x < x0 - 100 && boss.x > sp.x, 'rammed up to the front soldier'); assert.ok(sp.hp < sp.maxHp, 'trampled');
 });
+test('4.22: clone heals fade, totems stand in reach, ranged soldiers shoot totems first, charge never backs off', () => {
+  const A = vm.runInContext('({BOSS_AFFIXES})', ctx).BOSS_AFFIXES;
+  const bi = STAGES.findIndex(st => st.boss && st.bossId);
+  const b = new Battle(bi, save(), null, { hard: true });
+  const boss = b.spawnEnemy(STAGES[bi].bossId, 1200); boss.affixes = null; boss.s = Object.assign({}, boss.s, { special: null, phases: null });
+  const run = sec => { for (let i = 0; i < sec * 30; i++) { b.updatePending(1 / 30); b.step(b.enemies, b.allies, b.allyCastle, 1 / 30, false); } };
+  // 분신: 돌아올 때마다 덜 채운다 (끝나지 않는 판 막기)
+  const gains = [];
+  for (let k = 0; k < 3; k++) { boss.hp = boss.maxHp * 0.3; b.bossAct(boss, A.clone); const h = boss.hp; run(A.clone.life + 0.5); gains.push(boss.hp - h); }
+  assert.ok(gains[0] > 0 && gains[1] < gains[0] * 0.8 && gains[2] < gains[1] * 0.8, 'clone heal fades: ' + gains.map(Math.round));
+  // 수호 토템: 요새 뒤에는 박지 않는다
+  boss.x = b.enemyCastle.x - 30; b.bossAct(boss, A.totem);
+  const tots = b.enemies.filter(e => e.guardOf === boss && !e.dead); assert.equal(tots.length, 2);
+  for (const t of tots) assert.ok(t.x <= b.enemyCastle.x - 50, 'totem in reach: ' + t.x);
+  // 원거리 병사: 사거리 안의 토템을 먼저 노린다
+  boss.x = 900; tots.forEach((t, i) => { t.x = 960 + i * 20; });
+  const ar = b.makeAlly(U.archer, 900 - 150); b.allies.push(ar);
+  b.update(1 / 30);
+  assert.ok(b.totemUp, 'totem flag'); assert.ok(b.findTarget(ar, b.enemies).guardOf === boss, 'archer aims at a totem');
+  // 돌진: 바로 앞에 붙은 병사가 있어도 뒤로 물러나지 않는다
+  b.enemies.filter(e => e.guardOf).forEach(t => { t.dead = true; }); b.allies.forEach(x => { x.dead = true; }); b.allies = [];
+  boss.x = 1200; const sp = b.makeAlly(U.spear, 1200 - 5); b.allies.push(sp);
+  b.bossAct(boss, A.charge); b.updatePending(A.charge.warn + 0.1);
+  assert.ok(boss.x <= 1200 + 0.01, 'no backward charge: ' + boss.x);
+});
 
 console.log(count + ' regression checks passed');
