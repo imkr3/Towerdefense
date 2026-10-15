@@ -2260,8 +2260,9 @@ EVENT_STAGES.push(
 /* 4.18: 다 키운 편성이면 도전 여덟이 모두 성채 100% 로 끝났다 (하드코어보다 쉽다는 말이 맞았다).
  * 도전을 더 억세게: 적 배율 · 보스 체력에 곱한다.
    * 도전마다 여유가 달라(앞의 다섯은 넉넉, 뒤의 셋은 빠듯) 따로 맞춘다: [적 배율, 보스 체력] */
-const EVENT_TOUGH = { eclipse: [2.1, 2.1], titan: [2, 2], fleet: [1.85, 1.85], rift: [1.5, 1.55], demonking: [2, 2],
-                      train: [1.45, 1.45], masque: [1.45, 1.45], hourglass: [1.45, 1.45] };
+// 4.20: 만렙(Lv30 · 강화 10) 기준으로 다시 — 가장 잘 맞는 편성 + 타이밍 공략의 승률이 50% 안팎 (하드코어와 같은 기준)
+const EVENT_TOUGH = { eclipse: [2.98, 2.98], titan: [3.57, 3.57], fleet: [2.58, 2.58], rift: [2.26, 2.33], demonking: [2.44, 2.44],
+                      train: [1.62, 1.62], masque: [2.24, 2.24], hourglass: [1.625, 1.625] };
 EVENT_STAGES.forEach((st, k) => {
   st.eventIndex = k; st.opening = 'rush';
   const tg = EVENT_TOUGH[st.event.id] || [1, 1];
