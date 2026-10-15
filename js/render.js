@@ -3250,7 +3250,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
   const depthOn = !flash && MODEL.depth;
   const wrapped = autoInk || depthOn;                // 4.2: 잉크가 꺼져도 그림자를 다루려고 감싼다
   if (wrapped) { ctx.fill = inkedFill; ctx.stroke = inkedStroke; ctx._inkW = 0.95 * s; ctx._noInk = !autoInk; ctx._depth = depthOn; }
-  if (depthOn) ctx.fillRect = shadedFillRect;        // 4.5: 사각형도 같은 그림자 규칙으로
+  if (depthOn) { ctx.fillRect = shadedFillRect; ctx.strokeRect = shadedStrokeRect; ctx.fillText = shadedFillText; }   // 4.5 · 4.19: 사각형 · 글자도 같은 그림자 규칙으로
   if (HUMANOID[st.shape]) armSwing(S);
   if (st.evo && !st.bigEvo) (NO_CAPE[st.shape] ? evoBanner : evoCape)(S);   // 진화: 등 뒤로 망토, 기계·짐승은 군기
 
@@ -6275,7 +6275,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
         ctx.fillStyle = F3(gold); tri(S, ox - 4 * s, oy + orR + 2 * s, ox + 4 * s, oy + orR + 2 * s, ox, oy + orR + 7 * s, F3(gold));
         if (S.flash) { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(ox, oy, orR, 0, 7); ctx.fill(); }
         else {
-          ctx.save(); ctx._skipInk = true;
+          ctx.save(); ctx._skipInk = true; ctx.shadowColor = 'transparent';   // 4.19: 오려 낸 구슬 속엔 그림자가 필요 없다
           const g = ctx.createRadialGradient(ox - orR * 0.3, oy - orR * 0.3, orR * 0.1, ox, oy, orR);
           g.addColorStop(0, '#f6f0ff'); g.addColorStop(0.45, acc); g.addColorStop(1, '#3a2a8a');
           ctx.fillStyle = g; ctx.beginPath(); ctx.arc(ox, oy, orR, 0, 7); ctx.fill();
@@ -8798,7 +8798,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
   if (st.evo) evoCrest(S);                        // 진화: 머리 위 금빛 문장
 
   if (wrapped) { delete ctx.fill; delete ctx.stroke; ctx._depth = false; ctx._noInk = false; }
-  if (depthOn) delete ctx.fillRect;
+  if (depthOn) { delete ctx.fillRect; delete ctx.strokeRect; delete ctx.fillText; }
 
   if (hurt) {
     ctx.strokeStyle = 'rgba(255,255,255,.8)';
@@ -8941,6 +8941,18 @@ function shadowless(ctx) {
 function shadedFillRect(x, y, w, h) {
   if (shadowless(this)) { const sc = this.shadowColor; this.shadowColor = 'transparent'; _fillRect0.call(this, x, y, w, h); this.shadowColor = sc; return; }
   _fillRect0.call(this, x, y, w, h);
+}
+/* 4.19: 테두리 사각형 · 글자도. 홀로그램 대마도사의 룬 판(strokeRect · 'lighter')과 별의 대현자의 마법서 글자(fillText)가
+ * 그림자를 단 채 합성돼 멀린 3진 · 4진 하나를 그리는 데 7~9ms 씩 들었다 (다른 병종은 0.5ms 안팎). */
+const _strokeRect0 = CanvasRenderingContext2D.prototype.strokeRect, _fillText0 = CanvasRenderingContext2D.prototype.fillText;
+function noShadowCall(ctx, fn, args) { const sc = ctx.shadowColor; ctx.shadowColor = 'transparent'; fn.apply(ctx, args); ctx.shadowColor = sc; }
+function shadedStrokeRect() {
+  if (this.globalAlpha < 0.9 || this.globalCompositeOperation !== 'source-over') return noShadowCall(this, _strokeRect0, arguments);
+  _strokeRect0.apply(this, arguments);
+}
+function shadedFillText() {
+  if (shadowless(this)) return noShadowCall(this, _fillText0, arguments);
+  _fillText0.apply(this, arguments);
 }
 function inkedFill(a) {
   if (this._depth && shadowless(this)) {
