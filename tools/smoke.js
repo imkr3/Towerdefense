@@ -413,6 +413,31 @@ async function runSize(browser, size) {
     else console.log('  ✓ 데이터 문구 전부 영어로 옮겨짐');
     await page.close();
   }
+  // 4.19 편의: 별 모으기 · 강화 여러 단계 한 번에 · 업적 알림 요약 · ★3 조건
+  {
+    const page = await browser.newPage({ viewport: { width: 844, height: 390 } });
+    const errs = []; page.on('pageerror', e => errs.push(e.message));
+    await page.goto('file://' + path.join(__dirname, '..', 'index.html'));
+    await page.evaluate(() => { const stars = {}; for (let i = 0; i < 30; i++) stars[i] = i === 4 || i === 17 ? 2 : 3;
+      localStorage.setItem('stick-kingdom-save-v1', JSON.stringify({ cleared: 30, coins: 50000, tutorial: true, stars })); });
+    await page.reload(); await page.waitForTimeout(300);
+    const r = await page.evaluate(() => {
+      titleAnim.on = false; show('scr-map');
+      const hunt = $('#btn-star-hunt'), n = +hunt.querySelector('b').textContent, seen = [];
+      for (let k = 0; k < 3; k++) { hunt.click(); seen.push(mapSel); }
+      show('scr-shop'); const before = save.upgrades.power || 0, many = document.querySelectorAll('.up-many').length;
+      const pb = [...document.querySelectorAll('.up-card')].find(c => c.querySelector('.up-name').textContent === UPGRADES.power.name).querySelector('.up-many');
+      const coins0 = save.coins; if (pb) pb.click();
+      for (const k in save.achv) delete save.achv[k]; checkAchievements(); const tx = $('.toast').textContent;
+      return { n, seen, many, power: [before, save.upgrades.power], spent: coins0 - save.coins, toast: tx, hidden: hunt.hidden };
+    });
+    if (r.n !== 2 || r.seen.join() !== '4,17,4') failures.push('별 모으기 버튼이 ★3이 아닌 전장을 돌지 않는다 ' + JSON.stringify(r));
+    else if (!r.many || !(r.power[1] - r.power[0] >= 2) || r.spent <= 0) failures.push('강화 여러 단계 한 번에가 안 된다 ' + JSON.stringify(r));
+    else if (!/외 \d+개/.test(r.toast) || r.toast.length > 120) failures.push('업적 알림이 요약되지 않는다 ' + JSON.stringify(r.toast));
+    else if (errs.length) failures.push('4.19 편의 기능 오류 ' + errs.join(' | '));
+    else console.log('  ✓ 4.19 별 모으기 · 강화 한 번에 · 업적 알림 요약');
+    await page.close();
+  }
   await browser.close();
   console.log('  ' + '-'.repeat(58));
   if (failures.length) {

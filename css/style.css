@@ -627,7 +627,7 @@ button:focus-visible{outline:3px solid #48b9ee;outline-offset:3px;}
 .gacha-side{min-height:0}.gacha-side .rate-box{flex:1;min-height:45px;overflow-y:auto}.gacha-side>.btn,.gacha-side>.pity-box{flex-shrink:0}
 
 /* ================= 진군도: 장(章)별 진군로 + 전장 정보 ================= */
-#scr-map .bar .progress-wrap{flex:0 1 220px;padding:0;color:#e9efe6;font-size:11px}
+#scr-map .bar .progress-wrap{flex:0 1 290px;padding:0;color:#e9efe6;font-size:11px}
 #scr-map .bar-title{flex:0 0 auto;text-align:left}
 #scr-map .bar .progress-wrap + .coin-chip{margin-left:auto}
 .chapter-tabs{display:flex;gap:6px;padding:8px 14px 0;flex-shrink:0}
@@ -1519,3 +1519,16 @@ body{background:var(--bg0);color:var(--tx)}
 .unit-card.evolved3{border-color:#ffd76a99;box-shadow:0 0 0 1px #ffd76a44,0 0 18px #c88aff33,var(--panel-shadow)}
 .unit-card.evolved3 .unit-ico{border-color:#ffd76a;box-shadow:0 0 12px #ffd76a77}
 .unit-tile.evolved3 canvas{filter:drop-shadow(0 0 5px #ffd76acc) drop-shadow(0 0 9px #c88aff88)}
+
+/* 4.19 강화 병영: 여러 단계 한 번에 */
+.up-btns{display:flex;gap:8px;align-items:stretch}
+.up-btns .up-buy{flex:1;min-width:0}
+.up-many{flex:0 0 auto;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:1px;padding:4px 12px;line-height:1.1;
+  border-color:#e8c45a;color:#ffe7a0;background:linear-gradient(#3a3320,#2a2414)}
+.up-many b{font-size:14px}
+.up-many small{font-size:11px;opacity:.85;font-weight:600}
+/* 4.19 진군도: ★3이 아닌 전장으로 */
+.star-hunt{flex:0 0 auto;padding:3px 10px;min-height:0;font-size:13px;border-radius:999px;border-color:#e8c45a99;color:#ffe08a;background:#2a2414cc;white-space:nowrap}
+.star-hunt b{color:#fff}
+/* 4.19: 전투가 끝난 뒤의 알림(업적 달성 등)은 결과 카드의 숫자를 가리지 않게 맨 위로 */
+body:has(#result.show) .toast{top:calc(6px + var(--st))}

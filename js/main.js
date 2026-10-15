@@ -3,7 +3,7 @@
  * ======================================================================= */
 
 
-const APP_VERSION = '4.18.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
+const APP_VERSION = '4.19.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
 
 function defaultSave() {
   const lv = {};
@@ -185,13 +185,13 @@ function askConfirm(title, text, onYes) {
 function fmtNum(n) { return Math.floor(n || 0).toLocaleString('en-US'); }
 
 let toastTimer = null;
-function toast(msg) {
+function toast(msg, ms) {
   let t = $('.toast');
   if (!t) { t = document.createElement('div'); t.className = 'toast'; document.body.appendChild(t); }
   t.textContent = msg;
   t.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 1400);
+  toastTimer = setTimeout(() => t.classList.remove('show'), ms || 1400);
 }
 
 /* ------------------------ 일일 임무 / 업적 ------------------------ */
@@ -244,7 +244,10 @@ function checkAchievements() {
   if (earned.length) {
     saveGame(save);
     SFX.levelUp();
-    toast('업적 달성: ' + earned.map(a => a.name).join(', '));
+    // 4.19: 한꺼번에 여럿 달성하면 화면을 덮는 긴 목록 대신 셋까지 + 보상 합계
+    const gold = earned.reduce((n, a) => n + (a.gold || 0), 0), stone = earned.reduce((n, a) => n + (a.stone || 0), 0);
+    const names = earned.slice(0, 3).map(a => a.name).join(', ') + (earned.length > 3 ? ' 외 ' + (earned.length - 3) + '개' : '');
+    toast('업적 달성: ' + names + (gold ? ' · 💰 +' + fmtNum(gold) : '') + (stone ? ' 🔮 +' + stone : ''), earned.length > 1 ? 2600 : 1800);
   }
   updateQuestBadge();
   return earned;
@@ -400,6 +403,12 @@ function renderMap() {
     save.cleared + ' / ' + STAGES.length + ' <span class="gold-txt">★ ' +
     totalStars + ' / ' + (STAGES.length * 3) + '</span>';
 
+  // 4.19: ★3을 못 받은 전장 수 · 누르면 다음 곳으로 (80곳을 장마다 뒤지지 않게)
+  const missing = starHuntList();
+  const hunt = $('#btn-star-hunt');
+  hunt.hidden = !missing.length;
+  hunt.querySelector('b').textContent = missing.length;
+  hunt.title = '★3이 아닌 전장 ' + missing.length + '곳';
   const current = Math.min(save.cleared, STAGES.length - 1);
   if (mapChapter < 0) mapChapter = chapterOf(current);
   if (mapSel < 0 || mapSel > save.cleared) mapSel = current;
@@ -511,6 +520,24 @@ function renderMap() {
   renderStageDetail(mapSel >= ch.from && mapSel < ch.to ? mapSel : -1);
 }
 
+/* 4.19 별 모으기: 돌파했지만 ★3이 아닌 전장들 */
+function starHuntList() {
+  const out = [];
+  for (let i = 0; i < Math.min(save.cleared, STAGES.length); i++) if ((save.stars[i] || 0) < 3) out.push(i);
+  return out;
+}
+function starHuntNext() {
+  const list = starHuntList();
+  if (!list.length) return;
+  const ch = CHAPTERS[mapChapter], from = ch && !ch.endless && !ch.event && !ch.expedition ? mapSel : -1;
+  const i = list.find(k => k > from) ?? list[0];
+  mapChapter = chapterOf(i);
+  mapSel = i;
+  SFX.ui();
+  renderMap();
+  toast((i + 1) + '전장 · ' + STAGES[i].name + ' · ★' + (save.stars[i] || 0));
+}
+
 function renderStageDetail(i) {
   // 고른 전장의 곡과 보스곡을 미리 녹음해 둔다 (출진하자마자 바로 나오게)
   if (STAGES[i]) BGM.prefetch([stageMusic(STAGES[i]), STAGES[i].bossId ? bossTrack(STAGES[i], STAGES[i].bossId) : null]);
@@ -554,7 +581,9 @@ function renderStageDetail(i) {
   if (hardOpen) {
     const hc = document.createElement('div');
     hc.className = 'sd-hard' + (save.hard[i] ? ' done' : '');
-    const extra = hardcoreMods(st, i).filter(m => !(st.mods || []).includes(m)).map(m => STAGE_MODS[m].name);
+    const hm = hardcoreMods(st, i);
+    const extra = hm.filter(m => !(st.mods || []).includes(m)).map(m => STAGE_MODS[m].name);
+    const dropped = (st.mods || []).filter(m => !hm.includes(m)).map(m => STAGE_MODS[m].name);   // 4.19: 하드코어에서 빠지는 특성 (80전장)
     // 글자 조각마다 따로 감싸 둔다 — 영어일 때 조각이 통째로 번역된다
     const w = k => '<i>' + k + '</i>';
     hc.innerHTML = '<div class="sd-hard-txt"><b>' + (save.hard[i] ? '💀 하드코어 돌파 완료' : '💀 하드코어') + '</b>' +
@@ -562,6 +591,7 @@ function renderStageDetail(i) {
       ' · ' + w('요새') + ' ' + fmtNum(hardcoreFortHp(st)) +
       ' · ' + w('성채') + ' ' + Math.round(HARDCORE.castleMul * 100) + '% · ' + w('왕명 느림') + ' · ' + w('격앙') +
       (extra.length ? ' · ' + w('특성 +') + extra.map(w).join('·') : '') +
+      (dropped.length ? ' · ' + w('특성 −') + dropped.map(w).join('·') : '') +
       ' · ' + w('각성 경계') + ' ' + w('3진 하나마다 적') + ' +' + Math.round(AWAKEN_TAX * 100) + '%</span>' +
       '<small>' + w('보상 골드') + ' ×' + HARDCORE.reward + (save.hard[i] ? '' : ' · ' + w('첫 돌파') + ' 🔮 +' + HARDCORE.stones) + '</small></div>';
     const hb = document.createElement('button');
@@ -847,8 +877,26 @@ function renderShop() {
       '<div class="up-desc">' + u.desc + '</div>' +
       (fxName ? '<div class="up-fx"><i>' + fxName + '</i> <b>' + fxNow + '</b>' + (fxNext ? ' → <b class="nx">' + fxNext + '</b>' : '') + '</div>' : '') +
       '<div class="pips">' + pips + '</div>' +
-      '<button class="btn primary up-buy"' + (maxed ? ' disabled' : '') + '>' +
-        (maxed ? '최대 강화 완료' : '💰 ' + cost + ' 골드로 강화') + '</button>';
+      '<div class="up-btns"><button class="btn primary up-buy"' + (maxed ? ' disabled' : '') + '>' +
+        (maxed ? '최대 강화 완료' : '💰 ' + cost + ' 골드로 강화') + '</button></div>';
+    // 4.19: 골드가 넉넉하면 여러 단계를 한 번에 (예전엔 강화 13종 × 10단계를 하나씩 눌러야 했다)
+    let many = 0, manyCost = 0;
+    for (let l = lv; l < u.max; l++) { const c = upgradeCost(key, l); if (manyCost + c > save.coins) break; manyCost += c; many++; }
+    if (many >= 2) {
+      const mb = document.createElement('button');
+      mb.className = 'btn up-many';
+      mb.innerHTML = '<b>⏫ +' + many + '단계</b><small>💰 ' + fmtNum(manyCost) + '</small>';
+      mb.addEventListener('click', () => {
+        if (save.coins < manyCost) { toast('골드가 부족합니다'); return; }
+        save.coins -= manyCost;
+        save.upgrades[key] = lv + many;
+        saveGame(save);
+        renderShop();
+        SFX.levelUp();
+        toast(u.name + ' 레벨 ' + (lv + many) + ' 완료');
+      });
+      card.querySelector('.up-btns').appendChild(mb);
+    }
     if (!maxed) {
       card.querySelector('.up-buy').addEventListener('click', () => {
         if (save.coins < cost) { toast('골드가 부족합니다'); return; }
@@ -1921,7 +1969,8 @@ function showResult() {
     }
     const nextUnit = ROSTER_UNITS.find(u => u.unlockStage === battle.stageIndex + 2);
     if (nextUnit) lines.push('새 병종 해금: ' + nextUnit.name);
-    if (battle.stars < 3) lines.push('성채를 더 지켜내면 ★3을 받을 수 있습니다.');
+    // 4.19: 막연한 '더 지켜내면' 대신 기준과 이번 성채를 숫자로
+    if (battle.stars < 3) lines.push('★3 조건 · 성채 90% 이상 남기기 (이번 ' + Math.floor(battle.allyCastle.hp / battle.allyCastle.maxHp * 100) + '%)');
     if (battle.stoneGain) lines.push('소환석 🔮 +' + battle.stoneGain);
     if (battle.stageIndex + 1 >= STAGES.length) lines.push('왕국 방어전 전 전장 제패!');
   } else {
@@ -2572,6 +2621,7 @@ function openSettings() {
 function initSettings() {
   $('#btn-settings').addEventListener('click', openSettings);
   $('#btn-map-settings').addEventListener('click', openSettings);
+  $('#btn-star-hunt').addEventListener('click', starHuntNext);   // 4.19
   $('#btn-battle-settings').addEventListener('click', openSettings);
   $$('#set-lang button').forEach(b => b.addEventListener('click', () => {
     if (Settings.get('lang') === b.dataset.v) return;
