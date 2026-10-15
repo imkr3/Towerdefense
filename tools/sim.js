@@ -309,7 +309,7 @@ const SMART_ACT2 = { up: 10, lv: 14 };   // 3.1: 2막은 격앙·보스 격노�
 /* 진짜 어려운 전장. 전설·신화를 다 가져도 몰아 넣기만 해서는 못 넘고,
  * 특성에 맞춘 공략 편성이라야 넘는다. HARD_SEEDS 판 중 이긴 횟수로 본다. */
 const LEGEND_PROOF = [
-  { stage: 18, up: 7, lv: 11 }, { stage: 20, up: 7, lv: 11 },
+  { stage: 18, up: 7, lv: 11, legendMax: 2 }, { stage: 20, up: 7, lv: 11 },   // 4.23: S18 은 보스 등장 충격파 뒤로 공략 · 전설 편성의 폭이 좁아 전설만 2판까지
   // 3.4: S28(물량+중갑)은 뺐다. 영웅의 공격력이 갑주를 뚫는 건 이제 의도한 몫이다
   { stage: 27, up: 9, lv: 13 }, { stage: 30, up: 9, lv: 13 },
   // 3.3 3막의 조합 전장
@@ -492,7 +492,7 @@ function check() {
   for (const h of LEGEND_PROOF) {
     const [r] = runHard(h.up, h.lv, 0, h.stage - 1, h.stage);
     const tag = `S${h.stage} ${r.mods} (강화 ${h.up}/Lv${h.lv}) 전설만 ${r.legend}/${HARD_SEEDS.length} · 원거리만 ${r.ranged}/${HARD_SEEDS.length} · 공략 ${r.counter}/${HARD_SEEDS.length}`;
-    if (r.legend > LEGEND_PROOF_MAX) { console.error(`  ✗ 전설만으로 넘어가 버린다 ${tag}`); failed++; }
+    if (r.legend > (h.legendMax || LEGEND_PROOF_MAX)) { console.error(`  ✗ 전설만으로 넘어가 버린다 ${tag}`); failed++; }
     else if (r.ranged > LEGEND_PROOF_MAX) { console.error(`  ✗ 원거리만 몰아 넣어도 넘어가 버린다 ${tag} · 원거리만 ${r.ranged}`); failed++; }
     else if (r.counter < COUNTER_MIN) { console.error(`  ✗ 공략 편성으로도 못 넘는다 ${tag}`); failed++; }
     else console.log(`  ✓ 조합이 필요한 전장 ${tag}`);
