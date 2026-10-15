@@ -1408,7 +1408,8 @@ class Battle {
         const o = f.cloneOf || f.guardOf;
         if (f.cloneOf) f.cloneT -= dt;
         if (o.dead || (f.cloneOf && f.cloneT <= 0)) {
-          if (!o.dead && f.cloneOf) { o.heal(o.maxHp * f.cloneHeal); this.fx.push({ type: 'aura', x: o.x, row: o.row, r: 110, t: 0.6, life: 0.6, color: '#c06aff' }); this.announce('분신이 보스에게 돌아갔다', 1.6); }
+          // 4.22: 돌아올 때마다 덜 채운다 (×0.7) — 화력이 약한 편성이면 분신이 보스를 끝없이 채워 판이 끝나지 않았다
+          if (!o.dead && f.cloneOf) { o.heal(o.maxHp * f.cloneHeal * Math.pow(0.7, o.cloneReturns || 0)); o.cloneReturns = (o.cloneReturns || 0) + 1; this.fx.push({ type: 'aura', x: o.x, row: o.row, r: 110, t: 0.6, life: 0.6, color: '#c06aff' }); this.announce('분신이 보스에게 돌아갔다', 1.6); }
           this.fx.push({ type: 'poof', x: f.x, row: f.row, t: 0.45, life: 0.45, color: f.cloneOf ? '#c06aff' : '#ffd76a', big: true });
           f.exploded = true; f.hp = 0; f.dead = true; continue;
         }
@@ -1909,7 +1910,8 @@ class Battle {
         let have = 0;
         for (const e of this.enemies) if (!e.dead && e.guardOf === f) have++;
         for (let i = have; i < (a.n || 2); i++) {
-          const x = Math.max(80, Math.min(WORLD - 80, f.x - f.dir * (110 + i * 80)));
+          const home = f.side === 'enemy' ? this.enemyCastle.x - 50 : this.allyCastle.x + 50;   // 요새 뒤로는 박지 않는다 (닿을 수 없다)
+          const x = f.side === 'enemy' ? Math.min(home, f.x - f.dir * (110 + i * 80)) : Math.max(home, f.x - f.dir * (110 + i * 80));
           const t = new Fighter(ENEMIES.wardtotem, f.side, x, null);
           t.maxHp = t.hp = Math.max(1, Math.round(f.maxHp * (a.hp || 0.05)));
           t.gold = 0; t.kind = 'wardtotem'; t.summoned = true; t.guardOf = f; t.wardCut = a.cut || 0.5; t.row = i % 3; t.side = f.side; t.dir = f.dir;
@@ -1984,6 +1986,7 @@ class Battle {
         const d = (e.x - f.x) * f.dir;
         if (d > 0 && (x1 - f.x) * f.dir > d - f.radius) x1 = e.x - f.dir * f.radius;
       }
+      if ((x1 - f.x) * f.dir < 0) x1 = f.x;                // 바로 앞에 붙어 있으면 뒤로 물러나지 않고 그 자리에서 부딪힌다
       for (const e of foes) {
         if (e.dead || e.burrowed || Math.abs(e.x - x1) > 140 + e.radius) continue;
         e.takeDamage(e.maxHp * s.ratio, true);
@@ -2090,6 +2093,17 @@ class Battle {
     let best = null, bestD = Infinity;
     // 비행선 폭격: 사거리 안에서 가장 먼(뒷줄) 적을 노린다
     const back = !!f.ab.backline;
+    // 4.21 수호 토템: 원거리 병사는 사거리 안의 토템을 먼저 쏜다 (안내대로 '사거리 긴 병종' 이 받아치는 길) — 전엔 늘 가까운 보스만 쏴서
+    // 범위 공격이 우연히 닿지 않으면 토템이 한 판 내내 서 있었다
+    if (f.s.ranged && f.side === 'ally') {
+      let tot = null, td = Infinity;
+      for (const e of foes) {
+        if (e.dead || !e.guardOf) continue;
+        const d = (e.x - f.x) * f.dir;
+        if (d >= -f.radius && d <= reach + e.radius && d < td) { td = d; tot = e; }
+      }
+      if (tot) return tot;
+    }
     for (const e of foes) {
       if (e.dead) continue;
       const d = (e.x - f.x) * f.dir;
