@@ -188,6 +188,18 @@ class Fighter {
     this.reflectT = 0;      // 반사 결계: 받은 피해를 때린 자에게 되돌린다
     this.exposedT = 0;      // 약점 노출: 핵(core)이 드러나 피해가 몇 배로 들어간다
     this.curSpecial = null; // 페이즈에 따라 바뀐 고유 기술
+
+    // 4.22: 전투 중에 덧붙던 속성을 처음부터 둔다 — 병사마다 모양(숨은 클래스)이 갈려 뜨거운 반복문의 속성 읽기가
+    // 다형(megamorphic)으로 떨어졌다 (엔진 시간의 절반 남짓이 속성 읽기). 값의 뜻은 그대로: undefined 를 따지는 것은 undefined 로.
+    this.kind = null; this.gold = 0; this.boss = false; this.mul = undefined; this.wave = undefined;
+    this.summoned = false; this.summonedBy = null; this.raisedBy = null; this.creditTo = null; this.dotBy = null;
+    this.shadow = false; this.exploded = false; this.vanish = false; this.reaped = false; this.exposed = false;
+    this.furious = false; this.burrowed = false; this.unveiled = false; this.leapt = false; this.resistFx = false; this.reviveFx = false;
+    this.lifeT = undefined; this.maskCd = undefined; this.bornT = undefined; this.healedAt = undefined; this.throwCd = undefined; this.trainCd = undefined;
+    this.idleT = 0; this.podT = 0; this.salvoN = 0; this.chargeT = 0; this.ramCd = 0; this.horn = false; this.charmGuard = 0; this.reflectRatio = 0;
+    // 4.21 보스 각인
+    this.affixes = null; this.windT = 0; this.guardCut = 0; this.guardOf = null; this.wardCut = 0;
+    this.cloneOf = null; this.cloneT = 0; this.cloneHeal = 0; this.cloneReturns = 0;
   }
 
   /* 기절. 면역 중이거나 부동심이면 걸리지 않는다. 걸렸으면 true */
@@ -843,6 +855,9 @@ class Battle {
     }
 
     this.updateCover(dt);
+    // 4.22: 수호 토템이 서 있을 때만 원거리 병사가 토템을 먼저 찾는다 (없으면 병사마다 적을 한 번 더 훑지 않는다)
+    this.totemUp = false;
+    for (const e of this.enemies) if (e.guardOf && !e.dead) { this.totemUp = true; break; }
     this.step(this.allies, this.enemies, this.enemyCastle, dt, true);
     this.step(this.enemies, this.allies, this.allyCastle, dt, false);
     if (this.burrowers.length) this.stepBurrowers(dt);
@@ -2095,7 +2110,7 @@ class Battle {
     const back = !!f.ab.backline;
     // 4.21 수호 토템: 원거리 병사는 사거리 안의 토템을 먼저 쏜다 (안내대로 '사거리 긴 병종' 이 받아치는 길) — 전엔 늘 가까운 보스만 쏴서
     // 범위 공격이 우연히 닿지 않으면 토템이 한 판 내내 서 있었다
-    if (f.s.ranged && f.side === 'ally') {
+    if (this.totemUp && f.s.ranged && f.side === 'ally') {
       let tot = null, td = Infinity;
       for (const e of foes) {
         if (e.dead || !e.guardOf) continue;
