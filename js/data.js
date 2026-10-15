@@ -2167,8 +2167,8 @@ STAGES.forEach((st, i) => { st.hardTune = HARD_TUNE[i]; });
 /* 4.21 보스 각인: 하드코어 · 도전에서 보스가 제 고유 기술 말고 둘을 더 쓴다. 모두 예고가 있고, 받아칠 길이 있다.
  * (진군 · 무한 전장의 보스는 그대로) */
 const BOSS_AFFIXES = {
-  charge: { t: 'charge', name: '돌진', icon: '➶', cd: 15, first: 9, warn: 1.6, dist: 320, dmgMul: 2.5, push: 70, stun: 0.6,
-            desc: '붉은 길을 그은 뒤 내달려 길 위의 병사를 크게 치고 밀쳐 낸다' },
+  charge: { t: 'charge', name: '돌진', icon: '➶', cd: 15, first: 9, warn: 1.6, dist: 320, ratio: 0.35, push: 70, stun: 0.6,
+            desc: '붉은 길을 그은 뒤 내달려 맨 앞 병사를 들이받는다 — 부딪힌 자리 둘레 최대 체력 35% 피해 · 밀쳐 냄' },
   clone:  { t: 'clone', name: '분신', icon: '👥', cd: 24, first: 12, n: 2, hp: 0.07, atk: 0.35, life: 9, heal: 0.06,
             desc: '분신 둘 — 9초 안에 못 베면 분신마다 보스 체력이 6% 찬다' },
   totem:  { t: 'totem', name: '수호 토템', icon: '🗿', cd: 28, first: 10, n: 2, hp: 0.05, cut: 0.5,
@@ -2177,8 +2177,8 @@ const BOSS_AFFIXES = {
             desc: '가장 강한 아군 하나에 낙인 — 4초 뒤 최대 체력 85% 피해 (보호막 · 회복 · 왕명으로 버틴다)' },
   tax:    { t: 'tax', name: '군자금 탈취', icon: '💸', cd: 21, first: 14, delay: 3, ratio: 0.5,
             desc: '3초 뒤 쌓인 군자금 절반을 빼앗는다 — 그 전에 출진시켜라' },
-  pull:   { t: 'pull', name: '끌어당김', icon: '🌀', cd: 19, first: 11, r: 380, warn: 1.3, radius: 150, dmgMul: 2,
-            desc: '앞의 병사를 보스 앞으로 끌어당긴 뒤 내려찍는다 — 뒷줄 원거리도 끌려온다' }
+  pull:   { t: 'pull', name: '끌어당김', icon: '🌀', cd: 19, first: 11, r: 380, warn: 1.3, radius: 150, ratio: 0.3,
+            desc: '앞의 병사를 보스 앞으로 끌어당긴 뒤 내려찍는다(최대 체력 30%) — 뒷줄 원거리도 끌려온다' }
 };
 const AFFIX_KEYS = Object.keys(BOSS_AFFIXES);
 const EVENT_AFFIX = { eclipse: ['clone', 'doom'], titan: ['charge', 'pull'], fleet: ['tax', 'totem'], rift: ['pull', 'clone'],

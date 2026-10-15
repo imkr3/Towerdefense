@@ -983,12 +983,12 @@ const I18N_EN = {
   '시간을 거스른 자': 'Time Defier', '도전 \'파라오의 모래시계\' 돌파': 'Clear the \'Pharaoh\'s Hourglass\' challenge',
   /* ---------------- 4.21 보스 각인 ---------------- */
   '보스 각인': 'Boss traits', '돌진': 'Charge', '수호 토템': 'Ward Totem', '사형 선고': 'Death Mark', '군자금 탈취': 'Fund Heist', '끌어당김': 'Pull',
-  '붉은 길을 그은 뒤 내달려 길 위의 병사를 크게 치고 밀쳐 낸다': 'Marks a red lane, then charges down it, smashing and shoving every soldier in the way',
+  '붉은 길을 그은 뒤 내달려 맨 앞 병사를 들이받는다 — 부딪힌 자리 둘레 최대 체력 35% 피해 · 밀쳐 냄': 'Marks a red lane, then rams your front line — 35% of max HP to soldiers around the impact, shoving them back',
   '분신 둘 — 9초 안에 못 베면 분신마다 보스 체력이 6% 찬다': 'Two clones — each one left standing after 9s heals the boss 6%',
   '보스 뒤에 토템 둘 — 하나라도 서 있으면 보스가 받는 피해 절반 (사거리 긴 병종 · 범위 공격으로)': 'Two totems behind the boss — while any stands the boss takes half damage (use long range or area attacks)',
   '가장 강한 아군 하나에 낙인 — 4초 뒤 최대 체력 85% 피해 (보호막 · 회복 · 왕명으로 버틴다)': 'Brands your strongest unit — 85% of its max HP as damage after 4s (survive with shields, heals or the Command)',
   '3초 뒤 쌓인 군자금 절반을 빼앗는다 — 그 전에 출진시켜라': 'Steals half your banked war funds after 3s — spend them first',
-  '앞의 병사를 보스 앞으로 끌어당긴 뒤 내려찍는다 — 뒷줄 원거리도 끌려온다': 'Drags soldiers in front up to the boss, then slams — even the back-line ranged get pulled',
+  '앞의 병사를 보스 앞으로 끌어당긴 뒤 내려찍는다(최대 체력 30%) — 뒷줄 원거리도 끌려온다': 'Drags soldiers in front up to the boss, then slams (30% of max HP) — even the back-line ranged get pulled',
   '분신이 보스에게 돌아갔다': 'The clone returned to the boss', '빼앗길 군자금이 없다!': 'No war funds to steal!',
   '만렙(Lv30) 기준 · 병영 강화 최대 · 진화 전부': 'Max level (Lv30) · barracks maxed · every evolution',
   /* ---------------- 4.18 4진 (궁극) ---------------- */

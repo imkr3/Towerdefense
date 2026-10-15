@@ -1886,9 +1886,10 @@ class Battle {
       /* ---- 4.21 보스 각인 ---- */
       case 'charge': {                     // 돌진: 붉은 길 예고 → 내달려 길 위를 쓸고 밀쳐 낸다
         const dist = a.dist || 320;
-        const x1 = f.side === 'enemy' ? Math.max(this.allyCastle.x + 70, f.x + f.dir * dist) : Math.min(this.enemyCastle.x - 70, f.x + f.dir * dist);
+        const x1 = f.side === 'enemy' ? Math.max(this.allyCastle.x + 260, f.x + f.dir * dist) : Math.min(this.enemyCastle.x - 260, f.x + f.dir * dist);   // 성채 코앞까지는 오지 않는다
         f.windT = a.warn || 1.6;
-        this.pending.push({ t: f.windT, side: f.side, charge: true, src: f, x: x1, r: 0, dmg: f.atk * (a.dmgMul || 2.5), push: a.push || 70, stun: a.stun, row: f.row });
+        // 피해는 보스 공격력이 아니라 맞는 병사 최대 체력의 비율 — 공격력이 큰 보스(거신)의 돌진이 전열을 통째로 지웠다
+        this.pending.push({ t: f.windT, side: f.side, charge: true, src: f, x: x1, r: 0, ratio: a.ratio || 0.35, push: a.push || 70, stun: a.stun, row: f.row });
         this.fx.push({ type: 'chargeline', x: f.x, x2: x1, row: f.row, t: f.windT, life: f.windT, color: '#ff5a3c' });
         sfx('bossIn');
         break;
@@ -1944,12 +1945,12 @@ class Battle {
           if (e.dead || e.burrowed || e.ab.kbImmune || e.ab.hold) continue;
           const d = (e.x - f.x) * f.dir;
           if (d < 0 || d > r) continue;
-          e.x = Math.max(60, Math.min(WORLD - 60, f.x + f.dir * (40 + Math.random() * 60)));
+          e.x = Math.max(60, Math.min(WORLD - 60, f.x + f.dir * (40 + Math.random() * 130)));   // 한 점에 뭉치지 않게 흩어 놓는다
           e.kbTimer = 0; e.stun(0.5);
         }
         this.fx.push({ type: 'pullwave', x: f.x, row: f.row, r: r, dir: f.dir, t: 0.7, life: 0.7, color: f.s.accent });
-        this.queueStrike(f, { x: Math.max(120, Math.min(WORLD - 120, f.x + f.dir * 80)), r: a.radius || 150, dmg: f.atk * (a.dmgMul || 2),
-                              warn: a.warn || 1.3, kind: 'shockwave' });
+        this.queueStrike(f, { x: Math.max(120, Math.min(WORLD - 120, f.x + f.dir * 80)), r: a.radius || 150, ratio: a.ratio || 0.3, dmg: 0,
+                              warn: a.warn || 1.3, kind: 'shockwave', noCastle: true });
         break;
       }
       case 'meteor': {                     // 예고 후 떨어지는 폭격
@@ -1974,16 +1975,21 @@ class Battle {
     const f = s.src;
     if (!f || f.dead) return false;                  // 보스가 먼저 쓰러지면 없던 일
     if (s.charge) {
-      const x0 = f.x, x1 = (s.x - x0) * f.dir > 0 ? s.x : x0;
-      const lo = Math.min(x0, x1), hi = Math.max(x0, x1);
-      for (const e of this.foesOf(f.side)) {
-        if (e.dead || e.burrowed || e.x + e.radius < lo || e.x - e.radius > hi) continue;
-        e.takeDamage(s.dmg);
-        if (!e.ab.kbImmune && !e.ab.hold) { e.x = Math.max(60, Math.min(WORLD - 60, x1 + f.dir * (24 + Math.random() * s.push))); e.kbTimer = 0.3; }
+      // 들이받기: 예고한 길을 따라 달리다 맨 앞 병사에 부딪히면 거기서 멈추고, 부딪힌 자리 둘레를 치고 흩어지게 밀어낸다
+      // (처음엔 길 위 병사를 모두 보스 코앞 한 점으로 밀어 넣어, 다음 범위 공격 한 방에 전열이 통째로 지워졌다)
+      const foes = this.foesOf(f.side);
+      let x1 = (s.x - f.x) * f.dir > 0 ? s.x : f.x;
+      for (const e of foes) {
+        if (e.dead || e.burrowed) continue;
+        const d = (e.x - f.x) * f.dir;
+        if (d > 0 && (x1 - f.x) * f.dir > d - f.radius) x1 = e.x - f.dir * f.radius;
+      }
+      for (const e of foes) {
+        if (e.dead || e.burrowed || Math.abs(e.x - x1) > 140 + e.radius) continue;
+        e.takeDamage(e.maxHp * s.ratio, true);
+        if (!e.ab.kbImmune && !e.ab.hold) { e.x = Math.max(60, Math.min(WORLD - 60, e.x + f.dir * (40 + Math.random() * s.push))); e.kbTimer = 0.3; }
         if (s.stun) e.stun(s.stun);
       }
-      const castle = this.castleOf(f.side);
-      if (!castle.dead && Math.abs(castle.x - x1) <= castle.radius + 50) castle.takeDamage(s.dmg * 0.5);
       f.x = x1;
       this.fx.push({ type: 'cast', kind: 'shockwave', x: x1, row: f.row, color: '#ff5a3c', r: 140, big: true, dir: f.dir, t: 0.6, life: 0.6 });
       this.fx.push({ type: 'boom', x: x1, r: 110, t: 0.32, life: 0.32 });
@@ -2013,7 +2019,7 @@ class Battle {
    * 무작정 터지지 않으니 피할 틈이 있다. */
   queueStrike(f, o) {
     this.pending.push({
-      t: o.warn, side: f.side, x: o.x, r: o.r, dmg: o.dmg,
+      t: o.warn, side: f.side, x: o.x, r: o.r, dmg: o.dmg, ratio: o.ratio,
       burn: o.burn, poison: o.poison, stun: o.stun, kind: o.kind, color: f.s.accent, row: f.row,
       expose: o.expose, src: o.expose ? f : null, noCastle: !!o.noCastle,
       by: f.side === 'ally' ? (f.creditTo || f.s.id) : null
@@ -2034,7 +2040,7 @@ class Battle {
       const castle = this.castleOf(s.side);
       for (const e of foes) {
         if (e.dead || Math.abs(e.x - s.x) > s.r + e.radius) continue;
-        const got = e.takeDamage(s.dmg) || 0;
+        const got = e.takeDamage(s.ratio ? e.maxHp * s.ratio : s.dmg, !!s.ratio) || 0;   // 4.21 끌어당김: 최대 체력 비율
         if (s.by && got > 0) (this.meter[s.by] || (this.meter[s.by] = { dmg: 0, taken: 0, n: 0 })).dmg += got;
         if (s.burn) {
           if (e.burnT <= 0) e.burnDps = 0;

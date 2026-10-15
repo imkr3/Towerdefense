@@ -1846,10 +1846,11 @@ test('4.21: affixes — fund heist fires once, death mark hits the strongest, to
   assert.equal(b.enemies.filter(e => e.cloneOf === boss && !e.dead).length, 0, 'clones gone');
   assert.ok(boss.hp > hp1, 'boss healed by returning clones');
   // 돌진: 앞으로 내달리고 길 위의 병사가 다친다
-  const sp = b.makeAlly(U.spear, boss.x - 150); b.allies.push(sp);
+  b.allies.forEach(x => { x.dead = true; }); b.allies = []; boss.x = 1200;
+  const sp = b.makeAlly(U.spear, 1000); b.allies.push(sp);
   const x0 = boss.x; b.bossAct(boss, A.charge); assert.ok(boss.windT > 0);
   b.updatePending(A.charge.warn + 0.1);
-  assert.ok(boss.x < x0 - 100, 'charged forward'); assert.ok(sp.hp < sp.maxHp, 'trampled');
+  assert.ok(boss.x < x0 - 100 && boss.x > sp.x, 'rammed up to the front soldier'); assert.ok(sp.hp < sp.maxHp, 'trampled');
 });
 
 console.log(count + ' regression checks passed');
