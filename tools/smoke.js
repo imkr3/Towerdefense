@@ -114,7 +114,7 @@ async function runSize(browser, size) {
     const res={count:cards.length,open:!cards[0].disabled&&cards[0].dataset.stage==='20',locked:cards[1].disabled};
     mapChapter=CHAPTERS.findIndex(c=>c.endless);renderMap();res.endless=!!document.querySelector('#endless-slot .e-btn');
     // 3.3 3막: 30전장을 넘기면 31전장이 열린다
-    save.cleared=30;mapChapter=CHAPTERS.findIndex(c=>c.name==='3막');mapSel=-1;renderMap();
+    save.cleared=30;mapChapter=CHAPTERS.findIndex(c=>c.from===30);mapSel=-1;renderMap();
     const a3=[...document.querySelectorAll('#stage-list .stage')];res.act3=a3.length===10&&!a3[0].disabled&&a3[0].dataset.stage==='30'&&a3[1].disabled;
     return res;
   });

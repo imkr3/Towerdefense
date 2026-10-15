@@ -1785,7 +1785,9 @@ test('4.18: save keeps 4th forms only where the 3rd exists; hardcore saturates o
   assert.ok(H.hardcoreEnemyMul(late) > late.enemyMul, 'late hardcore still harder than the campaign');   // 4.20: 만렙 기준 보정 뒤로는 포화가 아니라 전장별 hardTune
   assert.ok(H.hardcoreEnemyMul(STAGES[0]) >= H.HARDCORE.mulFloor, 'early floor kept');
   assert.ok(H.HARDCORE.sally < 1, 'smaller hardcore garrisons');
-  for (const st of H.EVENT_STAGES) assert.ok((H.EVENT_TOUGH[st.event.id] || [1])[0] > 1, st.event.id + ' tougher');
+  // 4.23: 도전은 보스가 어려움을 맡는다 — 잡몹은 기본보다 약할 수 있어도 보스 체력은 늘 기본보다 크다
+  const EB = vm.runInContext('EVENT_BOSS_HP', ctx);
+  for (const st of H.EVENT_STAGES) assert.ok((H.EVENT_TOUGH[st.event.id] || [1, 1])[1] * EB > 1.5, st.event.id + ' boss tougher');
 });
 
 /* ---------------- 4.20 만렙 30 · 만렙 기준 하드코어 · 도전 ---------------- */
@@ -1798,7 +1800,11 @@ test('4.20: max level is 30 everywhere; hardcore is tuned per stage for a max-le
     assert.ok(st.hardTune > 0 && isFinite(st.hardTune), 'stage ' + (i + 1) + ' tuned');
     // 7막 끝 몇 곳은 진군도 만렙이어야 겨우 넘는 곳이라 적 능력치만은 진군과 비슷 (성채 · 요새 · 보스 · 특성 · 격앙이 하드코어를 만든다)
     // 4.21: 보스 전장은 보스 각인이 어려움을 맡아 능력치는 진군보다 조금 낮을 수 있다
-    assert.ok(D.hardcoreEnemyMul(st) >= (st.enemyMul || 1) * (st.boss && st.bossId ? 0.7 : 0.9), 'stage ' + (i + 1) + ' hardcore enemies not much softer than the campaign');
+    // 4.23: 보스 전장은 보스 체력을 크게 올리고 잡몹을 덜었다 — 잡몹은 진군의 절반 안팎까지, 대신 보스 체력은 진군보다 늘 크다
+    const bossSt = st.boss && st.bossId;
+    assert.ok(D.hardcoreEnemyMul(st) >= (st.enemyMul || 1) * (bossSt ? 0.45 : 0.9), 'stage ' + (i + 1) + ' hardcore enemies not much softer than the campaign');
+    if (bossSt) { const H = vm.runInContext('HARDCORE', ctx);
+      assert.ok(Math.sqrt(D.hardcoreEnemyMul(st)) * H.boss.hp * (st.hardBoss || 1) > 1.5 * Math.sqrt(st.enemyMul || 1), 'stage ' + (i + 1) + ' hardcore boss much tougher'); }
   });
   const main = fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8');
   assert.ok(/만렙\(Lv30\) 기준/.test(main), 'hardcore panel says it is tuned for max level');
