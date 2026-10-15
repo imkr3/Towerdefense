@@ -2171,7 +2171,7 @@ const HARD_BOSS_HP = { 5: 1.03, 10: 1.08, 13: 1.13, 15: 1.03, 17: 0.993, 18: 1.1
 for (const k in HARD_BOSS_HP) STAGES[k - 1].hardBoss = HARD_BOSS_HP[k];
 /* 4.23 보스 등장 충격파 · 보스가 밀치기에 버티게 되자, 특성이 붙은 진군 보스 전장 몇 곳을 공략 편성으로도 넘기 어려워졌다 (밀쳐 내며 붙잡던 길이 막혔다).
  * 진군의 적 배율을 조금 덜고, 하드코어는 hardTune 으로 되돌려 그대로 둔다 */
-[[18, 0.78], [20, 0.9], [27, 0.85], [30, 0.85]].forEach(([n, k]) => { const st = STAGES[n - 1]; st.enemyMul = Math.round(st.enemyMul * k * 100) / 100; st.hardTune = st.hardTune / k; });
+[[18, 0.86], [20, 0.9], [27, 0.8], [30, 0.85]].forEach(([n, k]) => { const st = STAGES[n - 1]; st.enemyMul = Math.round(st.enemyMul * k * 100) / 100; st.hardTune = st.hardTune / k; });
 
 /* 4.21 보스 각인: 하드코어 · 도전에서 보스가 제 고유 기술 말고 둘을 더 쓴다. 모두 예고가 있고, 받아칠 길이 있다.
  * (진군 · 무한 전장의 보스는 그대로) */
