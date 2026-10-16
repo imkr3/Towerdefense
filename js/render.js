@@ -424,21 +424,22 @@ class Renderer {
         const g = ctx.createLinearGradient(x0, 0, x0 + w, 0);   // 왼쪽 위 빛
         g.addColorStop(0, 'rgba(255,255,255,.14)'); g.addColorStop(0.6, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.2)');
         ctx.fillStyle = g; ctx.fillRect(x0, y0, w, h);
-        ctx.fillStyle = lite;                                   // 돌 줄눈
+        ctx.fillStyle = lite;                                   // 돌 줄눈 (4.26: 겹치지 않는 사각형이라 한 경로로 모아 한 번에 칠한다)
+        ctx.beginPath();
         for (let r = 0; r * 16 * s < h - 8 * s; r++) {
           for (let k = 0; k * 22 * s < w; k++) {
             const bx = x0 + k * 22 * s + ((r % 2) ? 11 * s : 0);
             if (bx + 18 * s > x0 + w) continue;
-            ctx.fillRect(bx + 1 * s, y0 + 6 * s + r * 16 * s, 18 * s, 2 * s);
+            ctx.rect(bx + 1 * s, y0 + 6 * s + r * 16 * s, 18 * s, 2 * s);
           }
         }
+        ctx.fill();
         ctx.beginPath(); ctx.rect(x0, y0, w, h); outline(1.6);
       };
       const merlons = (x0, y0, w, col) => {
-        ctx.fillStyle = col;
-        for (let k = 0; k * 12 * s < w - 4 * s; k++) {
-          ctx.beginPath(); ctx.rect(x0 + k * 12 * s, y0 - 10 * s, 8 * s, 10 * s); ctx.fill(); outline(1.2);
-        }
+        ctx.fillStyle = col; ctx.beginPath();                   // 4.26: 성가퀴도 한 경로로
+        for (let k = 0; k * 12 * s < w - 4 * s; k++) ctx.rect(x0 + k * 12 * s, y0 - 10 * s, 8 * s, 10 * s);
+        ctx.fill(); outline(1.2);
       };
       // 가운데 성벽
       stone(-wdt / 2 + tw * 0.6, -hgt, wdt - tw * 1.2, hgt, '#8e8b84', 'rgba(60,58,54,.35)');
@@ -464,11 +465,11 @@ class Renderer {
       ctx.fillStyle = '#3b3128';
       ctx.beginPath(); ctx.moveTo(-19 * s, 0); ctx.lineTo(-19 * s, -34 * s); ctx.arc(0, -34 * s, 19 * s, Math.PI, 0); ctx.lineTo(19 * s, 0); ctx.closePath(); ctx.fill();
       ctx.strokeStyle = '#6b5c46'; ctx.lineWidth = 2 * s;
-      for (let i = -2; i <= 2; i++) { ctx.beginPath(); ctx.moveTo(i * 8 * s, 0); ctx.lineTo(i * 8 * s, -50 * s); ctx.stroke(); }
+      ctx.beginPath(); for (let i = -2; i <= 2; i++) { ctx.moveTo(i * 8 * s, 0); ctx.lineTo(i * 8 * s, -50 * s); } ctx.stroke();   // 4.26: 창살 · 띠 · 징을 한 경로씩
       ctx.strokeStyle = '#2a241e'; ctx.lineWidth = 2.4 * s;
-      for (const yy of [-12, -30]) { ctx.beginPath(); ctx.moveTo(-19 * s, yy * s); ctx.lineTo(19 * s, yy * s); ctx.stroke(); }
+      ctx.beginPath(); for (const yy of [-12, -30]) { ctx.moveTo(-19 * s, yy * s); ctx.lineTo(19 * s, yy * s); } ctx.stroke();
       ctx.fillStyle = '#b8b3a8';
-      for (const xx of [-16, -8, 0, 8, 16]) for (const yy of [-12, -30]) { ctx.beginPath(); ctx.arc(xx * s, yy * s, 1.3 * s, 0, 7); ctx.fill(); }
+      ctx.beginPath(); for (const xx of [-16, -8, 0, 8, 16]) for (const yy of [-12, -30]) { ctx.moveTo(xx * s + 1.3 * s, yy * s); ctx.arc(xx * s, yy * s, 1.3 * s, 0, 7); } ctx.fill();
       torch(-30 * s, -52 * s); torch(30 * s, -52 * s);
       // 깃대와 휘날리는 왕국기
       ctx.strokeStyle = '#7d7468'; ctx.lineWidth = 3 * s;
