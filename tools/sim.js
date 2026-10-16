@@ -352,8 +352,8 @@ const EVENT_MID = { up: 10, lv: 20, timedMax: 2 };   // 중간 전력: 10판 중
 const ACT3_ENTRY = { up: 10, lv: 14, min: 2, max: 5 };   // 3.3
 const SMART_ACT3 = { up: 10, lv: 18 };
 /* 4.24 근접 병종을 보강하자 중간 레벨 공략 편성이 막 입구를 한 곳쯤 더 넘고, 다 키운 공략 편성은 열 곳 중 한 곳씩 아슬아슬하게 갈렸다
- * (어느 곳인지 판마다 바뀐다) — 관문 상한 +1 · 완주는 한 곳까지 · 막 사이 시간 비교는 10% 여유 */
-const FULL_CLEAR_SLACK = 1, ACT_TIME_SLACK = 0.9;
+ * (어느 곳인지 판마다 바뀐다) — 관문 상한 +1 · 완주는 한 곳까지 · 막 사이 시간 비교는 15% 여유 */
+const FULL_CLEAR_SLACK = 1, ACT_TIME_SLACK = 0.85;
 const ACT4_ENTRY = { up: 10, lv: 18, min: 2, max: 7 };   // 4.0: 3막을 끝낸 수준으론 앞 몇 곳만 · 4.23: 보스 등장 충격파 · 보스 버팀으로 판이 갈려 6까지
 const SMART_ACT4 = { up: 10, lv: 24 };                   // 4.0: 레벨 상한 20(+사관학교 5)까지 키우면 전부
 const ACT5_ENTRY = { up: 10, lv: 20, min: 2, max: 7 };   // 4.6: 4막을 끝낸 수준
