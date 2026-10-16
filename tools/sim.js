@@ -675,7 +675,8 @@ function judgeFull(label, X, rows) {
   return failed;
 }
 function checkHardFull() {
-  const rows = HARD_FULL.stages.map(s => Object.assign({ name: 'S' + s }, bestOf(HARD_FULL.decks, (d, sd) =>
+  const only = process.env.HARD_STAGES ? process.env.HARD_STAGES.split(',').map(Number) : HARD_FULL.stages;   // HARD_STAGES=2,3,4 로 다른 전장을 잰다
+  const rows = only.map(s => Object.assign({ name: 'S' + s }, bestOf(HARD_FULL.decks, (d, sd) =>
     runStage(loadEngine(sd), s - 1, HARD_FULL.up, HARD_FULL.lv, false, d, false, { timed: true, hard: true, full: true }).win)));
   return judgeFull('하드코어', HARD_FULL, rows);
 }
