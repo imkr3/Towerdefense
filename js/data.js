@@ -3355,9 +3355,9 @@ const AWAKEN_TAX = 0.06;
 /* 4.18: 전장 배율이 큰 뒤쪽 전장은 하드코어 배율이 누그러진다 (m / (1 + m/soft)). 예전엔 7막(배율 16~59)에 ×4.6 을 그대로 곱해
  * ×270 까지 올라 다 키운 편성도 30초 안에 성채가 무너졌다 — 어려운 게 아니라 깰 수 없었다. 앞쪽 전장은 거의 그대로다. */
 function hardcoreEnemyMul(st) { const m = st.enemyMul || 1; return Math.max(Math.max(HARDCORE.enemyMul * m / (1 + m / HARDCORE.soft), m * (st.hardRatio || HARDCORE.minRatio)) * (st.hardSoft || 1), HARDCORE.mulFloor) * (st.hardTune || 1); }   // 4.20 hardTune: 만렙 기준 전장별 보정
-/* 4.24 근접 병종을 보강한 만큼 진군이 쉬워져(막 입구 관문을 공략 편성이 7~8곳씩 넘었다) 진군 적 배율을 ×1.12.
+/* 4.24 근접 병종을 보강한 만큼 진군이 쉬워져(막 입구 관문을 공략 편성이 7~8곳씩 넘었다) 진군 적 배율을 ×1.08.
  * 하드코어는 방금 맞춘 그대로 두려고 hardTune 으로 정확히 되돌린다 (hardcoreEnemyMul 이 배율에 곧게 비례하지 않아 전장마다 계산) */
-const CAMPAIGN_MELEE_COMP = 1.12, CAMPAIGN_COMP_SKIP = { 33: 1.06, 52: 1.06, 53: 0.92, 60: 0.95, 61: 1.06, 63: 1.06, 67: 1.06, 70: 1.06, 75: 1.06 };
+const CAMPAIGN_MELEE_COMP = 1.08, CAMPAIGN_COMP_SKIP = { 33: 1, 39: 1, 52: 1, 53: 0.92, 60: 0.95, 61: 1, 63: 1, 65: 1, 67: 1, 68: 1, 70: 1, 75: 1 };
 STAGES.forEach((st, i) => {
   if (i < 3) return;                                                   // 1~3전장은 기본 병종으로 넘는 곳이라 그대로
   const k = CAMPAIGN_COMP_SKIP[i + 1] || CAMPAIGN_MELEE_COMP;            // 다 키운 공략 편성도 빠듯한 곳은 덜 (또는 조금 덜어)
