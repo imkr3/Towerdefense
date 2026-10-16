@@ -288,7 +288,7 @@ test('Stage traits: armored, horde, hero hunters and curse', () => {
   const hg = h.spawnEnemy('goblin', 900); assert.equal(hg.maxHp, Math.round(E.goblin.hp * 0.6));
   const hunt = mk(['giantslayer']), orc = hunt.spawnEnemy('goblin', 520);
   const cheap = hunt.makeAlly(U.spear, 500), pricey = hunt.makeAlly(U.thor, 500);
-  let a = cheap.hp; hunt.hitOne(10, cheap, orc, false); assert.equal(a - cheap.hp, 10);
+  let a = cheap.hp; hunt.hitOne(10, cheap, orc, false); assert.ok(Math.abs(a - cheap.hp - 10 * (1 - (cheap.ab.armor || 0))) < 1e-6);   // 4.24: 근접은 갑주가 조금 있다
   a = pricey.hp; hunt.hitOne(10, pricey, orc, false); const hurt = a - pricey.hp;
   const calm = mk([]), thor = calm.makeAlly(U.thor, 500); a = thor.hp; calm.hitOne(10, thor, calm.spawnEnemy('goblin', 520), false);
   assert.equal(hurt, 40, 'hero hunters hit heroes 4x and pierce their armor (3.9): ' + hurt);
@@ -939,11 +939,11 @@ test('Tidecallers push the front back without a boss banner', () => {
 test('Legends and myths outclass their cost: more hp/atk, melee heroes get armor, knockback immunity and a second wind', () => {
   const thor = G.resolveUnit(U.thor, 1), wukong = G.resolveUnit(U.wukong, 1), odin = G.resolveUnit(U.odin, 1);
   const plain = G.resolveUnit(Object.assign({}, U.thor, { gacha: false, id: 'thor_plain' }), 1);
-  assert.ok(thor.hp >= plain.hp * 1.25 * 1.3 - 2 && thor.atk > plain.atk, 'melee hero hp ' + thor.hp + ' vs ' + plain.hp);
+  assert.ok(thor.hp >= plain.hp * 1.5 && thor.atk > plain.atk * 0.8, 'melee hero hp ' + thor.hp + ' vs ' + plain.hp);   // 4.24: 근접 보강(얇을수록 큼)이 일반 쪽에 더 붙어 차이는 1.5배 이상
   assert.ok(thor.ab.kbImmune && thor.ab.revive >= 0.3 && thor.ab.armor >= 0.1, 'melee hero kit');
   assert.ok(wukong.ab.kbImmune && wukong.ab.revive >= 0.3, 'wukong kit');
   assert.ok(odin.hp > U.odin.hp && odin.atk > U.odin.atk && !(odin.ab && odin.ab.kbImmune), 'ranged hero: stats only');
-  const spear = G.resolveUnit(U.spear, 1); assert.equal(spear.hp, U.spear.hp, 'regular units untouched');
+  const archer = G.resolveUnit(U.archer, 1); assert.equal(archer.hp, U.archer.hp, 'regular ranged units untouched');
 });
 test('Some evolutions change the whole silhouette, and every new look is drawn', () => {
   const render = fs.readFileSync(path.join(__dirname, '../js/render.js'), 'utf8');
@@ -1210,7 +1210,8 @@ test('Third form: big upgrade, only deploy cost and cooldown go up, evolution tr
   for (const id of ['catapult', 'priest', 'spear', 'mage', 'colossus', 'falconer', 'shield', 'frost', 'duelist', 'sniper']) {
     const e1 = G.resolveUnit(U[id], 20, true), e2 = G.resolveUnit(U[id], 20, 2);
     assert.equal(e2.evo2, true, id); assert.equal(e2.evo, true, id);
-    assert.ok(e2.hp > e1.hp * 1.3 && e2.atk >= e1.atk * 1.3 - 1, id + ' stronger');
+    // 4.24: 근접 보강은 얇은 형태에 더 붙고 아주 두꺼운 근접은 공격을 덜어, 근접의 진화 폭은 조금 좁다
+    assert.ok(e2.hp > e1.hp * (e2.ranged ? 1.3 : 1.05) && e2.atk >= e1.atk * (e2.ranged ? 1.3 : 1.1) - 1, id + ' stronger');
     assert.ok(e2.cost > e1.cost && e2.cooldown > e1.cooldown, id + ' costs more and cools down longer');
     assert.ok(e2.interval <= U[id].interval + 1e-9, id + ' keeps the base attack speed (trade-off gone)');
     assert.ok(e2.speed >= U[id].speed, id + ' not slowed');
@@ -1936,6 +1937,20 @@ test('4.23: starfall hits the clumps by max-HP ratio, seal locks the priciest ca
   boss.stunImm = 0; boss.ab = Object.assign({}, boss.ab, { stunImmune: false, unshakable: false }); boss.stun(2);
   b.bossTick(boss, 1 / 30);
   assert.equal(boss.frenzyT, 0); assert.ok(Math.abs(boss.rateMul - r0) < 1e-9 && Math.abs(boss.speedMul - s0) < 1e-9, 'restored');
+});
+
+/* ---------------- 4.24 ---------------- */
+test('4.24: melee units get more hp (thinner ones more) and armor; huge-hp melee pay with attack; mounts move like mounts', () => {
+  const F = vm.runInContext('({FRONTLINE, SHAPE_SPEED, unitLevelMul})', ctx);
+  const raw = G.resolveUnit(U.spear, 30);
+  assert.ok(raw.hp > U.spear.hp * 1.3 && raw.ab.armor >= F.FRONTLINE.armor, 'thin melee boosted');
+  const arch = G.resolveUnit(U.archer, 30); assert.ok(!(arch.ab && arch.ab.armor), 'ranged untouched');
+  const thor = G.resolveUnit(U.thor, 30, 2); assert.ok(thor.speed >= F.SHAPE_SPEED.thunderbike, 'thunder bike is fast: ' + thor.speed);
+  const knight = G.resolveUnit(U.knight, 30, true); assert.ok(knight.speed >= F.SHAPE_SPEED.knight_evo, 'mounted knight');
+  // 아주 두꺼운 근접은 공격을 덜었다
+  const col = G.resolveUnit(U.colossus, 30, 2); assert.ok(col.hp * F.unitLevelMul(30) >= F.FRONTLINE.bigHp);
+  for (const id of Object.keys(U)) { const u = U[id]; if (u.enemy) continue; for (const ev of [0, 1, 2, 3]) {
+    const r = G.resolveUnit(u, 30, ev); assert.ok(r.speed >= u.speed || ev > 0, id + ' never slower than its base'); } }
 });
 
 console.log(count + ' regression checks passed');
