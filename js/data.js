@@ -3247,6 +3247,25 @@ const HERO_POWER = { UR: { hp: 1.35, atk: 1.2 }, SSR: { hp: 1.25, atk: 1.15 } };
 /* 3.9 근접 영웅은 '선봉': 맞아도 버티고(갑주·체력·흡혈) 곁의 아군도 지킨다(선봉 — 주변 아군이 받는 피해 -10%).
  * 3.4 의 체력 ×1.3 · 갑주 +10% 로는 여전히 원거리 영웅보다 훨씬 자주 쓰러졌다. */
 const HERO_MELEE = { hp: 1.55, armor: 0.3, revive: 0.4, lifesteal: 0.12, vanguard: { r: 160, cut: 0.1 } };
+/* 4.24 근접 병종 보강 · 탈것 속도.
+ * - 근접 병종(아군 · 비용 있는 것)이 체력 · 갑주가 얇아 앞에서 아무것도 못 하고 녹았다 → 체력을 올리되 얇을수록 크게(최대 ×1.5),
+ *   갑주 +0.1 (최대 0.5). 원래 체력이 아주 큰 근접(만렙 1.5만 이상: 거대 로봇 · 심해 수호자 · 신화 영웅 등)은 그 대가로 공격 −15%.
+ * - 탈것 · 날것인데 걸어가는 병사보다 느리던 모습들: 바이크 · 말 · 비행접시 · 근두운 · 위성 등은 모습에 맞게 빠르게 (느려지지는 않는다) */
+const FRONTLINE = { maxBoost: 0.5, refHp: 14000, armor: 0.1, bigHp: 15000, bigAtk: 0.85 };
+const SHAPE_SPEED = { thunderbike: 72, knight_evo: 52, unicorn: 60, ufo: 44, hovertank: 32, solarsat: 38, mechwukong: 66, jetvalk: 80,
+                      icecart: 40, ambulance: 46, azureguan: 48, airship: 40, railgun: 22, megabot: 22, tank: 26, nezha: 100 };
+function frontlineBuild(r) {
+  if (r.enemy) return;
+  const sp = SHAPE_SPEED[r.shape];
+  if (sp && r.speed < sp) r.speed = sp;
+  if (r.ranged || !(r.cost > 0) || !(r.speed > 0)) return;          // 소환물 · 건물 · 원거리는 그대로
+  const full = r.hp * unitLevelMul(30);                              // 만렙 기준으로 얇은지 두꺼운지 본다 (레벨마다 갈리지 않게)
+  const boost = 1 + FRONTLINE.maxBoost * Math.max(0, 1 - full / FRONTLINE.refHp);
+  if (full >= FRONTLINE.bigHp && r.atk > 0) r.atk = Math.round(r.atk * FRONTLINE.bigAtk);
+  r.hp = Math.round(r.hp * boost);
+  r.ab = r.ab ? r.ab : {};
+  r.ab.armor = _r2(Math.min(0.5, (r.ab.armor || 0) + FRONTLINE.armor));
+}
 function heroBuild(r) {
   const p = r.gacha && HERO_POWER[r.rarity];
   if (!p) return;
@@ -3281,6 +3300,7 @@ function resolveUnit(u, lv, evo) {
   if (ev3) applyEvo3(r, EVOLUTIONS3[u.id]);
   growUnit(r, lv);
   heroBuild(r);
+  frontlineBuild(r);
   _resolved[key] = r;
   return r;
 }
