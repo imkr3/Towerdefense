@@ -33,6 +33,7 @@
     </div>
     <div class="title-btns">
       <button class="btn big" id="btn-start">출 진</button>
+      <button class="btn conq-btn" id="btn-conquest" hidden><span class="cont-k">⚔ 왕국 정벌</span><span class="cont-v" id="conquest-state"></span></button>
       <button class="btn continue-btn" id="btn-continue" hidden><span class="cont-k">▶ 이어하기</span><span class="cont-v" id="continue-stage"></span></button>
       <div class="title-grid">
         <button class="btn ghost" id="btn-howto"><span class="tg-i">📜</span>교전 수칙</button>
@@ -76,6 +77,18 @@
     <button class="tab gacha-tab" id="btn-gacha">소환의 제단 <span class="stone-badge" id="tab-stones">0</span></button>
     <button class="tab" id="btn-quest">임무 · 업적 <span class="quest-badge" id="tab-quest">0</span></button>
   </nav>
+</section>
+
+<!-- ===================== 5.0 정벌 ===================== -->
+<section id="scr-conquest" class="screen">
+  <header class="bar">
+    <button class="icon-btn" id="conq-back" aria-label="진군도로">◀</button>
+    <div class="bar-title" id="conq-title">정벌</div>
+    <div class="cq-chips" id="conq-chips"></div>
+    <div class="coin-chip">💰 <span id="conq-coins">0</span></div>
+  </header>
+  <div class="cq-body" id="conq-body"></div>
+  <div class="cq-over" id="conq-over"></div>
 </section>
 
 <!-- ===================== 편성 ===================== -->
@@ -236,6 +249,7 @@
         <button class="btn primary" id="btn-next">다음 전장으로</button>
         <button class="btn ghost" id="btn-fix" style="display:none">편성 바꾸기</button>
         <button class="btn ghost" id="btn-tomap">진군도로</button>
+        <button class="btn primary" id="btn-conq" style="display:none">정벌 지도로 ▶</button>
       </div>
     </div>
   </div>
@@ -377,5 +391,6 @@
 <script src="js/render.js"></script>
 <script src="js/main.js"></script>
 <script src="js/formation.js"></script>
+<script src="js/conquest.js"></script>
 </body>
 </html>

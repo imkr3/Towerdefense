@@ -3,7 +3,7 @@
  * ======================================================================= */
 
 
-const APP_VERSION = '4.26.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
+const APP_VERSION = '5.0.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
 
 function defaultSave() {
   const lv = {};
@@ -133,6 +133,8 @@ function normalizeSave(raw) {
     if (!seasonById(s.season)) s.season = 'olympus';
     if (!Array.isArray(s.presets)) s.presets = [];
     s.presets = s.presets.slice(0, 3).map(p => Array.isArray(p) ? p.filter(id => typeof id === 'string' && UNIT_BY_ID[id]).slice(0, LOADOUT_MAX) : []);
+    s.conquest = conqNormalize(s.conquest);     // 5.0 진행 중인 정벌 (깨졌으면 버린다)
+    s.conqRec = conqNormRec(s.conqRec);
     return s;
 }
 
@@ -156,20 +158,21 @@ function show(id) {
   syncLoadout();
   $$('.screen').forEach(s => s.classList.toggle('active', s.id === id));
   titleAnim.on = (id === 'scr-title');
-  if (id === 'scr-title') { resizeTitle(); refreshTitleBadges(); }
+  if (id === 'scr-title') { resizeTitle(); refreshTitleBadges(); refreshConqTitle(); }
   if (id === 'scr-map') renderMap();
   if (id === 'scr-shop') renderShop();
   if (id === 'scr-units') { detailShown = null; renderTraining(); }
   if (id === 'scr-formation') renderFormation();
   if (id === 'scr-gacha') renderGacha();
   if (id === 'scr-quest') { checkAchievements(); renderQuest(); }
+  if (id === 'scr-conquest') renderConquest();
   if (id === 'scr-battle' && renderer) renderer.resize();
   if (id !== 'scr-battle') BGM.play(SCREEN_MUSIC[id] || 'map');
 }
 
 /* 화면마다 곡: 진군도·임무는 행진, 병영·훈련소·편성은 가벼운 곡, 소환은 신비로운 곡 */
 const SCREEN_MUSIC = { 'scr-title': 'title', 'scr-map': 'map', 'scr-quest': 'map', 'scr-shop': 'barracks',
-  'scr-units': 'barracks', 'scr-formation': 'barracks', 'scr-gacha': 'altar' };
+  'scr-units': 'barracks', 'scr-formation': 'barracks', 'scr-gacha': 'altar', 'scr-conquest': 'warcamp' };
 
 /* 브라우저 기본 confirm 대신 게임 톤에 맞춘 확인창 */
 let confirmYes = null;
@@ -363,6 +366,7 @@ const CHAPTERS = [
   { name: '6막', sub: '잊힌 밀림', from: 50, to: 60 },
   { name: '7막', sub: '홀린 요정 숲', from: 60, to: 70 },
   { name: '8막', sub: '모래폭풍 사막', from: 70, to: 80 },
+  { name: '정벌', sub: '로그라이크 원정', conquest: true },   // 5.0
   { name: '무한', sub: '끝없는 웨이브', endless: true },
   { name: '원정', sub: '금화 원정', expedition: true },
   { name: '이벤트', sub: '극악 도전', event: true }
@@ -375,7 +379,7 @@ let mapSel = -1;           // 고른 전장
 function chapterOf(i) {
   for (let c = 0; c < CHAPTERS.length; c++) {
     const ch = CHAPTERS[c];
-    if (!ch.endless && !ch.event && !ch.expedition && i >= ch.from && i < ch.to) return c;
+    if (!ch.endless && !ch.event && !ch.expedition && !ch.conquest && i >= ch.from && i < ch.to) return c;
   }
   return 0;
 }
@@ -435,8 +439,9 @@ function renderMap() {
   CHAPTERS.forEach((ch, c) => {
     const b = document.createElement('button');
     b.type = 'button';
-    const open = ch.event ? eventOpen(save, 0) : ch.expedition ? expeditionOpen(save, 0) : ch.endless ? save.cleared >= ENDLESS_UNLOCK_STAGE : ch.from <= save.cleared;
-    const special = ch.endless || ch.event || ch.expedition;
+    const open = ch.event ? eventOpen(save, 0) : ch.expedition ? expeditionOpen(save, 0) : ch.endless ? save.cleared >= ENDLESS_UNLOCK_STAGE
+      : ch.conquest ? conqOpen(save) : ch.from <= save.cleared;
+    const special = ch.endless || ch.event || ch.expedition || ch.conquest;
     let stars = 0;
     if (!special) for (let i = ch.from; i < ch.to; i++) stars += save.stars[i] || 0;
     b.className = 'chapter-tab' + (c === mapChapter ? ' on' : '') + (open ? '' : ' locked');
@@ -448,6 +453,7 @@ function renderMap() {
       (ch.event ? '<span class="ch-star">✦ ' + eventCount(save) + '/' + EVENT_STAGES.length + '</span>'
       : ch.expedition ? '<span class="ch-star">💰 ' + EXPEDITIONS.filter((x, k) => expeditionOpen(save, k)).length + '/' + EXPEDITIONS.length + '</span>'
       : ch.endless ? '<span class="ch-star">' + (save.endlessBest || 0) + '</span>'
+      : ch.conquest ? '<span class="ch-star">' + (save.conquest ? '⚔ ' + (save.conquest.act + 1) + '-' + (save.conquest.floor + 1) : '👑 ' + conqNormRec(save.conqRec).wins) + '</span>'
                   : '<span class="ch-star">★ ' + stars + '/' + ((ch.to - ch.from) * 3) + (crowns ? ' · 💀' + crowns : '') + '</span>');
     b.addEventListener('click', () => {
       mapChapter = c;
@@ -467,7 +473,7 @@ function renderMap() {
   const endless = $('#endless-slot');
   list.innerHTML = '';
   path.innerHTML = '';
-  $('#trail').classList.toggle('endless-mode', !!(ch.endless || ch.event || ch.expedition));
+  $('#trail').classList.toggle('endless-mode', !!(ch.endless || ch.event || ch.expedition || ch.conquest));
   $('#trail').classList.toggle('event-mode', !!(ch.event || ch.expedition));
   if (ch.expedition) {
     renderExpSlot();
@@ -481,6 +487,11 @@ function renderMap() {
   }
   if (ch.endless) {
     renderEndlessSlot();
+    renderStageDetail(-1);
+    return;
+  }
+  if (ch.conquest) {
+    renderConqSlot();
     renderStageDetail(-1);
     return;
   }
@@ -555,7 +566,9 @@ function renderStageDetail(i) {
   box.innerHTML = '';
   const ch = CHAPTERS[mapChapter];
   if (ch.endless || i < 0) {
-    box.innerHTML = ch.endless
+    box.innerHTML = ch.conquest
+      ? '<div class="sd-name">왕국 정벌</div><p class="sd-hint">세 막 · 열여덟 층. 층마다 갈림길(전투 · 정예 · 상점 · 야영 · 제단) 하나를 고릅니다. 이기면 축복, 정예와 보스는 유물. 성채는 다음 전투로 이어지고 한 번 지면 끝 — 끝까지 가면 정벌 단계가 오르고 소환석을 받습니다.</p>'
+      : ch.endless
       ? '<div class="sd-name">무한 전장</div><p class="sd-hint">정말로 끝이 없습니다. 웨이브마다 적이 가파르게 강해지고, 3웨이브마다 1~8막의 전장 보스와 도전 보스가 섞여 옵니다 (12웨이브마다 둘). 곡은 나온 보스의 곡으로 바뀝니다. 성채가 무너질 때까지!</p>'
       : '<div class="sd-name">' + ch.name + ' · ' + ch.sub + '</div><p class="sd-hint">이전 막을 먼저 돌파해야 합니다.</p>';
     const fb = document.createElement('button');
@@ -1961,6 +1974,8 @@ function appendTrialNews(lines) {
 function showResult() {
   recordBattle(battle);
   renderMeter(battle);
+  $('#btn-retry').style.display = ''; $('#btn-tomap').style.display = ''; $('#btn-conq').style.display = 'none';
+  if (battle.conquest) { showConquestResult(); return; }   // 5.0 정벌
 
   if (battle.endless) { showEndlessResult(); return; }
   if (battle.event) { showEventResult(); return; }
@@ -2497,6 +2512,11 @@ function init() {
   });
 
   $('#btn-quit').addEventListener('click', () => {
+    if (battle && battle.conquest) {       // 5.0 정벌: 싸우다 나가면 진 것, 끝난 뒤엔 정벌 지도로
+      if (battle.state === 'play') { conqQuitBattle(); return; }
+      conqResolveBattle(battle); flushPlayTime(); saveGame(save); show('scr-conquest');
+      return;
+    }
     if (battle && battle.state === 'play') {
       askConfirm('전투 포기', '지금까지의 전과를 포기하고 진군도로 돌아가시겠습니까?',
                  () => { flushPlayTime(); saveGame(save); show('scr-map'); });
@@ -2537,6 +2557,7 @@ function init() {
   });
   initSettings();
   initFormation();
+  initConquest();
   $('#btn-retry').addEventListener('click', () => {
     if (battle && battle.endless) startEndless();
     else if (battle && battle.event) startEvent(battle.eventIndex);

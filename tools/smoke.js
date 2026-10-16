@@ -406,6 +406,8 @@ async function runSize(browser, size) {
       for (const E of [EVOLUTIONS, EVOLUTIONS2, EVOLUTIONS3]) for (const k in E) { chk(E[k].name); chk(E[k].short); chk(E[k].plus); if (E[k].active) { chk(E[k].active.name); chk(E[k].active.desc); } }
       for (const k in ENEMIES) { const e = ENEMIES[k]; chk(e.name); chk(e.abText); if (e.special) chk(e.special.name); (e.phases || []).forEach(q => { chk(q.name); if (q.special) chk(q.special.name); }); }
       STAGES.concat(EVENT_STAGES).forEach(s => { chk(s.name); chk(s.hint); if (s.event) chk(s.event.mech); });
+      CONQ_BLESS.concat(CONQ_RELICS).forEach(b => { chk(b.name); chk(b.desc); }); CONQ_ASC.forEach(chk); for (const k in CONQ_NODES) { chk(CONQ_NODES[k].name); chk(CONQ_NODES[k].desc); }   // 5.0
+      CONQ_SHRINES.forEach(x => { chk(x.name); chk(x.text); x.opts.forEach(o => { chk(o.label); chk(o.note); }); });
       ACHIEVEMENTS.forEach(a => { chk(a.name); chk(a.desc); }); for (const k in BOSS_AFFIXES) { chk(BOSS_AFFIXES[k].name); chk(BOSS_AFFIXES[k].desc); }   // 4.21 SEASONS.forEach(s => { chk(s.name); chk(s.sub); chk(s.desc); });
       return [...out];
     });
@@ -436,6 +438,41 @@ async function runSize(browser, size) {
     else if (!/외 \d+개/.test(r.toast) || r.toast.length > 120) failures.push('업적 알림이 요약되지 않는다 ' + JSON.stringify(r.toast));
     else if (errs.length) failures.push('4.19 편의 기능 오류 ' + errs.join(' | '));
     else console.log('  ✓ 4.19 별 모으기 · 강화 한 번에 · 업적 알림 요약');
+    await page.close();
+  }
+  // 5.0 정벌: 출발 → 출발 유물 → 지도 → 전투 → 결과 → 축복 → 상점 → 포기 → 정산까지 오류 없이
+  {
+    const page = await browser.newPage({ viewport: { width: 844, height: 390 } });
+    const errs = []; page.on('pageerror', e => errs.push(e.message));
+    await page.goto('file://' + path.join(__dirname, '..', 'index.html'));
+    await page.evaluate(() => localStorage.setItem('stick-kingdom-save-v1', JSON.stringify({ cleared: 40, coins: 1000, tutorial: true, loadout: ['spear', 'archer', 'knight', 'shield'] })));
+    await page.reload(); await page.waitForTimeout(300);
+    const r = await page.evaluate(async () => {
+      const out = {}; titleAnim.on = false;
+      out.title = !$('#btn-conquest').hidden; $('#btn-conquest').click();
+      out.lobby = !!$('#conq-go'); $('#conq-go').click();
+      out.startPick = $$('#conq-over .cq-offer').length; $('#conq-over .cq-offer').click();
+      out.relics = save.conquest.relics.length;
+      $('.cq-node.live').click(); $('.cq-enter').click();
+      out.battle = !!(battle && battle.conquest) && $('#scr-battle').classList.contains('active');
+      out.deck = battle.roster.map(u => u.id).join();
+      battle.enemyCastle.hp = 1; battle.enemyCastle.takeDamage(5); battle.update(1 / 30);
+      showResult(); out.resultBtn = $('#btn-conq').style.display !== 'none' && $('#btn-retry').style.display === 'none';
+      $('#btn-conq').click();
+      out.won = save.conquest.won; out.floor = save.conquest.floor; out.pick = $$('#conq-over .cq-offer').length;
+      $('#conq-over .cq-offer').click(); out.bless = Object.keys(save.conquest.bless).length;
+      const run = save.conquest; run.map[run.floor][0] = { t: 'shop' }; run.scrip = 500; renderConquest();
+      $('.cq-node.live').click(); $('.cq-enter').click(); out.shop = $$('#conq-over .cq-offer').length;
+      $('#conq-over .cq-offer:not(.off)').click(); out.spent = run.scrip < 500; $('#conq-over .cq-skip').click(); out.floor2 = save.conquest.floor;
+      $('.cq-quit').click(); $('#modal-confirm .btn.primary, #confirm-yes').click();
+      out.ended = save.conquest === null && !!$('#conq-over .cq-res'); out.rec = save.conqRec.runs;
+      return out;
+    });
+    const want = { title: true, lobby: true, startPick: 3, relics: 1, battle: true, deck: 'spear,archer,knight,shield', resultBtn: true, won: 1, floor: 1, pick: 3, bless: 1, shop: 6, spent: true, floor2: 2, ended: true, rec: 1 };
+    const bad = Object.keys(want).filter(k => r[k] !== want[k]);
+    if (bad.length) failures.push('정벌 흐름이 어긋난다 ' + JSON.stringify(bad.map(k => k + '=' + r[k])));
+    else if (errs.length) failures.push('정벌 화면 오류 ' + errs.join(' | '));
+    else console.log('  ✓ 5.0 정벌 · 출발 · 유물 · 전투 · 축복 · 상점 · 포기 · 정산');
     await page.close();
   }
   await browser.close();

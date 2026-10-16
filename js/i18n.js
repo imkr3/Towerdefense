@@ -1162,6 +1162,81 @@ const I18N_EN = {
   '강철 의지': 'Will of Iron', '하드코어 전장 10곳 돌파': 'Clear 10 stages on Hardcore',
   '꺾이지 않는 왕국': 'The Unbroken Kingdom', '하드코어 전장 30곳 모두 돌파': 'Clear all 30 stages on Hardcore',
   '모든 시즌에서 전설 이상을 각각 보유': 'Own a Legend or better from every season',
+  /* ---------------- 5.0 정벌 ---------------- */
+  '정벌': 'Conquest', '로그라이크 원정': 'Roguelike campaign', '왕국 정벌': 'Kingdom Conquest', '⚔ 왕국 정벌': '⚔ Kingdom Conquest',
+  '정벌 · 기본': 'Conquest · Base', '기본': 'Base', '정벌 단계': 'Conquest tier', '정벌 출발': 'Set out', '정벌로': 'To Conquest', '이어서': 'Continue', '정벌 지도로 ▶': 'Conquest map ▶',
+  '갈림길을 골라 세 막을 내려가는 원정입니다. 한 번 지면 원정이 끝납니다.': 'Choose your path down three acts. One defeat ends the run.',
+  '성채가 이어집니다': 'The castle carries over',
+  ' · 전투에서 잃은 성채는 다음 전투에도 그대로 — 야영 · 상점 · 유물로 고칩니다': ' · damage stays for the next battle — repair at camps, shops or with relics',
+  '축복': 'Blessings', ' · 이길 때마다 하나 골라 쌓습니다 (공격 · 체력 · 수입 · 출진 대기 …)': ' · pick one after every win; they stack (attack · HP · income · cooldown …)',
+  '유물': 'Relics', ' · 정예와 보스가 줍니다. 원정마다 하나뿐인 큰 힘': ' · from elites and bosses — one of a kind, big effects',
+  '군표 🎖': 'Scrip 🎖', ' · 전투에서 모아 상점에서 씁니다 (원정이 끝나면 사라집니다)': ' · earned in battle, spent in shops (gone when the run ends)', ' · 내가 돌파한 전장에서 뽑습니다. 깊이 내려갈수록 적이 억세집니다': ' · drawn from stages you have cleared; foes grow tougher the deeper you go', ' · 출발할 때의 편성으로 끝까지 싸웁니다': ' · the squad you set out with fights to the end',
+  '단계를 넘으면 다음 단계가 열립니다 (최대 10)': 'Clear a tier to unlock the next (up to 10)',
+  '갈림길 하나를 고르세요': 'Pick a path', '들어간다': 'Enter', '원정 포기': 'Abandon run', '없음': 'None', '지금 원정을 끝냅니다. 여기까지의 보상은 받습니다.': 'End this run now. You keep the rewards so far.',
+  '출발 유물 고르기': 'Choose a starting relic', '원정을 함께할 유물 하나': 'One relic to carry on the run', '유물 고르기': 'Choose a relic', '축복 고르기': 'Choose a blessing',
+  '넘기기 · 군표 +15': 'Skip · Scrip +15', '🛒 상점': '🛒 Shop', '성채 수리': 'Castle repair', '팔림': 'Sold', '떠난다': 'Leave',
+  '이미 샀습니다': 'Already bought', '군표가 모자랍니다': 'Not enough scrip', '성채가 이미 가득합니다': 'The castle is already full',
+  '🔥 야영': '🔥 Camp', '성벽 수리': 'Mend the walls', '휴식': 'Rest', '훈련': 'Drill', '희귀 축복': 'Rare blessing', '희귀 축복 셋 중 하나를 고른다': 'Pick one of three rare blessings',
+  '계속': 'Continue', '조용히 지나쳤다': 'You passed by quietly', '끝났다': 'Done', '졌다…': 'Lost…', '이겼다! 군표 +90': 'Won! Scrip +90',
+  '대가를 치를 수 없습니다': 'You cannot pay the price', '👑 정벌 완료!': '👑 Conquest complete!',
+  '정벌 완료!': 'Conquest complete!', '정벌 실패': 'Run failed', '보스 격파': 'Boss slain', '정벌 승리': 'Victory', '정벌 지도로 돌아가 보상을 고르세요': 'Return to the map to pick your reward',
+  '성채가 무너졌습니다 · 원정이 끝났습니다': 'The castle fell · the run is over', '🪶 불사조 깃털을 썼습니다': '🪶 The Phoenix Feather was spent',
+  '정벌 전투 포기': 'Abandon battle', '이 전투를 포기하면 원정이 여기서 끝납니다. 정말 나가시겠습니까?': 'Leaving this battle ends the run. Leave anyway?',
+  '편성이 비어 있습니다': 'Your squad is empty', '불사조 깃털 · 성채가 되살아났다!': 'Phoenix Feather · the castle rises again!',
+  '갈림길을 골라 세 막을 내려가는 원정. 이길 때마다 축복을, 정예와 보스는 유물을 줍니다. 성채는 이어지고, 한 번 지면 끝.': 'Choose your path down three acts. Wins grant blessings, elites and bosses give relics. The castle carries over — one loss ends it.',
+  '세 막 · 열여덟 층. 층마다 갈림길(전투 · 정예 · 상점 · 야영 · 제단) 하나를 고릅니다. 이기면 축복, 정예와 보스는 유물. 성채는 다음 전투로 이어지고 한 번 지면 끝 — 끝까지 가면 정벌 단계가 오르고 소환석을 받습니다.': 'Three acts, eighteen floors. Each floor offers a fork (battle · elite · shop · camp · shrine). Wins grant blessings, elites and bosses give relics. The castle carries over and one loss ends the run — reach the end to raise your tier and earn summon stones.', '정벌 보스': 'Conquest boss', '정벌 정예': 'Conquest elite',
+  // 칸
+  '전투': 'Battle', '정예': 'Elite', '상점': 'Shop', '야영': 'Camp', '제단': 'Shrine',
+  '이기면 축복 하나 · 군표': 'Win for a blessing · scrip', '억센 적 · 전장 특성 하나 — 이기면 유물 + 축복': 'Tough foes · one field trait — win for a relic + blessing',
+  '군표로 축복 · 유물 · 성채 수리를 산다': 'Spend scrip on blessings · relics · castle repair', '성채를 고치거나, 훈련으로 희귀 축복': 'Repair the castle, or drill for a rare blessing',
+  '무엇이 기다리는지 모른다 — 대가와 보상': 'Who knows what waits — a price and a prize',
+  '막의 주인 · 각인을 두른 보스 — 이기면 유물 고르기 · 성채 30% 회복': 'Lord of the act · a boss with affixes — win to pick a relic · castle +30%',
+  // 단계
+  '정예가 더 자주 나온다': 'Elites appear more often', '성채 85%로 출발한다': 'Start with the castle at 85%', '상점 가격 +20%': 'Shop prices +20%',
+  '보스 각인 +1': 'Bosses gain +1 affix', '야영 회복 -10%p': 'Camp repair -10%p', '적 체력 · 공격 +10%': 'Foe HP · attack +10%',
+  '전투에서 받는 군표 -20%': 'Scrip from battles -20%', '모든 전투에 전장 특성 하나': 'Every battle has a field trait', '보스 체력 +20%': 'Boss HP +20%',
+  '마지막 보스 각인 +1 · 적 +10%': 'Final boss +1 affix · foes +10%',
+  // 축복
+  '날 선 칼날': 'Honed Blades', '모든 아군 공격 +8%': 'All allies attack +8%', '단단한 갑옷': 'Sturdy Mail', '모든 아군 체력 +10%': 'All allies HP +10%',
+  '선봉의 함성': 'Vanguard Cry', '근접 병종 공격 +14%': 'Melee attack +14%', '방패벽': 'Shield Wall', '근접 병종 체력 +16%': 'Melee HP +16%', '원거리 병종 공격 +14%': 'Ranged attack +14%', '긴 활시위': 'Long Bowstring', '원거리 병종 사거리 +25': 'Ranged range +25',
+  '병참 개선': 'Better Logistics', '군자금 수입 +12%': 'War fund income +12%', '큰 금고': 'Big Coffers', '군자금 한도 +250 · 시작 군자금 +100': 'Fund cap +250 · starting funds +100',
+  '빠른 징집': 'Swift Muster', '출진 대기 -10%': 'Deploy cooldown -10%', '성채 최대 체력 +15% · 곧바로 15% 회복': 'Castle max HP +15% · repair 15% now',
+  '전리품 사냥': 'Loot Hunt', '적을 쓰러뜨릴 때마다 군자금 +3': 'War funds +3 per kill', '민병대': 'Militia', '비용 150 이하 병종 공격 · 체력 +18%': 'Units costing 150 or less: attack · HP +18%',
+  '전쟁의 북': 'War Drums', '모든 아군 공격 +15%': 'All allies attack +15%', '영웅의 기개': 'Heroic Spirit', '전설 · 신화 공격 +22%': 'Legend · Myth attack +22%',
+  '시간의 모래': 'Sands of Time', '영웅 액티브 대기 -18%': 'Hero active cooldown -18%', '왕의 위엄': 'Royal Majesty', '왕의 명령 대기 -25% · 치유 +10%': "King's Command cooldown -25% · healing +10%",
+  '축성술': 'Masonry', '전투 중 성채가 초당 0.4% 회복': 'Castle regenerates 0.4%/s in battle', '보급 마차': 'Supply Wagon', '출진 비용 -10%': 'Deploy cost -10%',
+  '보호의 부적': 'Warding Charm', '출진할 때 보호막 +150': 'Shield +150 on deploy', '사냥꾼의 표식': "Hunter's Mark", '보스 체력 -12%': 'Boss HP -12%',
+  '군신의 가호': 'Blessing of the War God', '모든 아군 공격 +20% · 체력 +20%': 'All allies attack +20% · HP +20%', '끝없는 보급': 'Endless Supply', '군자금 수입 +25% · 출진 대기 -15%': 'Income +25% · deploy cooldown -15%',
+  '쇠약의 저주': 'Curse of Frailty', '모든 적 체력 -10% · 공격 -10%': 'All foes HP -10% · attack -10%', '거인의 성채': "Giant's Keep", '성채 최대 체력 +35% · 전투가 끝날 때마다 10% 회복': 'Castle max HP +35% · repair 10% after every battle',
+  // 유물
+  '불사조 깃털': 'Phoenix Feather', '성채가 무너지는 순간 한 번, 50%로 되살아난다 (쓰면 사라진다)': 'Once, when the castle falls, it returns at 50% (then it is gone)',
+  '황금 왕관': 'Golden Crown', '군표 획득 +30%': 'Scrip gained +30%', '상인의 저울': "Merchant's Scales", '상점 가격 -25%': 'Shop prices -25%',
+  '예언자의 수정구': "Seer's Orb", '축복을 고를 때 하나 더 보인다': 'One more blessing to choose from', '야전 병원': 'Field Hospital', '전투가 끝날 때마다 성채 8% 회복': 'Repair the castle 8% after every battle',
+  '용의 심장': 'Dragon Heart', '모든 아군 체력 +25%': 'All allies HP +25%', '전쟁 군주의 검': "Warlord's Sword", '모든 아군 공격 +25%': 'All allies attack +25%',
+  '대장장이 망치': "Smith's Hammer", '근접 병종 공격 · 체력 +20%': 'Melee attack · HP +20%', '엘프 화살통': 'Elven Quiver', '원거리 병종 공격 +20% · 사거리 +20': 'Ranged attack +20% · range +20',
+  '마나 샘': 'Mana Spring', '영웅 액티브 대기 -30%': 'Hero active cooldown -30%', '금고 열쇠': 'Vault Key', '시작 군자금 +250 · 군자금 한도 +300': 'Starting funds +250 · fund cap +300',
+  '징병 명부': 'Muster Roll', '출진 대기 -20%': 'Deploy cooldown -20%', '거석의 초석': 'Megalith Cornerstone', '성채 최대 체력 +50%': 'Castle max HP +50%',
+  '처형인의 도끼': "Executioner's Axe", '보스 체력 -20%': 'Boss HP -20%', '역병 단지': 'Plague Jar', '모든 적 체력 -12%': 'All foes HP -12%',
+  '수호의 성배': 'Guardian Grail', '출진할 때 보호막 +300': 'Shield +300 on deploy', '약탈자의 자루': "Raider's Sack", '적을 쓰러뜨릴 때마다 군자금 +6 · 금화 보상 +25%': 'War funds +6 per kill · gold rewards +25%',
+  '모닥불 부싯돌': 'Campfire Flint', '야영에서 성채를 20%p 더 회복': 'Camps repair 20%p more', '왕실 나팔': 'Royal Horn', '왕의 명령 대기 -40%': "King's Command cooldown -40%",
+  '거울 방패': 'Mirror Shield', '모든 적 공격 -15%': 'All foes attack -15%',
+  // 제단
+  '피의 제단': 'Altar of Blood', '붉게 젖은 돌이 대가를 원한다.': 'The blood-soaked stone demands a price.', '피를 바친다': 'Offer blood', '성채 -20% · 유물 하나': 'Castle -20% · one relic', '지나간다': 'Walk on',
+  '떠돌이 대장장이': 'Wandering Smith', '“군표만 있으면 무엇이든 벼려 드리지.”': '"Bring scrip and I\'ll forge you anything."', '벼려 달라': 'Forge it', '군표 50 · 희귀 축복 고르기': 'Scrip 50 · pick a rare blessing',
+  '치유의 샘': 'Healing Spring', '맑은 물이 솟는다.': 'Clear water wells up.', '성벽을 씻는다': 'Wash the walls', '성채 +30%': 'Castle +30%', '물을 팔아넘긴다': 'Sell the water', '군표 +40': 'Scrip +40',
+  '도박꾼의 탁자': "Gambler's Table", '“반반이오. 걸겠소?”': '"Fifty-fifty. Care to bet?"', '군표 30을 건다': 'Bet 30 scrip', '절반의 확률로 군표 90': 'Half the time, 90 scrip',
+  '저주받은 보물': 'Cursed Treasure', '검은 상자에서 속삭임이 새어 나온다.': 'Whispers leak from a black chest.', '연다': 'Open it', '유물 하나 · 다음 전투 셋은 적 +15%': 'One relic · next three battles foes +15%',
+  '용병 야영지': 'Mercenary Camp', '돈만 주면 싸워 줄 자들이 모여 있다.': 'Sellswords gather, ready to fight for pay.', '고용한다': 'Hire them', '군표 35 · 일반 축복 고르기': 'Scrip 35 · pick a common blessing',
+  '함께 술을 마신다': 'Share a drink', '성채 +12%': 'Castle +12%', '순례자': 'Pilgrim', '지친 순례자가 축복을 빌어 준다.': 'A weary pilgrim offers a blessing.',
+  '축복을 받는다': 'Accept the blessing', '무작위 일반 축복 하나': 'One random common blessing', '노자를 받는다': 'Take travel money', '군표 +50': 'Scrip +50',
+  '망각의 안개': 'Mist of Oblivion', '안개 속에서 무언가를 잃고 무언가를 얻는다.': 'In the mist you lose something and gain something.', '안개 속으로': 'Into the mist',
+  '가진 축복 하나를 잃고 영웅 축복 고르기': 'Lose one blessing, pick an epic one', '돌아선다': 'Turn back',
+  // 업적
+  '정벌자': 'Conqueror', '왕국 정벌을 끝까지 1회': 'Finish a Kingdom Conquest once', '피로 쓴 정벌기': 'Chronicle in Blood', '정벌 단계 5 넘기': 'Clear Conquest tier 5',
+  '끝없는 정복': 'Endless Conquest', '정벌 단계 10 넘기': 'Clear Conquest tier 10',
+  // 효과 요약 '근접 공격': 'Melee atk', '근접 체력': 'Melee HP', '원거리 공격': 'Ranged atk', '영웅 공격': 'Hero atk', '값싼 병종': 'Cheap units',
+  '수입': 'Income', '출진 대기': 'Cooldown', '적 체력': 'Foe HP', '적 공격': 'Foe atk', '보스 체력': 'Boss HP', '액티브 대기': 'Active cd', '왕명 대기': 'Command cd',
+  '적 강도': 'Foe strength',
 };
 
 /* 목록 문단처럼 굵은 글씨가 섞인 덩어리는 통째로 바꾼다 */
@@ -1188,6 +1263,21 @@ const I18N_EN_HTML = {
 
 /* 숫자가 붙은 말. 구절 치환보다 먼저 한다. */
 const I18N_EN_PATTERNS = [
+  // 5.0 정벌
+  [/^⚔ (\d)막 (\d)층 · /g, '⚔ Act $1 F$2 · '], [/(\d)막 (\d)층 진행 중/g, 'Act $1 · floor $2 in progress'], [/진행 중 · (\d)막 (\d)층 · 성채 (\d+)%/g, 'In progress · Act $1 floor $2 · castle $3%'],
+  [/^정벌 · 단계 (\d+)$/g, 'Conquest · Tier $1'], [/^단계 (\d+)$/g, 'Tier $1'], [/^(\d+) \/ (\d+)층$/g, 'Floor $1 / $2'], [/^(\d)막$/g, 'Act $1'],
+  [/^ \/ (\d+)층 · 정벌 $/g, ' / $1 floors · conquests '], [/^회 · 원정 (\d+)회( · 넘은 단계 )?$/g, ' · runs $1$2'], [/ · 넘은 단계 $/g, ' · top tier '],
+  [/^최고 $/g, 'Best '], [/^층 · 정벌 $/g, ' floors · conquests '], [/^회$/g, ''],
+  [/적 \+(\d+)% → \+(\d+)% \(깊이 내려갈수록\)/g, 'Foes +$1% → +$2% (deeper floors)'], [/\((\d+)전장\)/g, '(stage $1)'], [/저주 (\d)전/g, 'curse $1 battles'],
+  [/^(.+) · 기본 · (\d+) \/ (\d+)층$/g, '$1 · Base · floor $2 / $3'], [/^단계 (\d+) · (\d+) \/ (\d+)층$/g, 'Tier $1 · floor $2 / $3'], [/^기본 · (\d+) \/ (\d+)층$/g, 'Base · floor $1 / $2'],
+  [/이긴 전투 (\d+) · 처치 /g, 'Battles won $1 · kills '], [/전투 금화 💰 /g, 'Battle gold 💰 '], [/ · 정벌 보상 💰 /g, ' · conquest reward 💰 '], [/소환석 🔮 \+(\d+)/g, 'Summon stones 🔮 +$1'],
+  [/단계 (\d+) 첫 정벌! 소환석 덤 · 단계 (\d+) 열림/g, 'First clear of tier $1! Bonus stones · tier $2 unlocked'], [/단계 (\d+) 첫 정벌! 소환석 덤 · 마지막 단계/g, 'First clear of tier $1! Bonus stones · final tier'],
+  [/남은 성채 (\d+)% \(보스 격파 · 30% 회복\)  ·  군표 🎖 \+(\d+)/g, 'Castle left $1% (boss slain · +30%)  ·  scrip 🎖 +$2'], [/남은 성채 (\d+)%  ·  군표 🎖 \+(\d+)/g, 'Castle left $1%  ·  scrip 🎖 +$2'],
+  [/정예의 전리품 · /g, 'Elite spoils · '], [/^군표 🎖 (\d+) · 성채 (\d+)%$/g, 'Scrip 🎖 $1 · castle $2%'], [/^성채 (\d+)% · 하룻밤을 어떻게 보낼까$/g, 'Castle $1% · how will you spend the night?'],
+  [/^성채 \+(\d+)%$/g, 'Castle +$1%'], [/^잃음 · /g, 'Lost · '], [/^유물 · /g, 'Relic · '], [/^축복 · /g, 'Blessing · '],
+  [/정벌 · 성채 (\d+)%/g, 'Conquest · castle $1%'], [/정벌 보스 · 성채 (\d+)%/g, 'Conquest boss · castle $1%'], [/정벌 정예 · 성채 (\d+)%/g, 'Conquest elite · castle $1%'],
+  [/사거리 \+(\d+)/g, 'Range +$1'], [/시작 군자금 \+(\d+)/g, 'Starting funds +$1'], [/군자금 한도 \+(\d+)/g, 'Fund cap +$1'], [/처치 군자금 \+(\d+)/g, 'Funds per kill +$1'], [/출진 보호막 \+(\d+)/g, 'Deploy shield +$1'], [/성채 회복 ([\d.]+)%\/초/g, 'Castle regen $1%/s'], [/전투 후 성채 \+(\d+)%/g, 'Castle +$1% after battle'],
+  [/🔒 정벌은 (\d+)전장을 돌파하면 열립니다/g, '🔒 Conquest opens after clearing stage $1'], [/(\d+)전장을 돌파하면 정벌이 열립니다/g, 'Clear stage $1 to unlock Conquest'],
   // 4.4 3진 시련
   [/✪ 3진 시련 달성 · /g, '✪ Trial cleared · '],
   [/그림자 가면: (.+?) 봉인/g, 'Shadow Mask: $1 sealed'],   // 4.6
@@ -1343,7 +1433,8 @@ function i18nStart() {
 
 if (I18N.lang === 'en') {
   // 4.2: 3진 표(EVOLUTIONS2)도 — 빠져 있어 3진 능력 글이 반쯤만 번역됐다
-  [UNITS, ENEMIES, STAGES, EVENT_STAGES, EXPEDITIONS, SEASONS, MISSION_DEFS, ACHIEVEMENTS, UPGRADES, COMMAND, RARITY, STAGE_MODS, OPENINGS, EVOLUTIONS, EVOLUTIONS2, EVOLUTIONS3, EVO_LABELS, STAT_LABELS]
+  [UNITS, ENEMIES, STAGES, EVENT_STAGES, EXPEDITIONS, SEASONS, MISSION_DEFS, ACHIEVEMENTS, UPGRADES, COMMAND, RARITY, STAGE_MODS, OPENINGS, EVOLUTIONS, EVOLUTIONS2, EVOLUTIONS3, EVO_LABELS, STAT_LABELS,
+   CONQ_BLESS, CONQ_RELICS, CONQ_RARITY, CONQ_NODES, CONQ_ASC, CONQ_SHRINES]   // 5.0 정벌
     .forEach(o => i18nData(o, 0));
   // 무한 전장은 부를 때마다 새로 만든다
   const makeEndlessKo = makeEndlessStage;

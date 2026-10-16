@@ -117,4 +117,18 @@ test('4.4: trial records are cleaned when a save is loaded',()=>{
   ctx.raw=old;const fresh=vm.runInContext('normalizeSave(raw)',ctx);
   assert.deepEqual(JSON.parse(JSON.stringify([fresh.best,fresh.perfect,fresh.life])),[{},{},{}],'old saves start empty');
 });
+test('5.0: a conquest run in progress survives loading; a broken one is dropped',()=>{
+  const src=fs.readFileSync('js/main.js','utf8');
+  const grab=name=>{const i=src.indexOf('function '+name+'(');const j=src.indexOf('\n}\n',i);return src.slice(i,j+3);};
+  const ctx=vm.createContext({console});vm.runInContext(fs.readFileSync('js/data.js','utf8'),ctx);
+  vm.runInContext(grab('defaultSave')+grab('normalizeSave'),ctx);
+  const run=JSON.parse(JSON.stringify(vm.runInContext('conqNewRun({cleared:40,loadout:["spear","archer"]},0,42)',ctx)));
+  ctx.raw={...old,cleared:40,conquest:run,conqRec:{asc:2,top:1,best:12,runs:4,wins:2}};
+  const s=vm.runInContext('normalizeSave(raw)',ctx);
+  assert.equal(JSON.stringify(s.conquest.map),JSON.stringify(run.map));assert.equal(s.conquest.deck.join(),'spear,archer');assert.equal(s.conqRec.wins,2);
+  ctx.raw={...old,conquest:{...run,map:'oops'},conqRec:'bad'};
+  const t=vm.runInContext('normalizeSave(raw)',ctx);
+  assert.equal(t.conquest,null);assert.equal(t.conqRec.runs,0);
+  ctx.raw=old;assert.equal(vm.runInContext('normalizeSave(raw)',ctx).conquest,null,'old saves have no run');
+});
 console.log(n+' save protection checks passed');

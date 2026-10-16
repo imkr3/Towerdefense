@@ -344,6 +344,11 @@ class Battle {
       atk: 1 + 0.06 * (up.power || 0)
     };
     this.levels = save.levels || {};
+    // 5.0 정벌: 축복 · 유물을 모은 효과(opts.run = conqEffects) · 이어 온 성채(opts.castle)
+    const R = this.run = (opts && opts.run) || null;
+    this.deckFixed = (opts && opts.deck) || null;
+    this.conquest = this.stage.conquest || null;
+    if (R) { this.buff.hp *= R.hp; this.buff.atk *= R.atk; }
 
     this.walletMax = 900 + 260 * (up.wallet || 0);
     this.income = this.stage.rate * (1 + 0.12 * (up.income || 0));
@@ -351,12 +356,14 @@ class Battle {
     this.goldMul = 1 + 0.08 * (up.spoils || 0);
     this.money = Math.min(this.walletMax,
                           this.stage.money + 60 * (up.treasury || 0));
+    if (R) { this.walletMax += R.wallet; this.income *= R.income; this.cdMul *= R.cd; this.money = Math.min(this.walletMax, this.money + R.startMoney); }
 
     // 왕의 명령
     const cmdLv = up.command || 0;
     this.cmdMax = Math.max(25, COMMAND.baseCooldown - COMMAND.cooldownPerLv * cmdLv) * (this.hard ? HARDCORE.cmdMul : 1);
+    if (R) this.cmdMax *= R.cmdCd;
     this.cmdCd = this.cmdMax;   // 시작하자마자는 쓸 수 없다
-    this.cmdHeal = COMMAND.healRatio + COMMAND.healPerLv * cmdLv;
+    this.cmdHeal = COMMAND.healRatio + COMMAND.healPerLv * cmdLv + (R ? R.cmdHeal : 0);
     this.cmdUses = 0;
     this.heroCooldowns = {};
     this.heroGlobalCd = 0;
@@ -365,6 +372,10 @@ class Battle {
     const castleHp = Math.round(4000 * (1 + 0.10 * (up.castle || 0)) * (this.hard ? HARDCORE.castleMul : 1));
     this.allyCastle = new Castle('ally', castleHp, ALLY_BASE_X);
     this.enemyCastle = new Castle('enemy', this.hard ? hardcoreFortHp(this.stage) : this.stage.baseHp, ENEMY_BASE_X);
+    if (R) {                     // 정벌: 성채 최대 체력 축복 · 지난 전투에서 남은 만큼으로 시작
+      this.allyCastle.maxHp = Math.round(this.allyCastle.maxHp * R.castle);
+      this.allyCastle.hp = Math.max(1, Math.round(this.allyCastle.maxHp * Math.min(1, opts.castle === undefined ? 1 : opts.castle)));
+    }
 
     this.allies = [];
     this.enemies = [];
@@ -460,7 +471,7 @@ class Battle {
   /* 실제 출진 편성 (최대 LOADOUT_MAX) */
   battleUnits() {
     const unlocked = this.unlockedUnits();
-    const picked = [...new Set(this.save.loadout || [])].filter(id => unlocked.some(u => u.id === id));
+    const picked = [...new Set(this.deckFixed || this.save.loadout || [])].filter(id => unlocked.some(u => u.id === id));   // 5.0 정벌은 출발할 때 묶인 편성
     const list = picked.length ? picked.map(id => UNIT_BY_ID[id]) : unlocked.slice(0, LOADOUT_MAX);
     // 전설·신화는 앞에서부터 HERO_SLOT_MAX 명까지만 데려간다
     let heroes = 0;
@@ -472,7 +483,14 @@ class Battle {
   stats(id) {
     // 3.14: 전투 중엔 레벨·진화가 바뀌지 않는다. 예전엔 HUD·출진 판정이 매 프레임 카드마다 스탯을 새로 만들었다(쓰레기·발열)
     const c = this._stats || (this._stats = {});
-    return c[id] || (c[id] = unitFor(this.save, id));
+    if (c[id]) return c[id];
+    let st = unitFor(this.save, id);
+    // 5.0 정벌: 보급 마차(비용) · 활시위(사거리) — 공용 스탯을 건드리지 않게 복사본에
+    if (st && this.run && (this.run.cost !== 1 || this.run.range)) {
+      st = Object.assign({}, st, { cost: Math.round(st.cost * this.run.cost) });
+      if (st.ranged && this.run.range) st.range += this.run.range;
+    }
+    return (c[id] = st);
   }
 
   /* 3.5: 전장 병력 상한. 오래 끄는 싸움(무한 전장 등)에서 병력이 100명 넘게 쌓여
@@ -525,6 +543,11 @@ class Battle {
       lm = unitLevelMul(st.level || this.levels[u.id] || 1);
     }
     const buff = { hp: this.buff.hp * lm, atk: this.buff.atk * lm };
+    if (this.run && !owner) {    // 5.0 정벌: 근접 · 원거리 · 영웅 · 값싼 병종 축복
+      const R = this.run, melee = !st.ranged, cheap = st.cost <= 150;
+      buff.hp *= (melee ? R.meleeHp : 1) * (cheap ? R.cheapHp : 1);
+      buff.atk *= (melee ? R.meleeAtk : R.rangedAtk) * (isHeroUnit(st) ? R.heroAtk : 1) * (cheap ? R.cheapAtk : 1);
+    }
     const f = new Fighter(st, 'ally', x, buff);
     if (owner && owner.s) f.creditTo = owner.creditTo || owner.s.id;
     if (this.mods && this.mods.curse) f.healMul = CURSE_HEAL;
@@ -544,7 +567,7 @@ class Battle {
     this.cooldowns[id] = u.cooldown * this.cdMul;
     const f = this.makeAlly(u, ALLY_SPAWN_X + Math.random() * 40);
     this.meterRow(f).n++;
-    f.giveBarrier(25 * Math.min(5, this.save.upgrades.deployment || 0));
+    f.giveBarrier(25 * Math.min(5, this.save.upgrades.deployment || 0) + (this.run ? this.run.barrier : 0));
     // 안개 속으로 들어온 병사는 백작에게 홀린다 (안개가 걷힌 뒤에 내보내야 한다)
     const vb = this.veiledBoss();
     if (vb && vb.s.special && vb.s.special.charm !== undefined) {
@@ -700,7 +723,7 @@ class Battle {
     if(!this.canHeroActive(id)) return false;
     const f=this.heroCaster(id), a=f.s.active, buff=a.barrier||a.haste, target=buff?f:this.heroTarget(f);
     // 3.13: 영웅끼리 묶인 공용 대기(6초)를 없앴다 — 각자 자기 재사용 대기만 본다. 여럿을 한꺼번에 써도 된다
-    this.heroCooldowns[id]=a.cd; this.heroGlobalCd=HERO_SHARED_CD;
+    this.heroCooldowns[id]=a.cd*(this.run?this.run.heroCd:1); this.heroGlobalCd=HERO_SHARED_CD;
     if(buff) {
       for(const m of this.allies) if(!m.dead && Math.abs(m.x-f.x)<=a.radius) {
         if(a.barrier){m.giveBarrier(a.barrier*f.abMul);m.poisonT=0;m.poisonDps=0;m.burnT=0;m.burnDps=0;}
@@ -794,6 +817,8 @@ class Battle {
 
   tick(dt) {
     this.time += dt;
+    // 5.0 정벌 축성술: 성채가 조금씩 스스로 고쳐진다
+    if (this.run && this.run.regen && !this.allyCastle.dead) { const c = this.allyCastle; c.hp = Math.min(c.maxHp, c.hp + c.maxHp * this.run.regen * dt); }
     // 4.15 7막 모래폭풍: every 초마다 dur 초 동안 모래가 불어 원거리 사거리가 줄어든다 (양쪽 모두). 2초 전에 알린다.
     const sto = this.stage.storm;
     if (sto) {
@@ -890,6 +915,13 @@ class Battle {
 
     // 무한 전장도 적 요새를 무너뜨리면 끝난다 (요새 함락 · 웨이브 보상에 덤)
     if (this.enemyCastle.dead) { this.shake = 16; this.finish('win'); }
+    else if (this.allyCastle.dead && this.run && this.run.phoenix > 0 && !this.phoenixUsed) {
+      // 5.0 불사조 깃털: 한 번 되살아난다 (원정에서 쓰면 사라진다)
+      this.phoenixUsed = true; this.allyCastle.dead = false; this.allyCastle.hp = Math.round(this.allyCastle.maxHp * 0.5);
+      this.shake = 12; this.flash = 0.6; this.flashColor = '#ffb347';
+      this.fx.push({ type: 'aura', x: this.allyCastle.x, row: 1, r: 260, t: 1.2, life: 1.2, color: '#ffb347' });
+      this.announce('불사조 깃털 · 성채가 되살아났다!', 2.6); sfx('win');
+    }
     else if (this.allyCastle.dead) { this.shake = 16; this.finish(this.endless ? 'over' : 'lose'); }
     // 웨이브 수가 정해진 무한 전장(검사용)만 다 버티면 끝. 진짜 무한 전장은 성채가 무너질 때까지.
     else if (this.endless && !this.stage.infinite && this.qi >= this.queue.length && this.enemies.length === 0) {
@@ -1010,8 +1042,15 @@ class Battle {
       if (this.hard) { f.maxHp = Math.round(f.maxHp * HARDCORE.boss.hp * (this.stage.hardBoss || 1)); f.hp = f.maxHp; f.atk = Math.round(f.atk * HARDCORE.boss.atk); }
       f.baseAtk = f.atk;
     }
-    // 4.21 보스 각인: 하드코어 · 도전의 보스는 기술 둘을 더 쓴다
-    if (f.boss && this.stage.bossId && !this.endless && (this.hard || this.event)) {
+    // 5.0 정벌: 쇠약 · 역병 · 거울(모든 적) · 처형인(보스) — 보스의 정벌 덤 체력도 여기서
+    if (this.run) {
+      const R = this.run, bm = f.boss ? R.bossHp * (this.stage.conqBossHp || 1) : 1;
+      f.maxHp = Math.max(1, Math.round(f.maxHp * R.enemyHp * bm)); f.hp = f.maxHp;
+      f.atk = Math.round(f.atk * R.enemyAtk);
+      if (f.baseAtk !== undefined) f.baseAtk = f.atk;
+    }
+    // 4.21 보스 각인: 하드코어 · 도전의 보스는 기술 둘을 더 쓴다 (5.0 정벌 보스도 — 막마다 각인 수가 다르다)
+    if (f.boss && this.stage.bossId && !this.endless && (this.hard || this.event || this.stage.runAffix)) {
       const keys = bossAffixes(this.stage, this.stageIndex, this.hard);
       if (keys.length) f.affixes = keys.map(k => ({ k: k, a: BOSS_AFFIXES[k], cd: BOSS_AFFIXES[k].first }));
     }
@@ -1113,6 +1152,7 @@ class Battle {
         // 4.13 정예 · 보스를 쓰러뜨리면 금화가 튀어 오른다 (졸개마다 띄우면 화면이 금화투성이가 된다)
         if (got >= 20 && this.fx.length < FX_LIMIT * 0.6) this.fx.push({ type: 'coin', x: f.x, row: f.row, v: got, t: 0.9, life: 0.9 });
         this.kills++;
+        if (this.run && this.run.killGold) this.money = Math.min(this.walletMax, this.money + this.run.killGold);   // 5.0 전리품 사냥
         this.reanimate(f);
         if (f.stolen > 0) {                       // 도둑이 훔친 군자금을 되찾는다
           this.money = Math.min(this.walletMax, this.money + f.stolen);
@@ -1153,6 +1193,20 @@ class Battle {
     sfx(result === 'win' ? 'win' : 'lose');
     this.recordTrials(result);
 
+    if (this.conquest) {
+      // 5.0 정벌: 이기면 전장 보상, 지면 절반. 소환석은 원정이 끝날 때 한꺼번에 (conqFinish)
+      if (result === 'win') {
+        const ratio = this.allyCastle.hp / this.allyCastle.maxHp;
+        this.stars = ratio >= 0.9 ? 3 : (ratio >= 0.5 ? 2 : 1);
+        this.coins += this.stage.reward;
+      } else this.coins = Math.floor(this.coins * 0.5);
+      this.coins = Math.round(this.coins * (this.run ? this.run.coinMul : 1));
+      this.stoneGain = 0;
+      this.save.coins += this.coins;
+      this.save.totalKills = (this.save.totalKills || 0) + this.kills;
+      saveGame(this.save);
+      return;
+    }
     if (this.endless) {
       this.wavesCleared = this.wavesDone();
       const best = this.save.endlessBest || 0;
