@@ -3357,9 +3357,9 @@ const AWAKEN_TAX = 0.06;
 function hardcoreEnemyMul(st) { const m = st.enemyMul || 1; return Math.max(Math.max(HARDCORE.enemyMul * m / (1 + m / HARDCORE.soft), m * (st.hardRatio || HARDCORE.minRatio)) * (st.hardSoft || 1), HARDCORE.mulFloor) * (st.hardTune || 1); }   // 4.20 hardTune: 만렙 기준 전장별 보정
 /* 4.24 근접 병종을 보강한 만큼 진군이 쉬워져(막 입구 관문을 공략 편성이 7~8곳씩 넘었다) 진군 적 배율을 ×1.12.
  * 하드코어는 방금 맞춘 그대로 두려고 hardTune 으로 정확히 되돌린다 (hardcoreEnemyMul 이 배율에 곧게 비례하지 않아 전장마다 계산) */
-const CAMPAIGN_MELEE_COMP = 1.12;
+const CAMPAIGN_MELEE_COMP = 1.12, CAMPAIGN_COMP_SKIP = [33, 52, 53, 61, 63, 67, 70, 75];
 STAGES.forEach((st, i) => {
-  if (i < 3) return;                                                   // 1~3전장은 기본 병종으로 넘는 곳이라 그대로
+  if (i < 3 || CAMPAIGN_COMP_SKIP.includes(i + 1)) return;            // 1~3전장은 기본 병종으로 넘는 곳 · 다 키운 공략 편성도 빠듯한 곳은 그대로
   const before = hardcoreEnemyMul(st);
   st.enemyMul = Math.round((st.enemyMul || 1) * CAMPAIGN_MELEE_COMP * 100) / 100;
   st.hardTune = st.hardTune * before / hardcoreEnemyMul(st);
