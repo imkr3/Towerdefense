@@ -3,7 +3,7 @@
  * ======================================================================= */
 
 
-const APP_VERSION = '5.0.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
+const APP_VERSION = '5.0.1';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
 
 function defaultSave() {
   const lv = {};
@@ -1833,13 +1833,14 @@ function updateHud() {
     const u = battle.stats(id);
     // 전설·신화가 전장에 서 있으면 카드는 액티브 버튼이 된다
     const alive = !!(u.active && battle.heroCaster(id));
+    const canAct = !!(alive && battle.canHeroActive(id));   // 5.0.1: 카드마다 한 번만 따진다
     hudClass(el, 'alive', alive);
     if (u.active) {
       const act = el._act || (el._act = el.querySelector('.c-act'));
       hudClass(act, 'hide', !alive);
       if (alive) {
         const acd = Math.max(battle.heroCooldowns[id] || 0, battle.heroGlobalCd);
-        const ready = battle.canHeroActive(id);
+        const ready = canAct;
         hudClass(el, 'act-ready', ready);
         const k = acd > 0 && !ready ? '충전' : '필살';
         const v = ready ? '발동!' : (acd > 0 ? Math.ceil(acd) + '초' : '대상 없음');
@@ -1858,7 +1859,7 @@ function updateHud() {
     if (seal > 0 && !alive) { hudClass(cool, 'hide', false); hudText(cool, '🔒' + Math.ceil(seal)); }
     else if (cd > 0 && !alive) { hudClass(cool, 'hide', false); hudText(cool, cd.toFixed(1)); }
     else hudClass(cool, 'hide', true);
-    const canDeploy = battle.canDeploy(id), canAct = !!(u.active && battle.canHeroActive(id));
+    const canDeploy = battle.canDeploy(id);
     hudClass(el, 'poor', !alive && money < u.cost);
     hudClass(el, 'available', alive ? canAct : canDeploy);
     hudAttr(el, 'aria-disabled', String(!inputOk || !(canDeploy || canAct)));
@@ -2149,6 +2150,9 @@ function loop(ts) {
     if (BGM.vol > 0) BGM.sting(battle.state === 'win' || (battle.endless && battle.newRecord) ? 'victory' : 'defeat');
     else BGM.stop(0.6);
     recordBattle(battle);
+    // 5.0.1 정벌: 원정도 금화와 같은 순간에 정산해 저장한다. 결과창(0.7초 뒤) 전에 앱이 꺼지면
+    // 금화만 남고 원정은 그 층 그대로라 같은 칸을 다시 싸워 금화를 불리거나 패배를 없앨 수 있었다.
+    if (battle.conquest) battle._conqInfo = conqResolveBattle(battle);
     const ended = battle;
     resultTimer = setTimeout(() => {
       if (battle === ended && $('#scr-battle').classList.contains('active')) showResult();
@@ -2722,6 +2726,8 @@ window.__androidBack = function () {
   if (active.id === 'scr-formation') { if (fmDrag) { dragEnd(); return true; } show(fmBack); return true; }
   if (['scr-shop','scr-units','scr-gacha','scr-quest'].includes(active.id)) { show('scr-map'); return true; }
   if (active.id === 'scr-map') { show('scr-title'); return true; }
+  // 5.0.1: 정벌 화면에서 뒤로 가기가 앱을 껐다. 원정은 저장되어 있으니 진군도로 돌아간다
+  if (active.id === 'scr-conquest') { show('scr-map'); return true; }
   return false;   // 타이틀에서는 앱 종료
 };
 

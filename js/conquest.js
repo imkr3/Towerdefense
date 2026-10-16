@@ -97,6 +97,7 @@ function conqRunView(run) {
   const row = run.map[run.floor] || [];
   if (conqSel >= row.length) conqSel = -1;
   if (conqSel < 0 && row.length === 1) conqSel = 0;
+  if (run.fighting) conqSel = run.path[run.floor];   // 5.0.1: 꺼지기 전 치르던 전투는 다시 치른다
   // 막 표시
   let acts = '<div class="cq-acts">';
   for (let a = 0; a < CONQ.acts; a++) acts += '<span class="cq-act' + (a === run.act ? ' on' : a < run.act ? ' done' : '') + '">' + (a + 1) + '막</span>';
@@ -120,7 +121,7 @@ function conqRunView(run) {
     const node = run.map[CONQ.floors - 1][0], st = STAGES[node.src];
     if (ENEMIES[st.bossId]) drawUnitIcon(c, ENEMIES[st.bossId], 30);
   });
-  wrap.querySelectorAll('.cq-node.live').forEach(b => b.addEventListener('click', () => { conqSel = +b.dataset.k; SFX.ui(); renderConquest(); }));
+  wrap.querySelectorAll('.cq-node.live').forEach(b => b.addEventListener('click', () => { if (run.fighting) return; conqSel = +b.dataset.k; SFX.ui(); renderConquest(); }));
   conqDetail(run, wrap.querySelector('.cq-detail'));
   return wrap;
 }
@@ -139,6 +140,7 @@ function conqDetail(run, el) {
       if (st.mods && st.mods.length) h += '<div class="cq-pick-mods">' + st.mods.map(m => '<span style="--mc:' + STAGE_MODS[m].color + '">' + STAGE_MODS[m].name + '</span>').join('') + '</div>';
       if (node.aff) h += affixBlock(node.aff);
     }
+    if (run.fighting) h += '<div class="cq-pick-d"><b>' + '중단된 전투를 다시 치릅니다' + '</b></div>';
     h += '<button type="button" class="btn primary cq-enter">' + (node.src !== undefined ? '출진' : '들어간다') + '</button>';
   } else h += '<div class="cq-pick-d">갈림길 하나를 고르세요</div>';
   // 지금 가진 것
@@ -180,6 +182,7 @@ function conqSummary(R) {
 function conqEnter(run, k) {
   const node = run.map[run.floor][k];
   if (!node || run.pending || run.room) return;
+  if (run.fighting && k !== run.path[run.floor]) return;
   run.path[run.floor] = k;
   SFX.ui();
   if (node.src !== undefined) { startConquestBattle(run, node); return; }
@@ -410,7 +413,7 @@ function conqResolveBattle(b) {
   return info;
 }
 function showConquestResult() {
-  const b = battle, info = conqResolveBattle(b) || { win: b.state === 'win' };
+  const b = battle, info = conqResolveBattle(b) || b._conqInfo || { win: b.state === 'win' };
   $('#result-title').textContent = info.done === 'win' ? '정벌 완료!' : info.win ? (info.boss ? '보스 격파' : '정벌 승리') : '정벌 실패';
   $('#result-stars').innerHTML = info.win ? starMarks(b.stars) : '';
   const lines = [];

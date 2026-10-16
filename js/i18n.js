@@ -1234,9 +1234,12 @@ const I18N_EN = {
   // 업적
   '정벌자': 'Conqueror', '왕국 정벌을 끝까지 1회': 'Finish a Kingdom Conquest once', '피로 쓴 정벌기': 'Chronicle in Blood', '정벌 단계 5 넘기': 'Clear Conquest tier 5',
   '끝없는 정복': 'Endless Conquest', '정벌 단계 10 넘기': 'Clear Conquest tier 10',
-  // 효과 요약 '근접 공격': 'Melee atk', '근접 체력': 'Melee HP', '원거리 공격': 'Ranged atk', '영웅 공격': 'Hero atk', '값싼 병종': 'Cheap units',
+  // 효과 요약
+  '근접 공격': 'Melee atk', '근접 체력': 'Melee HP', '원거리 공격': 'Ranged atk', '영웅 공격': 'Hero atk', '값싼 병종': 'Cheap units',
   '수입': 'Income', '출진 대기': 'Cooldown', '적 체력': 'Foe HP', '적 공격': 'Foe atk', '보스 체력': 'Boss HP', '액티브 대기': 'Active cd', '왕명 대기': 'Command cd',
   '적 강도': 'Foe strength',
+  // 5.0.1
+  '단계 내리기': 'Lower tier', '단계 올리기': 'Raise tier', '군표': 'Scrip', '중단된 전투를 다시 치릅니다': 'Resume the interrupted battle',
 };
 
 /* 목록 문단처럼 굵은 글씨가 섞인 덩어리는 통째로 바꾼다 */
