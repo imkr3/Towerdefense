@@ -1953,7 +1953,7 @@ test('4.24: melee units get more hp (thinner ones more) and armor; huge-hp melee
     const r = G.resolveUnit(u, 30, ev); assert.ok(r.speed >= u.speed || ev > 0, id + ' never slower than its base'); } }
 });
 
-test('4.25: one new third form in each season that had none — they arrive, chain and summon in battle', () => {
+test('4.25: one new third form in each season that had none — they arrive and summon in battle', () => {
   const X = vm.runInContext('({EVOLUTIONS2, SEASONS})', ctx);
   for (const sn of X.SEASONS) assert.ok(sn.units.some(id => X.EVOLUTIONS2[id]), sn.id + ' has a third form');
   const mk = ids => { const s = save(); s.loadout = ids; s.owned = {}; s.levels = {}; s.evo = {}; s.evo2 = {};
@@ -1964,13 +1964,9 @@ test('4.25: one new third form in each season that had none — they arrive, cha
   assert.deepEqual(subs, ['ninetail', 'forge', 'stormcloud']);
   const fox = b.allies.find(a => a.s.id === 'gumiho'), inv = b.allies.find(a => a.s.id === 'inventor'), sus = b.allies.find(a => a.s.id === 'susanoo');
   assert.equal(fox.s.shot, 'foxorb'); assert.equal(inv.s.shot, 'teslabolt');
-  assert.ok(fox.s.ab.chain && inv.s.ab.chain, 'fox and forge chain');
+  assert.ok(!fox.s.ab.chain && fox.s.ab.charm.dur >= 3.5 && fox.s.areaRadius > U.gumiho.areaRadius, 'fox: longer, wider charm, no chain (area + chain snowballed)');
   assert.equal(inv.s.ab.summon.max, 5, 'five turrets');
   assert.ok(sus.s.speed >= 60, 'rides the storm cloud');
-  // 번개가 튕긴다: 붙어 선 적 셋 중 둘 이상이 다친다
-  const foes = [0, 1, 2].map(i => { const e = b.spawnEnemy('goblin', sus.x + 60 + i * 40); e.hp = e.maxHp = 1e6; return e; });
-  b.hitOne(1000, foes[0], fox, false);
-  assert.ok(foes.filter(e => e.hp < e.maxHp).length >= 2, 'lightning chains to a neighbour');
 });
 
 console.log(count + ' regression checks passed');

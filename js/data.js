@@ -2984,13 +2984,13 @@ const EVOLUTIONS2 = {
              castFx: 'dragonslash', arrive: 'dragon' },
   // 4.25 3진이 없던 시즌에 하나씩: 요괴록 · 태엽 공방 · 벚꽃 전국의 신화
   gumiho:  { look: { shape: 'skyfox', body: '#fff4fa', tunic: '#6a2a8a', accent: '#ff8ae0', grow: 1.0 }, name: '천호 여제', short: '천호여제',
-             plus: '빛나는 아홉 꼬리 · 여우불 구슬 2번 튕김 · 홀림 30% 3.5초 · 사거리 +40 · 범위 +25 · 여우 구슬 2.4배 · 6초 홀림',
-             add: { range: 40, areaRadius: 25 }, ab: { charm: { chance: 0.3, dur: 3.5 }, chain: { n: 2, fall: 0.5, range: 140 } },
+             plus: '빛나는 아홉 꼬리 · 큰 여우불 구슬 · 홀림 3.5초 · 사거리 +30 · 범위 +25 · 여우 구슬 2.4배 · 6초 홀림',
+             add: { range: 30, areaRadius: 25 }, ab: { charm: { dur: 3.5 } },   // 범위 공격에 튕김을 얹으면 맞은 적마다 튕겨 너무 셌다
              active: { mul: 2.4, charm: 6, radius: 260, desc: '가장 가까운 적 주변 여우 구슬 아홉이 터진다 · 6초 홀림(보스 제외). 성채에는 피해 없음.' },
              shot: 'foxorb', castFx: 'foxstorm', arrive: 'ninetail' },
   inventor:{ look: { shape: 'clockforge', body: '#f0dcb4', tunic: '#5a3b26', accent: '#ffb347', grow: 1.05 }, name: '태엽 신공방', short: '신공방',
-             plus: '걷는 태엽 공방 · 테슬라 코일 번개 2번 튕김 · 포탑 최대 5 · 5.5초마다 설치 · 사거리 +40 · 과부하 8초 · 범위 +60',
-             add: { range: 40 }, ab: { summon: { max: 5 }, interval: 5.5, chain: { n: 2, fall: 0.55, range: 120 } },
+             plus: '걷는 태엽 공방 · 테슬라 코일 번개 · 포탑 최대 5 · 5.5초마다 설치 · 사거리 +40 · 과부하 8초 · 범위 +60',
+             add: { range: 40 }, ab: { summon: { max: 5 }, interval: 5.5 },
              active: { haste: { mul: 0.45, dur: 8 }, radius: 380, desc: '주변 아군 공격 속도 크게 증가(8초)·기절 해제.' },
              shot: 'teslabolt', castFx: 'teslacoil', arrive: 'forge' },
   susanoo: { look: { shape: 'stormgod', body: '#eef2f6', tunic: '#1e2c5a', accent: '#8ad8ff', grow: 1.0 }, name: '천총운 폭풍신', short: '폭풍신',
@@ -3363,7 +3363,7 @@ function unitFor(save, id) {
  *   다 키운 공략 편성으로도 30곳 중 절반 남짓만 넘는다 (`npm run balance` 가 검사).
  * ======================================================================= */
 // 4.4: 3진이 생긴 뒤로 도전이 쉬워졌다 — 적 ×3.5 → 4.1 (바닥 5 → 6.2), 요새 ×2 → 2.2, 보스 체력 ×2.6 → 2.9
-const HARDCORE = { enemyMul: 4.6, fortMul: 2.4, castleMul: 0.6, cmdMul: 1.5, reward: 3, stones: 5, stunResist: 0.3,
+const HARDCORE = { enemyMul: 4.6, fortMul: 2.4, castleMul: 0.6, cmdMul: 1.5, reward: 3, stones: 5, stunResist: 0.3, charmResist: 0.4,
                    // 3.19: 하드코어 보스는 따로 더 억세다. 다 키운 영웅 편성이 필살을 몰아 쓰면 10~20초 만에 녹았다
                    boss: { hp: 3.2, atk: 1.2 },   // 4.18: 3.3 → 2 (7막 끝 보스 셋이 다 키워도 넘을 수 없었다) · 4.23: 3.2 — 보스가 너무 빨리 녹았다 (전장별 보정으로 승률은 맞춘다)
                    fury: { per30: 0.15, max: 1.5 },   // 3.1: 오래 끌수록 새로 나오는 적이 억세진다 (최대 2.5배)

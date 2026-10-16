@@ -719,7 +719,7 @@ class Battle {
         if(!e.dead) {
           if(a.slow)e.slowT=Math.max(e.slowT,a.slow);
           if(a.stun)e.stun(a.stun);
-          if(a.charm&&!e.boss){e.charmT=Math.max(e.charmT,a.charm);this.fx.push({type:'charm',x:e.x,row:e.row,t:.7,life:.7});}
+          if(a.charm&&!e.boss){e.charmT=Math.max(e.charmT,a.charm*(1-(e.ab.charmResist||0)));this.fx.push({type:'charm',x:e.x,row:e.row,t:.7,life:.7});}
           if(a.execute)this.tryExecute(e,a.execute);
           if(a.push&&!e.ab.kbImmune&&!e.dead){e.x+=f.dir*a.push*(e.boss?BOSS_PUSH_TAKEN:1);this.holdLine(e);e.kbTimer=Math.max(e.kbTimer,.3);}
           if(a.burn){e.dotBy=f.creditTo||f.s.id;if(e.burnT<=0)e.burnDps=0;e.burnT=Math.max(e.burnT,a.burn);e.burnDps=Math.max(e.burnDps,24*f.abMul);}
@@ -979,7 +979,8 @@ class Battle {
     // 중갑: 방어 60%. 보스는 이제 반드시 쓰러뜨려야 하므로 30%까지만 두른다.
     if (mods.ironclad) st.ab = Object.assign({}, st.ab, { armor: Math.max(spec.boss ? 0.3 : 0.6, (st.ab && st.ab.armor) || 0) });
     // 하드코어: 모든 적이 기절에 30% 버틴다
-    if (this.hard) st.ab = Object.assign({}, st.ab, { stunResist: Math.max(HARDCORE.stunResist, (st.ab && st.ab.stunResist) || 0) });
+    if (this.hard) st.ab = Object.assign({}, st.ab, { stunResist: Math.max(HARDCORE.stunResist, (st.ab && st.ab.stunResist) || 0),
+                                                     charmResist: HARDCORE.charmResist || 0 });   // 4.25: 홀림도 버틴다 (홀림 편성이 하드코어 몇 곳을 통째로 쓸었다)
     // 전장 자체가 거느린 강화 배율(2막처럼 같은 적이 더 억센 곳)과
     // 증원 배율을 함께 얹는다.
     let total = this.enemyMulBase * (mul && mul > 1 ? mul : 1);
@@ -2489,7 +2490,7 @@ class Battle {
       target.weakT = Math.max(target.weakT, ab.weaken.dur);
       target.weakMul = Math.min(target.weakMul, ab.weaken.mul);
     }
-    if (ab.charm && !target.boss && !(target.charmGuard > this.time) && Math.random() < ab.charm.chance) {
+    if (ab.charm && !target.boss && !(target.charmGuard > this.time) && Math.random() < ab.charm.chance * (1 - (target.ab.charmResist || 0))) {
       target.charmT = Math.max(target.charmT, ab.charm.dur);
       this.fx.push({ type: 'charm', x: target.x, row: target.row, t: 0.7, life: 0.7 });
     }

@@ -974,10 +974,10 @@ const I18N_EN = {
   '가장 가까운 적 주변을 청룡과 함께 베어 피해 · 1.2초 기절 · 밀쳐 냄.': 'Sweeps around the nearest foe together with the azure dragon · 1.2s stun · pushes back.',
   /* 4.25 시즌 신화의 3진 셋 */
   '천호 여제': 'Celestial Fox Empress', '천호여제': 'Fox Empress',
-  '빛나는 아홉 꼬리 · 여우불 구슬 2번 튕김 · 홀림 30% 3.5초 · 사거리 +40 · 범위 +25 · 여우 구슬 2.4배 · 6초 홀림': 'Nine shining tails · foxfire orbs bounce twice · 30% charm for 3.5s · range +40 · area +25 · Fox Beads ×2.4 · 6s charm',
+  '빛나는 아홉 꼬리 · 큰 여우불 구슬 · 홀림 3.5초 · 사거리 +30 · 범위 +25 · 여우 구슬 2.4배 · 6초 홀림': 'Nine shining tails · great foxfire orbs · charm lasts 3.5s · range +30 · area +25 · Fox Beads ×2.4 · 6s charm',
   '가장 가까운 적 주변 여우 구슬 아홉이 터진다 · 6초 홀림(보스 제외). 성채에는 피해 없음.': 'Nine fox beads burst around the nearest foe · 6s charm (not bosses). No damage to castles.',
   '태엽 신공방': 'Clockwork Grand Forge', '신공방': 'Grand Forge',
-  '걷는 태엽 공방 · 테슬라 코일 번개 2번 튕김 · 포탑 최대 5 · 5.5초마다 설치 · 사거리 +40 · 과부하 8초 · 범위 +60': 'A walking clockwork workshop · tesla-coil lightning bounces twice · up to 5 turrets · one every 5.5s · range +40 · 8s Overdrive · radius +60',
+  '걷는 태엽 공방 · 테슬라 코일 번개 · 포탑 최대 5 · 5.5초마다 설치 · 사거리 +40 · 과부하 8초 · 범위 +60': 'A walking clockwork workshop · tesla-coil lightning · up to 5 turrets · one every 5.5s · range +40 · 8s Overdrive · radius +60',
   '주변 아군 공격 속도 크게 증가(8초)·기절 해제.': 'Greatly raises nearby allies\' attack speed (8s) · clears stun.',
   '천총운 폭풍신': 'Storm God of the Heavenly Blade', '폭풍신': 'Storm God',
   '먹구름을 탄 폭풍신 · 등 뒤의 여덟 머리 큰뱀 그림자 · 천총운검 · 범위 +35 · 갑주 15% · 둔화 1.4초 · 오로치 베기 3.6배': 'A storm god riding a black cloud · the eight-headed serpent\'s shadow at his back · the Heavenly Blade · area +35 · 15% armor · 1.4s slow · Orochi Cleave ×3.6',
