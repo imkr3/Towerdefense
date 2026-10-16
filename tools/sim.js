@@ -166,6 +166,7 @@ function runStage(g, index, upLv, unitLv, trace, gacha, basic, opt) {
   const isHard = !!(SIM_HARD || opt.hard) && !evStage;
   const fStage = isHard ? Object.assign({}, g.STAGES[index], { mods: g.hardcoreMods(g.STAGES[index], index) }) : g.STAGES[index];
   const loadout = Array.isArray(gacha) ? gacha.slice()      // 3.6: 편성을 직접 넘길 수도 있다
+    : POWER_DECKS[gacha] ? POWER_DECKS[gacha].slice()          // 4.24: 버프 · 디버프를 몰아 넣은 편성
     : basic ? basicLoadout(g)
     : gacha === 'legend' ? legendLoadout(g)
     : (typeof gacha === 'string' && gacha.indexOf('trio:') === 0)
@@ -339,8 +340,14 @@ const EXP_EXPECT = [
  * 판마다 운이 갈리므로 한 곳에 0 · 10 이 아니고, 모두 합쳐 30~70% 안이면 통과. 중간 전력(Lv20)으론 도전을 못 넘는다. */
 const FULL_SEEDS = [101, 202, 303, 404, 505, 606, 707, 808, 909, 1010].map(x => x * 31);
 /* 4.21: '아직 쉽다' 해서 만렙 승률을 30% 안팎으로 (보스 각인까지 더해). 한 곳 0판은 운일 수 있어 막지 않고, 8판 이상이면 쉽다. */
-const HARD_FULL = { up: 10, lv: 30, stages: [1, 10, 18, 27, 36, 45, 53, 63, 70, 80], decks: ['combo', 'smart', 'rec'], min: 0, max: 7, sumMin: 0.15, sumMax: 0.5 };
-const EVENT_FULL = { up: 10, lv: 30, decks: ['counter', 'combo', 'rec'], min: 0, max: 7, sumMin: 0.15, sumMax: 0.5 };
+/* 4.24 버프 · 디버프를 몰아 넣은 편성 — 이것들이 가장 세서 하드코어 · 도전의 기준이 된다 */
+const POWER_DECKS = {
+  buff: ['merlin', 'odin', 'arthur', 'ra', 'zhugeliang', 'herald', 'runeseer', 'priest', 'mudang', 'catapult'],
+  core: ['mage', 'colossus', 'thor', 'ra', 'odin', 'merlin', 'herald', 'runeseer', 'priest', 'mudang'],
+  debuff: ['ra', 'merlin', 'odin', 'guanyu', 'susanoo', 'frost', 'mudang', 'alchemist', 'anchorguard', 'priest']
+};
+const HARD_FULL = { up: 10, lv: 30, stages: [1, 10, 18, 27, 36, 45, 53, 63, 70, 80], decks: ['buff', 'core', 'debuff', 'combo', 'rec'], min: 0, max: 7, sumMin: 0.15, sumMax: 0.5 };
+const EVENT_FULL = { up: 10, lv: 30, decks: ['buff', 'core', 'debuff', 'counter', 'combo', 'rec'], min: 0, max: 7, sumMin: 0.15, sumMax: 0.5 };
 const EVENT_MID = { up: 10, lv: 20, timedMax: 2 };   // 중간 전력: 10판 중 2판 이하
 const ACT3_ENTRY = { up: 10, lv: 14, min: 2, max: 5 };   // 3.3
 const SMART_ACT3 = { up: 10, lv: 18 };
