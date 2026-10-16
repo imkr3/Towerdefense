@@ -13,6 +13,13 @@ const HERO_SHARED_CD = 0;   // 3.13: 액티브 공용 대기 (예전 6초)    //
 const WORLD_DEFAULT = 2000;
 let WORLD = WORLD_DEFAULT;
 
+/* 제자리 걸러내기: keep 이 참인 것만 순서대로 남긴다 (프레임마다 새 배열을 만들지 않으려고) */
+function compactBy(list, keep) {
+  let j = 0;
+  for (let i = 0; i < list.length; i++) { const v = list[i]; if (keep(v)) list[j++] = v; }
+  list.length = j;
+  return list;
+}
 function anyDead(list) { for (let i = 0; i < list.length; i++) if (list[i].dead) return true; return false; }
 function coolCastle(c, dt) {
   if (c.hitFlash > 0) c.hitFlash = Math.max(0, c.hitFlash - dt);
@@ -208,6 +215,7 @@ class Fighter {
     // 4.23 보스 등장 충격파로 날아가는 속도(0 이면 보통 넉백) · 보스가 밀치기에 다시 밀릴 수 있는 때
     this.flyV = 0; this.flyT = 0; this.shoveT = 0;
     this.frenzyT = 0; this.frenzyRate = 1; this.frenzySpeed = 1;   // 4.23 광폭 각인
+    this._seed = undefined;   // 5.0.1: 그림이 처음 그릴 때 정하는 흔들림 씨앗 (모양을 처음부터 둔다)
   }
 
   /* 기절. 면역 중이거나 부동심이면 걸리지 않는다. 걸렸으면 true */
@@ -255,7 +263,7 @@ class Fighter {
 
   takeDamage(dmg, pierceArmor) {
     if (this.dead) return 0;
-    dmg = Math.max(0, dmg);
+    dmg = dmg > 0 ? dmg : 0;   // 5.0.1: NaN 이 들어오면 체력이 NaN 이 되어 죽지 않는다
     // 핵: 평소엔 거의 막고, 약점이 드러난 동안에만 몇 배로 들어간다
     if (this.ab.core) dmg *= this.exposedT > 0 ? this.ab.core.mul : (1 - this.ab.core.armor);
     if (this.guardCut > 0) dmg *= 1 - this.guardCut;                  // 4.21 수호 토템이 선 동안
@@ -310,7 +318,7 @@ class Castle {
     this.wardHit = 0;
   }
   takeDamage(d) {
-    d = Math.max(0, d);
+    d = d > 0 ? d : 0;
     // 보스의 결계: 보스를 쓰러뜨리기 전에는 요새가 끝까지 무너지지 않는다
     if (this.floor > 0 && this.hp - d < this.floor) { d = Math.max(0, this.hp - this.floor); this.wardHit = 0.35; }
     const dealt = Math.min(this.hp, d);
@@ -487,7 +495,7 @@ class Battle {
     let st = unitFor(this.save, id);
     // 5.0 정벌: 보급 마차(비용) · 활시위(사거리) — 공용 스탯을 건드리지 않게 복사본에
     if (st && this.run && (this.run.cost !== 1 || this.run.range)) {
-      st = Object.assign({}, st, { cost: Math.round(st.cost * this.run.cost) });
+      st = Object.assign({}, st, { cost: Math.round(st.cost * this.run.cost), baseCost: st.cost });
       if (st.ranged && this.run.range) st.range += this.run.range;
     }
     return (c[id] = st);
@@ -544,7 +552,7 @@ class Battle {
     }
     const buff = { hp: this.buff.hp * lm, atk: this.buff.atk * lm };
     if (this.run && !owner) {    // 5.0 정벌: 근접 · 원거리 · 영웅 · 값싼 병종 축복
-      const R = this.run, melee = !st.ranged, cheap = st.cost <= 150;
+      const R = this.run, melee = !st.ranged, cheap = (st.baseCost || st.cost) <= 150;   // 5.0.1: 보급 마차로 깎인 값이 아니라 원래 비용으로
       buff.hp *= (melee ? R.meleeHp : 1) * (cheap ? R.cheapHp : 1);
       buff.atk *= (melee ? R.meleeAtk : R.rangedAtk) * (isHeroUnit(st) ? R.heroAtk : 1) * (cheap ? R.cheapAtk : 1);
     }
@@ -696,12 +704,22 @@ class Battle {
   }
 
   /* 왕의 명령: 전군 회복 + 가속 */
+  // 5.0.1: HUD 가 프레임마다 여러 번 부른다 — 배열 · 정렬 없이 한 바퀴 (같은 거리면 앞쪽, 정렬과 같은 결과)
   heroCaster(id) {
-    return this.allies.find(f=>!f.dead && !f.summoned && f.s.id===id) || null;
+    const al = this.allies;
+    for (let i = 0; i < al.length; i++) { const f = al[i]; if (!f.dead && !f.summoned && f.s.id === id) return f; }
+    return null;
   }
   heroTarget(f) {
-    return this.enemies.filter(e=>!e.dead && Math.abs(e.x-f.x)<=f.attackRange+180)
-      .sort((a,b)=>Math.abs(a.x-f.x)-Math.abs(b.x-f.x))[0] || null;
+    const en = this.enemies, reach = f.attackRange + 180;
+    let best = null, bd = Infinity;
+    for (let i = 0; i < en.length; i++) {
+      const e = en[i];
+      if (e.dead) continue;
+      const d = Math.abs(e.x - f.x);
+      if (d <= reach && d < bd) { bd = d; best = e; }
+    }
+    return best;
   }
   canHeroActive(id) {
     const f=this.heroCaster(id), u=this.stats(id);
@@ -792,8 +810,9 @@ class Battle {
     }
     for (const a of this.allies) {
       a.heal(a.maxHp * this.cmdHeal);
+      // 5.0.1: 더 센 가속(필살 등)이 걸려 있으면 약한 쪽으로 덮어쓰지 않는다
+      a.hasteMul = a.hasteT > 0 ? Math.min(a.hasteMul, COMMAND.hasteMul) : COMMAND.hasteMul;
       a.hasteT = Math.max(a.hasteT, COMMAND.hasteDur);
-      a.hasteMul = COMMAND.hasteMul;
       a.stunT = 0;
       a.slowT = 0;
       this.fx.push({ type: 'rally', x: a.x, row: a.row, t: 0.6, life: 0.6 });
@@ -924,7 +943,7 @@ class Battle {
     }
     else if (this.allyCastle.dead) { this.shake = 16; this.finish(this.endless ? 'over' : 'lose'); }
     // 웨이브 수가 정해진 무한 전장(검사용)만 다 버티면 끝. 진짜 무한 전장은 성채가 무너질 때까지.
-    else if (this.endless && !this.stage.infinite && this.qi >= this.queue.length && this.enemies.length === 0) {
+    else if (this.endless && !this.stage.infinite && this.qi >= this.queue.length && this.enemies.length === 0 && !(this.burrowers && this.burrowers.length)) {
       this.finish('over');
     }
   }
@@ -1720,8 +1739,8 @@ class Battle {
       for (const m of mates) {
         if (m.dead || m === f) continue;
         if (Math.abs(m.x - f.x) > ab.radius) continue;
+        m.hasteMul = m.hasteT > 0 ? Math.min(m.hasteMul, ab.haste.mul) : ab.haste.mul;   // 5.0.1: 센 가속을 약한 북소리가 덮지 않게
         m.hasteT = Math.max(m.hasteT, ab.haste.dur);
-        m.hasteMul = ab.haste.mul;
       }
       f.auraPulse = 0.5;
       this.fx.push({ type: 'aura', x: f.x, row: f.row, r: ab.radius,
@@ -2668,15 +2687,22 @@ class Battle {
       if (hit) this.hitOne(s.dmg, hit, s.src, s.crit);
       this.fx.push({ type: s.crit ? 'crit' : 'hit', x: hit ? hit.x : s.tx, row: hit ? (hit.row ?? s.y0) : s.y0, dir: s.dir, t: 0.22, life: 0.22, sty: 'shoot', color: s.color });
     }
-    this.shots = this.shots.filter(s => !s.done);
+    compactBy(this.shots, s => !s.done);
   }
 
   updateFx(dt) {
-    for (const e of this.fx) e.t -= dt;
-    this.fx = this.fx.filter(e => e.t > 0);
-    if (this.fx.length > FX_LIMIT) this.fx.splice(0, this.fx.length - FX_LIMIT);
-    this.dmgFxCount = 0;
-    for (const e of this.fx) if (e.type === 'dmg') this.dmgFxCount++;
+    // 5.0.1: 새 배열을 만들지 않고 제자리에서 줄인다 (순서 그대로)
+    const fx = this.fx;
+    let j = 0, dmg = 0;
+    for (let i = 0; i < fx.length; i++) {
+      const e = fx[i];
+      e.t -= dt;
+      if (e.t > 0) fx[j++] = e;
+    }
+    fx.length = j;
+    if (fx.length > FX_LIMIT) fx.splice(0, fx.length - FX_LIMIT);
+    for (let i = 0; i < fx.length; i++) if (fx[i].type === 'dmg') dmg++;
+    this.dmgFxCount = dmg;
     if (this.state !== 'play') this.resultTime = (this.resultTime || 0) + dt;
   }
 

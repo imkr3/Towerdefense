@@ -3614,7 +3614,11 @@ function conqMakeAct(run, act) {
       row.push(t);
     }
     if (!row.some(t => t === 'battle' || t === 'elite')) row[0] = 'battle';   // 싸우지 않고는 내려갈 수 없다
-    if (f === CONQ.floors - 2 && !row.some(t => t === 'rest' || t === 'shop')) row[row.length - 1] = R() < 0.6 ? 'rest' : 'shop';
+    if (f === CONQ.floors - 2 && !row.some(t => t === 'rest' || t === 'shop')) {
+      // 5.0.1: 싸움 칸이 아닌 자리에 둔다 — 하나뿐인 전투를 덮어써 싸움 없는 층이 생겼다 (막의 5% 남짓)
+      const i = row.findIndex(t => t !== 'battle' && t !== 'elite');
+      row[i >= 0 ? i : row.length - 1] = R() < 0.6 ? 'rest' : 'shop';
+    }
     map.push(row.map(t => (t === 'battle' || t === 'elite') ? conqBattleNode(run, R, t, d, act) : { t: t }));
   }
   return map;
@@ -3851,7 +3855,10 @@ function conqNormalize(run) {
     const r = out.room.res;
     if ((r.lost && !CONQ_BLESS_BY_ID[r.lost]) || (r.bless && !CONQ_BLESS_BY_ID[r.bless]) || (r.relic && !CONQ_RELIC_BY_ID[r.relic])) out.room = Object.assign({}, out.room, { res: { none: true } });
   }
-  out.done = null; out.fighting = false;
+  out.done = null;
   out.path = Array.isArray(run.path) ? run.path.filter(x => Number.isInteger(x) && x >= 0 && x < 3).slice(0, CONQ.floors) : [];
+  // 5.0.1: 전투 도중에 꺼졌으면 그 전투를 다시 치른다 — 예전엔 풀려서 상점 · 야영으로 갈아탈 수 있었다
+  const fk = out.path[out.floor], fn = Number.isInteger(fk) ? run.map[out.floor][fk] : null;
+  out.fighting = run.fighting === true && !out.pending && !out.room && !!fn && fn.src !== undefined;
   return out;
 }

@@ -2047,4 +2047,29 @@ test('5.0: conquest — shops, shrines and the end of a run', () => {
   assert.equal(JSON.stringify(C.conqNormRec({ asc: 99, top: 'a', runs: 3 })), JSON.stringify({ asc: C.CONQ.ascMax, top: -1, best: 0, runs: 3, wins: 0 }));
 });
 
+test('5.0.1: conquest — every floor has a fight, an interrupted fight is re-fought', () => {
+  const C = vm.runInContext('({conqNewRun, conqMakeAct, conqNormalize, CONQ})', ctx);
+  const s = { cleared: 40, loadout: ['spear'], levels: {}, upgrades: {}, owned: {}, stars: {}, coins: 0, stones: 0 };
+  for (let seed = 1; seed <= 400; seed++) {
+    const run = C.conqNewRun(s, seed % 3, seed);
+    for (let a = 0; a < C.CONQ.acts; a++) {
+      C.conqMakeAct(run, a).forEach((row, f) => assert.ok(row.some(n => n.src !== undefined), 'seed ' + seed + ' act ' + a + ' floor ' + f + ' has a fight'));
+    }
+  }
+  const run = C.conqNewRun(s, 0, 7); run.pending = null; run.path[0] = 1; run.fighting = true;
+  const back = C.conqNormalize(JSON.parse(JSON.stringify(run)));
+  assert.equal(back.fighting, true, 'closing the app mid-battle does not free the choice');
+  assert.equal(C.conqNormalize(JSON.parse(JSON.stringify({ ...run, fighting: false }))).fighting, false);
+  run.path[0] = 9; assert.equal(C.conqNormalize(JSON.parse(JSON.stringify(run))).fighting, false, 'a bad path does not lock the floor');
+});
+test('5.0.1: a weaker haste pulse does not overwrite a stronger one; NaN damage is ignored', () => {
+  const b = battle();
+  b.money = 99999; b.deploy('spear'); const a = b.allies[0];
+  a.hasteT = 5; a.hasteMul = 0.5;
+  b.cmdCd = 0; b.useCommand && b.useCommand();
+  assert.ok(a.hasteMul <= 0.5, 'the king\'s command keeps the stronger haste');
+  const hp = a.hp; a.takeDamage(NaN); assert.equal(a.hp, hp); assert.ok(Number.isFinite(a.hp));
+  const c = b.enemyCastle.hp; b.enemyCastle.takeDamage(NaN); assert.equal(b.enemyCastle.hp, c);
+});
+
 console.log(count + ' regression checks passed');

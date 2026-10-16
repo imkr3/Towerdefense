@@ -3468,8 +3468,11 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
   const autoInk = MODEL.ink && !flash;
   const depthOn = !flash && MODEL.depth;
   const wrapped = autoInk || depthOn;                // 4.2: 잉크가 꺼져도 그림자를 다루려고 감싼다
-  if (wrapped) { ctx.fill = inkedFill; ctx.stroke = inkedStroke; ctx._inkW = 0.95 * s; ctx._noInk = !autoInk; ctx._depth = depthOn; }
-  if (depthOn) { ctx.fillRect = shadedFillRect; ctx.strokeRect = shadedStrokeRect; ctx.fillText = shadedFillText; }   // 4.5 · 4.19: 사각형 · 글자도 같은 그림자 규칙으로
+  // 5.0.1: 감싼 그리기 함수는 컨텍스트에 한 번만 달고 스위치(_wrap · _shade)로 켜고 끈다.
+  // 병사마다 속성을 달았다 지우면(delete) 컨텍스트가 느린 사전 모드로 떨어져 모든 ctx 호출이 느려졌다.
+  if (!ctx._wrapOn) installBodyWrap(ctx);
+  if (wrapped) { ctx._wrap = true; ctx._inkW = 0.95 * s; ctx._noInk = !autoInk; ctx._depth = depthOn; }
+  if (depthOn) ctx._shade = true;   // 4.5 · 4.19: 사각형 · 글자도 같은 그림자 규칙으로
   if (HUMANOID[st.shape]) armSwing(S);
   if (st.evo && !st.bigEvo) (NO_CAPE[st.shape] ? evoBanner : evoCape)(S);   // 진화: 등 뒤로 망토, 기계·짐승은 군기
 
@@ -9200,8 +9203,8 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
 
   if (st.evo) evoCrest(S);                        // 진화: 머리 위 금빛 문장
 
-  if (wrapped) { delete ctx.fill; delete ctx.stroke; ctx._depth = false; ctx._noInk = false; }
-  if (depthOn) { delete ctx.fillRect; delete ctx.strokeRect; delete ctx.fillText; }
+  if (wrapped) { ctx._wrap = false; ctx._depth = false; ctx._noInk = false; }
+  if (depthOn) ctx._shade = false;
 
   if (hurt) {
     ctx.strokeStyle = 'rgba(255,255,255,.8)';
@@ -9376,6 +9379,19 @@ function inkedFill(a) {
   this.strokeStyle = INK; this.lineWidth = this._inkW;
   if (a && typeof a === 'object') _stroke0.call(this, a); else _stroke0.call(this);
   this.strokeStyle = ss; this.lineWidth = lw;
+}
+/* 5.0.1: 컨텍스트마다 한 번 다는 문지기. 스위치가 꺼져 있으면 원래 함수 그대로 */
+function gateFill() { return this._wrap ? inkedFill.apply(this, arguments) : _fill0.apply(this, arguments); }
+function gateStroke() { return this._wrap ? inkedStroke.apply(this, arguments) : _stroke0.apply(this, arguments); }
+function gateFillRect(x, y, w, h) { return this._shade ? shadedFillRect.call(this, x, y, w, h) : _fillRect0.call(this, x, y, w, h); }
+function gateStrokeRect() { return this._shade ? shadedStrokeRect.apply(this, arguments) : _strokeRect0.apply(this, arguments); }
+function gateFillText() { return this._shade ? shadedFillText.apply(this, arguments) : _fillText0.apply(this, arguments); }
+function installBodyWrap(ctx) {
+  ctx._wrapOn = true; ctx._wrap = false; ctx._shade = false;
+  ctx._inkW = 1; ctx._noInk = false; ctx._depth = false;
+  if (ctx._skipInk === undefined) ctx._skipInk = false;
+  ctx.fill = gateFill; ctx.stroke = gateStroke;
+  ctx.fillRect = gateFillRect; ctx.strokeRect = gateStrokeRect; ctx.fillText = gateFillText;
 }
 const MODEL = { depth: true, ink: true, blink: false, time: 0, angry: false };
 const _shadeCache = {};

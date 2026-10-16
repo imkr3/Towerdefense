@@ -97,6 +97,17 @@ class GLFx {
     // 합성식이 포화형이어서 1 을 넘겨도 흰 덩어리로 터지지는 않는다.
     this.gain = 1.15;
     this.ok = this._init();
+    // 5.0.1: 안드로이드 WebView 는 앱을 내렸다 오거나 GPU 메모리가 모자라면 컨텍스트를 잃는다.
+    // 잃은 동안은 ok=false 로 두어 렌더러가 Canvas2D 연출로 돌아가고, 돌아오면 다시 만든다.
+    if (this.ok && canvas.addEventListener) {
+      canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); this.ok = false; this.count = 0; }, false);
+      canvas.addEventListener('webglcontextrestored', () => {
+        this.vao = null;
+        this.ok = this._init();
+        this.count = 0; this._empty = false;
+        if (this.ok) this.resize(this.w, this.h, this.dpr);
+      }, false);
+    }
   }
 
   _init() {
