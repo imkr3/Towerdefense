@@ -1334,7 +1334,7 @@ test('4.4: every third form has two varied trials that read the save', () => {
   }
   assert.ok(types.size >= 7, 'many kinds of trials: ' + [...types].join(','));
   const full = { levels: {}, best: {}, perfect: {}, stars: {}, hard: {}, events: { a: 1, b: 1, c: 1, d: 1, e: 1, f: 1, g: 1 }, endlessBest: 99, life: {} };
-  for (const u of vm.runInContext('UNITS', ctx)) { full.levels[u.id] = 20; full.life[u.id] = { d: 9e9, h: 9e9 }; }
+  for (const u of vm.runInContext('UNITS', ctx)) { full.levels[u.id] = 30; full.life[u.id] = { d: 9e9, h: 9e9 }; }   // 4.25: 만렙 30 (시련 계열 조건이 Lv22 인 것도 있다)
   X.STAGES.forEach((s0, i) => { full.best[i] = 1; full.perfect[i] = true; full.stars[i] = 3; full.hard[i] = true; });
   for (const id in X.EVOLUTIONS2) assert.ok(X.evo2TrialsDone(full, id), id + ' completes');
   const sv = { best: { 4: 39 } };
@@ -1459,7 +1459,7 @@ test('4.6: hardcore act 5 and challenge bosses get their own tracks', () => {
 });
 
 /* ---------------- 4.7 소환 영웅의 3진 ---------------- */
-const H47 = ['wukong', 'ra', 'thor', 'merlin', 'valkyrie', 'artemis', 'guanyu'];   // 4.15: + 관우
+const H47 = ['wukong', 'ra', 'thor', 'merlin', 'valkyrie', 'artemis', 'guanyu', 'gumiho', 'inventor', 'susanoo'];   // 4.15: + 관우 · 4.25: + 구미호 · 발명가 · 스사노오
 test('4.7: two mythic, two legendary and two hero summons awaken — drawn, translated, with their own effects', () => {
   const X = vm.runInContext('({EVOLUTIONS, EVOLUTIONS2, EVO2_TRIALS, evo2Cost})', ctx);
   const read = f => fs.readFileSync(path.join(__dirname, '../js/' + f), 'utf8');
@@ -1467,7 +1467,7 @@ test('4.7: two mythic, two legendary and two hero summons awaken — drawn, tran
   const gacha = Object.keys(X.EVOLUTIONS2).filter(id => U[id].gacha).sort();
   assert.deepEqual(gacha, H47.slice().sort());
   const rar = {}; gacha.forEach(id => { rar[U[id].rarity] = (rar[U[id].rarity] || 0) + 1; });
-  assert.deepEqual(rar, { UR: 3, SSR: 2, SR: 2 }, 'mythic · legendary · hero');
+  assert.deepEqual(rar, { UR: 6, SSR: 2, SR: 2 }, 'mythic · legendary · hero');   // 4.25: 시즌 신화 셋 더
   const shapes = new Set(Object.values(X.EVOLUTIONS2).map(e => e.look.shape)); assert.equal(shapes.size, Object.keys(X.EVOLUTIONS2).length, 'all third forms look different');
   for (const id of gacha) {
     const e = X.EVOLUTIONS2[id];
@@ -1482,7 +1482,7 @@ test('4.7: two mythic, two legendary and two hero summons awaken — drawn, tran
     assert.equal(X.EVO2_TRIALS[id].length, 2, id + ' has two trials');
     const a = G.resolveUnit(U[id], 20, true), b = G.resolveUnit(U[id], 20, 2);
     assert.ok(b.evo2 && b.hp > a.hp && b.atk > a.atk && b.cost > a.cost, id + ' stronger and pricier');
-    if (a.active) assert.ok(b.active.mul >= a.active.mul && b.active !== U[id].active, id + ' active is stronger and not shared');
+    if (a.active) assert.ok((b.active.mul || 0) >= (a.active.mul || 0) && b.active !== U[id].active, id + ' active is stronger and not shared');
   }
   assert.equal(U.wukong.active.mul, 2.4, 'base active untouched');
 });
@@ -1951,6 +1951,26 @@ test('4.24: melee units get more hp (thinner ones more) and armor; huge-hp melee
   const col = G.resolveUnit(U.colossus, 30, 2); assert.ok(col.hp * F.unitLevelMul(30) >= F.FRONTLINE.bigHp);
   for (const id of Object.keys(U)) { const u = U[id]; if (u.enemy) continue; for (const ev of [0, 1, 2, 3]) {
     const r = G.resolveUnit(u, 30, ev); assert.ok(r.speed >= u.speed || ev > 0, id + ' never slower than its base'); } }
+});
+
+test('4.25: one new third form in each season that had none — they arrive, chain and summon in battle', () => {
+  const X = vm.runInContext('({EVOLUTIONS2, SEASONS})', ctx);
+  for (const sn of X.SEASONS) assert.ok(sn.units.some(id => X.EVOLUTIONS2[id]), sn.id + ' has a third form');
+  const mk = ids => { const s = save(); s.loadout = ids; s.owned = {}; s.levels = {}; s.evo = {}; s.evo2 = {};
+    for (const id of ids) { s.owned[id] = 1; s.levels[id] = 30; s.evo[id] = true; s.evo2[id] = true; } const b = new Battle(0, s); b.money = 1e6; return b; };
+  const b = mk(['gumiho', 'inventor', 'susanoo']);
+  const subs = [];
+  for (const id of ['gumiho', 'inventor', 'susanoo']) { b.cooldowns[id] = 0; b.fx.length = 0; assert.ok(b.deploy(id), id); subs.push(b.fx.find(e => e.type === 'x3' && e.kind === 'arrive').sub); }
+  assert.deepEqual(subs, ['ninetail', 'forge', 'stormcloud']);
+  const fox = b.allies.find(a => a.s.id === 'gumiho'), inv = b.allies.find(a => a.s.id === 'inventor'), sus = b.allies.find(a => a.s.id === 'susanoo');
+  assert.equal(fox.s.shot, 'foxorb'); assert.equal(inv.s.shot, 'teslabolt');
+  assert.ok(fox.s.ab.chain && inv.s.ab.chain, 'fox and forge chain');
+  assert.equal(inv.s.ab.summon.max, 5, 'five turrets');
+  assert.ok(sus.s.speed >= 60, 'rides the storm cloud');
+  // 번개가 튕긴다: 붙어 선 적 셋 중 둘 이상이 다친다
+  const foes = [0, 1, 2].map(i => { const e = b.spawnEnemy('goblin', sus.x + 60 + i * 40); e.hp = e.maxHp = 1e6; return e; });
+  b.hitOne(1000, foes[0], fox, false);
+  assert.ok(foes.filter(e => e.hp < e.maxHp).length >= 2, 'lightning chains to a neighbour');
 });
 
 console.log(count + ' regression checks passed');

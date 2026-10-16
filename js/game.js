@@ -62,6 +62,7 @@ const X3_FX_LIMIT = 12;      // 4.3 3진 연출(포연·광선·사이렌)이 �
 const X3_GROUND = { shellblast: 'boom', rocketpunch: 'quake', dronestrike: 'smoke', dozerpush: 'dirtwave', snowburst: 'frost', railhit: 'railscar',
                     mechstaff: 'quake', boltstrike: 'railscar', solarburn: 'sunscar',   // 4.7
                     dragonslash: 'quake',   // 4.15
+                    teslacoil: 'railscar', kusanagi: 'quake',   // 4.25
                     starfall: 'starscar', plasmablast: 'plasmascar' };   // 4.18
 const REINFORCE_FIRST = 10;  // 대본 웨이브가 끝나고 첫 증원까지
 const REINFORCE_MIN = 3.0;   // 증원 간격 하한
@@ -585,6 +586,9 @@ class Battle {
     else if (sub === 'holo') sfx('holo');
     else if (sub === 'moon') sfx('laser');
     else if (sub === 'dragon') { this.shake = Math.max(this.shake, 5); sfx('saber'); }   // 4.15 청룡 군신
+    else if (sub === 'ninetail') sfx('holo');                                            // 4.25 천호 여제
+    else if (sub === 'forge') { this.shake = Math.max(this.shake, 7); sfx('boom'); }      // 4.25 태엽 신공방
+    else if (sub === 'stormcloud') { this.shake = Math.max(this.shake, 6); sfx('thunder'); }   // 4.25 천총운 폭풍신
     else if (sub === 'stargate') { this.shake = Math.max(this.shake, 4); sfx('holo'); }   // 4.18 별의 대현자
     else if (sub === 'hoverdrop') { this.shake = Math.max(this.shake, 8); sfx('boom'); }   // 4.18 플라즈마 기동전차
     if (sub === 'jetdive' || sub === 'cloudjet') this.shake = Math.max(this.shake, 4);
@@ -646,6 +650,9 @@ class Battle {
     else if (kind === 'divestrike') { this.shake = Math.max(this.shake, 3); sfx('jet'); }
     else if (kind === 'holoburst') sfx('holo');
     else if (kind === 'dragonslash') { this.shake = Math.max(this.shake, 3); sfx('saber'); }
+    else if (kind === 'foxstorm') sfx('holo');                                           // 4.25
+    else if (kind === 'teslacoil') { this.shake = Math.max(this.shake, 2); sfx('zap'); }
+    else if (kind === 'kusanagi') { this.shake = Math.max(this.shake, 4); sfx('thunder'); }
     else if (kind === 'starfall') { this.shake = Math.max(this.shake, 3); sfx('zap'); }
     else if (kind === 'plasmablast') { this.shake = Math.max(this.shake, 6); sfx('boom'); }
     const ground = X3_GROUND[kind];

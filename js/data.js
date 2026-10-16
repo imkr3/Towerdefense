@@ -2981,7 +2981,23 @@ const EVOLUTIONS2 = {
   guanyu:  { look: { shape: 'azureguan', tunic: '#1f6a4a', accent: '#5affc0', grow: 0.95 }, name: '청룡 군신', short: '청룡군신',
              plus: '등 뒤를 휘감는 청룡 · 빛의 언월도 범위 +35 · 갑주 25% · 맞은 적 1.5초 둔화 · 청룡언월 일섬 3.4배 · 기절 1.2초',
              add: { areaRadius: 35 }, ab: { armor: 0.25, slow: 1.5 }, active: { mul: 3.4, stun: 1.2, desc: '가장 가까운 적 주변을 청룡과 함께 베어 피해 · 1.2초 기절 · 밀쳐 냄.' },
-             castFx: 'dragonslash', arrive: 'dragon' }
+             castFx: 'dragonslash', arrive: 'dragon' },
+  // 4.25 3진이 없던 시즌에 하나씩: 요괴록 · 태엽 공방 · 벚꽃 전국의 신화
+  gumiho:  { look: { shape: 'skyfox', body: '#fff4fa', tunic: '#6a2a8a', accent: '#ff8ae0', grow: 1.0 }, name: '천호 여제', short: '천호여제',
+             plus: '빛나는 아홉 꼬리 · 여우불 구슬 2번 튕김 · 홀림 30% 3.5초 · 사거리 +40 · 범위 +25 · 여우 구슬 2.4배 · 6초 홀림',
+             add: { range: 40, areaRadius: 25 }, ab: { charm: { chance: 0.3, dur: 3.5 }, chain: { n: 2, fall: 0.5, range: 140 } },
+             active: { mul: 2.4, charm: 6, radius: 260, desc: '가장 가까운 적 주변 여우 구슬 아홉이 터진다 · 6초 홀림(보스 제외). 성채에는 피해 없음.' },
+             shot: 'foxorb', castFx: 'foxstorm', arrive: 'ninetail' },
+  inventor:{ look: { shape: 'clockforge', body: '#f0dcb4', tunic: '#5a3b26', accent: '#ffb347', grow: 1.05 }, name: '태엽 신공방', short: '신공방',
+             plus: '걷는 태엽 공방 · 테슬라 코일 번개 2번 튕김 · 포탑 최대 5 · 5.5초마다 설치 · 사거리 +40 · 과부하 8초 · 범위 +60',
+             add: { range: 40 }, ab: { summon: { max: 5 }, interval: 5.5, chain: { n: 2, fall: 0.55, range: 120 } },
+             active: { haste: { mul: 0.45, dur: 8 }, radius: 380, desc: '주변 아군 공격 속도 크게 증가(8초)·기절 해제.' },
+             shot: 'teslabolt', castFx: 'teslacoil', arrive: 'forge' },
+  susanoo: { look: { shape: 'stormgod', body: '#eef2f6', tunic: '#1e2c5a', accent: '#8ad8ff', grow: 1.0 }, name: '천총운 폭풍신', short: '폭풍신',
+             plus: '먹구름을 탄 폭풍신 · 등 뒤의 여덟 머리 큰뱀 그림자 · 천총운검 · 범위 +35 · 갑주 15% · 둔화 1.4초 · 오로치 베기 3.6배',
+             add: { areaRadius: 35 }, ab: { slow: 1.4, push: 35, armor: 0.15 },
+             active: { mul: 3.6, slow: 6, push: 120, desc: '가장 가까운 적 주변을 천총운검으로 베어 피해 · 6초 둔화 · 크게 밀쳐 냄.' },
+             castFx: 'kusanagi', arrive: 'stormcloud' }
 };
 
 /* 4.4 3진의 시련: 레벨 20 · 금화에 더해 병종마다 다른 조건 둘을 채워야 3진할 수 있다.
@@ -3007,7 +3023,11 @@ const EVO2_TRIALS = {
   merlin:   [{ t: 'perfect', stage: 45 }, { t: 'event', n: 4 }],
   valkyrie: [{ t: 'speed', stage: 27, sec: 64 }, { t: 'perfect', stage: 29 }],
   artemis:  [{ t: 'series', name: '활 계열', ids: ['artemis', 'archer', 'longbow', 'venom'], lv: 20 }, { t: 'dmg', id: 'artemis', n: 1500000 }],
-  guanyu:   [{ t: 'stars', from: 60, to: 70 }, { t: 'dmg', id: 'guanyu', n: 3500000 }]   // 4.15
+  guanyu:   [{ t: 'stars', from: 60, to: 70 }, { t: 'dmg', id: 'guanyu', n: 3500000 }],   // 4.15
+  // 4.25 시즌 신화 셋
+  gumiho:   [{ t: 'event', n: 5 }, { t: 'dmg', id: 'gumiho', n: 2500000 }],
+  inventor: [{ t: 'endless', n: 22 }, { t: 'series', name: '태엽 공방', ids: ['inventor', 'steammech', 'airship', 'teslaknight'], lv: 22 }],
+  susanoo:  [{ t: 'hard', n: 30 }, { t: 'dmg', id: 'susanoo', n: 3500000 }]
 };
 function _trialNum(n) { return n >= 1e6 ? (Math.round(n / 1e5) / 10) + 'M' : n >= 1e4 ? Math.round(n / 1e3) + 'k' : String(Math.round(n)); }
 /* 시련 하나의 진행: { done, text(조건), prog(지금 상태) } */
@@ -3254,7 +3274,7 @@ const HERO_MELEE = { hp: 1.55, armor: 0.3, revive: 0.4, lifesteal: 0.12, vanguar
  * - 탈것 · 날것인데 걸어가는 병사보다 느리던 모습들: 바이크 · 말 · 비행접시 · 근두운 · 위성 등은 모습에 맞게 빠르게 (느려지지는 않는다) */
 const FRONTLINE = { maxBoost: 0.5, refHp: 14000, armor: 0.1, bigHp: 15000, bigAtk: 0.85 };
 const SHAPE_SPEED = { thunderbike: 72, knight_evo: 52, unicorn: 60, ufo: 44, hovertank: 32, solarsat: 38, mechwukong: 66, jetvalk: 80,
-                      icecart: 40, ambulance: 46, azureguan: 48, airship: 40, railgun: 22, megabot: 22, tank: 26, nezha: 100 };
+                      icecart: 40, ambulance: 46, azureguan: 48, stormgod: 62, clockforge: 34, skyfox: 40, airship: 40, railgun: 22, megabot: 22, tank: 26, nezha: 100 };
 function frontlineBuild(r) {
   if (r.enemy) return;
   const sp = SHAPE_SPEED[r.shape];

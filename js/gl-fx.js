@@ -1010,6 +1010,42 @@ class GLFx {
         this.add(x, y - 24 * sc, 0, 0, 0.2, 14 * sc, 80 * sc * big, hot, 0.6, 1, 0, 0, 0, 1.3);
         break;
       }
+      /* 4.25 천호 여제: 사방으로 흩어지는 분홍 여우불 아홉 · 흰 심 · 위로 오르는 불티 */
+      case 'foxstorm': {
+        const hot = [1, 0.95, 0.98];
+        for (let i = 0, n = N(18); i < n; i++) {
+          const a = i / n * TAU, sp = rnd(140, 260) * sc;
+          this.add(x, y - 26 * sc, Math.cos(a) * sp, Math.sin(a) * sp * 0.5, rnd(0.45, 0.8), rnd(6, 10) * sc, 3 * sc, i % 2 ? col : hot, 0.95, 1.4, 0, 0, -40, 1.5);
+        }
+        for (let i = 0, n = N(16); i < n; i++) this.add(x + rnd(-R, R) * 0.5, y - 10 * sc, rnd(-30, 30) * sc, -rnd(80, 200) * sc, rnd(0.5, 1), rnd(3, 6) * sc, 2 * sc, col, 0.8, 1.6, 0, 0, -30, 1.4);
+        this.add(x, y - 26 * sc, 0, 0, 0.25, 12 * sc, 60 * sc * big, hot, 0.6, 1, 0, 0, 0, 1.3);
+        break;
+      }
+      /* 4.25 태엽 신공방: 테슬라 코일 방전 — 푸른 불꽃이 튀고 하얀 섬광 */
+      case 'teslacoil': {
+        const hot = [0.85, 0.97, 1], blue = [0.62, 0.9, 1];
+        for (let i = 0, n = N(24); i < n; i++) {
+          const a = rnd(-Math.PI, 0), sp = rnd(160, 380) * sc;
+          this.add(x, y - 20 * sc, Math.cos(a) * sp, Math.sin(a) * sp, rnd(0.25, 0.5), rnd(5, 9) * sc, 1.6 * sc, i % 3 ? blue : hot, 1, 1.6, a, 0, 300, 1.5);
+        }
+        this.add(x, y - 20 * sc, 0, 0, 0.18, 10 * sc, 70 * sc * big, hot, 0.7, 1, 0, 0, 0, 1.4);
+        this.emit('spark', x, y - 20 * sc, opt);
+        break;
+      }
+      /* 4.25 천총운 폭풍신: 길게 그은 푸른 일섬을 따라 늘어선 빛 · 번개 불티 · 바람 */
+      case 'kusanagi': {
+        const hot = [0.92, 0.98, 1], dir = opt.dir || 1;
+        for (let i = 0, n = N(24); i < n; i++) {
+          const u = i / (n - 1) - 0.5;
+          this.add(x + u * R * 1.4 * dir, y - 30 * sc - u * 36 * sc, 0, 0, 0.3, 9 * sc, 2 * sc, i % 3 ? col : hot, 1, 1.2, -0.45 * dir, 0, 0, 1.3);
+        }
+        for (let i = 0, n = N(18); i < n; i++) {
+          const a = rnd(-Math.PI, 0), sp = rnd(140, 320) * sc;
+          this.add(x, y - 24 * sc, Math.cos(a) * sp, Math.sin(a) * sp, rnd(0.35, 0.7), rnd(4, 7) * sc, 2 * sc, i % 2 ? col : hot, 0.95, 1.6, a, rnd(-5, 5), 360, 1.6);
+        }
+        this.emit('shockwave', x, y, opt);
+        break;
+      }
       /* 4.15 청룡언월 일섬 (관우): 거대한 초승달 빛 + 비늘 폭발 */
       case 'dragonblade': {
         this.emit('dragonslash', x, y, opt);
