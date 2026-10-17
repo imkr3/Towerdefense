@@ -15,7 +15,7 @@ function load(seed) {
     if (process.env.SIM_PATCH) for (const kv of process.env.SIM_PATCH.split('||')) { const [a, b] = kv.split('=>'); src = src.split(a).join(b); }
     vm.runInContext(src, ctx, { filename: f });
   }
-  return vm.runInContext('({Battle, STAGES, UNITS, ROSTER_UNITS, CONQ, CONQ_BLESS_BY_ID, CONQ_RELIC_BY_ID, CONQ_SHRINE_BY_ID, CONQ_SHRINES, conqNewRun, conqEffects, conqStage, conqAfterBattle, conqAdvance, conqTake, conqShop, conqBuy, conqRestHeal, conqShrine, conqShrineCan, conqFinish, conqBlessOffer, conqRng, conqPick, CONQ_ODDS, unitLevelCap, EVOLUTIONS, EVOLUTIONS2, EVOLUTIONS3})', ctx);
+  return vm.runInContext('({Battle, STAGES, UNITS, ROSTER_UNITS, CONQ, CONQ_BLESS_BY_ID, CONQ_RELIC_BY_ID, CONQ_SHRINE_BY_ID, CONQ_SHRINES, conqNewRun, conqEffects, conqStage, conqAfterBattle, conqAdvance, conqTake, conqShop, conqBuy, conqRestHeal, conqShrine, conqShrineCan, conqFinish, conqBlessOffer, conqRelicOffer, conqRng, conqPick, CONQ_ODDS, conqReachable, conqForge, unitLevelCap, EVOLUTIONS, EVOLUTIONS2, EVOLUTIONS3})', ctx);
 }
 const DECKS = {
   core: ['mage', 'colossus', 'thor', 'ra', 'odin', 'merlin', 'herald', 'runeseer', 'priest', 'mudang'],
@@ -46,18 +46,23 @@ function fight(g, save, run, node) {
 }
 const RANK = { epic: 0, rare: 1, common: 2 };
 function pickBless(g, run, opts) { return opts.slice().sort((a, b) => RANK[g.CONQ_BLESS_BY_ID[a].rar] - RANK[g.CONQ_BLESS_BY_ID[b].rar])[0]; }
+function pickRelic(g, run, opts) { return opts.find(id => !g.CONQ_RELIC_BY_ID[id].cursed) || opts[0]; }
 function resolvePending(g, run) {
   while (run.pending) {
     const p = run.pending; run.pending = null;
-    if (p.opts && p.opts.length) g.conqTake(run, p.kind, p.kind === 'bless' ? pickBless(g, run, p.opts) : p.opts[0]);
+    if (p.opts && p.opts.length) g.conqTake(run, p.kind, p.kind === 'bless' ? pickBless(g, run, p.opts) : pickRelic(g, run, p.opts));
     if (p.then) run.pending = p.then;
   }
 }
-function choose(row, run) {
-  const has = t => row.findIndex(n => n.t === t);
-  const order = run.castle < 0.45 ? ['rest', 'shop', 'shrine', 'battle', 'elite'] : run.castle > 0.75 ? ['elite', 'battle', 'shrine', 'shop', 'rest'] : ['battle', 'shrine', 'shop', 'rest', 'elite'];
-  for (const t of order) { const i = has(t); if (i >= 0) return row[i]; }
-  return row[0];
+/* 갈 수 있는 줄 가운데서 고른다: 성채가 낮으면 쉼터, 넉넉하면 정예 · 시련 */
+function choose(g, row, run) {
+  const ok = row.map((n, k) => g.conqReachable(run, k) ? k : -1).filter(k => k >= 0);
+  const has = t => ok.find(k => row[k].t === t);
+  const order = run.castle < 0.45 ? ['rest', 'shop', 'treasure', 'forge', 'shrine', 'recruit', 'battle', 'elite', 'trial']
+    : run.castle > 0.8 ? ['treasure', 'elite', 'battle', 'forge', 'trial', 'shrine', 'shop', 'recruit', 'rest']
+    : ['treasure', 'battle', 'forge', 'shrine', 'shop', 'rest', 'elite', 'recruit', 'trial'];
+  for (const t of order) { const k = has(t); if (k !== undefined) return k; }
+  return ok[0];
 }
 function playRun(seed, opt) {
   const g = load(seed);
@@ -67,8 +72,10 @@ function playRun(seed, opt) {
   resolvePending(g, run);
   const log = [];
   while (!run.done) {
-    const row = run.map[run.floor], node = choose(row, run);
-    if (node.t === 'battle' || node.t === 'elite' || node.t === 'boss') {
+    const row = run.map[run.floor], k = choose(g, row, run), node = row[k];
+    run.path[run.floor] = k;
+    if (node.src !== undefined) {
+      run.risk = process.env.RISK ? +process.env.RISK : (run.castle > 0.9 && node.t === 'battle' ? 1 : 0);   // 넉넉하면 도발
       const r = fight(g, save, run, node);
       log.push(node.t.slice(0,2) + (r.win ? '' : 'X') + Math.round(r.castle * 100) + '@' + r.t);
       g.conqAfterBattle(run, node, r.win, r.castle, { phoenixUsed: r.phoenix, kills: r.kills, coins: r.coins });
@@ -89,7 +96,14 @@ function playRun(seed, opt) {
       const o = (sh.id !== 'blood' || run.castle > 0.5) && g.conqShrineCan(run, sh.opts[0]) ? sh.opts[0] : sh.opts[1];
       g.conqShrine(run, o); resolvePending(g, run);
       log.push('?');
-    }
+    } else if (node.t === 'forge') {
+      const ids = Object.keys(run.bless).sort((a, b) => RANK[g.CONQ_BLESS_BY_ID[a].rar] - RANK[g.CONQ_BLESS_BY_ID[b].rar]);
+      if (ids.length) g.conqForge(run, ids[0]); else run.scrip += 25;
+      log.push('f');
+    } else if (node.t === 'treasure') {
+      run.pending = { kind: 'relic', opts: g.conqRelicOffer(run, 2) }; resolvePending(g, run);
+      log.push('t');
+    } else log.push(node.t[0]);                                  // 징집소는 지나친다 (편성이 이미 짜여 있다)
     if (run.done) break;
     g.conqAdvance(run);
   }

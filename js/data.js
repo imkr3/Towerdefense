@@ -3458,28 +3458,34 @@ const CONQ = {
   ascMax: 10,
   startScrip: 50,
   span: 34,               // 전장을 뽑는 폭: 돌파한 마지막 전장에서 이만큼 앞까지
-  lag: 4,                 // 막 돌파한 끝 전장 몇은 빼고 (갓 넘은 곳은 배율이 얹히면 벽이다)
-  mul0: 1.0, mulDepth: 0.35,         // 적 배율: 첫 층 ×mul0 → 마지막 보스 ×mul0×(1+mulDepth)
+  lag: 3,                 // 막 돌파한 끝 전장 몇은 빼고 (갓 넘은 곳은 배율이 얹히면 벽이다)
+  lanes: 3,               // 5.1 갈림길은 세 줄 — 고른 줄의 이웃 줄로만 내려간다
+  mul0: 1.12, mulDepth: 0.5,         // 적 배율: 첫 층 ×mul0 → 마지막 보스 ×mul0×(1+mulDepth)   (5.1: 1.0/0.35 → 1.12/0.5)
+  castleMul: 0.8,                    // 5.1 원정 성채는 진군보다 얇다 — 새는 피해가 다음 전투까지 남는다
   // 정벌 단계의 적 덤(깊이 끝 기준): 낮은 단계는 완만하게, 높은 단계는 가파르게. 첫 층엔 40%만, 내려갈수록 다 받는다
-  ascCurve: [0, 0.06, 0.13, 0.21, 0.3, 0.42, 0.56, 0.72, 0.9, 1.15, 1.4], ascEarly: 0.4,
-  elite: 1.3, eliteFort: 1.2,         // 정예: 적 ×1.3 · 요새 ×1.2 · 특성 하나
+  ascCurve: [0, 0.05, 0.11, 0.18, 0.26, 0.36, 0.55, 0.72, 0.9, 1.2, 1.55], ascEarly: 0.3,   // 5.1: 6 · 10단계의 ×1.1 도 여기에 (첫 층이 벽이었다)
+  elite: 1.45, eliteFort: 1.25,       // 정예: 적 ×1.45 · 요새 ×1.25 · 특성 하나
+  trial: 1.75, trialFort: 1.4,        // 5.1 시련: 적 ×1.75 · 요새 ×1.4 · 특성 둘 — 유물 고르기 + 높은 축복
+  risk: [{ mul: 1, scrip: 1, coin: 1 }, { mul: 1.2, scrip: 1.5, coin: 1.3 }, { mul: 1.45, scrip: 2, coin: 1.6, up: 1 }],   // 5.1 평소 · 도발 · 결사
+  reroll: { base: 20, step: 10 },     // 5.1 고르기 다시 굴리기: 군표 20, 쓸 때마다 +10
   fortDepth: 0.5,                     // 요새 체력: 깊이에 따라 ×(1+0.5d)
-  bossHp: 1.0, bossAff: [1, 2, 3],    // 보스 체력 덤 · 막마다 각인 수
+  bossHp: 1.3, bossAff: [2, 2, 3],    // 보스 체력 덤 · 막마다 각인 수 (5.1: 1.0 · 1/2/3 → 1.3 · 2/2/3)
   curseMul: 1.15,                     // 저주받은 보물: 다음 세 전투 적 +15%
-  scrip: { battle: 30, elite: 60, boss: 100, perAct: 10 },
+  scrip: { battle: 30, elite: 60, trial: 80, boss: 100, perAct: 10 },
   heal: { rest: 0.3, boss: 0.3 },
   price: { common: 45, rare: 75, epic: 120, relic: 140, heal: 40 },
-  coin: { mul: 1.4, perAct: 0.25, elite: 1.6, boss: 2.5, victory: 2500 }
+  coin: { mul: 1.4, perAct: 0.25, elite: 1.6, trial: 2, boss: 2.5, victory: 2500 }
 };
 
 /* 축복: 겹쳐 쌓인다. fx 의 곱셈 키는 곱하고, CONQ_ADD 키는 더한다 */
 const CONQ_ADD = { range: 1, wallet: 1, startMoney: 1, regen: 1, killGold: 1, cmdHeal: 1, barrier: 1, phoenix: 1,
-                   healAfter: 1, extraPick: 1, restHeal: 1 };
+                   healAfter: 1, extraPick: 1, restHeal: 1, heroStart: 1, cmdStart: 1, freePath: 1, luck: 1, scripFlat: 1 };
 const CONQ_BASE = { atk: 1, hp: 1, meleeAtk: 1, meleeHp: 1, rangedAtk: 1, heroAtk: 1, cheapAtk: 1, cheapHp: 1,
                     income: 1, cd: 1, cost: 1, castle: 1, bossHp: 1, enemyHp: 1, enemyAtk: 1, heroCd: 1, cmdCd: 1,
                     scrip: 1, shop: 1, coinMul: 1,
                     range: 0, wallet: 0, startMoney: 0, regen: 0, killGold: 0, cmdHeal: 0, barrier: 0, phoenix: 0,
-                    healAfter: 0, extraPick: 0, restHeal: 0 };
+                    healAfter: 0, extraPick: 0, restHeal: 0,
+                    fortHp: 1, heroStart: 0, cmdStart: 0, freePath: 0, luck: 0, scripFlat: 0 };   // 5.1
 const CONQ_BLESS = [
   { id: 'blade',    rar: 'common', icon: '🗡', name: '날 선 칼날',  desc: '모든 아군 공격 +8%',                 fx: { atk: 1.08 } },
   { id: 'mail',     rar: 'common', icon: '🛡', name: '단단한 갑옷', desc: '모든 아군 체력 +10%',                fx: { hp: 1.1 } },
@@ -3504,7 +3510,20 @@ const CONQ_BLESS = [
   { id: 'wargod',   rar: 'epic',   icon: '⚜', name: '군신의 가호', desc: '모든 아군 공격 +20% · 체력 +20%',    fx: { atk: 1.2, hp: 1.2 } },
   { id: 'endless',  rar: 'epic',   icon: '♾', name: '끝없는 보급', desc: '군자금 수입 +25% · 출진 대기 -15%',  fx: { income: 1.25, cd: 0.85 } },
   { id: 'wither',   rar: 'epic',   icon: '🥀', name: '쇠약의 저주', desc: '모든 적 체력 -10% · 공격 -10%',      fx: { enemyHp: 0.9, enemyAtk: 0.9 } },
-  { id: 'bastion',  rar: 'epic',   icon: '🗼', name: '거인의 성채', desc: '성채 최대 체력 +35% · 전투가 끝날 때마다 10% 회복', fx: { castle: 1.35, healAfter: 0.1 } }
+  { id: 'bastion',  rar: 'epic',   icon: '🗼', name: '거인의 성채', desc: '성채 최대 체력 +35% · 전투가 끝날 때마다 10% 회복', fx: { castle: 1.35, healAfter: 0.1 } },
+  // 5.1 열둘 더
+  { id: 'ram',      rar: 'common', icon: '🐏', name: '공성 망치',   desc: '적 요새 체력 -10%',                  fx: { fortHp: 0.9 } },
+  { id: 'ration',   rar: 'common', icon: '🍖', name: '넉넉한 군량', desc: '시작 군자금 +150',                   fx: { startMoney: 150 } },
+  { id: 'drill',    rar: 'common', icon: '🥋', name: '훈련 교관',   desc: '출진 대기 -6% · 모든 아군 공격 +4%', fx: { cd: 0.94, atk: 1.04 } },
+  { id: 'pike',     rar: 'common', icon: '🔱', name: '장창 대열',   desc: '근접 병종 공격 · 체력 +8%',          fx: { meleeAtk: 1.08, meleeHp: 1.08 } },
+  { id: 'sapper',   rar: 'rare',   icon: '💣', name: '공성 기술자', desc: '적 요새 체력 -20%',                  fx: { fortHp: 0.8 } },
+  { id: 'standard', rar: 'rare',   icon: '🚩', name: '전쟁 군기',   desc: '영웅 액티브가 준비된 채로 전투를 시작한다', fx: { heroStart: 1 } },
+  { id: 'signet',   rar: 'rare',   icon: '💍', name: '선왕의 인장', desc: '왕의 명령이 준비된 채로 전투를 시작한다', fx: { cmdStart: 1 } },
+  { id: 'tithe',    rar: 'rare',   icon: '⛪', name: '십일조',      desc: '군표 획득 +20%',                     fx: { scrip: 1.2 } },
+  { id: 'legion',   rar: 'epic',   icon: '🛡', name: '불패의 군단', desc: '모든 아군 체력 +30% · 근접 체력 +15%', fx: { hp: 1.3, meleeHp: 1.15 } },
+  { id: 'volley',   rar: 'epic',   icon: '🎯', name: '화살 폭풍',   desc: '원거리 공격 +30% · 사거리 +30',      fx: { rangedAtk: 1.3, range: 30 } },
+  { id: 'coffers',  rar: 'epic',   icon: '🏦', name: '왕실 금고',   desc: '수입 +20% · 군자금 한도 +400 · 시작 군자금 +200', fx: { income: 1.2, wallet: 400, startMoney: 200 } },
+  { id: 'bane',     rar: 'epic',   icon: '🐉', name: '용 사냥꾼',   desc: '보스 체력 -25% · 전설 · 신화 공격 +15%', fx: { bossHp: 0.75, heroAtk: 1.15 } }
 ];
 /* 유물: 원정마다 하나씩만 */
 const CONQ_RELICS = [
@@ -3527,7 +3546,18 @@ const CONQ_RELICS = [
   { id: 'sack',     icon: '💰', name: '약탈자의 자루', desc: '적을 쓰러뜨릴 때마다 군자금 +6 · 금화 보상 +25%', fx: { killGold: 6, coinMul: 1.25 } },
   { id: 'flint',    icon: '🔥', name: '모닥불 부싯돌', desc: '야영에서 성채를 20%p 더 회복',          fx: { restHeal: 0.2 } },
   { id: 'horn',     icon: '📯', name: '왕실 나팔',     desc: '왕의 명령 대기 -40%',                   fx: { cmdCd: 0.6 } },
-  { id: 'mirror',   icon: '🪞', name: '거울 방패',     desc: '모든 적 공격 -15%',                     fx: { enemyAtk: 0.85 } }
+  { id: 'mirror',   icon: '🪞', name: '거울 방패',     desc: '모든 적 공격 -15%',                     fx: { enemyAtk: 0.85 } },
+  // 5.1 열 더 — 앞의 넷은 대가가 있다
+  { id: 'bloodcrown', icon: '🩸', name: '피의 왕관',   desc: '모든 아군 공격 +35% · 대가: 성채 최대 체력 -25%', fx: { atk: 1.35, castle: 0.75 }, cursed: true },
+  { id: 'greed',    icon: '💎', name: '탐욕의 반지',   desc: '군표 획득 +60% · 대가: 모든 적 체력 +10%', fx: { scrip: 1.6, enemyHp: 1.1 }, cursed: true },
+  { id: 'helm',     icon: '⛑', name: '광전사의 투구', desc: '근접 공격 +40% · 대가: 근접 체력 -15%',  fx: { meleeAtk: 1.4, meleeHp: 0.85 }, cursed: true },
+  { id: 'glass',    icon: '🔭', name: '유리 대포',     desc: '원거리 공격 +40% · 대가: 모든 아군 체력 -12%', fx: { rangedAtk: 1.4, hp: 0.88 }, cursed: true },
+  { id: 'ballista', icon: '🎯', name: '공성 노포',     desc: '적 요새 체력 -30%',                     fx: { fortHp: 0.7 } },
+  { id: 'warbanner', icon: '🚩', name: '왕의 깃발',    desc: '영웅 액티브 · 왕의 명령이 준비된 채로 전투를 시작한다', fx: { heroStart: 1, cmdStart: 1 } },
+  { id: 'compass',  icon: '🧭', name: '탐험가의 나침반', desc: '갈림길 어느 줄로든 내려갈 수 있다',   fx: { freePath: 1 } },
+  { id: 'lantern',  icon: '🏮', name: '길잡이 등불',   desc: '축복을 고를 때 희귀 · 영웅이 더 자주 나온다', fx: { luck: 1 } },
+  { id: 'hourglass', icon: '⌛', name: '시간술사의 모래시계', desc: '출진 대기 -12% · 영웅 액티브 대기 -12%', fx: { cd: 0.88, heroCd: 0.88 } },
+  { id: 'cart',     icon: '🛻', name: '전리품 수레',   desc: '전투가 끝날 때마다 군표 +12',           fx: { scripFlat: 12 } }
 ];
 const CONQ_BLESS_BY_ID = {}, CONQ_RELIC_BY_ID = {};
 CONQ_BLESS.forEach(b => { CONQ_BLESS_BY_ID[b.id] = b; });
@@ -3539,8 +3569,19 @@ const CONQ_NODES = {
   shop:   { name: '상점', icon: '🛒', desc: '군표로 축복 · 유물 · 성채 수리를 산다' },
   rest:   { name: '야영', icon: '🔥', desc: '성채를 고치거나, 훈련으로 희귀 축복' },
   shrine: { name: '제단', icon: '✨', desc: '무엇이 기다리는지 모른다 — 대가와 보상' },
-  boss:   { name: '보스', icon: '👑', desc: '막의 주인 · 각인을 두른 보스 — 이기면 유물 고르기 · 성채 30% 회복' }
+  boss:   { name: '보스', icon: '👑', desc: '막의 주인 · 각인을 두른 보스 — 이기면 유물 고르기 · 성채 30% 회복' },
+  // 5.1
+  trial:  { name: '시련', icon: '🔥', desc: '아주 억센 적 · 전장 특성 둘 — 이기면 유물 고르기 + 높은 축복' },
+  forge:  { name: '대장간', icon: '⚒', desc: '가진 축복 하나를 하나 더 벼린다' },
+  recruit: { name: '징집소', icon: '📋', desc: '편성 한 칸을 다른 병종으로 바꾼다 (자리가 있으면 더한다)' },
+  treasure: { name: '보물', icon: '💎', desc: '유물 둘 중 하나를 고른다' }
 };
+/* 5.1 전투마다 거는 위험: 적이 억세지는 대신 군표 · 금화가 늘고, 결사는 축복 등급이 하나 오른다 */
+const CONQ_RISK = [
+  { name: '평소', desc: '그대로 싸운다' },
+  { name: '도발', desc: '적 +20% · 군표 ×1.5 · 금화 ×1.3' },
+  { name: '결사', desc: '적 +45% · 군표 ×2 · 금화 ×1.6 · 축복 등급 하나 위' }
+];
 /* 정벌 단계: 끝까지 가면 하나씩 열린다. CONQ.ascCurve 만큼 적이 억세지고(깊이 내려갈수록 — 첫 층엔 40%) 아래가 쌓인다 */
 const CONQ_ASC = [
   '기본',
@@ -3572,7 +3613,16 @@ const CONQ_SHRINES = [
   { id: 'pilgrim', name: '순례자',        text: '지친 순례자가 축복을 빌어 준다.',
     opts: [{ label: '축복을 받는다', note: '무작위 일반 축복 하나', gain: { randBless: 'common' } }, { label: '노자를 받는다', note: '군표 +50', gain: { scrip: 50 } }] },
   { id: 'mist',   name: '망각의 안개',    text: '안개 속에서 무언가를 잃고 무언가를 얻는다.',
-    opts: [{ label: '안개 속으로', note: '가진 축복 하나를 잃고 영웅 축복 고르기', cost: { loseBless: 1 }, gain: { pick: 'epic' } }, { label: '돌아선다', note: '', gain: {} }] }
+    opts: [{ label: '안개 속으로', note: '가진 축복 하나를 잃고 영웅 축복 고르기', cost: { loseBless: 1 }, gain: { pick: 'epic' } }, { label: '돌아선다', note: '', gain: {} }] },
+  // 5.1 넷 더
+  { id: 'seer',   name: '점술가',          text: '“네 앞길을 넷으로 갈라 보여 주지.”',
+    opts: [{ label: '점을 본다', note: '군표 25 · 축복 넷 중 하나 고르기', cost: { scrip: 25 }, gain: { pick4: 1 } }, { label: '지나간다', note: '', gain: {} }] },
+  { id: 'duel',   name: '결투 신청',        text: '이름 모를 기사가 길을 막고 칼을 뽑는다.',
+    opts: [{ label: '받아들인다', note: '성채 -15% · 무작위 영웅 축복 하나', cost: { castle: 0.15 }, gain: { randBless: 'epic' } }, { label: '물러선다', note: '', gain: {} }] },
+  { id: 'refugee', name: '피난민 행렬',     text: '불탄 마을에서 쫓겨난 이들이 성문을 두드린다.',
+    opts: [{ label: '받아들인다', note: '군표 -30 · 성벽 보수 축복', cost: { scrip: 30 }, gain: { bless: 'mason' } }, { label: '외면한다', note: '군표 +30 · 다음 전투 적 +15%', gain: { scrip: 30, curse: 1 } }] },
+  { id: 'anvil',  name: '버려진 대장간',    text: '아직 불씨가 남은 화덕이 있다.',
+    opts: [{ label: '화덕을 지핀다', note: '가진 축복 하나를 무작위로 하나 더', cost: { needBless: 1 }, gain: { dupBless: 1 } }, { label: '고철을 판다', note: '군표 +35', gain: { scrip: 35 } }] }
 ];
 const CONQ_SHRINE_BY_ID = {};
 CONQ_SHRINES.forEach(s => { CONQ_SHRINE_BY_ID[s.id] = s; });
@@ -3593,45 +3643,57 @@ function conqRange(run) { const hi = Math.max(0, Math.min(STAGES.length, run.tie
 /* 이 층의 적 배율 (깊이 · 단계) */
 function conqMul(run, d) { return CONQ.mul0 * (1 + CONQ.mulDepth * d) * (1 + (CONQ.ascCurve[run.asc] || 0) * (CONQ.ascEarly + (1 - CONQ.ascEarly) * d)); }
 
-/* 막 하나의 지도: 층마다 갈림길. 첫 층은 전투 둘, 넷째(끝 앞) 층엔 야영이나 상점이 하나는 있다, 마지막 층은 보스 */
+/* 막 하나의 지도 (5.1): 층마다 세 줄. 고른 줄의 이웃 줄(위 · 같은 · 아래)로만 내려간다.
+ * 첫 층은 전투 셋, 넷째(끝 앞) 층엔 야영이나 상점이 하나는 있다, 마지막 층은 보스 하나 (어느 줄에서든 간다) */
+const CONQ_WEIGHTS = [['battle', 38], ['elite', 14], ['shop', 9], ['rest', 9], ['shrine', 12], ['trial', 6], ['forge', 6], ['recruit', 6], ['treasure', 3]];
 function conqMakeAct(run, act) {
   const R = conqRng(run, 101 + act * 7);
   const map = [];
-  const eliteW = run.asc >= 1 ? 22 : 15;
   for (let f = 0; f < CONQ.floors; f++) {
     const d = conqDepth(act, f);
     if (f === CONQ.floors - 1) { map.push([conqBattleNode(run, R, 'boss', d, act)]); continue; }
-    const n = f === 0 ? 2 : (R() < 0.45 ? 2 : 3);
+    const w = CONQ_WEIGHTS.map(([t, x]) => [t,
+      t === 'elite' ? (f >= 2 ? x * (run.asc >= 1 ? 1.5 : 1) : 0) : t === 'trial' ? (f >= 2 ? x : 0) : t === 'rest' ? (f >= 2 ? x : 3) :
+      t === 'treasure' || t === 'forge' ? (f >= 1 ? x : 0) : x]);
+    const sum = w.reduce((a, b) => a + b[1], 0);
     const row = [];
-    for (let k = 0; k < n; k++) {
-      let t;
-      if (f === 0) t = 'battle';
-      else {
-        const w = [['battle', 46], ['elite', f >= 2 ? eliteW : 0], ['shop', 12], ['rest', f >= 2 ? 12 : 4], ['shrine', 15]];
-        let x = R() * w.reduce((a, b) => a + b[1], 0);
-        t = w.find(p => (x -= p[1]) < 0)[0];
-      }
+    for (let k = 0; k < CONQ.lanes; k++) {
+      let t = 'battle';
+      if (f > 0) { let x = R() * sum; t = w.find(p => (x -= p[1]) < 0)[0]; }
+      if (row.indexOf(t) >= 0 && t !== 'battle' && R() < 0.7) t = 'battle';   // 같은 줄에 같은 쉼터가 겹치지 않게
       row.push(t);
     }
-    if (!row.some(t => t === 'battle' || t === 'elite')) row[0] = 'battle';   // 싸우지 않고는 내려갈 수 없다
-    if (f === CONQ.floors - 2 && !row.some(t => t === 'rest' || t === 'shop')) row[row.length - 1] = R() < 0.6 ? 'rest' : 'shop';
-    map.push(row.map(t => (t === 'battle' || t === 'elite') ? conqBattleNode(run, R, t, d, act) : { t: t }));
+    const fight = t => t === 'battle' || t === 'elite' || t === 'trial';
+    if (!row.some(fight)) row[1] = 'battle';                                 // 싸우지 않고는 내려갈 수 없다
+    if (f === CONQ.floors - 2 && !row.some(t => t === 'rest' || t === 'shop')) row[conqPick(R, [0, 2])] = R() < 0.6 ? 'rest' : 'shop';
+    map.push(row.map(t => fight(t) ? conqBattleNode(run, R, t, d, act) : { t: t }));
   }
   return map;
+}
+/* 이 칸으로 갈 수 있나: 막의 첫 층 · 보스 층 · 나침반이면 어디든, 아니면 지난 층에서 고른 줄의 이웃 */
+function conqReachable(run, k) {
+  const row = run.map[run.floor] || [];
+  if (k < 0 || k >= row.length) return false;
+  if (run.floor === 0 || row.length === 1 || conqEffects(run).freePath) return true;
+  const prev = run.path[run.floor - 1], pr = run.map[run.floor - 1] || [];
+  if (prev === undefined || pr.length !== row.length) return true;            // 옛 지도(줄 수가 다름)는 막지 않는다
+  return Math.abs(k - prev) <= 1;
 }
 function conqBattleNode(run, R, t, d, act) {
   const { lo, hi } = conqRange(run);
   const c = lo + d * (hi - lo);
   const boss = t === 'boss';
-  // 보스 층은 보스 전장에서, 아니면 보스가 없는 전장에서. 가운데(c)에 가까운 것 넷 중 하나
+  // 보스 층은 보스 전장에서, 아니면 보스가 없는 전장에서. 가운데(c)에 가까운 것 넷 중 하나 (시련은 더 뒤에서)
   const pool = [];
   STAGES.forEach((st, i) => { if (i <= hi && !!(st.boss && st.bossId) === boss) pool.push(i); });
   if (!pool.length) STAGES.forEach((st, i) => { if (!!(st.boss && st.bossId) === boss) pool.push(i); });
-  pool.sort((a, b) => Math.abs(a - c) - Math.abs(b - c));
+  const cc = t === 'trial' ? Math.min(hi, c + 4) : c;
+  pool.sort((a, b) => Math.abs(a - cc) - Math.abs(b - cc));
   const src = boss && act === CONQ.acts - 1 ? pool.slice(0, 2).sort((a, b) => b - a)[0] : conqPick(R, pool.slice(0, 4));
   const node = { t: t, src: src };
   const modKeys = Object.keys(STAGE_MODS);
-  if (t === 'elite' || run.asc >= 8) node.mod = conqPick(R, modKeys);
+  if (t === 'elite' || t === 'trial' || run.asc >= 8) node.mod = conqPick(R, modKeys);
+  if (t === 'trial') node.mod2 = conqPick(R, modKeys.filter(m => m !== node.mod));
   if (boss) {
     const n = CONQ.bossAff[act] + (run.asc >= 4 ? 1 : 0) + (run.asc >= 10 && act === CONQ.acts - 1 ? 1 : 0);
     const keys = AFFIX_KEYS.slice();
@@ -3646,7 +3708,7 @@ function conqNewRun(s, asc, seed) {
   const run = { v: 1, asc: Math.max(0, Math.min(conqAscOpen(s), asc | 0)), seed: (seed >>> 0) || 1, rn: 0,
                 tier: Math.min(STAGES.length, s.cleared || 0), deck: (s.loadout || []).slice(0, LOADOUT_MAX),
                 act: 0, floor: 0, castle: 1, scrip: CONQ.startScrip, bless: {}, relics: [], won: 0, curse: 0,
-                kills: 0, coins: 0, pending: null, map: null, done: null, path: [], room: null };
+                kills: 0, coins: 0, pending: null, map: null, done: null, path: [], room: null, risk: 0, rerolls: 0 };
   if (run.asc >= 2) run.castle = 0.85;
   run.map = conqMakeAct(run, 0);
   run.pending = { kind: 'relic', opts: conqRelicOffer(run, 3), start: true };   // 출발 유물 하나 고르기
@@ -3662,9 +3724,16 @@ function conqEffects(run) {
   if (run.phoenixUsed) R.phoenix = 0;
   return R;
 }
-/* 축복 고르기: 희귀도를 굴려 서로 다른 n 개 */
-function conqBlessOffer(run, n, odds) {
+/* 축복 고르기: 희귀도를 굴려 서로 다른 n 개. up: 등급을 한 칸 올린다(결사) · 등불은 일반을 덜 */
+function conqBlessOffer(run, n, odds, up) {
   const R = conqRng(run, 7);
+  if (Array.isArray(odds)) {
+    let o = odds.slice();
+    if (conqEffects(run).luck) o = [o[0] * 0.6, o[1] + o[0] * 0.25, o[2] + o[0] * 0.15];
+    if (up) o = [0, o[0] + o[1] * 0.5, o[2] + o[1] * 0.5];
+    odds = o;
+  } else if (up && odds === 'common') odds = 'rare';
+  else if (up && odds === 'rare') odds = 'epic';
   const out = [];
   for (let k = 0; k < 40 && out.length < n; k++) {
     const x = R(), rar = typeof odds === 'string' ? odds : (x < odds[0] ? 'common' : x < odds[0] + odds[1] ? 'rare' : 'epic');
@@ -3680,24 +3749,36 @@ function conqRelicOffer(run, n) {
   while (out.length < n && pool.length) out.push(pool.splice(Math.floor(R() * pool.length), 1)[0]);
   return out;
 }
-const CONQ_ODDS = { battle: [0.68, 0.27, 0.05], elite: [0.35, 0.47, 0.18], boss: [0, 0.6, 0.4], rest: 'rare' };
+const CONQ_ODDS = { battle: [0.68, 0.27, 0.05], elite: [0.35, 0.47, 0.18], trial: [0, 0.55, 0.45], boss: [0, 0.6, 0.4], rest: 'rare' };
+/* 5.1 고르기 다시 굴리기: 같은 종류 · 같은 확률로 새 선택지 (값은 쓸 때마다 오른다) */
+function conqRerollCost(run) { return CONQ.reroll.base + CONQ.reroll.step * (run.rerolls || 0); }
+function conqReroll(run) {
+  const p = run.pending, cost = conqRerollCost(run);
+  if (!p || p.start || run.scrip < cost) return false;
+  run.scrip -= cost; run.rerolls = (run.rerolls || 0) + 1;
+  p.opts = p.kind === 'relic' ? conqRelicOffer(run, p.opts.length) : conqBlessOffer(run, p.opts.length, p.odds || CONQ_ODDS.battle, p.up);
+  return true;
+}
 
-/* 고른 칸의 전장을 만든다 (깊이 · 단계 · 정예 · 저주를 얹은 STAGES 복사본) */
+/* 고른 칸의 전장을 만든다 (깊이 · 단계 · 정예 · 시련 · 저주 · 위험을 얹은 STAGES 복사본) */
 function conqStage(run, node) {
   const src = STAGES[node.src];
   const d = conqDepth(run.act, run.floor);
-  let mul = conqMul(run, d);
-  if (run.asc >= 6) mul *= 1.1;
-  if (run.asc >= 10) mul *= 1.1;
+  const risk = CONQ.risk[run.risk || 0] || CONQ.risk[0];
+  let mul = conqMul(run, d) * risk.mul;
   if (node.t === 'elite') mul *= CONQ.elite;
+  if (node.t === 'trial') mul *= CONQ.trial;
   if (run.curse > 0) mul *= CONQ.curseMul;
+  const fortK = node.t === 'elite' ? CONQ.eliteFort : node.t === 'trial' ? CONQ.trialFort : 1;
+  const coinK = (CONQ.coin[node.t] || 1) * risk.coin;
+  const mods = node.mod ? [node.mod].concat(node.mod2 ? [node.mod2] : []) : (src.mods || []).slice();
   const st = Object.assign({}, src, {
     name: src.name, waves: src.waves.map(w => Object.assign({}, w)),
     enemyMul: (src.enemyMul || 1) * mul,
-    baseHp: Math.round(src.baseHp * (1 + CONQ.fortDepth * d) * (node.t === 'elite' ? CONQ.eliteFort : 1)),
-    reward: Math.round(src.reward * (CONQ.coin.mul + CONQ.coin.perAct * run.act) * (node.t === 'elite' ? CONQ.coin.elite : node.t === 'boss' ? CONQ.coin.boss : 1)),
-    mods: node.mod ? [node.mod] : (src.mods || []).slice(),
-    conquest: { t: node.t, act: run.act, floor: run.floor }
+    baseHp: Math.round(src.baseHp * (1 + CONQ.fortDepth * d) * fortK),
+    reward: Math.round(src.reward * (CONQ.coin.mul + CONQ.coin.perAct * run.act) * coinK),
+    mods: mods,
+    conquest: { t: node.t, act: run.act, floor: run.floor, risk: run.risk || 0 }
   });
   if (node.aff) st.runAffix = node.aff.slice();
   if (node.t === 'boss') st.conqBossHp = CONQ.bossHp * (run.asc >= 9 ? 1.2 : 1);
@@ -3709,6 +3790,8 @@ function conqStage(run, node) {
 function conqAfterBattle(run, node, win, castleRatio, extra) {
   const R = conqEffects(run);
   extra = extra || {};
+  const risk = CONQ.risk[run.risk || 0] || CONQ.risk[0];
+  run.risk = 0;
   if (extra.phoenixUsed) run.phoenixUsed = true;
   run.kills += extra.kills || 0;
   run.coins += extra.coins || 0;
@@ -3717,14 +3800,15 @@ function conqAfterBattle(run, node, win, castleRatio, extra) {
   run.won++;
   run.castle = Math.min(1, Math.max(0.01, castleRatio) + R.healAfter + (node.t === 'boss' ? CONQ.heal.boss : 0));
   const base = CONQ.scrip[node.t] + CONQ.scrip.perAct * run.act;
-  run.scrip += Math.round(base * R.scrip * (run.asc >= 7 ? 0.8 : 1));
-  const pick = 3 + R.extraPick;
-  if (node.t === 'boss') run.pending = { kind: 'relic', opts: conqRelicOffer(run, 3), then: { kind: 'bless', opts: conqBlessOffer(run, pick, CONQ_ODDS.boss) } };
+  run.scrip += Math.round(base * R.scrip * risk.scrip * (run.asc >= 7 ? 0.8 : 1)) + R.scripFlat;
+  const pick = 3 + R.extraPick, up = risk.up ? 1 : 0;
+  const bless = odds => ({ kind: 'bless', opts: conqBlessOffer(run, pick, odds, up), odds: odds, up: up });
+  if (node.t === 'boss' || node.t === 'trial') run.pending = Object.assign({ kind: 'relic', opts: conqRelicOffer(run, 3) }, { then: bless(CONQ_ODDS[node.t]) });
   else if (node.t === 'elite') {
     const rel = conqRelicOffer(run, 1)[0];
     if (rel) run.relics.push(rel);
-    run.pending = { kind: 'bless', opts: conqBlessOffer(run, pick, CONQ_ODDS.elite), got: rel || null };
-  } else run.pending = { kind: 'bless', opts: conqBlessOffer(run, pick, CONQ_ODDS.battle) };
+    run.pending = Object.assign(bless(CONQ_ODDS.elite), { got: rel || null });
+  } else run.pending = bless(CONQ_ODDS.battle);
   return run;
 }
 /* 다음 층으로 (막 끝이면 다음 막 · 마지막 막이면 정벌 완료) */
@@ -3739,7 +3823,11 @@ function conqAdvance(run) {
 }
 /* 축복 · 유물 받기 */
 function conqTake(run, kind, id) {
-  if (kind === 'relic') { if (CONQ_RELIC_BY_ID[id] && run.relics.indexOf(id) < 0) run.relics.push(id); return run; }
+  if (kind === 'relic') {
+    const r = CONQ_RELIC_BY_ID[id];
+    if (r && run.relics.indexOf(id) < 0) run.relics.push(id);
+    return run;
+  }
   const b = CONQ_BLESS_BY_ID[id];
   if (!b) return run;
   run.bless[id] = (run.bless[id] || 0) + 1;
@@ -3747,6 +3835,27 @@ function conqTake(run, kind, id) {
   return run;
 }
 function conqBlessCount(run) { let n = 0; for (const k in run.bless) n += run.bless[k]; return n; }
+
+/* 5.1 대장간: 가진 축복 하나를 하나 더 (고를 수 있는 것: 가진 것 전부) */
+function conqForge(run, id) { if (!run.bless[id]) return false; conqTake(run, 'bless', id); return true; }
+/* 5.1 징집소: 편성에 없는 쓸 수 있는 병종 셋 (영웅은 자리가 날 때만 의미가 있지만 바꿔 넣을 수는 있다) */
+function conqRecruitOffer(run, s) {
+  const R = conqRng(run, 41);
+  const pool = availableUnits(s).filter(u => run.deck.indexOf(u.id) < 0).map(u => u.id);
+  const out = [];
+  while (out.length < 3 && pool.length) out.push(pool.splice(Math.floor(R() * pool.length), 1)[0]);
+  return out;
+}
+/* id 를 slot 자리에 넣는다 (slot 이 편성 길이면 더한다). 전설 · 신화 자리 수를 넘으면 false */
+function conqRecruit(run, id, slot) {
+  const u = UNIT_BY_ID[id];
+  if (!u || run.deck.indexOf(id) >= 0 || slot < 0 || slot > run.deck.length || slot >= LOADOUT_MAX) return false;
+  const next = run.deck.slice();
+  if (slot === next.length) next.push(id); else next[slot] = id;
+  if (next.filter(x => isHeroUnit(UNIT_BY_ID[x])).length > HERO_SLOT_MAX) return false;
+  run.deck = next;
+  return true;
+}
 
 /* 상점: 들를 때 한 번 정한다 */
 function conqShop(run) {
@@ -3771,7 +3880,8 @@ function conqRestHeal(run) { return Math.max(0.1, CONQ.heal.rest + conqEffects(r
 /* 제단의 선택: 대가를 치를 수 없으면 false. 고르기가 이어지면 run.pending 이 선다 */
 function conqShrineCan(run, opt) {
   const c = opt.cost || {};
-  return !(c.scrip && run.scrip < c.scrip) && !(c.castle && run.castle <= c.castle + 0.02) && !(c.loseBless && conqBlessCount(run) < c.loseBless);
+  return !(c.scrip && run.scrip < c.scrip) && !(c.castle && run.castle <= c.castle + 0.02) && !(c.loseBless && conqBlessCount(run) < c.loseBless) &&
+    !(c.needBless && conqBlessCount(run) < c.needBless);
 }
 function conqShrine(run, opt, rnd) {
   if (!conqShrineCan(run, opt)) return null;
@@ -3786,7 +3896,10 @@ function conqShrine(run, opt, rnd) {
   if (g.gamble) { out.gamble = (rnd !== undefined ? rnd : R()) < 0.5; if (out.gamble) run.scrip += g.gamble; }
   if (g.relic) { const id = conqRelicOffer(run, 1)[0]; if (id) { run.relics.push(id); out.relic = id; } }
   if (g.randBless) { const pool = CONQ_BLESS.filter(b => b.rar === g.randBless); const b = conqPick(R, pool); conqTake(run, 'bless', b.id); out.bless = b.id; }
-  if (g.pick) run.pending = { kind: 'bless', opts: conqBlessOffer(run, 3 + conqEffects(run).extraPick, g.pick) };
+  if (g.bless) { conqTake(run, 'bless', g.bless); out.bless = g.bless; }
+  if (g.dupBless) { const ids = Object.keys(run.bless).filter(k => run.bless[k] > 0); if (ids.length) { const id = conqPick(R, ids); conqTake(run, 'bless', id); out.bless = id; } }
+  if (g.pick) run.pending = { kind: 'bless', opts: conqBlessOffer(run, 3 + conqEffects(run).extraPick, g.pick), odds: g.pick };
+  if (g.pick4) run.pending = { kind: 'bless', opts: conqBlessOffer(run, 4 + conqEffects(run).extraPick, [0.45, 0.4, 0.15]), odds: [0.45, 0.4, 0.15] };
   return out;
 }
 
@@ -3823,7 +3936,7 @@ function conqNormalize(run) {
   const act = num(run.act, 0, CONQ.acts - 1), floor = num(run.floor, 0, CONQ.floors - 1);
   if (act === null || floor === null || run.map.length !== CONQ.floors) return null;
   const okNode = n => n && typeof n === 'object' && CONQ_NODES[n.t] && (!('src' in n) || (STAGES[n.src] !== undefined)) &&
-    (!n.mod || STAGE_MODS[n.mod]) && (!n.aff || (Array.isArray(n.aff) && n.aff.every(k => BOSS_AFFIXES[k])));
+    (!n.mod || STAGE_MODS[n.mod]) && (!n.mod2 || STAGE_MODS[n.mod2]) && (!n.aff || (Array.isArray(n.aff) && n.aff.every(k => BOSS_AFFIXES[k])));
   if (!run.map.every(row => Array.isArray(row) && row.length && row.every(okNode))) return null;
   const out = Object.assign({}, run, { act: act | 0, floor: floor | 0 });
   out.asc = num(run.asc, 0, CONQ.ascMax) | 0;
@@ -3833,6 +3946,7 @@ function conqNormalize(run) {
   out.scrip = Math.floor(num(run.scrip, 0, 1e6) || 0);
   out.won = Math.floor(num(run.won, 0, 99) || 0); out.curse = Math.floor(num(run.curse, 0, 9) || 0);
   out.kills = Math.floor(num(run.kills, 0, 1e9) || 0); out.coins = Math.floor(num(run.coins, 0, 1e12) || 0);
+  out.risk = Math.floor(num(run.risk, 0, CONQ.risk.length - 1) || 0); out.rerolls = Math.floor(num(run.rerolls, 0, 999) || 0);
   out.deck = Array.isArray(run.deck) ? run.deck.filter(id => typeof id === 'string' && UNIT_BY_ID[id]).slice(0, LOADOUT_MAX) : [];
   if (!out.deck.length) return null;
   const bless = {};
@@ -3845,13 +3959,15 @@ function conqNormalize(run) {
     (!p.got || !!CONQ_RELIC_BY_ID[p.got]);
   out.pending = okPend(run.pending) ? run.pending : null;
   const rm = run.room;
-  out.room = rm && typeof rm === 'object' && (rm.t === 'rest' || (rm.t === 'shrine' && CONQ_SHRINE_BY_ID[rm.id]) ||
+  out.room = rm && typeof rm === 'object' && (rm.t === 'rest' || rm.t === 'forge' || (rm.t === 'shrine' && CONQ_SHRINE_BY_ID[rm.id]) ||
+    (rm.t === 'recruit' && Array.isArray(rm.opts) && rm.opts.every(id => UNIT_BY_ID[id])) ||
     (rm.t === 'shop' && Array.isArray(rm.items) && rm.items.every(i => i && (i.kind === 'heal' || okList(i.kind, [i.id])) && Number(i.price) >= 0))) ? rm : null;
+  if (out.room && out.room.t === 'recruit' && out.room.pick && !UNIT_BY_ID[out.room.pick]) out.room = Object.assign({}, out.room, { pick: null });
   if (out.room && out.room.res) {          // 제단 결과에 적힌 이름이 사라진 것이면 결과만 비운다
     const r = out.room.res;
     if ((r.lost && !CONQ_BLESS_BY_ID[r.lost]) || (r.bless && !CONQ_BLESS_BY_ID[r.bless]) || (r.relic && !CONQ_RELIC_BY_ID[r.relic])) out.room = Object.assign({}, out.room, { res: { none: true } });
   }
   out.done = null; out.fighting = false;
-  out.path = Array.isArray(run.path) ? run.path.filter(x => Number.isInteger(x) && x >= 0 && x < 3).slice(0, CONQ.floors) : [];
+  out.path = Array.isArray(run.path) ? run.path.slice(0, CONQ.floors).map(x => Number.isInteger(x) && x >= 0 && x < CONQ.lanes ? x : 0) : [];
   return out;
 }

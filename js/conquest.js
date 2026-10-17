@@ -49,7 +49,9 @@ function conqLobby() {
         '<li><b>유물</b> · 정예와 보스가 줍니다. 원정마다 하나뿐인 큰 힘</li>' +
         '<li><b>군표 🎖</b> · 전투에서 모아 상점에서 씁니다 (원정이 끝나면 사라집니다)</li>' +
         '<li><b>전장</b> · 내가 돌파한 전장에서 뽑습니다. 깊이 내려갈수록 적이 억세집니다</li>' +
-        '<li><b>편성</b> · 출발할 때의 편성으로 끝까지 싸웁니다</li>' +
+        '<li><b>편성</b> · 출발할 때의 편성으로 싸웁니다 — 징집소에서 한 칸씩 바꿀 수 있습니다</li>' +
+        '<li><b>길</b> · 갈림길은 세 줄. 고른 줄의 이웃 줄로만 내려갑니다 — 앞을 보고 길을 짜세요</li>' +
+        '<li><b>위험 걸기</b> · 전투마다 평소 · 도발 · 결사 — 적이 억세질수록 군표 · 금화 · 축복 등급이 오릅니다</li>' +
       '</ul>' +
       '<div class="cq-rec">최고 <b>' + rec.best + '</b> / ' + (CONQ.acts * CONQ.floors) + '층 · 정벌 <b>' + rec.wins + '</b>회 · 원정 ' + rec.runs + '회' +
         (rec.top >= 0 ? ' · 넘은 단계 <b>' + rec.top + '</b>' : '') + '</div>' +
@@ -95,7 +97,7 @@ function conqRunView(run) {
   const wrap = document.createElement('div');
   wrap.className = 'cq-run';
   const row = run.map[run.floor] || [];
-  if (conqSel >= row.length) conqSel = -1;
+  if (conqSel >= row.length || (conqSel >= 0 && !conqReachable(run, conqSel))) conqSel = -1;
   if (conqSel < 0 && row.length === 1) conqSel = 0;
   // 막 표시
   let acts = '<div class="cq-acts">';
@@ -107,10 +109,11 @@ function conqRunView(run) {
     map += '<div class="cq-col' + (f === run.floor ? ' now' : f < run.floor ? ' past' : '') + '">';
     r.forEach((node, k) => {
       const N = CONQ_NODES[node.t], took = f < run.floor && run.path[f] === k;
-      const cls = 'cq-node t-' + node.t + (f === run.floor ? ' live' : '') + (f === run.floor && k === conqSel ? ' sel' : '') + (took ? ' took' : '') + (f < run.floor && !took ? ' skip' : '');
-      map += '<button type="button" class="' + cls + '" data-f="' + f + '" data-k="' + k + '"' + (f === run.floor ? '' : ' tabindex="-1"') + '>' +
+      const live = f === run.floor && conqReachable(run, k);                // 5.1 지난 층에서 고른 줄의 이웃만
+      const cls = 'cq-node t-' + node.t + (live ? ' live' : f === run.floor ? ' block' : '') + (f === run.floor && k === conqSel ? ' sel' : '') + (took ? ' took' : '') + (f < run.floor && !took ? ' skip' : '');
+      map += '<button type="button" class="' + cls + '" data-f="' + f + '" data-k="' + k + '"' + (live ? '' : ' tabindex="-1"') + '>' +
         (node.t === 'boss' ? '<canvas></canvas>' : '<i>' + N.icon + '</i>') + '<span>' + conqNodeLabel(node) + '</span>' +
-        (node.mod ? '<em class="cq-mod" style="--mc:' + STAGE_MODS[node.mod].color + '">' + STAGE_MODS[node.mod].name + '</em>' : '') + '</button>';
+        (node.mod ? '<em class="cq-mod" style="--mc:' + STAGE_MODS[node.mod].color + '">' + STAGE_MODS[node.mod].name + (node.mod2 ? ' · ' + STAGE_MODS[node.mod2].name : '') + '</em>' : '') + '</button>';
     });
     map += '</div>';
   });
@@ -139,7 +142,10 @@ function conqDetail(run, el) {
       if (st.mods && st.mods.length) h += '<div class="cq-pick-mods">' + st.mods.map(m => '<span style="--mc:' + STAGE_MODS[m].color + '">' + STAGE_MODS[m].name + '</span>').join('') + '</div>';
       if (node.aff) h += affixBlock(node.aff);
     }
-    h += '<button type="button" class="btn primary cq-enter">' + (node.src !== undefined ? '출진' : '들어간다') + '</button>';
+    if (node.src !== undefined) {           // 5.1 위험 걸기: 평소 · 도발 · 결사
+      h += '<div class="cq-risks">' + CONQ_RISK.map((r, i) => '<button type="button" class="btn ' + (i ? 'cq-risk r' + i : 'primary') + ' cq-enter" data-risk="' + i + '">' +
+        '<b>' + (i ? r.name : '출진') + '</b><small>' + (i ? r.desc : '평소대로') + '</small></button>').join('') + '</div>';
+    } else h += '<button type="button" class="btn primary cq-enter" data-risk="0">들어간다</button>';
   } else h += '<div class="cq-pick-d">갈림길 하나를 고르세요</div>';
   // 지금 가진 것
   const R = conqEffects(run);
@@ -151,8 +157,7 @@ function conqDetail(run, el) {
   h += '<div class="cq-sum">' + conqSummary(R).map(x => '<span>' + x + '</span>').join('') + '</div></div>';
   h += '<button type="button" class="btn ghost danger cq-quit">원정 포기</button>';
   el.innerHTML = h;
-  const go = el.querySelector('.cq-enter');
-  if (go) go.addEventListener('click', () => conqEnter(run, conqSel));
+  el.querySelectorAll('.cq-enter').forEach(go => go.addEventListener('click', () => { run.risk = +go.dataset.risk || 0; conqEnter(run, conqSel); }));
   el.querySelector('.cq-quit').addEventListener('click', () => {
     askConfirm('원정 포기', '지금 원정을 끝냅니다. 여기까지의 보상은 받습니다.', () => {
       run.done = 'lose';
@@ -173,19 +178,32 @@ function conqSummary(R) {
   if (R.barrier) out.push('출진 보호막 +' + R.barrier);
   if (R.regen) out.push('성채 회복 ' + (R.regen * 100).toFixed(1) + '%/초');
   if (R.healAfter) out.push('전투 후 성채 +' + Math.round(R.healAfter * 100) + '%');
+  pc(R.fortHp, '적 요새'); pc(R.scrip, '군표');
+  if (R.scripFlat) out.push('전투 후 군표 +' + R.scripFlat);
+  if (R.heroStart) out.push('액티브 준비됨');
+  if (R.cmdStart) out.push('왕명 준비됨');
+  if (R.freePath) out.push('어느 줄로든');
+  if (R.luck) out.push('축복 운');
   return out;
 }
 
 /* 고른 칸에 들어간다 */
 function conqEnter(run, k) {
   const node = run.map[run.floor][k];
-  if (!node || run.pending || run.room) return;
+  if (!node || run.pending || run.room || !conqReachable(run, k)) return;
   run.path[run.floor] = k;
   SFX.ui();
   if (node.src !== undefined) { startConquestBattle(run, node); return; }
+  run.risk = 0;
   if (node.t === 'shop') run.room = { t: 'shop', items: conqShop(run) };
   else if (node.t === 'rest') run.room = { t: 'rest' };
   else if (node.t === 'shrine') run.room = { t: 'shrine', id: conqPick(conqRng(run, 3), CONQ_SHRINES).id };
+  else if (node.t === 'forge') run.room = { t: 'forge' };
+  else if (node.t === 'recruit') run.room = { t: 'recruit', opts: conqRecruitOffer(run, save) };
+  else if (node.t === 'treasure') {         // 보물: 유물 둘 중 하나를 고르고 곧장 다음 층으로
+    run.pending = { kind: 'relic', opts: conqRelicOffer(run, 2), treasure: true };
+    conqAdvance(run); conqSel = -1;
+  }
   saveGame(save);
   renderConquest();
 }
@@ -206,7 +224,8 @@ function conqOverlay(run) {
   let card = null;
   if (conqLast) card = conqSummaryCard();
   else if (run && run.pending) card = conqPickCard(run);
-  else if (run && run.room) card = run.room.t === 'shop' ? conqShopCard(run) : run.room.t === 'rest' ? conqRestCard(run) : conqShrineCard(run);
+  else if (run && run.room) card = run.room.t === 'shop' ? conqShopCard(run) : run.room.t === 'rest' ? conqRestCard(run)
+    : run.room.t === 'forge' ? conqForgeCard(run) : run.room.t === 'recruit' ? conqRecruitCard(run) : conqShrineCard(run);
   if (!card) return;
   box.appendChild(card);
   box.classList.add('show');
@@ -221,9 +240,9 @@ function conqOfferEl(kind, id, extra) {
   const it = kind === 'relic' ? CONQ_RELIC_BY_ID[id] : CONQ_BLESS_BY_ID[id];
   const b = document.createElement('button');
   b.type = 'button';
-  b.className = 'cq-offer ' + (kind === 'relic' ? 'relic' : 'r-' + it.rar);
+  b.className = 'cq-offer ' + (kind === 'relic' ? 'relic' + (it.cursed ? ' cursed' : '') : 'r-' + it.rar);
   b.innerHTML = '<i>' + it.icon + '</i><b>' + it.name + '</b>' +
-    '<small>' + (kind === 'relic' ? '유물' : CONQ_RARITY[it.rar].name) + '</small><em>' + it.desc + '</em>' + (extra || '');
+    '<small>' + (kind === 'relic' ? (it.cursed ? '대가 있는 유물' : '유물') : CONQ_RARITY[it.rar].name) + '</small><em>' + it.desc + '</em>' + (extra || '');
   return b;
 }
 
@@ -231,7 +250,7 @@ function conqOfferEl(kind, id, extra) {
 function conqPickCard(run) {
   const p = run.pending;
   const relic = p.kind === 'relic';
-  const card = conqCard(p.start ? '출발 유물 고르기' : relic ? '유물 고르기' : '축복 고르기',
+  const card = conqCard(p.start ? '출발 유물 고르기' : p.treasure ? '💎 보물 · 유물 고르기' : relic ? '유물 고르기' : '축복 고르기',
     p.got ? '정예의 전리품 · ' + CONQ_RELIC_BY_ID[p.got].icon + ' ' + CONQ_RELIC_BY_ID[p.got].name : p.start ? '원정을 함께할 유물 하나' : '');
   const row = document.createElement('div');
   row.className = 'cq-offers';
@@ -248,11 +267,21 @@ function conqPickCard(run) {
   });
   card.appendChild(row);
   if (!p.start) {
+    const btns = document.createElement('div'); btns.className = 'cq-btnrow';
+    const cost = conqRerollCost(run);          // 5.1 다시 굴리기
+    const re = document.createElement('button');
+    re.type = 'button'; re.className = 'btn cq-skip cq-reroll' + (run.scrip < cost ? ' off' : '');
+    re.textContent = '🎲 다시 굴리기 · 군표 ' + cost;
+    re.addEventListener('click', () => {
+      if (!conqReroll(run)) { toast('군표가 모자랍니다'); return; }
+      SFX.ui(); saveGame(save); renderConquest();
+    });
     const skip = document.createElement('button');
     skip.type = 'button'; skip.className = 'btn ghost cq-skip';
     skip.textContent = '넘기기 · 군표 +15';
     skip.addEventListener('click', () => { run.scrip += 15; run.pending = p.then || null; SFX.ui(); saveGame(save); renderConquest(); });
-    card.appendChild(skip);
+    btns.appendChild(re); btns.appendChild(skip);
+    card.appendChild(btns);
   }
   return card;
 }
@@ -305,6 +334,68 @@ function conqRestCard(run) {
   });
   row.appendChild(a); row.appendChild(b);
   card.appendChild(row);
+  return card;
+}
+
+/* 5.1 대장간: 가진 축복 하나를 하나 더 */
+function conqForgeCard(run) {
+  const card = conqCard('⚒ 대장간', '벼릴 축복 하나를 고르세요 — 같은 축복이 하나 더 쌓입니다');
+  const row = document.createElement('div');
+  row.className = 'cq-offers shop';
+  Object.keys(run.bless).forEach(id => {
+    const b = conqOfferEl('bless', id, '<span class="cq-price">' + (run.bless[id] > 1 ? '×' + run.bless[id] + ' → ×' + (run.bless[id] + 1) : '×1 → ×2') + '</span>');
+    b.addEventListener('click', () => { conqForge(run, id); SFX.ui(); conqLeaveRoom(run); });
+    row.appendChild(b);
+  });
+  if (!row.children.length) { const p = document.createElement('p'); p.className = 'cq-res'; p.textContent = '벼릴 축복이 없습니다 · 고철을 팔아 군표 +25'; card.appendChild(p); }
+  else card.appendChild(row);
+  const out = document.createElement('button');
+  out.type = 'button'; out.className = 'btn ghost cq-skip'; out.textContent = row.children.length ? '그냥 떠난다' : '고철을 판다';
+  out.addEventListener('click', () => { if (!row.children.length) run.scrip += 25; SFX.ui(); conqLeaveRoom(run); });
+  card.appendChild(out);
+  return card;
+}
+/* 5.1 징집소: 병종 하나를 고르고, 바꿀 칸(또는 빈 칸)을 고른다 */
+function conqRecruitCard(run) {
+  const rm = run.room;
+  const card = conqCard('📋 징집소', rm.pick ? '바꿀 자리를 고르세요 · ' + UNIT_BY_ID[rm.pick].name : '편성에 넣을 병종 하나를 고르세요 (편성 ' + run.deck.length + ' / ' + LOADOUT_MAX + ')');
+  const row = document.createElement('div');
+  row.className = 'cq-offers recruit';
+  const unitBtn = (id, extra) => {
+    const u = UNIT_BY_ID[id], b = document.createElement('button');
+    b.type = 'button'; b.className = 'cq-offer unit r-' + ({ UR: 'epic', SSR: 'epic', SR: 'rare' }[u.rarity] || 'common');
+    b.innerHTML = '<canvas></canvas><b>' + u.name + '</b><small>' + (u.role || '') + ' · 비용 ' + unitFor(save, id).cost + '</small>' + (extra || '');
+    drawUnitIcon(b.querySelector('canvas'), unitFor(save, id), 40);
+    return b;
+  };
+  if (!rm.pick) {
+    rm.opts.forEach(id => { const b = unitBtn(id); b.addEventListener('click', () => { rm.pick = id; SFX.ui(); saveGame(save); renderConquest(); }); row.appendChild(b); });
+    if (!rm.opts.length) { const p = document.createElement('p'); p.className = 'cq-res'; p.textContent = '데려올 병종이 없습니다'; card.appendChild(p); }
+  } else {
+    run.deck.forEach((id, slot) => {
+      const b = unitBtn(id, '<em>이 자리에</em>');
+      b.addEventListener('click', () => {
+        if (!conqRecruit(run, rm.pick, slot)) { toast('전설·신화는 최대 ' + HERO_SLOT_MAX + '명까지 편성할 수 있습니다'); return; }
+        SFX.ui(); conqLeaveRoom(run);
+      });
+      row.appendChild(b);
+    });
+    if (run.deck.length < LOADOUT_MAX) {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'cq-offer heal';
+      b.innerHTML = '<i>➕</i><b>빈 자리에 더한다</b><small>편성 ' + run.deck.length + ' → ' + (run.deck.length + 1) + '</small>';
+      b.addEventListener('click', () => {
+        if (!conqRecruit(run, rm.pick, run.deck.length)) { toast('전설·신화는 최대 ' + HERO_SLOT_MAX + '명까지 편성할 수 있습니다'); return; }
+        SFX.ui(); conqLeaveRoom(run);
+      });
+      row.insertBefore(b, row.firstChild);
+    }
+  }
+  card.appendChild(row);
+  const out = document.createElement('button');
+  out.type = 'button'; out.className = 'btn ghost cq-skip';
+  out.textContent = rm.pick ? '다른 병종 고르기' : '그냥 떠난다';
+  out.addEventListener('click', () => { SFX.ui(); if (rm.pick) { rm.pick = null; saveGame(save); renderConquest(); } else conqLeaveRoom(run); });
+  card.appendChild(out);
   return card;
 }
 
@@ -386,10 +477,10 @@ function startConquestBattle(run, node) {
   run.fighting = true;
   saveGame(save);
   $('#scr-battle').classList.toggle('hardcore', node.t !== 'battle');
-  $('#battle-stage').textContent = '⚔ ' + (run.act + 1) + '막 ' + (run.floor + 1) + '층 · ' + st.name;
+  $('#battle-stage').textContent = '⚔ ' + (run.act + 1) + '막 ' + (run.floor + 1) + '층 · ' + st.name + (run.risk ? ' · ' + CONQ_RISK[run.risk].name : '');
   beginBattle();
   const mods = Object.keys(battle.mods).map(m => STAGE_MODS[m].name);
-  const head = node.t === 'boss' ? '정벌 보스' : node.t === 'elite' ? '정벌 정예' : '정벌';
+  const head = node.t === 'boss' ? '정벌 보스' : node.t === 'elite' ? '정벌 정예' : node.t === 'trial' ? '정벌 시련' : '정벌';
   battle.announce(head + ' · 성채 ' + conqPct(run.castle) + (mods.length ? ' · ' + mods.join(' · ') : ''), 3.2);
 }
 

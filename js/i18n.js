@@ -1162,6 +1162,37 @@ const I18N_EN = {
   '강철 의지': 'Will of Iron', '하드코어 전장 10곳 돌파': 'Clear 10 stages on Hardcore',
   '꺾이지 않는 왕국': 'The Unbroken Kingdom', '하드코어 전장 30곳 모두 돌파': 'Clear all 30 stages on Hardcore',
   '모든 시즌에서 전설 이상을 각각 보유': 'Own a Legend or better from every season',
+  /* ---------------- 5.1 정벌 ---------------- */
+  '공성 망치': 'Battering Ram', '적 요새 체력 -10%': 'Enemy fort HP -10%', '넉넉한 군량': 'Ample Rations', '시작 군자금 +150': 'Starting funds +150',
+  '훈련 교관': 'Drill Sergeant', '출진 대기 -6% · 모든 아군 공격 +4%': 'Deploy cooldown -6% · all allies attack +4%', '장창 대열': 'Pike Line', '근접 병종 공격 · 체력 +8%': 'Melee attack · HP +8%',
+  '공성 기술자': 'Sapper Corps', '적 요새 체력 -20%': 'Enemy fort HP -20%', '전쟁 군기': 'War Standard', '영웅 액티브가 준비된 채로 전투를 시작한다': 'Hero actives start every battle ready',
+  '선왕의 인장': "Old King's Signet", '왕의 명령이 준비된 채로 전투를 시작한다': "King's Command starts every battle ready", '십일조': 'Tithe', '군표 획득 +20%': 'Scrip gained +20%',
+  '불패의 군단': 'Unbroken Legion', '모든 아군 체력 +30% · 근접 체력 +15%': 'All allies HP +30% · melee HP +15%', '화살 폭풍': 'Arrow Storm', '원거리 공격 +30% · 사거리 +30': 'Ranged attack +30% · range +30',
+  '왕실 금고': 'Royal Treasury', '수입 +20% · 군자금 한도 +400 · 시작 군자금 +200': 'Income +20% · fund cap +400 · starting funds +200', '용 사냥꾼': 'Dragonslayer', '보스 체력 -25% · 전설 · 신화 공격 +15%': 'Boss HP -25% · Legend · Myth attack +15%',
+  '피의 왕관': 'Crown of Blood', '모든 아군 공격 +35% · 대가: 성채 최대 체력 -25%': 'All allies attack +35% · cost: castle max HP -25%',
+  '탐욕의 반지': 'Ring of Greed', '군표 획득 +60% · 대가: 모든 적 체력 +10%': 'Scrip gained +60% · cost: all foes HP +10%',
+  '광전사의 투구': "Berserker's Helm", '근접 공격 +40% · 대가: 근접 체력 -15%': 'Melee attack +40% · cost: melee HP -15%',
+  '유리 대포': 'Glass Cannon', '원거리 공격 +40% · 대가: 모든 아군 체력 -12%': 'Ranged attack +40% · cost: all allies HP -12%',
+  '공성 노포': 'Siege Ballista', '적 요새 체력 -30%': 'Enemy fort HP -30%', '왕의 깃발': "King's Banner", '영웅 액티브 · 왕의 명령이 준비된 채로 전투를 시작한다': "Hero actives and King's Command start every battle ready",
+  '탐험가의 나침반': "Explorer's Compass", '갈림길 어느 줄로든 내려갈 수 있다': 'Take any lane at every fork', '길잡이 등불': 'Guiding Lantern', '축복을 고를 때 희귀 · 영웅이 더 자주 나온다': 'Rare and epic blessings show up more often',
+  '시간술사의 모래시계': "Chronomancer's Hourglass", '출진 대기 -12% · 영웅 액티브 대기 -12%': 'Deploy cooldown -12% · hero active cooldown -12%', '전리품 수레': 'Spoils Cart', '전투가 끝날 때마다 군표 +12': 'Scrip +12 after every battle',
+  '시련': 'Trial', '아주 억센 적 · 전장 특성 둘 — 이기면 유물 고르기 + 높은 축복': 'Very tough foes · two field traits — win to pick a relic + a high blessing',
+  '대장간': 'Forge', '가진 축복 하나를 하나 더 벼린다': 'Forge one more copy of a blessing you own', '징집소': 'Recruiter',
+  '편성 한 칸을 다른 병종으로 바꾼다 (자리가 있으면 더한다)': 'Swap one squad slot for another unit (or add one if there is room)', '유물 둘 중 하나를 고른다': 'Pick one of two relics',
+  '평소': 'Steady', '그대로 싸운다': 'Fight as usual', '도발': 'Taunt', '적 +20% · 군표 ×1.5 · 금화 ×1.3': 'Foes +20% · scrip ×1.5 · gold ×1.3',
+  '결사': 'Do or Die', '적 +45% · 군표 ×2 · 금화 ×1.6 · 축복 등급 하나 위': 'Foes +45% · scrip ×2 · gold ×1.6 · blessings one rarity up', '평소대로': 'As usual',
+  '점술가': 'Fortune Teller', '“네 앞길을 넷으로 갈라 보여 주지.”': '"I\'ll show you four paths ahead."', '점을 본다': 'Have your fortune told', '군표 25 · 축복 넷 중 하나 고르기': 'Scrip 25 · pick one of four blessings',
+  '결투 신청': 'A Challenge', '이름 모를 기사가 길을 막고 칼을 뽑는다.': 'A nameless knight blocks the road and draws his blade.', '받아들인다': 'Accept', '성채 -15% · 무작위 영웅 축복 하나': 'Castle -15% · one random epic blessing', '물러선다': 'Back away',
+  '피난민 행렬': 'Refugee Column', '불탄 마을에서 쫓겨난 이들이 성문을 두드린다.': 'People driven from burned villages knock at the gate.', '군표 -30 · 성벽 보수 축복': 'Scrip -30 · Wall Repair blessing',
+  '외면한다': 'Turn them away', '군표 +30 · 다음 전투 적 +15%': 'Scrip +30 · next battle foes +15%',
+  '버려진 대장간': 'Abandoned Forge', '아직 불씨가 남은 화덕이 있다.': 'Embers still glow in the hearth.', '화덕을 지핀다': 'Stoke the fire', '가진 축복 하나를 무작위로 하나 더': 'One more copy of a random blessing you own',
+  '고철을 판다': 'Sell the scrap', '군표 +35': 'Scrip +35',
+  '대가 있는 유물': 'Relic with a cost', '💎 보물 · 유물 고르기': '💎 Treasure · choose a relic', '⚒ 대장간': '⚒ Forge',
+  '벼릴 축복 하나를 고르세요 — 같은 축복이 하나 더 쌓입니다': 'Choose a blessing to forge — it stacks one more time', '벼릴 축복이 없습니다 · 고철을 팔아 군표 +25': 'Nothing to forge · sell scrap for scrip +25',
+  '그냥 떠난다': 'Just leave', '📋 징집소': '📋 Recruiter', '이 자리에': 'Put here', '빈 자리에 더한다': 'Add to an empty slot', '다른 병종 고르기': 'Pick another unit', '데려올 병종이 없습니다': 'No units to recruit',
+  ' · 출발할 때의 편성으로 싸웁니다 — 징집소에서 한 칸씩 바꿀 수 있습니다': ' · you fight with the squad you set out with — recruiters can swap one slot at a time',
+  '길': 'Paths', ' · 갈림길은 세 줄. 고른 줄의 이웃 줄로만 내려갑니다 — 앞을 보고 길을 짜세요': ' · every fork has three lanes; you can only move to neighbouring lanes — plan ahead',
+  '위험 걸기': 'Stakes', ' · 전투마다 평소 · 도발 · 결사 — 적이 억세질수록 군표 · 금화 · 축복 등급이 오릅니다': ' · each battle: steady · taunt · do or die — tougher foes pay more scrip, gold and better blessings', '군표': 'Scrip', '액티브 준비됨': 'Actives ready', '왕명 준비됨': 'Command ready', '어느 줄로든': 'Any lane', '축복 운': 'Blessing luck', '정벌 시련': 'Conquest trial',
   /* ---------------- 5.0 정벌 ---------------- */
   '정벌': 'Conquest', '로그라이크 원정': 'Roguelike campaign', '왕국 정벌': 'Kingdom Conquest', '⚔ 왕국 정벌': '⚔ Kingdom Conquest',
   '정벌 · 기본': 'Conquest · Base', '기본': 'Base', '정벌 단계': 'Conquest tier', '정벌 출발': 'Set out', '정벌로': 'To Conquest', '이어서': 'Continue', '정벌 지도로 ▶': 'Conquest map ▶',
@@ -1263,6 +1294,11 @@ const I18N_EN_HTML = {
 
 /* 숫자가 붙은 말. 구절 치환보다 먼저 한다. */
 const I18N_EN_PATTERNS = [
+  // 5.1 정벌
+  [/🎲 다시 굴리기 · 군표 (\d+)/g, '🎲 Reroll · scrip $1'], [/^바꿀 자리를 고르세요 · /g, 'Choose a slot to replace · '],
+  [/편성에 넣을 병종 하나를 고르세요 \(편성 (\d+) \/ (\d+)\)/g, 'Choose a unit for your squad (squad $1 / $2)'], [/^편성 (\d+) → (\d+)$/g, 'Squad $1 → $2'],
+  [/ · 비용 (\d+)$/g, ' · cost $1'], [/전투 후 군표 \+(\d+)/g, 'Scrip +$1 after battle'], [/ · 도발$/g, ' · Taunt'], [/ · 결사$/g, ' · Do or Die'],
+  [/정벌 시련 · 성채 (\d+)%/g, 'Conquest trial · castle $1%'], [/^×(\d+) → ×(\d+)$/g, '×$1 → ×$2'],
   // 5.0 정벌
   [/^⚔ (\d)막 (\d)층 · /g, '⚔ Act $1 F$2 · '], [/(\d)막 (\d)층 진행 중/g, 'Act $1 · floor $2 in progress'], [/진행 중 · (\d)막 (\d)층 · 성채 (\d+)%/g, 'In progress · Act $1 floor $2 · castle $3%'],
   [/^정벌 · 단계 (\d+)$/g, 'Conquest · Tier $1'], [/^단계 (\d+)$/g, 'Tier $1'], [/^(\d+) \/ (\d+)층$/g, 'Floor $1 / $2'], [/^(\d)막$/g, 'Act $1'],
@@ -1434,7 +1470,7 @@ function i18nStart() {
 if (I18N.lang === 'en') {
   // 4.2: 3진 표(EVOLUTIONS2)도 — 빠져 있어 3진 능력 글이 반쯤만 번역됐다
   [UNITS, ENEMIES, STAGES, EVENT_STAGES, EXPEDITIONS, SEASONS, MISSION_DEFS, ACHIEVEMENTS, UPGRADES, COMMAND, RARITY, STAGE_MODS, OPENINGS, EVOLUTIONS, EVOLUTIONS2, EVOLUTIONS3, EVO_LABELS, STAT_LABELS,
-   CONQ_BLESS, CONQ_RELICS, CONQ_RARITY, CONQ_NODES, CONQ_ASC, CONQ_SHRINES]   // 5.0 정벌
+   CONQ_BLESS, CONQ_RELICS, CONQ_RARITY, CONQ_NODES, CONQ_ASC, CONQ_SHRINES, CONQ_RISK]   // 5.0 정벌 · 5.1 위험
     .forEach(o => i18nData(o, 0));
   // 무한 전장은 부를 때마다 새로 만든다
   const makeEndlessKo = makeEndlessStage;

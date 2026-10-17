@@ -1979,9 +1979,10 @@ test('5.0: conquest — a run is a fixed map of three acts, boss last; same seed
   assert.ok(a.map[0].every(n => n.t === 'battle'), 'the first floor is a fight');
   for (const row of a.map) assert.ok(row.some(n => n.t === 'battle' || n.t === 'elite' || n.t === 'boss'), 'every floor has a fight');
   assert.ok(a.map[C.CONQ.floors - 2].some(n => n.t === 'rest' || n.t === 'shop'), 'a camp or shop before the boss');
+  for (let f = 0; f < C.CONQ.floors - 1; f++) assert.equal(a.map[f].length, C.CONQ.lanes, '5.1: three lanes');
   const boss = a.map[C.CONQ.floors - 1][0];
   assert.ok(STAGES[boss.src].boss && STAGES[boss.src].bossId, 'boss floor uses a boss stage');
-  assert.equal(boss.aff.length, 1, 'act one boss has one affix'); boss.aff.forEach(k => assert.ok(C.BOSS_AFFIXES[k]));
+  assert.equal(boss.aff.length, C.CONQ.bossAff[0], 'act one boss affixes'); boss.aff.forEach(k => assert.ok(C.BOSS_AFFIXES[k]));
   for (const row of a.map) for (const n of row) if (n.src !== undefined) assert.ok(n.src <= 60 - 1 - C.CONQ.lag, 'only stages you have cleared');
   assert.equal(a.pending.kind, 'relic'); assert.equal(a.pending.opts.length, 3); assert.ok(a.pending.start);
   assert.ok(C.conqMul({ asc: 10 }, 0) < C.conqMul({ asc: 10 }, 1), 'tiers bite harder deeper down');
@@ -1999,7 +2000,8 @@ test('5.0: conquest — blessings and relics reach the battle; the castle carrie
   assert.notEqual(st, STAGES[node.src]); assert.ok(st.conquest); assert.notEqual(st.waves, STAGES[node.src].waves, 'waves are copied');
   const b = new Battle(node.src, { ...save(), cleared: 30 }, st, { run: R, castle: run.castle, deck: ['archer'] });
   assert.equal(b.roster.map(u => u.id).join(), 'archer', 'the run deck, not the current loadout');
-  assert.equal(b.allyCastle.maxHp, Math.round(4000 * 1.5)); assert.equal(b.allyCastle.hp, Math.round(6000 * 0.4));
+  const cmax = Math.round(4000 * 1.5 * C.CONQ.castleMul);
+  assert.equal(b.allyCastle.maxHp, cmax, '5.1: conquest castles are thinner'); assert.equal(b.allyCastle.hp, Math.round(cmax * 0.4));
   assert.equal(b.stats('archer').range, U.archer.range + 25, 'bowstring reaches the battle'); assert.equal(U.archer.range, vm.runInContext('UNIT_BY_ID.archer.range', ctx), 'shared stats untouched');
   assert.equal(b.stats('archer').cost, Math.round(vm.runInContext('unitFor({levels:{},evo:{},evo2:{},evo3:{},upgrades:{}},"archer").cost', ctx) * 0.9));
   const f = b.makeAlly(b.stats('archer'), 500); const plain = new Battle(node.src, { ...save(), cleared: 30 }, st, { deck: ['archer'] }).makeAlly(b.stats('archer'), 500);
@@ -2045,6 +2047,47 @@ test('5.0: conquest — shops, shrines and the end of a run', () => {
   assert.equal(fixed.castle, 1); assert.equal(fixed.scrip, 0); assert.equal(JSON.stringify(fixed.bless), '{"blade":2}'); assert.equal(fixed.relics.join(), 'phoenix'); assert.equal(fixed.deck.join(), 'spear');
   assert.equal(C.conqNormalize({ ...saved, deck: ['ghost'] }), null, 'no squad, no run');
   assert.equal(JSON.stringify(C.conqNormRec({ asc: 99, top: 'a', runs: 3 })), JSON.stringify({ asc: C.CONQ.ascMax, top: -1, best: 0, runs: 3, wins: 0 }));
+});
+
+test('5.1: conquest — lanes, risk, reroll, trials, forge and recruits', () => {
+  const C = vm.runInContext('({CONQ, conqNewRun, conqEffects, conqStage, conqAfterBattle, conqAdvance, conqTake, conqReachable, conqReroll, conqRerollCost, conqForge, conqRecruitOffer, conqRecruit, conqBlessOffer, CONQ_BLESS_BY_ID, CONQ_RELIC_BY_ID, CONQ_BLESS, CONQ_RELICS, CONQ_SHRINES, conqShrine, conqShrineCan})', ctx);
+  assert.equal(C.CONQ_BLESS.length, 36); assert.equal(C.CONQ_RELICS.length, 30); assert.equal(C.CONQ_SHRINES.length, 12);
+  for (const sh of C.CONQ_SHRINES) assert.ok(sh.opts.some(o => !o.cost), sh.id + ' always has a free way out');
+  const s = { cleared: 60, loadout: ['spear', 'archer', 'knight'], levels: {}, upgrades: {}, owned: {}, stars: {}, evo: {} };
+  const run = C.conqNewRun(s, 0, 31); run.pending = null;
+  assert.ok([0, 1, 2].every(k => C.conqReachable(run, k)), 'any lane on the first floor');
+  run.path[0] = 0; C.conqAdvance(run);
+  assert.deepEqual([0, 1, 2].map(k => C.conqReachable(run, k)), [true, true, false], 'only neighbouring lanes');
+  C.conqTake(run, 'relic', 'compass'); assert.ok(C.conqReachable(run, 2), 'the compass opens every lane');
+  // 위험: 적 배율 · 보상
+  const node = run.map[0].find(n => n.src !== undefined);
+  run.risk = 0; const calm = C.conqStage(run, node); run.risk = 2; const dare = C.conqStage(run, node);
+  assert.ok(Math.abs(dare.enemyMul / calm.enemyMul - C.CONQ.risk[2].mul) < 1e-9); assert.ok(dare.reward > calm.reward);
+  const before = run.scrip; C.conqAfterBattle(run, node, true, 0.9, {});
+  assert.equal(run.risk, 0, 'risk resets after the battle'); assert.ok(run.scrip - before >= C.CONQ.scrip.battle * 2);
+  assert.ok(run.pending.opts.every(id => C.CONQ_BLESS_BY_ID[id].rar !== 'common'), 'do-or-die lifts the rarity');
+  // 다시 굴리기
+  run.scrip = 100; const cost = C.conqRerollCost(run); const old = run.pending.opts.join();
+  assert.equal(C.conqReroll(run), true); assert.equal(run.scrip, 100 - cost); assert.equal(C.conqRerollCost(run), cost + C.CONQ.reroll.step);
+  run.scrip = 0; assert.equal(C.conqReroll(run), false, 'no scrip, no reroll');
+  // 시련: 특성 둘 · 유물 고르기 뒤 축복
+  const trial = { t: 'trial', src: node.src, mod: 'horde', mod2: 'blitz' };
+  const ts = C.conqStage(run, trial); assert.equal(ts.mods.join(), 'horde,blitz'); assert.ok(ts.enemyMul > calm.enemyMul * 1.5);
+  run.pending = null; C.conqAfterBattle(run, trial, true, 0.5, {});
+  assert.equal(run.pending.kind, 'relic'); assert.equal(run.pending.then.kind, 'bless');
+  // 대장간 · 징집소
+  run.bless = { blade: 1 }; assert.equal(C.conqForge(run, 'blade'), true); assert.equal(run.bless.blade, 2); assert.equal(C.conqForge(run, 'mail'), false);
+  const offer = C.conqRecruitOffer(run, s); assert.equal(offer.length, 3); assert.ok(offer.every(id => !run.deck.includes(id)));
+  assert.equal(C.conqRecruit(run, offer[0], 1), true); assert.equal(run.deck[1], offer[0]);
+  assert.equal(C.conqRecruit(run, offer[1], run.deck.length), true, 'an empty slot is filled'); assert.equal(run.deck.length, 4);
+  const heroes = UNITS.filter(u => u.rarity === 'UR' || u.rarity === 'SSR').map(u => u.id);
+  run.deck = heroes.slice(0, 5).concat(['spear']);
+  assert.equal(C.conqRecruit(run, heroes[6], 5), false, 'no sixth legend'); assert.equal(C.conqRecruit(run, heroes[6], 0), true, 'a legend for a legend');
+  // 시작 버프 · 공성
+  const R = Object.assign(C.conqEffects({ bless: { signet: 1, standard: 1, sapper: 1 }, relics: [] }));
+  const st = { baseHp: 10000, money: 0, rate: 0, waves: [], reward: 0, conquest: { t: 'battle' } };
+  const b = new Battle(0, { ...save(), loadout: ['zeus', 'spear'], owned: { zeus: 1 } }, st, { run: R });
+  assert.equal(b.cmdCd, 0); assert.equal(b.enemyCastle.maxHp, 8000); assert.ok(!b.roster.some(u => u.active) || b.roster.filter(u => u.active).every(u => b.heroCooldowns[u.id] === 0));
 });
 
 console.log(count + ' regression checks passed');

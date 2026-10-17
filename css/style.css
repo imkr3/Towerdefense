@@ -1644,3 +1644,19 @@ body:has(#result.show) .toast{top:calc(6px + var(--st))}
 .cq-offers.shop .cq-offer i{font-size:21px}.cq-offers.shop .cq-offer em{font-size:10.5px}
 @media(max-height:420px){.cq-node{padding:4px 2px;font-size:9.5px}.cq-node i{font-size:16px}.cq-offer{padding:7px 6px}.cq-offer i{font-size:22px}
   .cq-side{padding:8px 10px;gap:5px}.cq-rules{line-height:1.5}}
+/* 5.1 정벌: 막힌 줄 · 위험 걸기 · 다시 굴리기 · 징집소 */
+.cq-node.block{opacity:.3;filter:grayscale(.6)}
+.cq-node.t-trial.live{border-color:#ffb36a99}
+.cq-risks{display:flex;flex-direction:column;gap:5px}
+.cq-risks .btn{display:flex;flex-direction:column;align-items:flex-start;padding:6px 10px;text-align:left}
+.cq-risks .btn b{font-size:13.5px}.cq-risks .btn small{font-size:10.5px;opacity:.85;font-weight:600}
+.cq-risk.r1{background:linear-gradient(180deg,#5a3a1c,#3a2614)!important;border-color:#ffb36a66!important}
+.cq-risk.r2{background:linear-gradient(180deg,#5a1c24,#3a1018)!important;border-color:#ff6a6a77!important}
+.cq-btnrow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.cq-btnrow .cq-skip{min-width:150px}
+.cq-reroll.off{opacity:.45}
+.cq-offer.cursed{border-color:#ff6a6acc;background:linear-gradient(180deg,#3a1a22,#1d1a2c)}
+.cq-offer.cursed small{color:#ff9a8a}
+.cq-offer.unit canvas{width:40px;height:40px}
+.cq-offers.recruit .cq-offer{flex:1 1 110px;max-width:150px;padding:6px}
+@media(max-height:420px){.cq-risks .btn{padding:4px 8px}.cq-risks .btn small{font-size:9.5px}}

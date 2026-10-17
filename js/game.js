@@ -362,7 +362,7 @@ class Battle {
     const cmdLv = up.command || 0;
     this.cmdMax = Math.max(25, COMMAND.baseCooldown - COMMAND.cooldownPerLv * cmdLv) * (this.hard ? HARDCORE.cmdMul : 1);
     if (R) this.cmdMax *= R.cmdCd;
-    this.cmdCd = this.cmdMax;   // 시작하자마자는 쓸 수 없다
+    this.cmdCd = R && R.cmdStart ? 0 : this.cmdMax;   // 시작하자마자는 쓸 수 없다 (5.1 정벌 '선왕의 인장'은 바로)
     this.cmdHeal = COMMAND.healRatio + COMMAND.healPerLv * cmdLv + (R ? R.cmdHeal : 0);
     this.cmdUses = 0;
     this.heroCooldowns = {};
@@ -373,7 +373,8 @@ class Battle {
     this.allyCastle = new Castle('ally', castleHp, ALLY_BASE_X);
     this.enemyCastle = new Castle('enemy', this.hard ? hardcoreFortHp(this.stage) : this.stage.baseHp, ENEMY_BASE_X);
     if (R) {                     // 정벌: 성채 최대 체력 축복 · 지난 전투에서 남은 만큼으로 시작
-      this.allyCastle.maxHp = Math.round(this.allyCastle.maxHp * R.castle);
+      this.allyCastle.maxHp = Math.round(this.allyCastle.maxHp * R.castle * (this.stage.conquest ? CONQ.castleMul : 1));   // 5.1 원정 성채는 얇다
+      if (R.fortHp !== 1) { this.enemyCastle.maxHp = Math.max(1, Math.round(this.enemyCastle.maxHp * R.fortHp)); this.enemyCastle.hp = this.enemyCastle.maxHp; }   // 5.1 공성
       this.allyCastle.hp = Math.max(1, Math.round(this.allyCastle.maxHp * Math.min(1, opts.castle === undefined ? 1 : opts.castle)));
     }
 
@@ -453,7 +454,7 @@ class Battle {
     this.reinfOn = false;
 
     this.roster = this.battleUnits();
-    this.roster.forEach(u => { this.cooldowns[u.id] = 0; if(u.active) this.heroCooldowns[u.id]=20; });
+    this.roster.forEach(u => { this.cooldowns[u.id] = 0; if(u.active) this.heroCooldowns[u.id] = R && R.heroStart ? 0 : 20; });   // 5.1 '전쟁 군기'는 바로
     // 4.4 각성 경계: 도전 전장은 편성한 3진 수만큼 적이 억세진다
     this.awakenN = (this.hard || this.event) ? this.roster.filter(u => u.evo2).length : 0;
     this.awakenMul = 1 + AWAKEN_TAX * this.awakenN;
