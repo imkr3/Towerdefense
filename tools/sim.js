@@ -338,7 +338,7 @@ const EXP_EXPECT = [
 /* 4.18 도전 전장: '하드코어에 비해 도전이 쉽다' 해서 다 올렸다.
  * 4.20: 하드코어 · 도전 모두 '만렙 기준' — 강화 10 · Lv30 · 전장을 다 연 계정의 가장 잘 맞는 편성(+타이밍)이 반쯤 이긴다.
  * 판마다 운이 갈리므로 한 곳에 0 · 10 이 아니고, 모두 합쳐 30~70% 안이면 통과. 중간 전력(Lv20)으론 도전을 못 넘는다. */
-const FULL_SEEDS = [101, 202, 303, 404, 505, 606, 707, 808, 909, 1010].map(x => x * 31);
+const FULL_SEEDS = (process.env.FULL_N ? Array.from({ length: +process.env.FULL_N }, (_, i) => 101 + i * 101) : [101, 202, 303, 404, 505, 606, 707, 808, 909, 1010]).map(x => x * 31);   // FULL_N=30 으로 표본을 늘려 본다
 /* 4.21: '아직 쉽다' 해서 만렙 승률을 30% 안팎으로 (보스 각인까지 더해). 한 곳 0판은 운일 수 있어 막지 않고, 8판 이상이면 쉽다. */
 /* 4.24 버프 · 디버프를 몰아 넣은 편성 — 이것들이 가장 세서 하드코어 · 도전의 기준이 된다 */
 const POWER_DECKS = {
@@ -346,8 +346,8 @@ const POWER_DECKS = {
   core: ['mage', 'colossus', 'thor', 'ra', 'odin', 'merlin', 'herald', 'runeseer', 'priest', 'mudang'],
   debuff: ['ra', 'merlin', 'odin', 'guanyu', 'susanoo', 'frost', 'mudang', 'alchemist', 'anchorguard', 'priest']
 };
-const HARD_FULL = { up: 10, lv: 30, stages: [1, 10, 18, 27, 36, 45, 53, 63, 70, 80], decks: ['buff', 'core', 'debuff', 'combo', 'rec'], min: 0, max: 7, sumMin: 0.15, sumMax: 0.5 };
-const EVENT_FULL = { up: 10, lv: 30, decks: ['buff', 'core', 'debuff', 'counter', 'combo', 'rec'], min: 0, max: 7, sumMin: 0.15, sumMax: 0.5 };
+const HARD_FULL = { up: 10, lv: 30, stages: [1, 10, 18, 27, 36, 45, 53, 63, 70, 80], decks: ['buff', 'core', 'debuff', 'combo', 'rec'], min: 0, maxRate: 0.5, sumMin: 0.15, sumMax: 0.4 };
+const EVENT_FULL = { up: 10, lv: 30, decks: ['buff', 'core', 'debuff', 'counter', 'combo', 'rec'], min: 0, maxRate: 0.5, sumMin: 0.15, sumMax: 0.4 };
 const EVENT_MID = { up: 10, lv: 20, timedMax: 2 };   // 중간 전력: 10판 중 2판 이하
 const ACT3_ENTRY = { up: 10, lv: 14, min: 2, max: 5 };   // 3.3
 const SMART_ACT3 = { up: 10, lv: 18 };
@@ -667,7 +667,7 @@ function judgeFull(label, X, rows) {
     sum += r.best;
     const tag = `${label} ${r.name} 만렙(강화 ${X.up}/Lv${X.lv}) 최선 ${r.deck} ${r.best}/${FULL_SEEDS.length}`;
     if (r.best < X.min) { console.error(`  ✗ ${tag} — 만렙으로도 거의 못 넘는다`); failed++; }
-    else if (r.best > X.max) { console.error(`  ✗ ${tag} — 만렙이면 거의 늘 넘는다`); failed++; }
+    else if (r.best / FULL_SEEDS.length > X.maxRate) { console.error(`  ✗ ${tag} — 완벽한 카운터 편성이 절반을 넘게 이긴다`); failed++; }
     else console.log(`  ✓ ${tag}`);
   }
   const rate = sum / (rows.length * FULL_SEEDS.length), tag = `${label} 만렙 기준 승률 ${Math.round(rate * 100)}% (기대 ${X.sumMin * 100}~${X.sumMax * 100}%)`;
