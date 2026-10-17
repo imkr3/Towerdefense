@@ -3,7 +3,7 @@
  * ======================================================================= */
 
 
-const APP_VERSION = '5.1.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
+const APP_VERSION = '5.1.1';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
 
 function defaultSave() {
   const lv = {};
@@ -2149,6 +2149,8 @@ function loop(ts) {
     if (BGM.vol > 0) BGM.sting(battle.state === 'win' || (battle.endless && battle.newRecord) ? 'victory' : 'defeat');
     else BGM.stop(0.6);
     recordBattle(battle);
+    // 5.1.1 정벌은 끝나는 즉시 원정에 적는다. 결과창(0.7초 뒤)을 기다리다 앱을 끄면 진 전투를 다시 치르거나 이긴 보상을 두 번 받았다
+    if (battle.conquest) conqResolveBattle(battle);
     const ended = battle;
     resultTimer = setTimeout(() => {
       if (battle === ended && $('#scr-battle').classList.contains('active')) showResult();
@@ -2581,6 +2583,7 @@ function init() {
   });
 
   $('#btn-full').addEventListener('click', toggleFullscreen);
+  if (window.AndroidSave) $('#btn-full').style.display = 'none';     // 5.1.1 앱은 이미 전체화면 (WebView 는 requestFullscreen 을 못 쓴다)
   // 전장 캔버스는 Renderer 가 스스로 resize 를 듣는다 (3.10: 예전엔 여기서도 불러 창이 바뀔 때마다 두 번 다시 만들었다)
   window.addEventListener('resize', resizeTitle);
   window.addEventListener('orientationchange', () => {
@@ -2722,6 +2725,7 @@ window.__androidBack = function () {
   if (active.id === 'scr-formation') { if (fmDrag) { dragEnd(); return true; } show(fmBack); return true; }
   if (['scr-shop','scr-units','scr-gacha','scr-quest'].includes(active.id)) { show('scr-map'); return true; }
   if (active.id === 'scr-map') { show('scr-title'); return true; }
+  if (active.id === 'scr-conquest') { $('#conq-back').click(); return true; }   // 5.1.1 정벌 화면에서 앱이 닫히던 것
   return false;   // 타이틀에서는 앱 종료
 };
 

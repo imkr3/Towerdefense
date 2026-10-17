@@ -29,6 +29,8 @@ public class MainActivity extends Activity {
 
     private WebView web;
     private String pendingExport;
+    private String pendingImport;          // 페이지가 다 뜨기 전에 돌아온 불러오기 (앱이 파일 선택 중 정리됐을 때)
+    private boolean pageReady;
     private static final int EXPORT_SAVE = 41, IMPORT_SAVE = 42;
     private static final int SAVE_LIMIT = 1024 * 1024;
 
@@ -62,6 +64,10 @@ public class MainActivity extends Activity {
                 // The JavaScript bridge is available only to bundled game pages.
                 return !request.getUrl().toString().startsWith("file:///android_asset/www/");
             }
+            @Override public void onPageFinished(WebView view, String url) {
+                pageReady = true;
+                if (pendingImport != null) { String json = pendingImport; pendingImport = null; deliverImport(json); }
+            }
         });
         web.addJavascriptInterface(new SaveBridge(), "AndroidSave");
         web.setBackgroundColor(0xFF171A1F);
@@ -75,7 +81,10 @@ public class MainActivity extends Activity {
 
     public class SaveBridge {
         @JavascriptInterface public void exportSave(String json) {
-            if (json == null || json.getBytes(StandardCharsets.UTF_8).length > SAVE_LIMIT) return;
+            if (json == null || json.getBytes(StandardCharsets.UTF_8).length > SAVE_LIMIT) {
+                runOnUiThread(() -> backupMessage("백업이 너무 커서 파일로 내보내지 못했습니다. 백업 텍스트를 복사해 주세요."));
+                return;
+            }
             runOnUiThread(() -> {
                 pendingExport = json;
                 Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
@@ -129,12 +138,17 @@ public class MainActivity extends Activity {
                     }
                     json = new String(bytes.toByteArray(), StandardCharsets.UTF_8);
                 }
-                if (web != null) web.evaluateJavascript("window.receiveSaveBackup(" + JSONObject.quote(json) + ")", null);
+                if (web != null && pageReady) deliverImport(json);
+                else pendingImport = json;
             }
         } catch (Exception e) {
             pendingExport = null;
             backupMessage("백업 파일 처리에 실패했습니다. 기존 진행도는 변경하지 않았습니다.");
         }
+    }
+
+    private void deliverImport(String json) {
+        web.evaluateJavascript("window.receiveSaveBackup && window.receiveSaveBackup(" + JSONObject.quote(json) + ")", null);
     }
 
     private void hideSystemBars() {

@@ -2090,4 +2090,49 @@ test('5.1: conquest — lanes, risk, reroll, trials, forge and recruits', () => 
   assert.equal(b.cmdCd, 0); assert.equal(b.enemyCastle.maxHp, 8000); assert.ok(!b.roster.some(u => u.active) || b.roster.filter(u => u.active).every(u => b.heroCooldowns[u.id] === 0));
 });
 
+test('5.1.1 weaker re-applies do not keep a stronger effect alive', () => {
+  const { stackFx, keepIf } = vm.runInContext('({stackFx, keepIf})', ctx);
+  const m = { rallyT: 0, rallyMul: 1, hasteT: 0, hasteMul: 1 };
+  stackFx(m, 'rallyT', 'rallyMul', 3, 1.45); stackFx(m, 'rallyT', 'rallyMul', 9, 1.12);
+  assert.equal(m.rallyT, 3, 'a weaker rally does not extend the strong one'); assert.equal(m.rallyMul, 1.45);
+  m.rallyT = 0; stackFx(m, 'rallyT', 'rallyMul', 3, 1.12); assert.equal(m.rallyMul, 1.12, 'once it expires the weaker value starts fresh');
+  stackFx(m, 'hasteT', 'hasteMul', 8, 0.45, false); stackFx(m, 'hasteT', 'hasteMul', 2, 0.78, false);
+  assert.equal(m.hasteMul, 0.45, 'a drum pulse does not overwrite a hero haste'); assert.equal(m.hasteT, 8);
+  const a = [1, 2, 3, 4]; assert.equal(keepIf(a, x => x % 2 === 0), a); assert.deepEqual(a, [2, 4]);
+});
+
+test('5.1.1 boss warnings survive the effect cap', () => {
+  const b = new Battle(0, save(), { baseHp: 1000, money: 0, rate: 0, waves: [], reward: 0 });
+  b.fx.push({ type: 'warn', x: 0, t: 3, life: 3 });
+  for (let i = 0; i < 260; i++) b.fx.push({ type: 'hit', x: 0, t: 0.2, life: 0.2 });
+  b.updateFx(0.01);
+  assert.ok(b.fx.some(e => e.type === 'warn')); assert.ok(b.fx.length <= 200);
+});
+
+test('5.1.1 conquest: reroll keeps rest odds, auto relics are never cursed, a crashed battle is locked', () => {
+  const C = vm.runInContext('({CONQ, CONQ_ODDS, CONQ_BLESS_BY_ID, CONQ_RELIC_BY_ID, CONQ_RELICS, conqNewRun, conqReroll, conqRelicOffer, conqNormalize})', ctx);
+  const s = { cleared: 60, loadout: ['spear', 'archer', 'knight'], levels: {}, upgrades: {}, owned: {}, stars: {}, evo: {} };
+  const run = C.conqNewRun(s, 0, 7);
+  run.pending = { kind: 'bless', opts: ['blade', 'mail', 'blade'], odds: C.CONQ_ODDS.rest }; run.scrip = 1e6;
+  for (let i = 0; i < 40; i++) { C.conqReroll(run); assert.ok(run.pending.opts.every(id => C.CONQ_BLESS_BY_ID[id].rar === 'rare'), 'rerolled training stays rare'); }
+  run.relics = C.CONQ_RELICS.filter(r => !r.cursed).slice(2).map(r => r.id);
+  for (let i = 0; i < 40; i++) { const id = C.conqRelicOffer(run, 1, true)[0]; assert.ok(!id || !C.CONQ_RELIC_BY_ID[id].cursed); }
+  const r2 = C.conqNewRun(s, 0, 9); r2.pending = null; r2.room = null;
+  const k = r2.map[0].findIndex(n => n.src !== undefined);
+  r2.path[0] = k; r2.risk = 2; r2.fighting = true;
+  const back = C.conqNormalize(JSON.parse(JSON.stringify(r2)));
+  assert.equal(back.fighting, false); assert.equal(JSON.stringify(back.locked), JSON.stringify({ k: k, risk: 2 }));
+  assert.equal(JSON.stringify(C.conqNormalize(JSON.parse(JSON.stringify(back))).locked), JSON.stringify({ k: k, risk: 2 }), 'the lock survives another reload');
+});
+
+test('5.1.1 conquest maps: every floor has a fight, the floor before the boss a camp', () => {
+  const C = vm.runInContext('({CONQ, conqNewRun})', ctx);
+  const s = { cleared: 60, loadout: ['spear', 'archer', 'knight'], levels: {}, upgrades: {}, owned: {}, stars: {}, evo: {} };
+  for (let seed = 1; seed <= 300; seed++) {
+    const map = C.conqNewRun(s, 0, seed).map;
+    map.forEach((row, f) => assert.ok(row.some(n => n.src !== undefined), 'seed ' + seed + ' floor ' + f + ' has a fight'));
+    assert.ok(map[C.CONQ.floors - 2].some(n => n.t === 'rest' || n.t === 'shop'), 'seed ' + seed + ' camp before the boss');
+  }
+});
+
 console.log(count + ' regression checks passed');

@@ -13,6 +13,13 @@ const HERO_SHARED_CD = 0;   // 3.13: 액티브 공용 대기 (예전 6초)    //
 const WORLD_DEFAULT = 2000;
 let WORLD = WORLD_DEFAULT;
 
+/* 5.1.1 시간 걸린 효과 겹치기: 더 센 것만 시간을 늘린다.
+ * 예전엔 세기는 max, 시간도 max 로 따로 잡아서, 약한 쪽이 계속 다시 걸면 센 값이 끝없이 남았다
+ * (오딘이 쓰러져도 전령 나팔만 불면 +45% 가 그대로). hi=false 면 작을수록 세다(가속 · 약화). */
+function stackFx(o, tKey, vKey, dur, val, hi = true) {
+  if (!(o[tKey] > 0)) { o[vKey] = val; o[tKey] = dur; return; }
+  if (hi ? val >= o[vKey] : val <= o[vKey]) { o[vKey] = val; o[tKey] = Math.max(o[tKey], dur); }
+}
 function anyDead(list) { for (let i = 0; i < list.length; i++) if (list[i].dead) return true; return false; }
 function coolCastle(c, dt) {
   if (c.hitFlash > 0) c.hitFlash = Math.max(0, c.hitFlash - dt);
@@ -57,6 +64,13 @@ const BOSS_THROW = { first: 2, every: 4.5, range: 340, mul: 0.25, radius: 70 };
 let _visSeed = 1234567;
 function visRand() { _visSeed = (_visSeed * 1103515245 + 12345) & 0x7fffffff; return _visSeed / 0x7fffffff; }
 const FX_LIMIT = 200;        // 이펙트가 무한정 쌓이지 않게
+const FX_KEEP = { warn: 1, doom: 1, chargeline: 1, taxwarn: 1 };   // 5.1.1 넘쳐도 지우지 않는 예고 표시
+function keepIf(a, pred) {         // 5.1.1 제자리에서 걸러 매 프레임 새 배열을 만들지 않는다
+  let j = 0;
+  for (let i = 0; i < a.length; i++) if (pred(a[i])) a[j++] = a[i];
+  a.length = j;
+  return a;
+}
 const X3_FX_LIMIT = 12;      // 4.3 3진 연출(포연·광선·사이렌)이 한꺼번에 떠 있을 수 있는 수
 // 3진의 타격 연출 → 땅에 남는 Canvas 연출 (연기 · 흙 · 갈라진 땅 · 눈더미 · 그을린 자국)
 const X3_GROUND = { shellblast: 'boom', rocketpunch: 'quake', dronestrike: 'smoke', dozerpush: 'dirtwave', snowburst: 'frost', railhit: 'railscar',
@@ -545,7 +559,7 @@ class Battle {
     }
     const buff = { hp: this.buff.hp * lm, atk: this.buff.atk * lm };
     if (this.run && !owner) {    // 5.0 정벌: 근접 · 원거리 · 영웅 · 값싼 병종 축복
-      const R = this.run, melee = !st.ranged, cheap = st.cost <= 150;
+      const R = this.run, melee = !st.ranged, cheap = unitFor(this.save, st.id).cost <= 150;   // 5.1.1 보급 마차 할인 전 값으로 본다
       buff.hp *= (melee ? R.meleeHp : 1) * (cheap ? R.cheapHp : 1);
       buff.atk *= (melee ? R.meleeAtk : R.rangedAtk) * (isHeroUnit(st) ? R.heroAtk : 1) * (cheap ? R.cheapAtk : 1);
     }
@@ -701,8 +715,14 @@ class Battle {
     return this.allies.find(f=>!f.dead && !f.summoned && f.s.id===id) || null;
   }
   heroTarget(f) {
-    return this.enemies.filter(e=>!e.dead && Math.abs(e.x-f.x)<=f.attackRange+180)
-      .sort((a,b)=>Math.abs(a.x-f.x)-Math.abs(b.x-f.x))[0] || null;
+    // 5.1.1 배열을 새로 만들지 않고 한 번 훑는다 (HUD 가 영웅 카드마다 매 프레임 부른다)
+    let best = null, bd = f.attackRange + 180;
+    for (const e of this.enemies) {
+      if (e.dead) continue;
+      const d = Math.abs(e.x - f.x);
+      if (d < bd || (d === bd && !best)) { bd = d; best = e; }
+    }
+    return best;
   }
   canHeroActive(id) {
     const f=this.heroCaster(id), u=this.stats(id);
@@ -728,7 +748,7 @@ class Battle {
     if(buff) {
       for(const m of this.allies) if(!m.dead && Math.abs(m.x-f.x)<=a.radius) {
         if(a.barrier){m.giveBarrier(a.barrier*f.abMul);m.poisonT=0;m.poisonDps=0;m.burnT=0;m.burnDps=0;}
-        if(a.haste){m.hasteMul=m.hasteT>0?Math.min(m.hasteMul,a.haste.mul):a.haste.mul;m.hasteT=Math.max(m.hasteT,a.haste.dur);m.stunT=0;}
+        if(a.haste){stackFx(m,'hasteT','hasteMul',a.haste.dur,a.haste.mul,false);m.stunT=0;}
       }
     } else if (this.reflectingBoss() && Math.abs(this.reflectingBoss().x - target.x) <= 450) {
       // 공허 반사: 결계 곁에 쓴 액티브는 시전자에게 돌아온다
@@ -746,7 +766,7 @@ class Battle {
           if(a.charm&&!e.boss){e.charmT=Math.max(e.charmT,a.charm*(1-(e.ab.charmResist||0)));this.fx.push({type:'charm',x:e.x,row:e.row,t:.7,life:.7});}
           if(a.execute)this.tryExecute(e,a.execute);
           if(a.push&&!e.ab.kbImmune&&!e.dead){e.x+=f.dir*a.push*(e.boss?BOSS_PUSH_TAKEN:1);this.holdLine(e);e.kbTimer=Math.max(e.kbTimer,.3);}
-          if(a.burn){e.dotBy=f.creditTo||f.s.id;if(e.burnT<=0)e.burnDps=0;e.burnT=Math.max(e.burnT,a.burn);e.burnDps=Math.max(e.burnDps,24*f.abMul);}
+          if(a.burn){e.dotBy=f.creditTo||f.s.id;stackFx(e,'burnT','burnDps',a.burn,24*f.abMul);}
           // 혼천릉: 붉은 비단으로 묶어 한곳에 끌어모은다 (보스·넉백 면역은 버틴다)
           if(a.pull&&!e.dead&&!e.ab.kbImmune&&!e.boss){const dx=target.x-e.x;e.x+=Math.sign(dx)*Math.min(Math.abs(dx),a.pull);e.kbTimer=Math.max(e.kbTimer,.2);}
         }
@@ -756,7 +776,7 @@ class Battle {
       if (a.ally) {
         for (const m of this.allies) if (!m.dead && Math.abs(m.x - f.x) <= a.ally.radius) {
           if (a.ally.barrier) m.giveBarrier(a.ally.barrier * f.abMul);
-          if (a.ally.haste) { m.hasteMul = m.hasteT > 0 ? Math.min(m.hasteMul, a.ally.haste.mul) : a.ally.haste.mul; m.hasteT = Math.max(m.hasteT, a.ally.haste.dur); }
+          if (a.ally.haste) { stackFx(m, 'hasteT', 'hasteMul', a.ally.haste.dur, a.ally.haste.mul, false); }
         }
         this.fx.push({ type: 'aura', x: f.x, row: f.row, r: a.ally.radius, t: 0.8, life: 0.8, color: f.s.accent });
       }
@@ -793,8 +813,7 @@ class Battle {
     }
     for (const a of this.allies) {
       a.heal(a.maxHp * this.cmdHeal);
-      a.hasteT = Math.max(a.hasteT, COMMAND.hasteDur);
-      a.hasteMul = COMMAND.hasteMul;
+      stackFx(a, 'hasteT', 'hasteMul', COMMAND.hasteDur, COMMAND.hasteMul, false);
       a.stunT = 0;
       a.slowT = 0;
       this.fx.push({ type: 'rally', x: a.x, row: a.row, t: 0.6, life: 0.6 });
@@ -807,13 +826,15 @@ class Battle {
 
   update(dtRaw) {
     if (this.state !== 'play') { this.updateFx(dtRaw); return; }
-    let remaining = Math.max(0, Math.min(0.1, dtRaw)) * this.speed;
+    const scaled = Math.max(0, Math.min(0.1, dtRaw)) * this.speed;
+    let remaining = scaled;
     while (remaining > 1e-8 && this.state === 'play') {
       const step = Math.min(1 / 30, remaining);
       this.tick(step);
       remaining -= step;
     }
-    this.updateFx(dtRaw);
+    // 5.1.1 예고 표시(운석 · 돌진선)는 전투 시간에 맞춰 줄어야 한다 — 3배속에서 맞은 뒤에도 남아 있었다
+    this.updateFx(scaled, dtRaw);
   }
 
   tick(dt) {
@@ -925,7 +946,7 @@ class Battle {
     }
     else if (this.allyCastle.dead) { this.shake = 16; this.finish(this.endless ? 'over' : 'lose'); }
     // 웨이브 수가 정해진 무한 전장(검사용)만 다 버티면 끝. 진짜 무한 전장은 성채가 무너질 때까지.
-    else if (this.endless && !this.stage.infinite && this.qi >= this.queue.length && this.enemies.length === 0) {
+    else if (this.endless && !this.stage.infinite && this.qi >= this.queue.length && this.enemies.length === 0 && this.burrowers.length === 0) {
       this.finish('over');
     }
   }
@@ -1139,9 +1160,7 @@ class Battle {
         // 4.11 독버섯: 터지며 포자를 흩뿌려 둘레의 병사를 중독시킨다 (정화로 풀린다)
         if (b.poison) for (const a of foes) {
           if (a.dead || a.burrowed || Math.abs(a.x - f.x) > b.radius + a.radius) continue;
-          if (a.poisonT <= 0) a.poisonDps = 0;
-          a.poisonT = Math.max(a.poisonT, b.poison.dur);
-          a.poisonDps = Math.max(a.poisonDps, b.poison.dps * f.abMul);
+          stackFx(a, 'poisonT', 'poisonDps', b.poison.dur, b.poison.dps * f.abMul);
         }
         if (b.poison) this.fx.push({ type: 'aura', x: f.x, row: f.row, r: b.radius, t: 0.8, life: 0.8, color: '#b06ae8' });
         else this.fx.push({ type: 'boom', x: f.x, r: b.radius, t: 0.35, life: 0.35 });
@@ -1655,8 +1674,7 @@ class Battle {
       for (const m of mates) {
         if (m.dead || m === f) continue;
         if (Math.abs(m.x - f.x) > ab.rally.radius) continue;
-        m.rallyT = Math.max(m.rallyT, (ab.interval || 3) + 0.6);
-        m.rallyMul = Math.max(m.rallyMul, 1 + ab.rally.atk);
+        stackFx(m, 'rallyT', 'rallyMul', (ab.interval || 3) + 0.6, 1 + ab.rally.atk);
       }
       f.auraPulse = 0.5;
       this.fx.push({ type: 'aura', x: f.x, row: f.row, r: ab.rally.radius,
@@ -1675,8 +1693,7 @@ class Battle {
     if (ab.pacify) {
       // 삼장법사: 경을 읊으면 주변 적의 살기가 누그러진다
       for (const e of this.foesOf(f.side)) if (!e.dead && Math.abs(e.x - f.x) <= ab.radius) {
-        e.weakT = Math.max(e.weakT, ab.pacify.dur);
-        e.weakMul = Math.min(e.weakMul, ab.pacify.mul);
+        stackFx(e, 'weakT', 'weakMul', ab.pacify.dur, ab.pacify.mul, false);
       }
       this.fx.push({ type: 'aura', x: f.x, row: f.row, r: ab.radius, t: 0.6, life: 0.6, color: '#f6e6a0' });
     }
@@ -1721,8 +1738,7 @@ class Battle {
       for (const m of mates) {
         if (m.dead || m === f) continue;
         if (Math.abs(m.x - f.x) > ab.radius) continue;
-        m.hasteT = Math.max(m.hasteT, ab.haste.dur);
-        m.hasteMul = ab.haste.mul;
+        stackFx(m, 'hasteT', 'hasteMul', ab.haste.dur, ab.haste.mul, false);
       }
       f.auraPulse = 0.5;
       this.fx.push({ type: 'aura', x: f.x, row: f.row, r: ab.radius,
@@ -2190,14 +2206,10 @@ class Battle {
         const got = e.takeDamage(s.ratio ? e.maxHp * s.ratio : s.dmg, !!s.ratio) || 0;   // 4.21 끌어당김: 최대 체력 비율
         if (s.by && got > 0) (this.meter[s.by] || (this.meter[s.by] = { dmg: 0, taken: 0, n: 0 })).dmg += got;
         if (s.burn) {
-          if (e.burnT <= 0) e.burnDps = 0;
-          e.burnT = Math.max(e.burnT, s.burn.dur);
-          e.burnDps = Math.max(e.burnDps, s.burn.dps);
+          stackFx(e, 'burnT', 'burnDps', s.burn.dur, s.burn.dps);
         }
         if (s.poison) {                  // 4.11 버섯 왕의 포자 폭탄
-          if (e.poisonT <= 0) e.poisonDps = 0;
-          e.poisonT = Math.max(e.poisonT, s.poison.dur);
-          e.poisonDps = Math.max(e.poisonDps, s.poison.dps);
+          stackFx(e, 'poisonT', 'poisonDps', s.poison.dur, s.poison.dps);
         }
         if (s.stun) e.stun(s.stun);
       }
@@ -2476,8 +2488,7 @@ class Battle {
     // 저팔계: 쓰러뜨린 만큼 배를 채운다
     if (src && src.ab.feast && dealt > 0 && target.dead && !target.isCastle) src.heal(src.maxHp * src.ab.feast);
     if (src && src.ab.sunmark && !target.isCastle && !target.dead) {
-      target.vulnT = Math.max(target.vulnT, src.ab.sunmark.dur);
-      target.vulnMul = Math.max(target.vulnMul, 1 + src.ab.sunmark.vuln);
+      stackFx(target, 'vulnT', 'vulnMul', src.ab.sunmark.dur, 1 + src.ab.sunmark.vuln);
     }
     if (src && src.ab.chain && !target.isCastle && !this._chaining) this.chainFrom(src, target, dmg);
     if (target.isCastle) {
@@ -2514,14 +2525,10 @@ class Battle {
     }
     if ((ab.poison || ab.burn) && src.side === 'ally') target.dotBy = src.creditTo || src.s.id;
     if (ab.poison) {
-      if (target.poisonT <= 0) target.poisonDps = 0;
-      target.poisonT = Math.max(target.poisonT, ab.poison.dur);
-      target.poisonDps = Math.max(target.poisonDps, ab.poison.dps * src.abMul);
+      stackFx(target, 'poisonT', 'poisonDps', ab.poison.dur, ab.poison.dps * src.abMul);
     }
     if (ab.burn) {
-      if (target.burnT <= 0) target.burnDps = 0;
-      target.burnT = Math.max(target.burnT, ab.burn.dur);
-      target.burnDps = Math.max(target.burnDps, ab.burn.dps * src.abMul);
+      stackFx(target, 'burnT', 'burnDps', ab.burn.dur, ab.burn.dps * src.abMul);
     }
     if (ab.stun && Math.random() < ab.stun.chance) {
       if (target.stun(ab.stun.dur)) this.fx.push({ type: 'stun', x: target.x, row: target.row, t: 0.5, life: 0.5 });
@@ -2542,8 +2549,7 @@ class Battle {
       }
     }
     if (ab.weaken) {                              // 액막이: 이 적이 주는 피해가 준다
-      target.weakT = Math.max(target.weakT, ab.weaken.dur);
-      target.weakMul = Math.min(target.weakMul, ab.weaken.mul);
+      stackFx(target, 'weakT', 'weakMul', ab.weaken.dur, ab.weaken.mul, false);
     }
     if (ab.charm && !target.boss && !(target.charmGuard > this.time) && Math.random() < ab.charm.chance * (1 - (target.ab.charmResist || 0))) {
       target.charmT = Math.max(target.charmT, ab.charm.dur);
@@ -2669,16 +2675,20 @@ class Battle {
       if (hit) this.hitOne(s.dmg, hit, s.src, s.crit);
       this.fx.push({ type: s.crit ? 'crit' : 'hit', x: hit ? hit.x : s.tx, row: hit ? (hit.row ?? s.y0) : s.y0, dir: s.dir, t: 0.22, life: 0.22, sty: 'shoot', color: s.color });
     }
-    this.shots = this.shots.filter(s => !s.done);
+    keepIf(this.shots, s => !s.done);
   }
 
-  updateFx(dt) {
+  updateFx(dt, dtReal = dt) {
     for (const e of this.fx) e.t -= dt;
-    this.fx = this.fx.filter(e => e.t > 0);
-    if (this.fx.length > FX_LIMIT) this.fx.splice(0, this.fx.length - FX_LIMIT);
+    keepIf(this.fx, e => e.t > 0);
+    if (this.fx.length > FX_LIMIT) {
+      // 오래된 것부터 지우되, 보스 예고 표시는 남긴다 (가장 오래 떠 있어서 먼저 지워지곤 했다)
+      let drop = this.fx.length - FX_LIMIT;
+      keepIf(this.fx, e => drop <= 0 || FX_KEEP[e.type] === 1 || !(drop-- > 0));
+    }
     this.dmgFxCount = 0;
     for (const e of this.fx) if (e.type === 'dmg') this.dmgFxCount++;
-    if (this.state !== 'play') this.resultTime = (this.resultTime || 0) + dt;
+    if (this.state !== 'play') this.resultTime = (this.resultTime || 0) + dtReal;
   }
 
   /* 무한 전장: 앞으로 나올 적이 이만큼 줄면 다음 웨이브를 붙인다 */

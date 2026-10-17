@@ -3664,8 +3664,10 @@ function conqMakeAct(run, act) {
       row.push(t);
     }
     const fight = t => t === 'battle' || t === 'elite' || t === 'trial';
-    if (!row.some(fight)) row[1] = 'battle';                                 // 싸우지 않고는 내려갈 수 없다
-    if (f === CONQ.floors - 2 && !row.some(t => t === 'rest' || t === 'shop')) row[conqPick(R, [0, 2])] = R() < 0.6 ? 'rest' : 'shop';
+    const camp = t => t === 'rest' || t === 'shop';
+    if (f === CONQ.floors - 2 && !row.some(camp)) row[conqPick(R, [0, 2])] = R() < 0.6 ? 'rest' : 'shop';
+    // 싸우지 않고는 내려갈 수 없다 (5.1.1 보스 앞 쉼터를 넣은 뒤에 본다 — 먼저 보면 하나뿐인 싸움을 쉼터가 덮었다)
+    if (!row.some(fight)) row[camp(row[1]) && f === CONQ.floors - 2 ? (camp(row[0]) ? 2 : 0) : 1] = 'battle';
     map.push(row.map(t => fight(t) ? conqBattleNode(run, R, t, d, act) : { t: t }));
   }
   return map;
@@ -3742,9 +3744,9 @@ function conqBlessOffer(run, n, odds, up) {
   }
   return out;
 }
-function conqRelicOffer(run, n) {
+function conqRelicOffer(run, n, noCursed) {
   const R = conqRng(run, 13);
-  const pool = CONQ_RELICS.filter(r => (run.relics || []).indexOf(r.id) < 0).map(r => r.id);
+  const pool = CONQ_RELICS.filter(r => (run.relics || []).indexOf(r.id) < 0 && !(noCursed && r.cursed)).map(r => r.id);
   const out = [];
   while (out.length < n && pool.length) out.push(pool.splice(Math.floor(R() * pool.length), 1)[0]);
   return out;
@@ -3805,7 +3807,7 @@ function conqAfterBattle(run, node, win, castleRatio, extra) {
   const bless = odds => ({ kind: 'bless', opts: conqBlessOffer(run, pick, odds, up), odds: odds, up: up });
   if (node.t === 'boss' || node.t === 'trial') run.pending = Object.assign({ kind: 'relic', opts: conqRelicOffer(run, 3) }, { then: bless(CONQ_ODDS[node.t]) });
   else if (node.t === 'elite') {
-    const rel = conqRelicOffer(run, 1)[0];
+    const rel = conqRelicOffer(run, 1, true)[0];      // 5.1.1 고르지 않고 받는 유물엔 대가 있는 것이 섞이지 않는다
     if (rel) run.relics.push(rel);
     run.pending = Object.assign(bless(CONQ_ODDS.elite), { got: rel || null });
   } else run.pending = bless(CONQ_ODDS.battle);
@@ -3894,7 +3896,7 @@ function conqShrine(run, opt, rnd) {
   if (g.scrip) run.scrip += g.scrip;
   if (g.curse) run.curse += g.curse;
   if (g.gamble) { out.gamble = (rnd !== undefined ? rnd : R()) < 0.5; if (out.gamble) run.scrip += g.gamble; }
-  if (g.relic) { const id = conqRelicOffer(run, 1)[0]; if (id) { run.relics.push(id); out.relic = id; } }
+  if (g.relic) { const id = conqRelicOffer(run, 1, true)[0]; if (id) { run.relics.push(id); out.relic = id; } }
   if (g.randBless) { const pool = CONQ_BLESS.filter(b => b.rar === g.randBless); const b = conqPick(R, pool); conqTake(run, 'bless', b.id); out.bless = b.id; }
   if (g.bless) { conqTake(run, 'bless', g.bless); out.bless = g.bless; }
   if (g.dupBless) { const ids = Object.keys(run.bless).filter(k => run.bless[k] > 0); if (ids.length) { const id = conqPick(R, ids); conqTake(run, 'bless', id); out.bless = id; } }
@@ -3969,5 +3971,9 @@ function conqNormalize(run) {
   }
   out.done = null; out.fighting = false;
   out.path = Array.isArray(run.path) ? run.path.slice(0, CONQ.floors).map(x => Number.isInteger(x) && x >= 0 && x < CONQ.lanes ? x : 0) : [];
+  // 5.1.1 전투 도중에 꺼졌으면 그 칸 · 그 위험으로 다시 치른다 (다른 칸이나 '평소'로 바꿔 피할 수 없다)
+  const lk = run.fighting ? { k: out.path[out.floor], risk: out.risk } : run.locked;
+  const lkNode = lk && out.map[out.floor][lk.k];
+  out.locked = lkNode && lkNode.src !== undefined && !out.pending && !out.room ? { k: lk.k, risk: CONQ_RISK[lk.risk] ? lk.risk : 0 } : null;
   return out;
 }

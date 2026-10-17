@@ -6,6 +6,7 @@
 const REACH_BY_STYLE = { thrust: 12, heavy: 9, slash: 7, cast: 2, shoot: -4 };
 const PULL_BY_STYLE = { thrust: 5, heavy: 4, slash: 3, cast: 1, shoot: 1 };
 const CROWD_NO_SHADOW = 24;      // 화면에 이보다 많이 서 있으면(자동 품질) 부품 그림자를 끈다 (3.10: 36 → 24)
+const DMG_FONT = {};              // 5.1.1 피해 숫자 글꼴 문자열 (크기별)
 const CROWD_ON = 26, CROWD_OFF = 20;   // 3.12: 자동 품질의 '빽빽함' (잉크 테두리 끄기 · 30fps)
 function byRowX(a, b) { return (a.row - b.row) || (a.x - b.x); }
 
@@ -370,6 +371,12 @@ class Renderer {
   }
 
   /* --------------------------- 본진 --------------------------- */
+  /* 5.1.1 성채 그라디언트: 크기(s)가 같으면 지난 프레임 것을 다시 쓴다 (성채는 국소 좌표로 그려 위치와 상관없다) */
+  castleGrad(key, s, make) {
+    if (this._cgS !== s || this._cgN > 64) { this._cg = {}; this._cgS = s; this._cgN = 0; }
+    return this._cg[key] || (this._cgN++, this._cg[key] = make());
+  }
+
   drawCastle(c, isEnemy) {
     const ctx = this.ctx;
     const x = this.screenX(c.x);
@@ -421,9 +428,11 @@ class Renderer {
       const tw = 30 * s, th = hgt + 22 * s;
       const stone = (x0, y0, w, h, base, lite) => {
         ctx.fillStyle = base; ctx.fillRect(x0, y0, w, h);
-        const g = ctx.createLinearGradient(x0, 0, x0 + w, 0);   // 왼쪽 위 빛
-        g.addColorStop(0, 'rgba(255,255,255,.14)'); g.addColorStop(0.6, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.2)');
-        ctx.fillStyle = g; ctx.fillRect(x0, y0, w, h);
+        ctx.fillStyle = this.castleGrad('s' + x0 + '|' + w, s, () => {   // 왼쪽 위 빛 (5.1.1 크기가 같으면 다시 만들지 않는다)
+          const g = ctx.createLinearGradient(x0, 0, x0 + w, 0);
+          g.addColorStop(0, 'rgba(255,255,255,.14)'); g.addColorStop(0.6, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.2)');
+          return g;
+        }); ctx.fillRect(x0, y0, w, h);
         ctx.fillStyle = lite;                                   // 돌 줄눈 (4.26: 겹치지 않는 사각형이라 한 경로로 모아 한 번에 칠한다)
         ctx.beginPath();
         for (let r = 0; r * 16 * s < h - 8 * s; r++) {
@@ -504,9 +513,11 @@ class Renderer {
       const logs = 7, lw = wdt / logs;
       for (let i = 0; i < logs; i++) {
         const bx = -wdt / 2 + i * lw, top = -hgt - ((i * 53) % 3) * 5 * s;
-        const g = ctx.createLinearGradient(bx, 0, bx + lw, 0);
-        g.addColorStop(0, '#6e5438'); g.addColorStop(0.45, '#57412a'); g.addColorStop(1, '#3a2c1c');
-        ctx.fillStyle = g;
+        ctx.fillStyle = this.castleGrad('l' + bx + '|' + lw, s, () => {
+          const g = ctx.createLinearGradient(bx, 0, bx + lw, 0);
+          g.addColorStop(0, '#6e5438'); g.addColorStop(0.45, '#57412a'); g.addColorStop(1, '#3a2c1c');
+          return g;
+        });
         ctx.beginPath();
         ctx.moveTo(bx + 1 * s, 0); ctx.lineTo(bx + 1 * s, top);
         ctx.lineTo(bx + lw / 2, top - 20 * s); ctx.lineTo(bx + lw - 1 * s, top); ctx.lineTo(bx + lw - 1 * s, 0);
@@ -1709,7 +1720,8 @@ class Renderer {
         if (e.bump > 0) { pop += e.bump * 2.5; e.bump = Math.max(0, e.bump - 0.016); }   // 4.13 합쳐질 때 한 번 더 튄다
         const jx = e.crit && k < 0.3 ? Math.sin(k * 90) * 2 * cs : 0;
         ctx.globalAlpha = Math.min(1, p * 2.5);
-        ctx.font = 'bold ' + Math.round((e.crit ? 18 : 13) * cs * pop) + 'px sans-serif';
+        const fpx = Math.round((e.crit ? 18 : 13) * cs * pop);   // 5.1.1 글꼴 문자열을 크기마다 한 번만 만든다
+        ctx.font = DMG_FONT[fpx] || (DMG_FONT[fpx] = 'bold ' + fpx + 'px sans-serif');
         ctx.textAlign = 'center';
         ctx.lineWidth = (e.crit ? 4 : 3) * cs;
         ctx.strokeStyle = e.crit ? 'rgba(90,30,0,.85)' : 'rgba(0,0,0,.65)';
