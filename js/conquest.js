@@ -191,6 +191,10 @@ function conqSummary(R) {
 function conqEnter(run, k) {
   const node = run.map[run.floor][k];
   if (!node || run.pending || run.room || !conqReachable(run, k)) return;
+  if (run.locked) {
+    if (k !== run.locked.k) { toast('끊긴 전투를 먼저 마쳐야 합니다'); return; }
+    run.risk = run.locked.risk;
+  }
   run.path[run.floor] = k;
   SFX.ui();
   if (node.src !== undefined) { startConquestBattle(run, node); return; }
@@ -329,7 +333,7 @@ function conqRestCard(run) {
   const b = document.createElement('button'); b.type = 'button'; b.className = 'cq-offer r-rare';
   b.innerHTML = '<i>🎯</i><b>훈련</b><small>희귀 축복</small><em>희귀 축복 셋 중 하나를 고른다</em>';
   b.addEventListener('click', () => {
-    run.pending = { kind: 'bless', opts: conqBlessOffer(run, 3 + conqEffects(run).extraPick, CONQ_ODDS.rest) };
+    run.pending = { kind: 'bless', opts: conqBlessOffer(run, 3 + conqEffects(run).extraPick, CONQ_ODDS.rest), odds: CONQ_ODDS.rest };   // 5.1.1 다시 굴려도 희귀
     SFX.ui(); conqLeaveRoom(run);
   });
   row.appendChild(a); row.appendChild(b);
@@ -487,17 +491,18 @@ function startConquestBattle(run, node) {
 /* 전투가 끝나면 원정을 고친다 (결과창 · 나가기 둘 다 여기로) */
 function conqResolveBattle(b) {
   const run = conqRunNow();
-  if (!run || !b || !b.conquest || b._conqDone) return null;
+  if (!run || !b || !b.conquest || b._conqDone) return (b && b._conqInfo) || null;
   b._conqDone = true;
   const win = b.state === 'win';
   const ratio = b.allyCastle.hp / b.allyCastle.maxHp;
   const before = run.scrip;
   conqAfterBattle(run, b.conqNode, win, ratio, { phoenixUsed: !!b.phoenixUsed, kills: b.kills, coins: b.coins });
-  run.fighting = false;
+  run.fighting = false; run.locked = null;
   const info = { win: win, castle: run.castle, scrip: run.scrip - before, boss: b.conqNode.t === 'boss', phoenix: !!b.phoenixUsed };
   if (win) { conqAdvance(run); conqSel = -1; }
   if (run.done) { info.done = run.done; conqEnd(run); }
   else saveGame(save);
+  b._conqInfo = info;
   return info;
 }
 function showConquestResult() {
