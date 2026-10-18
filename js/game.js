@@ -712,8 +712,11 @@ class Battle {
 
   /* 왕의 명령: 전군 회복 + 가속 */
   heroCaster(id) {
-    return this.allies.find(f=>!f.dead && !f.summoned && f.s.id===id) || null;
+    // 5.1.2 HUD 가 영웅 카드마다 매 프레임 부른다 — 닫힘 없이 훑는다
+    for (const f of this.allies) if (!f.dead && !f.summoned && f.s.id === id) return f;
+    return null;
   }
+  inRoster(id) { for (const r of this.roster) if (r.id === id) return true; return false; }
   heroTarget(f) {
     // 5.1.1 배열을 새로 만들지 않고 한 번 훑는다 (HUD 가 영웅 카드마다 매 프레임 부른다)
     let best = null, bd = f.attackRange + 180;
@@ -726,7 +729,7 @@ class Battle {
   }
   canHeroActive(id) {
     const f=this.heroCaster(id), u=this.stats(id);
-    return !!(this.state==='play' && u && u.active && this.roster.some(r=>r.id===id) && f &&
+    return !!(this.state==='play' && u && u.active && this.inRoster(id) && f &&
       f.stunT<=0 && f.kbTimer<=0 && (this.heroCooldowns[id]||0)<=0 && this.heroGlobalCd<=0 &&
       (u.active.barrier || u.active.haste || this.heroTarget(f)));
   }
@@ -932,8 +935,9 @@ class Battle {
       this.reap(this.allies, this.enemies, this.enemyCastle, false);
     }
     // 3.10: 아무도 안 쓰러진 틱(대부분)에는 배열을 새로 만들지 않는다 (틱마다 쓰레기 두 개)
-    if (anyDead(this.enemies)) this.enemies = this.enemies.filter(e => !e.dead);
-    if (anyDead(this.allies)) this.allies = this.allies.filter(a => !a.dead);
+    // 5.1.2 제자리에서 거른다 (쓰러진 틱마다 새 배열을 만들지 않는다)
+    if (anyDead(this.enemies)) keepIf(this.enemies, e => !e.dead);
+    if (anyDead(this.allies)) keepIf(this.allies, a => !a.dead);
 
     // 무한 전장도 적 요새를 무너뜨리면 끝난다 (요새 함락 · 웨이브 보상에 덤)
     if (this.enemyCastle.dead) { this.shake = 16; this.finish('win'); }
@@ -1767,7 +1771,7 @@ class Battle {
             this.allies.push(m);
           }
         } else {
-          const m = this.spawnEnemy(ab.summon.id, sx); m.summoned = true; m.wave = f.wave;
+          const m = this.spawnEnemy(ab.summon.id, sx, f.mul); m.summoned = true; m.wave = f.wave;   // 5.1.2 부른 쪽의 웨이브 배율을 잇는다
         }
       }
       this.fx.push({ type: 'spawn', x: f.x - f.dir * 24, row: f.row, t: 0.4, life: 0.4 });
@@ -1922,7 +1926,7 @@ class Battle {
             const u = UNIT_BY_ID[a.id];
             if (u && this.roomForSummon()) { const m = this.makeAlly(u, sx, f); m.summoned = true; this.allies.push(m); }
           } else {
-            const m = this.spawnEnemy(a.id, sx); m.summoned = true; m.wave = f.wave;
+            const m = this.spawnEnemy(a.id, sx, f.mul); m.summoned = true; m.wave = f.wave;   // 5.1.2 웨이브 배율을 잇는다
           }
           this.fx.push({ type: 'spawn', x: sx, row: f.row, t: 0.4, life: 0.4 });
         }
@@ -2226,9 +2230,9 @@ class Battle {
         this.announce('약점 노출! 지금 집중 공격', 2.2);
       }
     }
-    if (quiet && !landed) this.pending = this.pending.filter(s => !s.done);
+    if (quiet && !landed) keepIf(this.pending, s => !s.done);
     if (landed) {
-      this.pending = this.pending.filter(s => !s.done);
+      keepIf(this.pending, s => !s.done);
       this.shake = Math.max(this.shake, 12);
       sfx('boom');
     }
@@ -2624,7 +2628,9 @@ class Battle {
       if (Math.abs(e.x - cx) <= radius + e.radius) this.hitOne(dmg, e, src, crit);
     }
     if (castleOk && foeCastle && !foeCastle.dead && Math.abs(foeCastle.x - cx) <= radius + foeCastle.radius) {
-      foeCastle.takeDamage(dmg);
+      // 5.1.2 범위 공격이 성채에 준 피해도 공적에 적는다 (투석기 · 마법사 진화 시련이 성채 피해를 못 셌다)
+      const got = foeCastle.takeDamage(dmg) || 0;
+      if (got > 0 && src && src.side === 'ally' && src.s) this.meterRow(src).dmg += got;
     }
     this.fx.push({ type: 'boom', x: cx, r: radius, t: 0.32, life: 0.32 });
     sfx('boom');
@@ -2642,7 +2648,8 @@ class Battle {
       if (e.x >= from - 30 && e.x <= to + 30) { this.hitOne(shot.dmg, e, shot.src, shot.crit); hits++; }
     }
     if (!castle.dead && castle.x >= from - 40 && castle.x <= to + 40) {
-      castle.takeDamage(shot.dmg);
+      const got = castle.takeDamage(shot.dmg) || 0;      // 5.1.2 관통도 성채 피해를 공적에 적는다
+      if (got > 0 && shot.src && shot.src.side === 'ally' && shot.src.s) this.meterRow(shot.src).dmg += got;
     }
     this.fx.push({ type: 'beam', x: shot.x, x2: shot.tx, row: shot.y0, t: 0.22, life: 0.22,
                    color: shot.color });
@@ -2748,13 +2755,12 @@ class Battle {
   /* 땅굴 고블린: 땅속으로 기어 오다가 아군 전열(또는 성채) 코앞에서 튀어나온다.
    * 튀어나오며 주변 아군을 잠깐 기절시키고, 그때부터는 여느 적과 같다. */
   stepBurrowers(dt) {
-    const keep = [];
     for (const b of this.burrowers) {
       b.bob += dt * 3;
       b.x += b.dir * b.speedNow * dt;
       let near = Math.abs(b.x - this.allyCastle.x) <= 90;
       for (const a of this.allies) if (!a.dead && Math.abs(a.x - b.x) <= 70) { near = true; break; }
-      if (!near) { keep.push(b); continue; }
+      if (!near) continue;
       b.burrowed = false;
       const bw = b.ab.burrow;
       for (const a of this.allies) {
@@ -2766,7 +2772,7 @@ class Battle {
       this.shake = Math.max(this.shake, 5);
       this.enemies.push(b);
     }
-    this.burrowers = keep;
+    keepIf(this.burrowers, b => b.burrowed);     // 5.1.2 제자리에서 (땅속을 오는 동안 틱마다 새 배열)
   }
 
   /* 요새 반격: 요새 체력이 정해진 선 아래로 떨어지면 충격파로 가까운 아군을
