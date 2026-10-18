@@ -3757,6 +3757,8 @@ function conqRerollCost(run) { return CONQ.reroll.base + CONQ.reroll.step * (run
 function conqReroll(run) {
   const p = run.pending, cost = conqRerollCost(run);
   if (!p || p.start || run.scrip < cost) return false;
+  // 5.1.2 남은 유물이 지금 보이는 것뿐이면 같은 것이 다시 나온다 — 군표만 날리지 않게
+  if (p.kind === 'relic' && CONQ_RELICS.filter(r => run.relics.indexOf(r.id) < 0).length <= p.opts.length) return false;
   run.scrip -= cost; run.rerolls = (run.rerolls || 0) + 1;
   p.opts = p.kind === 'relic' ? conqRelicOffer(run, p.opts.length) : conqBlessOffer(run, p.opts.length, p.odds || CONQ_ODDS.battle, p.up);
   return true;
@@ -3803,8 +3805,9 @@ function conqAfterBattle(run, node, win, castleRatio, extra) {
   run.castle = Math.min(1, Math.max(0.01, castleRatio) + R.healAfter + (node.t === 'boss' ? CONQ.heal.boss : 0));
   const base = CONQ.scrip[node.t] + CONQ.scrip.perAct * run.act;
   run.scrip += Math.round(base * R.scrip * risk.scrip * (run.asc >= 7 ? 0.8 : 1)) + R.scripFlat;
-  const pick = 3 + R.extraPick, up = risk.up ? 1 : 0;
-  const bless = odds => ({ kind: 'bless', opts: conqBlessOffer(run, pick, odds, up), odds: odds, up: up });
+  const up = risk.up ? 1 : 0;
+  // 5.1.2 고르기 수는 그때그때 (정예가 준 예언자의 수정구가 바로 그 고르기에 듣는다)
+  const bless = odds => ({ kind: 'bless', opts: conqBlessOffer(run, 3 + conqEffects(run).extraPick, odds, up), odds: odds, up: up });
   if (node.t === 'boss' || node.t === 'trial') run.pending = Object.assign({ kind: 'relic', opts: conqRelicOffer(run, 3) }, { then: bless(CONQ_ODDS[node.t]) });
   else if (node.t === 'elite') {
     const rel = conqRelicOffer(run, 1, true)[0];      // 5.1.1 고르지 않고 받는 유물엔 대가 있는 것이 섞이지 않는다

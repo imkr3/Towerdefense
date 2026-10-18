@@ -99,6 +99,7 @@ function conqRunView(run) {
   const row = run.map[run.floor] || [];
   if (conqSel >= row.length || (conqSel >= 0 && !conqReachable(run, conqSel))) conqSel = -1;
   if (conqSel < 0 && row.length === 1) conqSel = 0;
+  if (conqSel < 0 && run.locked && row[run.locked.k]) conqSel = run.locked.k;   // 5.1.2 끊긴 전투 칸을 먼저 골라 둔다
   // 막 표시
   let acts = '<div class="cq-acts">';
   for (let a = 0; a < CONQ.acts; a++) acts += '<span class="cq-act' + (a === run.act ? ' on' : a < run.act ? ' done' : '') + '">' + (a + 1) + '막</span>';
@@ -136,13 +137,19 @@ function conqDetail(run, el) {
     const N = CONQ_NODES[node.t];
     h += '<div class="cq-pick-h"><i>' + N.icon + '</i> ' + N.name + '</div><div class="cq-pick-d">' + N.desc + '</div>';
     if (node.src !== undefined) {
-      const st = conqStage(run, node), src = STAGES[node.src];
+      // 5.1.2 강도는 고를 위험과 상관없이 '평소'로 보인다 (끊긴 전투면 그때 건 위험으로)
+      const lockedHere = run.locked && run.locked.k === conqSel;
+      const st = conqStage(Object.assign({}, run, { risk: lockedHere ? run.locked.risk : 0 }), node), src = STAGES[node.src];
       h += '<div class="cq-pick-st">' + conqEsc(src.name) + ' <span>(' + (node.src + 1) + '전장)</span></div>';
       h += '<div class="cq-pick-pow">적 강도 <b>×' + (st.enemyMul / (src.enemyMul || 1)).toFixed(2) + '</b>' + (run.curse > 0 ? ' · 저주 ' + run.curse + '전' : '') + '</div>';
       if (st.mods && st.mods.length) h += '<div class="cq-pick-mods">' + st.mods.map(m => '<span style="--mc:' + STAGE_MODS[m].color + '">' + STAGE_MODS[m].name + '</span>').join('') + '</div>';
       if (node.aff) h += affixBlock(node.aff);
     }
-    if (node.src !== undefined) {           // 5.1 위험 걸기: 평소 · 도발 · 결사
+    if (run.locked && run.locked.k === conqSel) {   // 5.1.2 끊긴 전투는 그때 건 위험 하나만 (다른 단추를 눌러도 몰래 바뀌던 것)
+      const i = run.locked.risk || 0, r = CONQ_RISK[i];
+      h += '<div class="cq-risks"><button type="button" class="btn ' + (i ? 'cq-risk r' + i : 'primary') + ' cq-enter" data-risk="' + i + '">' +
+        '<b>' + (i ? r.name : '출진') + '</b><small>끊긴 전투 다시</small></button></div>';
+    } else if (node.src !== undefined) {           // 5.1 위험 걸기: 평소 · 도발 · 결사
       h += '<div class="cq-risks">' + CONQ_RISK.map((r, i) => '<button type="button" class="btn ' + (i ? 'cq-risk r' + i : 'primary') + ' cq-enter" data-risk="' + i + '">' +
         '<b>' + (i ? r.name : '출진') + '</b><small>' + (i ? r.desc : '평소대로') + '</small></button>').join('') + '</div>';
     } else h += '<button type="button" class="btn primary cq-enter" data-risk="0">들어간다</button>';
@@ -157,7 +164,7 @@ function conqDetail(run, el) {
   h += '<div class="cq-sum">' + conqSummary(R).map(x => '<span>' + x + '</span>').join('') + '</div></div>';
   h += '<button type="button" class="btn ghost danger cq-quit">원정 포기</button>';
   el.innerHTML = h;
-  el.querySelectorAll('.cq-enter').forEach(go => go.addEventListener('click', () => { run.risk = +go.dataset.risk || 0; conqEnter(run, conqSel); }));
+  el.querySelectorAll('.cq-enter').forEach(go => go.addEventListener('click', () => conqEnter(run, conqSel, +go.dataset.risk || 0)));
   el.querySelector('.cq-quit').addEventListener('click', () => {
     askConfirm('원정 포기', '지금 원정을 끝냅니다. 여기까지의 보상은 받습니다.', () => {
       run.done = 'lose';
@@ -188,13 +195,15 @@ function conqSummary(R) {
 }
 
 /* 고른 칸에 들어간다 */
-function conqEnter(run, k) {
+function conqEnter(run, k, risk) {
   const node = run.map[run.floor][k];
   if (!node || run.pending || run.room || !conqReachable(run, k)) return;
+  // 5.1.2 위험은 들어갈 때만 적는다 (막힌 칸을 누르고 남은 위험이 다른 칸의 강도 표시를 부풀렸다)
   if (run.locked) {
     if (k !== run.locked.k) { toast('끊긴 전투를 먼저 마쳐야 합니다'); return; }
-    run.risk = run.locked.risk;
+    risk = run.locked.risk;
   }
+  run.risk = node.src !== undefined ? (risk || 0) : 0;
   run.path[run.floor] = k;
   SFX.ui();
   if (node.src !== undefined) { startConquestBattle(run, node); return; }
@@ -262,6 +271,9 @@ function conqPickCard(run) {
     const b = conqOfferEl(p.kind, id);
     b.addEventListener('click', () => {
       conqTake(run, p.kind, id);
+      // 5.1.2 방금 고른 유물(예언자의 수정구 · 길잡이 등불)이 이어지는 축복 고르기에 바로 듣는다
+      if (p.kind === 'relic' && p.then && p.then.kind === 'bless')
+        p.then.opts = conqBlessOffer(run, 3 + conqEffects(run).extraPick, p.then.odds, p.then.up);
       run.pending = p.then || null;
       SFX.ui();
       saveGame(save);
@@ -277,7 +289,7 @@ function conqPickCard(run) {
     re.type = 'button'; re.className = 'btn cq-skip cq-reroll' + (run.scrip < cost ? ' off' : '');
     re.textContent = '🎲 다시 굴리기 · 군표 ' + cost;
     re.addEventListener('click', () => {
-      if (!conqReroll(run)) { toast('군표가 모자랍니다'); return; }
+      if (!conqReroll(run)) { toast(run.scrip < cost ? '군표가 모자랍니다' : '다시 굴릴 유물이 없습니다'); return; }
       SFX.ui(); saveGame(save); renderConquest();
     });
     const skip = document.createElement('button');

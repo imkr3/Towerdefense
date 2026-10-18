@@ -632,10 +632,10 @@ function dragEnd() {
   fmDrag = null;
 }
 
-// 끌고 있는 동안에는 목록이 따라 스크롤되지 않게 막는다
-document.addEventListener('touchmove', e => { if (fmDrag && fmDrag.active) e.preventDefault(); }, { passive: false });
-
 function initFormation() {
+  // 끌고 있는 동안에는 목록이 따라 스크롤되지 않게 막는다
+  // 5.1.2 편성 화면에만 건다 (문서 전체에 걸린 막을 수 있는 touchmove 가 모든 화면의 스크롤을 늦췄다)
+  $('#scr-formation').addEventListener('touchmove', e => { if (fmDrag && fmDrag.active) e.preventDefault(); }, { passive: false });
   $('#btn-formation').addEventListener('click', () => openFormation(null));
   $('#btn-open-formation').addEventListener('click', () => openFormation(null));
   $('#btn-formation-back').addEventListener('click', () => show(fmBack));

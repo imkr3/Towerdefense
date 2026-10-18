@@ -3,7 +3,7 @@
  * ======================================================================= */
 
 
-const APP_VERSION = '5.1.1';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
+const APP_VERSION = '5.1.2';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
 
 function defaultSave() {
   const lv = {};
@@ -148,7 +148,7 @@ function saveGame(s) {
 let save = loadGame();
 let battle = null;
 let renderer = null;
-let lastTs = 0;
+let lastTs = 0, frameDue = 0;
 
 /* ------------------------------ 화면 ------------------------------ */
 const $ = sel => document.querySelector(sel);
@@ -561,7 +561,7 @@ function starHuntNext() {
 
 function renderStageDetail(i) {
   // 고른 전장의 곡과 보스곡을 미리 녹음해 둔다 (출진하자마자 바로 나오게)
-  if (STAGES[i]) BGM.prefetch([stageMusic(STAGES[i]), STAGES[i].bossId ? bossTrack(STAGES[i], STAGES[i].bossId) : null]);
+  if (STAGES[i]) BGM.prefetch([stageMusic(STAGES[i]), STAGES[i].bossId ? bossTrack(STAGES[i], STAGES[i].bossId) : null], true);   // 5.1.2 둘러본 앞 전장 곡은 줄에서 뺀다
   const box = $('#stage-detail');
   box.innerHTML = '';
   const ch = CHAPTERS[mapChapter];
@@ -1654,7 +1654,7 @@ function beginBattle() {
   }
   renderer.cam = renderer.camTarget = renderer.clampCam(ALLY_SPAWN_X + 200);
   renderer.dragUntil = 0;
-  lastTs = 0;
+  lastTs = 0; frameDue = 0;
 }
 
 function buildCards() {
@@ -2106,7 +2106,11 @@ function loop(ts) {
   const idle = inBattle && (paused || modal || battle.state !== 'play');
   const minMs = Math.max(FRAME_MIN_MS[Settings.get('quality')] || 14,
                          titleAnim.on ? TITLE_FRAME_MS : (idle ? (inBattle && battle.state !== 'play' && resultEl.classList.contains('show') ? OVER_FRAME_MS : IDLE_FRAME_MS) : (renderer && renderer.crowded ? CROWD_FRAME_MS : 0)));
-  if (ts - lastTs < minMs) return;
+  // 5.1.2 최소 간격 대신 마감 시각으로 맞춘다. 90Hz(11.1ms)는 14ms 문턱에 한 장씩 걸러 45fps,
+  // 144Hz 는 50fps 로 떨어졌고, 그 탓에 자동 품질이 한 번 낮아지면 다시 오르지 못했다.
+  const target = minMs === 14 ? 1000 / 60 : minMs;
+  if (frameDue && ts + 2 < frameDue) return;
+  frameDue = !frameDue || ts - frameDue > target ? ts + target : frameDue + target;
   let dt = (ts - lastTs) / 1000;
   lastTs = ts;
   if (dt > 0.1) dt = 0.1;
@@ -2148,9 +2152,10 @@ function loop(ts) {
     // 승리는 팡파르, 패배는 애가. 음악을 꺼 두었으면 효과음이 대신한다.
     if (BGM.vol > 0) BGM.sting(battle.state === 'win' || (battle.endless && battle.newRecord) ? 'victory' : 'defeat');
     else BGM.stop(0.6);
-    recordBattle(battle);
     // 5.1.1 정벌은 끝나는 즉시 원정에 적는다. 결과창(0.7초 뒤)을 기다리다 앱을 끄면 진 전투를 다시 치르거나 이긴 보상을 두 번 받았다
+    // 5.1.2 기록보다 먼저 — 덜 끝난 원정이 저장되어 백업으로 남지 않게
     if (battle.conquest) conqResolveBattle(battle);
+    recordBattle(battle);
     const ended = battle;
     resultTimer = setTimeout(() => {
       if (battle === ended && $('#scr-battle').classList.contains('active')) showResult();
@@ -2404,6 +2409,8 @@ function refreshTitleBadges() {
   const next = save.cleared < STAGES.length ? save.cleared : -1;
   cont.hidden = !(save.cleared >= 1 && next >= 0);
   if (!cont.hidden) $('#continue-stage').textContent = (next + 1) + '. ' + STAGES[next].name;
+  // 5.1.2 초기화 · 전부 열기 뒤에도 정벌 단추가 맞게 (전엔 화면을 다시 열어야 바뀌었다)
+  if (typeof refreshConqTitle === 'function') refreshConqTitle();
 }
 
 function init() {
@@ -2617,7 +2624,7 @@ function init() {
     if (document.hidden && playAccum > 0) { flushPlayTime(); saveGame(save); }
     // 앱이 뒤로 가면 음악도 멈춘다 (배터리)
     if (SFX.ctx) { if (document.hidden) SFX.ctx.suspend(); else SFX.ctx.resume(); }
-    lastTs = 0;
+    lastTs = 0; frameDue = 0;
   });
   window.addEventListener('keydown', e => {
     if (e.repeat || e.ctrlKey || e.metaKey || e.altKey || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
@@ -2777,7 +2784,8 @@ function renderSlots() {
 }
 
 function backupText() {
-  if (SaveStore.blocked) return localStorage.getItem(SaveStore.key) || localStorage.getItem(SaveStore.key + '-damaged') || '';
+  // 5.1.2 막힌 저장은 백업 쪽에 진짜 데이터가 남아 있을 수 있다 (빈 파일을 '저장했습니다'로 내보냈다)
+  if (SaveStore.blocked) return localStorage.getItem(SaveStore.key) || localStorage.getItem(SaveStore.key + '-damaged') || localStorage.getItem(SaveStore.backupKey) || '';
   return SaveStore.export(save);
 }
 function initSaveManager() {
@@ -2789,6 +2797,7 @@ function initSaveManager() {
   $('#btn-export-save').addEventListener('click', () => {
     try {
       const raw = backupText();
+      if (!raw) { toast('내보낼 저장이 없습니다'); return; }
       $('#save-text').value = raw;
       if (window.AndroidSave) { window.AndroidSave.exportSave(raw); return; }
       const url = URL.createObjectURL(new Blob([raw], {type:'application/json'}));

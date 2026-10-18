@@ -97,6 +97,16 @@ class GLFx {
     // 합성식이 포화형이어서 1 을 넘겨도 흰 덩어리로 터지지는 않는다.
     this.gain = 1.15;
     this.ok = this._init();
+    // 5.1.2 GPU 컨텍스트를 잃으면(안드로이드가 뒤로 간 앱의 GPU 메모리를 거둘 때) Canvas2D 연출로 버티다가
+    // 돌아오면 다시 세운다. 전에는 ok 가 그대로 true 라 필살 연출이 그 뒤로 통째로 사라졌다.
+    canvas.addEventListener('webglcontextlost', e => {
+      e.preventDefault(); this.ok = false; this.count = 0;
+      if (typeof setCastLimits === 'function') setCastLimits(4, 2);
+    });
+    canvas.addEventListener('webglcontextrestored', () => {
+      this.ok = this._init(); this._empty = false;
+      if (this.ok) { this.resize(this.w, this.h, this.dpr); if (typeof setCastLimits === 'function') setCastLimits(8, 3); }
+    });
   }
 
   _init() {

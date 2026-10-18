@@ -1267,6 +1267,12 @@ const I18N_EN = {
   '끝없는 정복': 'Endless Conquest', '정벌 단계 10 넘기': 'Clear Conquest tier 10',
   // 효과 요약
   '끊긴 전투를 먼저 마쳐야 합니다': 'Finish the interrupted battle first',
+  // 5.1.2
+  '다시 굴릴 유물이 없습니다': 'No other relics to roll', '끊긴 전투 다시': 'Resume the interrupted battle', '내보낼 저장이 없습니다': 'There is no save to export',
+  '게임 저장 데이터가 아닙니다.': 'This is not game save data.', '저장 항목 형식 오류: ': 'Bad save field: ', '저장 숫자 오류: ': 'Bad save number: ',
+  '저장 능력치 오류: ': 'Bad save stat: ', '진화 데이터 오류': 'Bad evolution data', '3진 데이터 오류': 'Bad third-form data', '4진 데이터 오류': 'Bad fourth-form data',
+  '편성 데이터 오류': 'Bad squad data', '일일 임무 데이터 오류': 'Bad daily mission data',
+  '백업은 1MB 이하의 JSON 파일이어야 합니다.': 'A backup must be a JSON file under 1MB.', '지원하지 않는 백업 버전입니다.': 'Unsupported backup version.',
   '단계 내리기': 'Lower tier', '단계 올리기': 'Raise tier',
   '근접 공격': 'Melee atk', '근접 체력': 'Melee HP', '원거리 공격': 'Ranged atk', '영웅 공격': 'Hero atk', '값싼 병종': 'Cheap units',
   '수입': 'Income', '출진 대기': 'Cooldown', '적 체력': 'Foe HP', '적 공격': 'Foe atk', '보스 체력': 'Boss HP', '액티브 대기': 'Active cd', '왕명 대기': 'Command cd',
@@ -1364,7 +1370,8 @@ const I18N_EN_PATTERNS = [
   [/이벤트 (\d) \/ (\d) 돌파/g, 'Events $1 / $2 cleared'],
   [/지금 슬롯 (\d)을 저장하고 슬롯 (\d)\(으\)로 바꿉니다\./g, 'Saves slot $1 and switches to slot $2.'],
   [/슬롯 (\d)의 (진행도와 소환한 병종이 모두 삭제됩니다)/g, 'Slot $1: $2'],
-  [/(\d+)시간 (\d+)분/g, '$1h $2m'],
+  [/(\d+)시간 (\d+)분/g, '$1h $2m'], [/^(\d+)분$/g, '$1m'],   // 5.1.2 한 시간이 안 된 슬롯 플레이 시간
+  [/^전장 (\d+)개 돌파 · 골드 (\d+) · 소환석 (\d+)/g, '$1 stages cleared · gold $2 · stones $3'],   // 5.1.2 복원 확인
   [/(\d+)분 (\d+)초/g, '$1m $2s'],          // 4.2: 기록 탭의 총 전투 시간
   [/(\d+)\s*전장 돌파/g, 'Stage $1 cleared'],
   [/전장 (\d+)/g, 'Stage $1'],

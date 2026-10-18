@@ -559,7 +559,7 @@ class Battle {
     }
     const buff = { hp: this.buff.hp * lm, atk: this.buff.atk * lm };
     if (this.run && !owner) {    // 5.0 정벌: 근접 · 원거리 · 영웅 · 값싼 병종 축복
-      const R = this.run, melee = !st.ranged, cheap = unitFor(this.save, st.id).cost <= 150;   // 5.1.1 보급 마차 할인 전 값으로 본다
+      const R = this.run, melee = !st.ranged, cheap = this.cheapUnit(st.id);   // 5.1.1 보급 마차 할인 전 값으로 본다
       buff.hp *= (melee ? R.meleeHp : 1) * (cheap ? R.cheapHp : 1);
       buff.atk *= (melee ? R.meleeAtk : R.rangedAtk) * (isHeroUnit(st) ? R.heroAtk : 1) * (cheap ? R.cheapAtk : 1);
     }
@@ -715,6 +715,10 @@ class Battle {
     // 5.1.2 HUD 가 영웅 카드마다 매 프레임 부른다 — 닫힘 없이 훑는다
     for (const f of this.allies) if (!f.dead && !f.summoned && f.s.id === id) return f;
     return null;
+  }
+  cheapUnit(id) {            // 5.1.2 출진마다 병종을 통째로 다시 만들지 않는다 (보급 마차 할인 전 값)
+    const c = this._cheap || (this._cheap = {});
+    return c[id] !== undefined ? c[id] : (c[id] = unitFor(this.save, id).cost <= 150);
   }
   inRoster(id) { for (const r of this.roster) if (r.id === id) return true; return false; }
   heroTarget(f) {
@@ -1228,7 +1232,8 @@ class Battle {
       this.stoneGain = 0;
       this.save.coins += this.coins;
       this.save.totalKills = (this.save.totalKills || 0) + this.kills;
-      saveGame(this.save);
+      // 5.1.2 여기선 저장하지 않는다 — conqResolveBattle 이 원정을 적고 한 번에 저장한다.
+      // 먼저 저장하면 '금화는 받고 전투는 덜 끝난' 저장이 백업으로 남아, 이전 저장 복원으로 같은 전투를 또 치렀다.
       return;
     }
     if (this.endless) {

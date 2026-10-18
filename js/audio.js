@@ -374,9 +374,19 @@ const BGM = {
     }
     return new Promise((res, rej) => this.waiters[name].push([res, rej]));
   },
-  prefetch: function (names) {
+  prefetch: function (names, replace) {
     if (!SFX.ready || this.vol <= 0) return;
-    for (const n of names) if (n && BGM_TRACKS[n] && !this.cache[n] && !this.waiters[n]) this.want(n, false).catch(() => {});
+    // 5.1.2 replace: 앞서 둘러보며 미리 받으려던 곡 중 아무도 기다리지 않는 것은 줄에서 뺀다.
+    // 진군도에서 전장을 훑기만 해도 곡 수십 개가 줄을 서 캐시(7곡)를 서로 밀어내며 계속 녹음했다.
+    const spec = this.spec || (this.spec = {});
+    if (replace) this.queue = this.queue.filter(n => {
+      const ws = this.waiters[n];
+      if (!spec[n] || n === this.name || names.indexOf(n) >= 0 || !ws || ws.length > 1) return true;
+      delete this.waiters[n]; delete spec[n];
+      ws.forEach(([, rej]) => rej(Error('stale')));
+      return false;
+    });
+    for (const n of names) if (n && BGM_TRACKS[n] && !this.cache[n] && !this.waiters[n]) { this.want(n, false).catch(() => {}); if (replace) spec[n] = true; }
   },
   pump: function () {
     if (this.busy || !this.queue.length || !SFX.ready) return;
@@ -385,6 +395,7 @@ const BGM = {
     const done = (err, buf) => {
       this.busy = false;
       const ws = this.waiters[name] || []; delete this.waiters[name];
+      if (this.spec) delete this.spec[name];
       if (buf) { this.cache[name] = buf; this.touch(name); }
       ws.forEach(([res, rej]) => err ? rej(err) : res(buf));
       setTimeout(() => this.pump(), 30);

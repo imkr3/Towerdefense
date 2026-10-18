@@ -969,7 +969,7 @@ test('Field cap: one shared limit of 40 deployed soldiers, summons stop at 60 in
 test('Renderer and HUD stay light: frame cap, HUD diffing, cached background layers', () => {
   const main = fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8');
   const render = fs.readFileSync(path.join(__dirname, '../js/render.js'), 'utf8');
-  assert.ok(/FRAME_MIN_MS/.test(main) && /ts - lastTs < /.test(main), 'frame cap');
+  assert.ok(/FRAME_MIN_MS/.test(main) && /ts \+ 2 < frameDue/.test(main), 'frame cap');
   const hud = main.slice(main.indexOf('function updateHud()'), main.indexOf('function updateHud()') + 4000);
   assert.ok(!/\$\('#/.test(hud), 'updateHud must not query the DOM every frame');
   assert.ok(!/\.textContent = /.test(hud.replace('el.textContent = v', '')), 'updateHud writes text only through hudText');
@@ -1977,7 +1977,7 @@ test('5.0: conquest — a run is a fixed map of three acts, boss last; same seed
   assert.equal(a.map.length, C.CONQ.floors);
   assert.equal(a.map[C.CONQ.floors - 1].length, 1); assert.equal(a.map[C.CONQ.floors - 1][0].t, 'boss');
   assert.ok(a.map[0].every(n => n.t === 'battle'), 'the first floor is a fight');
-  for (const row of a.map) assert.ok(row.some(n => n.t === 'battle' || n.t === 'elite' || n.t === 'boss'), 'every floor has a fight');
+  for (const row of a.map) assert.ok(row.some(n => n.src !== undefined), 'every floor has a fight');
   assert.ok(a.map[C.CONQ.floors - 2].some(n => n.t === 'rest' || n.t === 'shop'), 'a camp or shop before the boss');
   for (let f = 0; f < C.CONQ.floors - 1; f++) assert.equal(a.map[f].length, C.CONQ.lanes, '5.1: three lanes');
   const boss = a.map[C.CONQ.floors - 1][0];
@@ -2133,6 +2133,46 @@ test('5.1.1 conquest maps: every floor has a fight, the floor before the boss a 
     map.forEach((row, f) => assert.ok(row.some(n => n.src !== undefined), 'seed ' + seed + ' floor ' + f + ' has a fight'));
     assert.ok(map[C.CONQ.floors - 2].some(n => n.t === 'rest' || n.t === 'shop'), 'seed ' + seed + ' camp before the boss');
   }
+});
+
+test('5.1.2 splash and pierce damage on the fortress counts for the unit', () => {
+  const s = save(); s.loadout = ['spear', 'archer'];
+  const b = new Battle(0, s, { baseHp: 1e6, money: 1e6, rate: 0, waves: [], reward: 0 });
+  b.deploy('spear'); const sp = b.allies[0];
+  const d0 = b.meter.spear.dmg;
+  b.areaHit(100, b.enemyCastle.x, 60, b.enemies, b.enemyCastle, sp, false);
+  assert.ok(b.meter.spear.dmg > d0, 'splash on the fortress is credited');
+  const d1 = b.meter.spear.dmg;
+  b.pierceHit({ x: b.enemyCastle.x - 200, tx: b.enemyCastle.x, side: 'ally', dmg: 100, src: sp, crit: false, y0: 0 });
+  assert.ok(b.meter.spear.dmg > d1, 'pierce on the fortress is credited');
+});
+
+test('5.1.2 endless summons carry the wave strength', () => {
+  const b = new Battle(0, save(), { baseHp: 1e9, money: 0, rate: 0, waves: [], reward: 0 });
+  const id = Object.keys(E).find(k => E[k].ab && E[k].ab.summon && !E[k].boss);
+  const base = b.spawnEnemy(E[id].ab.summon.id, 900); base.summoned = false;
+  b.spawnEnemy(id, 900, 10);
+  const n0 = b.enemies.length;
+  for (let i = 0; i < 600 && b.enemies.length === n0; i++) b.tick(1 / 30);
+  const kid = b.enemies.find(e => e.summoned);
+  assert.ok(kid, 'the summoner called something');
+  assert.ok(kid.maxHp > base.maxHp * 5, 'the summon is as tough as its wave');
+});
+
+test('5.1.2 conquest: relic reroll with nothing new is refused, orb from an elite counts at once', () => {
+  const C = vm.runInContext('({CONQ, CONQ_RELICS, conqNewRun, conqReroll, conqAfterBattle})', ctx);
+  const s = { cleared: 60, loadout: ['spear', 'archer', 'knight'], levels: {}, upgrades: {}, owned: {}, stars: {}, evo: {} };
+  const run = C.conqNewRun(s, 0, 11);
+  const left = C.CONQ_RELICS.slice(0, 2).map(r => r.id);
+  run.relics = C.CONQ_RELICS.slice(2).map(r => r.id);
+  run.pending = { kind: 'relic', opts: left.slice() }; run.scrip = 1000;
+  assert.equal(C.conqReroll(run), false); assert.equal(run.scrip, 1000, 'no scrip spent on the same relics');
+  const r2 = C.conqNewRun(s, 0, 12); r2.pending = null;
+  // 정예가 줄 수 있는 유물을 수정구 하나만 남긴다
+  r2.relics = C.CONQ_RELICS.filter(r => r.id !== 'orb' && !r.cursed).map(r => r.id);
+  const node = r2.map[0].find(n => n.src !== undefined);
+  C.conqAfterBattle(r2, Object.assign({}, node, { t: 'elite' }), true, 0.8, {});
+  assert.equal(r2.pending.got, 'orb'); assert.equal(r2.pending.opts.length, 4, 'the orb shows its extra blessing right away');
 });
 
 console.log(count + ' regression checks passed');
