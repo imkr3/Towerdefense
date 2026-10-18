@@ -371,9 +371,9 @@ test('A squad brings at most five legends and mythics', () => {
   assert.equal(ids.filter(id => U[id].rarity === 'UR' || U[id].rarity === 'SSR').length, 5);
   assert.ok(ids.includes('spear')); assert.ok(!ids.includes('zeus'));
 });
-test('Nine seasons (4.15: +삼국지), every summon points at a real unit', () => {
+test('Ten seasons (5.2: +천일야화), every summon points at a real unit', () => {
   const { SEASONS } = vm.runInContext('({SEASONS})', ctx);
-  assert.equal(SEASONS.length, 9);
+  assert.equal(SEASONS.length, 10);
   for (const sn of SEASONS) for (const id of sn.units) { assert.ok(U[id], id); assert.equal(U[id].season, sn.id); }
   for (const u of UNITS) if (u.ab && u.ab.summon) assert.ok(U[u.ab.summon.id], u.id);
 });
@@ -1459,7 +1459,8 @@ test('4.6: hardcore act 5 and challenge bosses get their own tracks', () => {
 });
 
 /* ---------------- 4.7 소환 영웅의 3진 ---------------- */
-const H47 = ['wukong', 'ra', 'thor', 'merlin', 'valkyrie', 'artemis', 'guanyu', 'gumiho', 'inventor', 'susanoo'];   // 4.15: + 관우 · 4.25: + 구미호 · 발명가 · 스사노오
+const H47 = ['wukong', 'ra', 'thor', 'merlin', 'valkyrie', 'artemis', 'guanyu', 'gumiho', 'inventor', 'susanoo',   // 4.15: + 관우 · 4.25: + 구미호 · 발명가 · 스사노오
+             'odin', 'genie', 'zhugeliang', 'dokkaebi', 'medusa', 'rifleman'];                                      // 5.2: 등급을 고루 (신화 둘 · 전설 · 영웅 · 희귀 · 일반)
 test('4.7: two mythic, two legendary and two hero summons awaken — drawn, translated, with their own effects', () => {
   const X = vm.runInContext('({EVOLUTIONS, EVOLUTIONS2, EVO2_TRIALS, evo2Cost})', ctx);
   const read = f => fs.readFileSync(path.join(__dirname, '../js/' + f), 'utf8');
@@ -1467,7 +1468,7 @@ test('4.7: two mythic, two legendary and two hero summons awaken — drawn, tran
   const gacha = Object.keys(X.EVOLUTIONS2).filter(id => U[id].gacha).sort();
   assert.deepEqual(gacha, H47.slice().sort());
   const rar = {}; gacha.forEach(id => { rar[U[id].rarity] = (rar[U[id].rarity] || 0) + 1; });
-  assert.deepEqual(rar, { UR: 6, SSR: 2, SR: 2 }, 'mythic · legendary · hero');   // 4.25: 시즌 신화 셋 더
+  assert.deepEqual(rar, { UR: 8, SSR: 3, SR: 3, R: 1, N: 1 }, 'mythic · legendary · hero · rare · common');   // 4.25: 시즌 신화 셋 더 · 5.2: 등급을 고루
   const shapes = new Set(Object.values(X.EVOLUTIONS2).map(e => e.look.shape)); assert.equal(shapes.size, Object.keys(X.EVOLUTIONS2).length, 'all third forms look different');
   for (const id of gacha) {
     const e = X.EVOLUTIONS2[id];
@@ -1740,7 +1741,7 @@ test('4.18: two units ascend (4th form) — drawn, translated, with their own ef
   const X = vm.runInContext('({EVOLUTIONS2, EVOLUTIONS3, EVO3_TRIALS, EVO3_LEVEL, usesEvo3, setEvoForm, evoForm, unitFor})', ctx);
   const read = f => fs.readFileSync(path.join(__dirname, '../js/' + f), 'utf8');
   const render = read('render.js'), i18n = read('i18n.js'), gl = read('gl-fx.js');
-  assert.deepEqual(Object.keys(X.EVOLUTIONS3).sort(), ['catapult', 'merlin']);
+  assert.deepEqual(Object.keys(X.EVOLUTIONS3).sort(), ['catapult', 'merlin', 'odin']);   // 5.2: + 세계수의 만물부
   for (const id in X.EVOLUTIONS3) {
     const e = X.EVOLUTIONS3[id];
     assert.ok(X.EVOLUTIONS2[id], id + ' has a 3rd form');
@@ -1762,6 +1763,8 @@ test('4.18: two units ascend (4th form) — drawn, translated, with their own ef
   }
   const m = G.resolveUnit(U.merlin, 27, 3);
   assert.ok(m.ab.chain && m.ab.sunmark && m.ab.rally && m.active.ally, 'Merlin deals damage and supports');
+  const o = G.resolveUnit(U.odin, 27, 3);
+  assert.ok(o.ab.rally && o.ab.ward && o.ab.sunmark && !o.active.barrier && o.active.mul > 0 && o.active.ally.cleanse, 'Odin 4th: commands, wards, brands and strikes');
 });
 test('4.18: the plasma tank fires a missile salvo every third shot; Merlin\'s ultimate shields and hastes allies', () => {
   const b = battle(); const tk = b.makeAlly(G.resolveUnit(U.catapult, 27, 3), 400); b.allies.push(tk);
@@ -2088,6 +2091,80 @@ test('5.1: conquest — lanes, risk, reroll, trials, forge and recruits', () => 
   const st = { baseHp: 10000, money: 0, rate: 0, waves: [], reward: 0, conquest: { t: 'battle' } };
   const b = new Battle(0, { ...save(), loadout: ['zeus', 'spear'], owned: { zeus: 1 } }, st, { run: R });
   assert.equal(b.cmdCd, 0); assert.equal(b.enemyCastle.maxHp, 8000); assert.ok(!b.roster.some(u => u.active) || b.roster.filter(u => u.active).every(u => b.heroCooldowns[u.id] === 0));
+});
+
+/* ---------------- 5.2 천일야화 · 오딘 · 3진 다섯 · 고퀄 이펙트 · 개발자 해금 ---------------- */
+test('5.2: the genie grants wishes in turn (heal → barrier → haste) and Three Wishes pays funds', () => {
+  const b = battle(); b.update(1 / 30);
+  const gn = b.makeAlly(G.resolveUnit(U.genie, 10, false), 400); b.allies.push(gn);
+  const m = b.makeAlly(U.spear, 430); b.allies.push(m); m.hp = m.maxHp * 0.5;
+  const hp0 = m.hp; gn.abCd = 0; b.supportTick(gn, b.allies, 0.01, true);
+  assert.ok(m.hp > hp0, 'first wish heals'); assert.ok(b.fx.some(e => e.type === 'wish' && e.w === 0));
+  gn.abCd = 0; b.supportTick(gn, b.allies, 0.01, true); assert.ok(m.barrier > 0, 'second wish shields');
+  gn.abCd = 0; b.supportTick(gn, b.allies, 0.01, true); assert.ok(m.hasteT > 0, 'third wish hastes');
+  assert.ok(G.unitRoleStats(G.resolveUnit(U.genie, 10, false), 1).some(r => r[0] === '소원'), 'wish shown in the training card');
+  const s = save(); s.owned.genie = true; s.levels.genie = 10; s.loadout = ['genie', 'spear'];
+  const c = new Battle(5, s); c.update(1 / 30);
+  const g2 = c.makeAlly(c.stats('genie'), 500); c.allies.push(g2); const sp = c.makeAlly(U.spear, 520); c.allies.push(sp);
+  c.spawnEnemy('ogre', 640); c.heroCooldowns.genie = 0; c.heroGlobalCd = 0;
+  const money0 = c.money; assert.ok(c.useHeroActive('genie'), 'cast');
+  assert.ok(c.money > money0 && sp.barrier > 0, 'funds and a barrier');
+});
+test('5.2: a new season of seven, each drawn and translated; unique cooldowns', () => {
+  const { SEASONS, UNIT_COOLDOWN } = vm.runInContext('({SEASONS, UNIT_COOLDOWN})', ctx);
+  const sn = SEASONS.find(x => x.id === 'arabian');
+  assert.equal(sn.units.slice().sort().join(','), 'bandit,camelarcher,carpet,genie,scheherazade,scimitar,sinbad');
+  assert.deepEqual(sn.units.map(id => U[id].rarity).join(), 'UR,SSR,SR,SR,R,R,N');
+  const render = fs.readFileSync(path.join(__dirname, '../js/render.js'), 'utf8'), i18n = fs.readFileSync(path.join(__dirname, '../js/i18n.js'), 'utf8');
+  for (const id of sn.units) {
+    const u = U[id];
+    assert.ok(render.indexOf("case '" + u.shape + "':") >= 0, id + ' drawn');
+    for (const k of [u.name, u.role, u.abText, u.desc]) assert.ok(i18n.indexOf("'" + k.replace(/'/g, "\\'") + "'") >= 0, id + ' translated: ' + k.slice(0, 16));
+    if (u.active) assert.ok(render.indexOf("e.kind==='" + u.active.kind + "'") >= 0, id + ' active drawn');
+  }
+  const cds = Object.values(UNIT_COOLDOWN); assert.equal(new Set(cds).size, cds.length, 'cooldowns are unique');
+});
+test('5.2: the Empress of Stone petrifies; Odin\'s Yggdrasil judgement strikes, shields and cleanses', () => {
+  const b = battle(); b.update(1 / 30);
+  const md = b.makeAlly(G.resolveUnit(U.medusa, 20, 2), 400); md.ab.stun.chance = 1; b.allies.push(md);
+  const foe = b.spawnEnemy('goblin', 520); foe.hp = foe.maxHp = 1e6;
+  b.hitOne(10, foe, md, false);
+  assert.ok(foe.stunT > 0 && foe.petrifyUntil > b.time, 'petrified');
+  const s = save(); s.owned.odin = true; s.levels.odin = 27; s.evo = { odin: true }; s.evo2 = { odin: true }; s.evo3 = { odin: true }; s.loadout = ['odin', 'spear'];
+  const c = new Battle(5, s); c.update(1 / 30);
+  const od = c.makeAlly(c.stats('odin'), 500); c.allies.push(od); const sp = c.makeAlly(U.spear, 520); c.allies.push(sp);
+  sp.poisonT = 5; sp.poisonDps = 30;
+  const og = c.spawnEnemy('ogre', 640); const hp0 = og.hp; c.heroCooldowns.odin = 0; c.heroGlobalCd = 0;
+  assert.ok(c.useHeroActive('odin'), 'cast');
+  assert.ok(og.hp < hp0 && sp.barrier > 0 && sp.hasteT > 0 && sp.poisonT === 0, 'damage, shield, haste, cleanse');
+});
+test('5.2: the Trigram Dragon bewitches only through his formation, not on every wind blade', () => {
+  assert.ok(!G.resolveUnit(U.zhugeliang, 30, 2).ab.charm, 'no on-hit charm — an area attack rolled it for every foe hit');
+  const s = save(); s.owned.zhugeliang = true; s.levels.zhugeliang = 22; s.evo = { zhugeliang: true }; s.evo2 = { zhugeliang: true }; s.loadout = ['zhugeliang', 'spear'];
+  const c = new Battle(5, s); c.update(1 / 30);
+  const zg = c.makeAlly(c.stats('zhugeliang'), 500); c.allies.push(zg);
+  const og = c.spawnEnemy('ogre', 640); og.hp = og.maxHp = 1e6; c.heroCooldowns.zhugeliang = 0; c.heroGlobalCd = 0;
+  assert.equal(zg.s.active.charm, 3);
+  assert.ok(c.useHeroActive('zhugeliang'), 'cast');
+  assert.ok(og.charmT > 0 && og.burnT > 0, 'foes trapped in the formation are bewitched and burn');
+});
+test('5.2: dev mode can unlock roster units without clearing stages; the effects setting migrates once to the new look', () => {
+  const R = vm.runInContext('({rosterOpen, availableUnits, ROSTER_UNITS})', ctx);
+  const late = R.ROSTER_UNITS.filter(u => u.unlockStage > 1)[0];
+  assert.equal(R.rosterOpen({ cleared: 0 }, late), false); assert.equal(R.rosterOpen({ cleared: 0, devUnits: { [late.id]: true } }, late), true);
+  const main = fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8');
+  assert.ok(/id="dev-units"/.test(fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8')) && /\$\('#dev-units'\)/.test(main), 'dev button wired');
+  const set = raw => { const store = { 'stick-kingdom-settings-v1': raw ? JSON.stringify(raw) : null, 'stick-kingdom-save-v1': '{}' };
+    const sc = vm.createContext({ localStorage: { getItem: k => store[k] || null, setItem() {} }, navigator: { language: 'ko' }, JSON });
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '../js/settings.js'), 'utf8') + ';this.S = Settings;', sc); return sc.S.get('quality'); };
+  assert.equal(set(null), 'hq', 'new players get the high-quality effects');
+  assert.equal(set({ quality: 'auto' }), 'hq', 'old auto moves to hq once'); assert.equal(set({ quality: 'high' }), 'hq');
+  assert.equal(set({ quality: 'auto', fxv: 52 }), 'auto', 'a later choice of battery saver stays'); assert.equal(set({ quality: 'low' }), 'low');
+  const gl = fs.readFileSync(path.join(__dirname, '../js/gl-fx.js'), 'utf8');
+  const kinds = new Set(); const X = vm.runInContext('({EVOLUTIONS2, EVOLUTIONS3})', ctx);
+  for (const e of Object.values(X.EVOLUTIONS2).concat(Object.values(X.EVOLUTIONS3))) if (e.castFx) kinds.add(e.castFx);
+  for (const u of UNITS) if (u.active && u.active.kind) kinds.add(u.active.kind);
+  for (const k of kinds) if (gl.indexOf("case '" + k + "':") >= 0) assert.ok(new RegExp("['\\s]" + k + "['\\s]").test(gl.slice(gl.indexOf('GLFX_HQ_CAT = {}'), gl.indexOf('class GLFx'))) || ['runeveil', 'sunfall', 'underworld'].includes(k), k + ' has a high-quality category');
 });
 
 console.log(count + ' regression checks passed');

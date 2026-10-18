@@ -63,7 +63,8 @@ const X3_GROUND = { shellblast: 'boom', rocketpunch: 'quake', dronestrike: 'smok
                     mechstaff: 'quake', boltstrike: 'railscar', solarburn: 'sunscar',   // 4.7
                     dragonslash: 'quake',   // 4.15
                     teslacoil: 'railscar', kusanagi: 'quake',   // 4.25
-                    starfall: 'starscar', plasmablast: 'plasmascar' };   // 4.18
+                    starfall: 'starscar', plasmablast: 'plasmascar',   // 4.18
+                    gungnir: 'runescar', yggdrasil: 'rootscar', bagua: 'baguascar', petrify: 'stonescar', goldbat: 'quake', djinnblast: 'starscar' };   // 5.2
 const REINFORCE_FIRST = 10;  // 대본 웨이브가 끝나고 첫 증원까지
 const REINFORCE_MIN = 3.0;   // 증원 간격 하한
 const REINFORCE_STEP = 0.06; // 증원 한 번마다 적이 세지는 폭
@@ -463,10 +464,9 @@ class Battle {
 
   /* 해금된 병종 */
   unlockedUnits() {
-    const cleared = this.save.cleared;
     const owned = this.save.owned || {};
     return UNITS.filter(u =>
-      u.unlockStage <= cleared + 1 || (u.gacha && owned[u.id]));
+      rosterOpen(this.save, u) || (u.gacha && owned[u.id]));
   }
 
   /* 실제 출진 편성 (최대 LOADOUT_MAX) */
@@ -615,6 +615,13 @@ class Battle {
     else if (sub === 'stormcloud') { this.shake = Math.max(this.shake, 6); sfx('thunder'); }   // 4.25 천총운 폭풍신
     else if (sub === 'stargate') { this.shake = Math.max(this.shake, 4); sfx('holo'); }   // 4.18 별의 대현자
     else if (sub === 'hoverdrop') { this.shake = Math.max(this.shake, 8); sfx('boom'); }   // 4.18 플라즈마 기동전차
+    else if (sub === 'bifrost') { this.shake = Math.max(this.shake, 5); sfx('solar'); }     // 5.2 슬레이프니르 기수
+    else if (sub === 'lamp') { this.shake = Math.max(this.shake, 5); sfx('holo'); }         // 5.2 마신왕 지니
+    else if (sub === 'bagua') sfx('holo');                                                   // 5.2 팔진도 와룡
+    else if (sub === 'wisp') { this.shake = Math.max(this.shake, 4); sfx('boom'); }          // 5.2 도깨비 대왕
+    else if (sub === 'snakes') sfx('freeze');                                                // 5.2 석화의 여제
+    else if (sub === 'gatling') { this.shake = Math.max(this.shake, 3); sfx('cannon'); }     // 5.2 개틀링 사수
+    else if (sub === 'worldtree') { this.shake = Math.max(this.shake, 6); sfx('holo'); }    // 5.2 세계수의 만물부
     if (sub === 'jetdive' || sub === 'cloudjet') this.shake = Math.max(this.shake, 4);
   }
   /* 공격하는 순간: 전차 포구의 섬광·연기 고리, 비행접시가 내리쏘는 광선 */
@@ -627,6 +634,8 @@ class Battle {
     else if (kind === 'moonflash') sfx('laser');
     else if (kind === 'starsigil') sfx('holo');
     else if (kind === 'plasmamuzzle') sfx('rail');
+    else if (kind === 'yggsigil') sfx('holo');
+    else if (kind === 'gatling') sfx('arrow');
     if (this.x3Live() >= X3_FX_LIMIT) return;
     if (kind === 'solarray') {                          // 4.7 태양 위성: 하늘에서 과녁으로 내리꽂는 빛기둥 (과녁 자리)
       const tx = target && target.x !== undefined ? target.x : f.x + f.dir * f.attackRange;
@@ -636,6 +645,14 @@ class Battle {
     }
     if (kind === 'starsigil') {                         // 4.18 별의 대현자: 발밑 마법진 · 지팡이 끝 별 문양 (몸 단위)
       this.fx.push({ type: 'x3', kind: 'starsigil', x: f.x, ox: 6 * sc, h: 66 * sc, row: f.row, dir: f.dir, scale: sc, color: f.s.accent, t: 0.7, life: 0.7 });
+      return;
+    }
+    if (kind === 'gatling') {                           // 5.2 개틀링: 총구 섬광 · 튀는 탄피 (몸 단위)
+      this.fx.push({ type: 'x3', kind: 'gatling', x: f.x, ox: 44 * sc, h: 34 * sc, row: f.row, dir: f.dir, scale: sc, t: 0.5, life: 0.5 });
+      return;
+    }
+    if (kind === 'yggsigil') {                          // 5.2 세계수의 만물부: 발밑 룬 고리 · 궁니르 끝 빛살 (몸 단위)
+      this.fx.push({ type: 'x3', kind: 'yggsigil', x: f.x, ox: 62 * sc, h: 46 * sc, row: f.row, dir: f.dir, scale: sc, color: f.s.accent, t: 0.7, life: 0.7 });
       return;
     }
     if (kind === 'plasmamuzzle') {                      // 4.18 플라즈마 포: 포구 앞에 모였다 터지는 푸른 고리 (몸 단위)
@@ -679,6 +696,12 @@ class Battle {
     else if (kind === 'kusanagi') { this.shake = Math.max(this.shake, 4); sfx('thunder'); }
     else if (kind === 'starfall') { this.shake = Math.max(this.shake, 3); sfx('zap'); }
     else if (kind === 'plasmablast') { this.shake = Math.max(this.shake, 6); sfx('boom'); }
+    else if (kind === 'gungnir') { this.shake = Math.max(this.shake, 2); sfx('rail'); }      // 5.2
+    else if (kind === 'djinnblast') { this.shake = Math.max(this.shake, 2); sfx('holo'); }
+    else if (kind === 'bagua') sfx('holo');
+    else if (kind === 'goldbat') { this.shake = Math.max(this.shake, 4); sfx('boom'); }
+    else if (kind === 'petrify') sfx('freeze');
+    else if (kind === 'yggdrasil') { this.shake = Math.max(this.shake, 3); sfx('holo'); }
     const ground = X3_GROUND[kind];
     if (!ground) return;
     if (this.x3Live() >= X3_FX_LIMIT) return;
@@ -757,8 +780,14 @@ class Battle {
         for (const m of this.allies) if (!m.dead && Math.abs(m.x - f.x) <= a.ally.radius) {
           if (a.ally.barrier) m.giveBarrier(a.ally.barrier * f.abMul);
           if (a.ally.haste) { m.hasteMul = m.hasteT > 0 ? Math.min(m.hasteMul, a.ally.haste.mul) : a.ally.haste.mul; m.hasteT = Math.max(m.hasteT, a.ally.haste.dur); }
+          if (a.ally.cleanse) { m.poisonT = 0; m.poisonDps = 0; m.burnT = 0; m.burnDps = 0; m.slowT = 0; }   // 5.2 세계수의 심판
         }
         this.fx.push({ type: 'aura', x: f.x, row: f.row, r: a.ally.radius, t: 0.8, life: 0.8, color: f.s.accent });
+      }
+      // 5.2 세 가지 소원: 군자금도 하나의 소원
+      if (a.gold) {
+        this.money = Math.min(this.walletMax, this.money + a.gold);
+        this.fx.push({ type: 'coin', x: f.x, row: f.row, v: a.gold, t: 0.9, life: 0.9 });
       }
       // 여의봉 강타: 분신이 곧바로 튀어나온다
       if (a.clones && f.ab.summon) {
@@ -1642,7 +1671,7 @@ class Battle {
   supportTick(f, mates, dt, isAlly) {
     const ab = f.ab;
     if (!ab.heal && !ab.gold && !ab.summon && !ab.barrier && !ab.haste && !ab.cleanse &&
-        !ab.rally && !ab.ward && !ab.pacify) return;
+        !ab.rally && !ab.ward && !ab.pacify && !ab.wish) return;
     if (ab.gold && isAlly) {
       this.money = Math.min(this.walletMax, this.money + ab.gold * dt);
     }
@@ -1671,6 +1700,19 @@ class Battle {
       }
       f.auraPulse = 0.5;
       this.fx.push({ type: 'bell', x: f.x, row: f.row, r: ab.radius, t: 0.7, life: 0.7, color: '#f6d365' });
+    }
+    if (ab.wish) {
+      // 5.2 지니의 소원: 주기마다 하나씩, 차례로 — 회복(최대 체력 비율) → 보호막 → 가속
+      const w = f.wishN = ((f.wishN === undefined ? -1 : f.wishN) + 1) % 3, W = ab.wish;
+      for (const m of mates) {
+        if (m.dead || Math.abs(m.x - f.x) > ab.radius) continue;
+        if (w === 0) { if (m !== f) { const filled = m.heal(m.maxHp * W.heal); if (filled > 0) { const row = this.meterRow(f); row.heal = (row.heal || 0) + filled; } } }
+        else if (w === 1) m.giveBarrier(W.barrier * f.abMul);
+        else if (m !== f) { m.hasteMul = m.hasteT > 0 ? Math.min(m.hasteMul, W.haste.mul) : W.haste.mul; m.hasteT = Math.max(m.hasteT, W.haste.dur); }
+      }
+      f.auraPulse = 0.5;
+      this.fx.push({ type: 'aura', x: f.x, row: f.row, r: ab.radius, t: 0.6, life: 0.6, color: w === 0 ? '#7fe08e' : w === 1 ? '#8fd8ff' : '#ffd166' });
+      this.fx.push({ type: 'wish', x: f.x, row: f.row, w: w, scale: f.scale || 1, t: 0.9, life: 0.9 });
     }
     if (ab.pacify) {
       // 삼장법사: 경을 읊으면 주변 적의 살기가 누그러진다
@@ -2524,7 +2566,10 @@ class Battle {
       target.burnDps = Math.max(target.burnDps, ab.burn.dps * src.abMul);
     }
     if (ab.stun && Math.random() < ab.stun.chance) {
-      if (target.stun(ab.stun.dur)) this.fx.push({ type: 'stun', x: target.x, row: target.row, t: 0.5, life: 0.5 });
+      if (target.stun(ab.stun.dur)) {
+        this.fx.push({ type: 'stun', x: target.x, row: target.row, t: 0.5, life: 0.5 });
+        if (ab.petrify) target.petrifyUntil = this.time + ab.stun.dur;   // 5.2 석화의 여제: 굳은 적은 잿빛 돌이 된다 (보기)
+      }
       else if (target.resistFx && this.dmgFxCount < 14) this.fx.push({ type: 'miss', text: '기절 면역', x: target.x, row: target.row, t: 0.5, life: 0.5 });
       target.resistFx = false;
     }

@@ -283,9 +283,9 @@
       <div class="set-range"><input type="range" id="set-bgm" min="0" max="100" step="5"><output id="set-bgm-v">50</output></div>
       <label class="set-label" for="set-sfx">효과음</label>
       <div class="set-range"><input type="range" id="set-sfx" min="0" max="100" step="5"><output id="set-sfx-v">80</output></div>
-      <span class="set-label">이펙트 품질</span>
-      <div class="seg" id="set-quality" role="group" aria-label="이펙트 품질">
-        <button type="button" data-v="auto">자동</button><button type="button" data-v="high">높음</button><button type="button" data-v="low">절전</button>
+      <span class="set-label">이펙트</span>
+      <div class="seg" id="set-quality" role="group" aria-label="이펙트">
+        <button type="button" data-v="hq" title="빛 번짐 · 연기 · 불티 · 충격파가 더해진 이펙트">고퀄</button><button type="button" data-v="auto" title="5.1 까지의 이펙트 모습">절전</button><button type="button" data-v="low" title="파티클을 끄고 30fps 로">최소</button>
       </div>
       <span class="set-label">진동</span>
       <button type="button" class="switch" id="set-vibrate" role="switch" aria-checked="true" aria-label="진동"></button>
@@ -367,7 +367,7 @@
 </div>
 <div class="dev-quick"><button type="button" class="btn small" data-dev-add="stones:10">+10</button><button type="button" class="btn small" data-dev-add="stones:100">+100</button><button type="button" class="btn small" data-dev-add="stones:1000">+1000</button></div>
 <p class="dev-now" id="dev-now"></p>
-<div class="confirm-btns"><button type="button" class="btn" id="dev-unlock">전장 모두 열기</button><button type="button" class="btn primary" data-close>닫기</button></div>
+<div class="confirm-btns"><button type="button" class="btn" id="dev-unlock">전장 모두 열기</button><button type="button" class="btn" id="dev-units">모든 캐릭터 해금</button><button type="button" class="btn primary" data-close>닫기</button></div>
 </div></div>
 <div id="rotate-hint">
   <div class="rot-box">

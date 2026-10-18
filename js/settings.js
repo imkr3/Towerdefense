@@ -24,7 +24,8 @@ const Settings = {
       vibrate: true,
       dmgNums: true,     // 피해 숫자
       shake: true,       // 화면 흔들림
-      quality: 'auto',   // 'auto' | 'high' | 'low'
+      quality: 'hq',     // 5.2: 'hq' 고퀄 | 'auto' 절전(예전 모습) | 'low' 최소   (예전 'high' 는 고퀄로)
+      fxv: 52,
       keepSpeed: true,   // 전투 속도 기억
       autoActive: true,  // 3.14: 자동 출진일 때 필살도 자동
       speed: 1
@@ -43,7 +44,10 @@ const Settings = {
       for (const k of ['vibrate', 'dmgNums', 'shake', 'keepSpeed', 'autoActive']) {
         if (typeof raw[k] === 'boolean') d[k] = raw[k];
       }
-      if (['auto', 'high', 'low'].indexOf(raw.quality) >= 0) d.quality = raw.quality;
+      if (['hq', 'auto', 'high', 'low'].indexOf(raw.quality) >= 0) d.quality = raw.quality;
+      // 5.2: 고퀄 이펙트가 생겼다 — 예전 '자동 · 높음' 은 한 번 고퀄로 옮긴다 (그 뒤에 고른 '절전' 은 그대로 둔다)
+      if (raw.fxv !== 52 && (d.quality === 'auto' || d.quality === 'high')) d.quality = 'hq';
+      if (d.quality === 'high') d.quality = 'hq';
       if ([1, 2, 3].indexOf(raw.speed) >= 0) d.speed = raw.speed;
     }
     this.d = d;

@@ -342,7 +342,8 @@ const FULL_SEEDS = [101, 202, 303, 404, 505, 606, 707, 808, 909, 1010].map(x => 
 /* 4.21: '아직 쉽다' 해서 만렙 승률을 30% 안팎으로 (보스 각인까지 더해). 한 곳 0판은 운일 수 있어 막지 않고, 8판 이상이면 쉽다. */
 /* 4.24 버프 · 디버프를 몰아 넣은 편성 — 이것들이 가장 세서 하드코어 · 도전의 기준이 된다 */
 const POWER_DECKS = {
-  buff: ['merlin', 'odin', 'arthur', 'ra', 'zhugeliang', 'herald', 'runeseer', 'priest', 'mudang', 'catapult'],
+  // 5.2: 몸으로 막는 아서를 오딘보다 앞에 — 자동 출진은 편성 순서대로라, 오딘이 아서보다 싸면 앞줄 없이 지원만 나가 돌격에 무너졌다 (값이 바뀌어도 검사가 흔들리지 않게)
+  buff: ['merlin', 'arthur', 'odin', 'ra', 'zhugeliang', 'herald', 'runeseer', 'priest', 'mudang', 'catapult'],
   core: ['mage', 'colossus', 'thor', 'ra', 'odin', 'merlin', 'herald', 'runeseer', 'priest', 'mudang'],
   debuff: ['ra', 'merlin', 'odin', 'guanyu', 'susanoo', 'frost', 'mudang', 'alchemist', 'anchorguard', 'priest']
 };

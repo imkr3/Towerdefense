@@ -542,7 +542,7 @@ SEASON_UNITS.push(
     desc:'근처에서 쓰러진 적을 해골 병사로 일으킵니다. 싸움이 길어질수록 군세가 불어나지만, 스스로 적을 쓰러뜨릴 힘은 없습니다. 적을 쓰러뜨려 줄 주력과 함께 쓰세요.',
     active:{name:'명계의 문',kind:'underworld',cd:52,radius:230,mul:2.6,slow:3,desc:'가장 가까운 적 주변 피해·3초 둔화. 성채에는 피해 없음.'}}),
   mk({id:'odin',name:'오딘',role:'룬의 지배자',shape:'odin',season:'ragnarok',rarity:'UR',gacha:true,unlockStage:999,
-    body:'#b4bdc4',accent:'#7be6ff',tunic:'#28495e',hp:1600,atk:150,range:290,speed:27,interval:2.2,
+    body:'#e2c6a8',accent:'#7be6ff',tunic:'#28495e',hp:1600,atk:150,range:290,speed:27,interval:2.2,
     cost:560,cooldown:45,kb:2,ranged:true,maxActive:1,scale:1.15,
     ab:{pierce:true,rally:{atk:.35,radius:300},interval:2.5},
     abText:'지휘 · 주변 아군 공격력 +35% (자신 제외) · 운명의 룬',
@@ -833,6 +833,48 @@ SEASON_UNITS.push(
     cost:0,cooldown:0,kb:2,ab:{dodge:.2},
     desc:'손오공의 털 한 가닥이 변한 분신입니다. 잠시 뒤 연기처럼 사라집니다.'})
 );
+SEASON_UNITS.push(
+  // 5.2 시즌: 천일야화 (램프의 마신과 일곱 바다) — 램프의 마신 · 일곱 바다의 선장 · 하늘 양탄자 · 이야기꾼 · 초승달 칼 · 낙타 궁기병 · 마흔 도적
+  mk({id:'genie',name:'지니',role:'램프의 마신',shape:'genie',castFx:'wishburst',season:'arabian',rarity:'UR',gacha:true,unlockStage:999,
+    body:'#4aa0f0',accent:'#ffd24a',tunic:'#5a2a8e',hp:1550,atk:135,range:270,speed:30,interval:2.0,
+    cost:550,kb:2,ranged:true,area:true,areaRadius:80,scale:1.3,
+    ab:{wish:{heal:.1,barrier:150,haste:{mul:.75,dur:4}},radius:280,interval:6},
+    abText:'램프 마법 범위 · 6초마다 주변 아군에게 소원 하나 (회복 → 보호막 → 가속 차례로) · 세 가지 소원',
+    desc:'황금 램프에서 피어오른 푸른 마신입니다. 마법 구슬로 적을 터뜨리고, 곁의 병사들에게 차례로 소원을 들어줍니다 — 상처는 아물고, 몸은 단단해지고, 발은 빨라집니다.',
+    active:{name:'세 가지 소원',kind:'threewish',cd:52,radius:270,mul:2.4,stun:1,gold:150,ally:{barrier:220,radius:320},desc:'가장 가까운 적 주변 피해 · 1초 기절, 주변 아군 보호막, 군자금 +150.'}}),
+  mk({id:'sinbad',name:'신드바드',role:'일곱 바다의 선장',shape:'sinbad',castFx:'slash',season:'arabian',rarity:'SSR',gacha:true,unlockStage:999,
+    body:'#c8925a',accent:'#4ad8e8',tunic:'#2a5a8e',hp:1450,atk:106,range:86,speed:46,interval:1.1,
+    cost:450,kb:2,area:true,areaRadius:55,scale:1.12,
+    ab:{dodge:.2,crit:{chance:.15,mul:2.2}},abText:'휘두르는 언월도 범위 · 회피 20% · 치명타 15% ×2.2 · 로크의 습격',
+    desc:'일곱 번 바다로 나가 일곱 번 살아 돌아온 선장입니다. 파도처럼 몸을 틀어 칼을 피하고, 언월도를 크게 휘둘러 앞줄을 쓸어 냅니다. 위급하면 거대한 로크 새를 부릅니다.',
+    active:{name:'로크의 습격',kind:'rocdive',cd:46,radius:240,mul:2.5,stun:.8,push:90,desc:'거대한 로크 새가 내리꽂혀 가장 가까운 적 주변 피해 · 0.8초 기절 · 밀쳐 냄.'}}),
+  mk({id:'carpet',name:'양탄자 기사',short:'양탄자',role:'하늘을 나는 양탄자',shape:'carpet',season:'arabian',rarity:'SR',gacha:true,unlockStage:999,
+    body:'#d8a070',accent:'#ff5a8a',tunic:'#3a7ac8',hp:700,atk:88,range:250,speed:64,interval:1.1,
+    cost:330,kb:1,ranged:true,
+    ab:{hunter:1.8,dodge:.25},abText:'날아다니며 던지는 굽은 단검 · 원거리 적에게 1.8배 · 회피 25% · 빠름',
+    desc:'하늘을 나는 양탄자를 타고 전장 위를 미끄러집니다. 적의 궁수와 마법사를 먼저 노려 굽은 단검을 던집니다.'}),
+  mk({id:'scheherazade',name:'셰에라자드',role:'천일야화의 이야기꾼',shape:'scheherazade',season:'arabian',rarity:'SR',gacha:true,unlockStage:999,
+    body:'#e8c0a0',accent:'#ffcf5a',tunic:'#8e2a6a',hp:700,atk:38,range:220,speed:30,interval:1.8,
+    cost:320,kb:1,ranged:true,
+    ab:{haste:{mul:.82,dur:4},pacify:{mul:.8,dur:4},radius:210,interval:5},
+    abText:'천 하룻밤의 이야기 · 5초마다 주변 아군 공격이 빨라지고 주변 적 공격력 -20%',
+    desc:'천 하룻밤 동안 이야기를 이어 간 이야기꾼입니다. 그녀의 이야기에 아군은 기운이 솟고, 적은 넋을 놓아 칼끝이 무뎌집니다.'}),
+  mk({id:'scimitar',name:'시미터 전사',short:'시미터',role:'쌍 초승달 칼',shape:'scimitar',castFx:'slash',season:'arabian',rarity:'R',gacha:true,unlockStage:999,
+    body:'#b07a50',accent:'#e8e0c8',tunic:'#c83a3a',hp:820,atk:60,range:68,speed:48,interval:0.8,
+    cost:230,kb:2,
+    ab:{crit:{chance:.18,mul:2},dodge:.1},abText:'두 자루 초승달 칼 · 빠른 연속 베기 · 치명타 18% · 회피 10%',
+    desc:'초승달처럼 휜 칼 두 자루를 번갈아 휘두르는 사막의 전사입니다. 빠르게 베고 날렵하게 피합니다.'}),
+  mk({id:'camelarcher',name:'낙타 궁기병',short:'낙타궁',role:'사막의 궁기병',shape:'camelarcher',season:'arabian',rarity:'R',gacha:true,unlockStage:999,
+    body:'#b07a50',accent:'#f0ece0',tunic:'#2a6a8a',hp:680,atk:62,range:310,speed:56,interval:1.35,
+    cost:245,kb:2,ranged:true,
+    ab:{pierce:true},abText:'낙타 위의 짧은 활 · 줄 선 적을 꿰뚫는 화살 · 빠름',
+    desc:'낙타 등에 올라 모래 언덕을 넘나드는 궁기병입니다. 높은 곳에서 쏜 화살이 줄 선 적을 꿰뚫습니다.'}),
+  mk({id:'bandit',name:'사막 도적',short:'도적',role:'마흔 도적',shape:'bandit',castFx:'slash',season:'arabian',rarity:'N',gacha:true,unlockStage:999,
+    body:'#a87048',accent:'#e8c65a',tunic:'#3a3a3a',hp:600,atk:42,range:66,speed:52,interval:0.95,
+    cost:140,kb:2,
+    ab:{bounty:{chance:.12,gold:8}},abText:'굽은 단검 · 값싸고 빠름 · 맞힐 때 12% 확률로 금화 +8',
+    desc:'"열려라 참깨!" — 마흔 도적의 졸개입니다. 싸고 날래며, 칼끝에 걸린 적의 주머니를 털어 금화를 챙깁니다.'})
+);
 // 전설·신화는 한 명씩만 전장에 설 수 있다. 머릿수로 밀어붙이는 병종이 아니라
 // 판을 바꾸는 특수 병종이기 때문이다.
 SEASON_UNITS.forEach(u => {
@@ -890,7 +932,9 @@ const UNIT_COOLDOWN = {
   ashigaru: 5.9, samurai: 12.7, kyudo: 13.3, miko: 20.5, ninja: 26.5, tengu: 44.5, susanoo: 66.2,
   maceman: 13.6, axethrower: 11.6, siegebow: 22.0,
   // 4.15 삼국지
-  jiqiang: 6.2, tengjia: 12.3, huangzhong: 13.4, zhangfei: 21.2, zhaoyun: 26.3, zhugeliang: 44.8, guanyu: 66.4
+  jiqiang: 6.2, tengjia: 12.3, huangzhong: 13.4, zhangfei: 21.2, zhaoyun: 26.3, zhugeliang: 44.8, guanyu: 66.4,
+  // 5.2 천일야화
+  bandit: 6.5, scimitar: 12.4, camelarcher: 13.9, scheherazade: 20.8, carpet: 25.8, sinbad: 44.2, genie: 67.2
 };
 const TIER_FROM = 200, TIER_TO = 560, TIER_MAX = 0.35;
 function costTierMul(cost) {
@@ -950,7 +994,11 @@ const SEASONS = [
   { id: 'threekingdoms', name: '삼국지', sub: '도원결의와 와룡',
     color: '#e8b04a', accent: '#8e2a1f',
     desc: '복숭아밭에서 형제를 맺은 장수들과 와룡 선생이 왕국의 깃발 아래 모입니다.',
-    units: ['guanyu', 'zhugeliang', 'zhaoyun', 'zhangfei', 'huangzhong', 'tengjia', 'jiqiang'] }
+    units: ['guanyu', 'zhugeliang', 'zhaoyun', 'zhangfei', 'huangzhong', 'tengjia', 'jiqiang'] },
+  { id: 'arabian', name: '천일야화', sub: '램프의 마신과 일곱 바다',
+    color: '#5ad0e0', accent: '#6a2a8e',
+    desc: '천 하룻밤의 이야기 속 램프의 마신과 일곱 바다의 선장, 하늘을 나는 양탄자가 왕국의 부름에 응합니다.',
+    units: ['genie', 'sinbad', 'carpet', 'scheherazade', 'scimitar', 'camelarcher', 'bandit'] }
 ];
 
 /* 소환 풀: 시즌 병종 + (다른 시즌은 낮은 확률로) */
@@ -1830,10 +1878,12 @@ const MOD_COUNTERS = {
   giantslayer: ['spear', 'shield', 'javelin', 'venom', 'catapult', 'sniper', 'pyro', 'musketeer', 'frost'],
   curse: ['knight', 'shield', 'spear', 'javelin', 'venom', 'pyro', 'frost']
 };
+/* 전장 병종이 열렸나: 전장 진행으로 · 또는 5.2 개발자 모드 '모든 캐릭터 해금'으로 */
+function rosterOpen(s, u) { return u.unlockStage <= ((s && s.cleared) || 0) + 1 || !!(s && s.devUnits && s.devUnits[u.id]); }
 /* 지금 쓸 수 있는 병종: 전장 진행으로 열린 것 + 소환해 얻은 것 */
 function availableUnits(save) {
   return UNITS.filter(u => u.cost > 0 &&
-    (u.gacha ? !!(save.owned && save.owned[u.id]) : u.unlockStage <= (save.cleared || 0) + 1));
+    (u.gacha ? !!(save.owned && save.owned[u.id]) : rosterOpen(save, u)));
 }
 /* 앞에서 몸으로 막는 병종 (원거리 엄호 규칙의 '근접 전열') */
 function isFrontUnit(u) { return !!u && !u.ranged && !(u.ab && (u.ab.noAttack || u.ab.summon)); }
@@ -2152,16 +2202,17 @@ STAGES[79].hardMods = ['blitz', 'curse']; STAGES[79].hardSoft = 0.65; STAGES[79]
 /* 4.20 하드코어는 '만렙 기준': 강화 10 · Lv30 · 전장을 다 연 계정(병종 · 진화 전부, 소환 영웅 전부)의 가장 잘 맞는 편성이
  * 전장마다 정해 둔 만큼 이기도록 하드코어 적 배율에 따로 곱한다. 시뮬레이터로 찾았다 (씨앗 여섯 판 이분 탐색 → 다른 씨앗 열 판으로 확인).
  * 4.20: 승률 50% · 4.21: 보스 각인을 더하고 30% 안팎 (보스 전장은 각인이 어려움을 맡아 능력치를 덜기도 했다).
- * 만렙 계정에게 앞쪽 전장은 거저라 값이 크다. */
+ * 만렙 계정에게 앞쪽 전장은 거저라 값이 크다.
+ * 5.2: 오딘 4진 · 새 3진 다섯 · 버프 편성을 아서 먼저 내보내게 해 다시 맞췄다 (가장 센 편성의 승률 1/3 — 4.24 와 같은 방법). */
 const HARD_TUNE = [
-  17.5, 17.6, 14.6, 13.7, 5.66, 12.3, 8.51, 8.46, 11.2, 3.42,   // 1~10
-  4.82, 6.13, 2.9, 5.33, 4.28, 6.18, 2.67, 3.72, 8.5, 9.17,   // 11~20
-  15.7, 5.02, 9.87, 3.02, 13.7, 9.77, 3.56, 1.94, 8.19, 4.31,   // 21~30
-  38.4, 3.17, 2.45, 10.7, 3.24, 4.01, 4.9, 1.57, 3.18, 6.24,   // 31~40
-  6.17, 5.86, 3.68, 1.85, 2.8, 7.17, 6.1, 2.54, 1.57, 6.79,   // 41~50
-  7.9, 9.34, 3.01, 9.88, 3.69, 7.62, 2.54, 8.87, 5.3, 5.62,   // 51~60
-  6.23, 4.39, 6.16, 7.31, 5.41, 5.17, 2.28, 2.88, 3.74, 5.2,   // 61~70
-  6.16, 3.46, 3.07, 2.37, 3.6, 3.74, 2.46, 5.18, 2.28, 3.89    // 71~80
+  14.9, 15.0, 12.1, 10.1, 4.31, 11.8, 8.0, 6.45, 3.64, 2.92,   // 1~10
+  3.78, 3.61, 3.23, 3.62, 6.75, 8.93, 7.08, 4.14, 13.4, 13.8,   // 11~20
+  8.01, 9.01, 17.7, 4.56, 10.4, 13.5, 3.51, 2.57, 12.9, 7.41,   // 21~30
+  11.5, 3.04, 2.73, 6.87, 6.91, 4.47, 7.39, 2.37, 6.22, 9.02,   // 31~40
+  4.07, 7.44, 6.33, 3.47, 4.81, 8.35, 7.74, 7.03, 3.21, 8.25,   // 41~50
+  9.6, 7.75, 5.4, 10.5, 8.23, 9.26, 4.76, 4.66, 7.66, 6.83,   // 51~60
+  5.03, 4.33, 5.73, 3.13, 6.57, 6.85, 2.12, 2.61, 3.82, 5.31,   // 61~70
+  5.26, 2.95, 3.28, 2.42, 3.35, 3.99, 2.99, 5.11, 2.54, 4.73    // 71~80
 ];
 STAGES.forEach((st, i) => { st.hardTune = HARD_TUNE[i]; });
 /* 4.23 하드코어 보스 전장의 보스 체력 배율 (전장 번호 → hardBoss). 보스 체력을 4.22 의 1.6배로 올리고(HARDCORE.boss.hp 2 → 3.2)
@@ -2328,9 +2379,10 @@ EVENT_STAGES.push(
 // 4.20: 만렙(Lv30 · 강화 10) 기준으로 다시 — 가장 잘 맞는 편성 + 타이밍 공략의 승률이 50% 안팎 (하드코어와 같은 기준)
 // 4.21: 보스 각인을 더하고 승률 목표를 30% 안팎으로 — 각인이 무거운 곳(거신 · 균열 · 모래시계)은 능력치를 오히려 덜었다
 // 4.22: 분신이 돌아올 때마다 덜 채우게 되어(끝나지 않는 판 막기) 분신 도전(월식 · 균열 · 가면무도회)이 쉬워져 다시 올렸다 · 토템 원거리 우선으로 마왕도 조금
-const EVENT_TOUGH = { eclipse: [0.614, 4.256], titan: [4.022, 2.569], fleet: [4.309, 2.515], rift: [3.108, 2.376], demonking: [2.409, 2.942],
-                      train: [3.439, 1.492], masque: [3.466, 2.708], hourglass: [3.308, 1.314] };
+const EVENT_TOUGH = { eclipse: [0.715, 4.256], titan: [4.682, 2.569], fleet: [6.502, 2.515], rift: [3.776, 2.376], demonking: [2.243, 2.942],
+                      train: [4.364, 1.492], masque: [5.23, 2.708], hourglass: [3.381, 1.314] };
 // 4.24: 버프 · 디버프를 몰아 넣은 편성(멀린 · 오딘 · 아서 · 라 · 제갈량 + 북 · 룬 현자 · 사제 · 무당)도 기준에 넣어 다시 맞췄다 — 적 배율이 오르면 보스 체력도 따라 오른다
+// 5.2: 오딘 4진 · 새 3진 다섯을 넣고 하드코어와 같이 다시 맞췄다
 const EVENT_BOSS_HP = 1.6;   // 4.23 도전 보스 체력을 따로 더 (보스가 생각보다 빨리 녹았다) — 잡몹 · 공격은 EVENT_TOUGH 로 맞춘다
 EVENT_STAGES.forEach((st, k) => {
   st.eventIndex = k; st.opening = 'rush';
@@ -2838,6 +2890,14 @@ const EVOLUTIONS = {
   tengjia: { name: '남만 등갑대', short: '등갑대', plus: '갑주 50% · 초당 25 회복', ab: { armor: 0.5, regen: 25 }, cost: { atk: 0.85 } },
   jiqiang: { name: '극병 대장', short: '극병장', plus: '사거리 +12 · 갑주 15%', add: { range: 12 }, ab: { armor: 0.15 }, cost: { atk: 0.9 } },
   camelotguard:{ name: '카멜롯 근위대', short: '근위대', plus: '갑주 22% · 회피 15%', ab: { armor: 0.22, dodge: 0.15 }, cost: { atk: 0.9 } },
+  // 5.2 천일야화
+  genie:   { name: '자유의 마신', short: '자유마신', plus: '소원 +30% · 세 가지 소원 강화 (군자금 +220)', mul: { 'wish.heal': 1.3, 'wish.barrier': 1.3 }, active: { mul: 2.8, gold: 220 }, cost: { atk: 0.88 } },
+  sinbad:  { name: '일곱 바다의 영웅', short: '바다영웅', plus: '회피 30% · 범위 +20 · 로크의 습격 강화', add: { areaRadius: 20 }, ab: { dodge: 0.3 }, active: { mul: 2.9, stun: 1.1 }, cost: { hp: 0.9 } },
+  carpet:  { name: '바람의 양탄자', short: '바람양탄', plus: '원거리 적에게 2.3배 · 사거리 +30', add: { range: 30 }, ab: { hunter: 2.3 }, cost: { hp: 0.88 } },
+  scheherazade:{ name: '천하룻밤의 왕비', short: '이야기왕비', plus: '가속 강화 · 적 공격력 -30%', ab: { haste: { mul: 0.75 }, pacify: { mul: 0.7 } }, cost: { 'ab.interval': 1.12 } },
+  scimitar:{ name: '사막의 검무사', short: '검무사', plus: '치명타 30% · 흡혈 10%', ab: { crit: { chance: 0.3, mul: 2.1 }, lifesteal: 0.1 }, cost: { hp: 0.9 } },
+  camelarcher:{ name: '사막의 명궁 기병', short: '명궁기병', plus: '사거리 +40 · 치명타 20%', add: { range: 40 }, ab: { crit: { chance: 0.2, mul: 2 } }, cost: { interval: 1.1 } },
+  bandit:  { name: '도적단 두목', short: '두목', plus: '금화 확률 25% · 회피 15%', ab: { bounty: { chance: 0.25, gold: 10 }, dodge: 0.15 }, cost: { atk: 0.9 } },
   // 3.0 서유기
   wukong:  { look: { shape: 'wukong_evo', tunic: '#c9a227', accent: '#ffd35a', grow: 1.1 }, name: '투전승불', plus: '분신 최대 6 · 여의봉 강타 강화', ab: { summon: { max: 6 } }, active: { mul: 2.9 }, cost: { atk: 0.85 } },
   nezha:   { name: '삼두육비 나타', short: '삼두육비', plus: '화상 +50% · 혼천릉 강화', mul: { 'burn.dps': 1.5 }, active: { pull: 130, slow: 4 }, cost: { hp: 0.9 } },
@@ -3005,7 +3065,36 @@ const EVOLUTIONS2 = {
              plus: '먹구름을 탄 폭풍신 · 등 뒤의 여덟 머리 큰뱀 그림자 · 천총운검 · 범위 +35 · 갑주 15% · 둔화 1.4초 · 오로치 베기 3.6배',
              add: { areaRadius: 35 }, ab: { slow: 1.4, push: 35, armor: 0.15 },
              active: { mul: 3.6, slow: 6, push: 120, desc: '가장 가까운 적 주변을 천총운검으로 베어 피해 · 6초 둔화 · 크게 밀쳐 냄.' },
-             castFx: 'kusanagi', arrive: 'stormcloud' }
+             castFx: 'kusanagi', arrive: 'stormcloud' },
+  // 5.2 라그나로크의 신화: 만물의 아버지가 여덟 다리 군마 슬레이프니르를 타고 무지개다리를 내려온다
+  odin:    { look: { shape: 'sleipnir', body: '#e2c6a8', tunic: '#26446a', accent: '#8ae8ff', grow: 1.0 }, name: '슬레이프니르 기수', short: '슬레이프니르',
+             plus: '여덟 다리 군마 · 지휘 +50% · 지휘 범위 380 · 사거리 +30 · 보스·중장갑에게 1.4배 · 줄 선 적을 꿰뚫는 궁니르 · 운명의 룬 보호막 520 · 범위 360',
+             add: { range: 30 }, ab: { rally: { atk: 0.5, radius: 380 }, breaker: 1.4 },
+             active: { barrier: 520, radius: 360, desc: '주변 아군에게 큰 보호막 · 중독과 화상 정화. 보호막 중첩 없음.' },
+             shot: 'gungnir', castFx: 'gungnir', arrive: 'bifrost' },
+  // 5.2 등급을 고루: 신화 지니 · 전설 제갈량 · 영웅 도깨비 · 희귀 메두사 · 일반 소총수
+  genie:   { look: { shape: 'djinnking', body: '#3a78e8', tunic: '#2a1a6a', accent: '#ffd24a', grow: 1.0 }, name: '마신왕 지니', short: '마신왕',
+             plus: '네 팔의 마신왕 · 별을 품은 연기 꼬리 · 램프 불꽃 범위 +30 · 사거리 +30 · 소원 강화 (회복 15% · 보호막 220 · 가속 5초) · 세 가지 소원 3.2배 · 1.4초 기절 · 군자금 +300',
+             add: { areaRadius: 30, range: 30 }, ab: { wish: { heal: 0.15, barrier: 220, haste: { mul: 0.7, dur: 5 } } },
+             active: { mul: 3.2, stun: 1.4, gold: 300, ally: { barrier: 320, radius: 340 }, desc: '가장 가까운 적 주변 피해 · 1.4초 기절, 주변 아군 큰 보호막, 군자금 +300.' },
+             shot: 'djinnorb', castFx: 'djinnblast', arrive: 'lamp' },
+  zhugeliang:{ look: { shape: 'bagua', body: '#f0e0c8', tunic: '#f4f0e6', accent: '#ffb04a', grow: 1.0 }, name: '팔진도 와룡', short: '팔진와룡',
+             plus: '사륜거 · 등 뒤의 팔괘 · 칠성등 · 바람 칼날 범위 +25 · 사거리 +30 · 둔화 2초 · 동남풍 3배 · 8초 화상 · 팔진에 가둔 적은 3초 동안 홀려 제 편을 친다 (보스 제외)',
+             add: { areaRadius: 25, range: 30 }, ab: { slow: 2 },   // 범위 공격에 홀림을 얹으면 맞은 적마다 굴려 만렙에서 너무 셌다 — 팔진(필살)에만
+             active: { mul: 3.0, burn: 8, charm: 3, radius: 290, desc: '가장 가까운 적 주변 불바람 피해 · 8초 화상 · 밀쳐 냄 · 팔진에 가둔 적은 3초 홀림 (보스 제외).' },
+             shot: 'fanwind', castFx: 'bagua', arrive: 'bagua' },
+  dokkaebi:{ look: { shape: 'dokkaebiking', body: '#3f7a5a', tunic: '#c8963a', accent: '#ffd24a', grow: 1.0 }, name: '도깨비 대왕', short: '도깨비왕',
+             plus: '금빛 도깨비 방망이 · 도깨비불 · 범위 +25 · 금 나올 확률 55% · 한 번에 +30 · 기절 15%',
+             add: { areaRadius: 25 }, ab: { bounty: { chance: 0.55, gold: 30 }, stun: { chance: 0.15, dur: 0.8 } },
+             castFx: 'goldbat', arrive: 'wisp' },
+  medusa:  { look: { shape: 'gorgon', body: '#6a9a5a', tunic: '#8a6a3a', accent: '#b8ff8a', grow: 1.0 }, name: '석화의 여제', short: '석화여제',
+             plus: '뱀 꼬리 · 머리카락은 쉿쉿대는 뱀 · 청동 거울 방패 · 석화의 시선 범위 80 · 석화 30% (1.6초) · 굳은 적은 받는 피해 +20%',
+             set: { area: true, areaRadius: 80 }, ab: { stun: { chance: 0.3, dur: 1.6 }, sunmark: { vuln: 0.2, dur: 3 }, petrify: true },
+             shot: 'gaze', castFx: 'petrify', arrive: 'snakes' },
+  rifleman:{ look: { shape: 'gatling', tunic: '#5a6b3a', accent: '#ffc24a', grow: 1.0 }, name: '개틀링 사수', short: '개틀링',
+             plus: '손으로 돌리는 놋쇠 개틀링 · 공격 25% 빠름 · 쏠수록 빨라진다 (최대 1.6배) · 치명타 20%',
+             faster: 0.75, ab: { spinup: { per: 0.06, max: 0.6 }, crit: { chance: 0.2, mul: 2 } },
+             shot: 'bullet', castFx: 'bulletpuff', atkFx: 'gatling', arrive: 'gatling' }
 };
 
 /* 4.4 3진의 시련: 레벨 20 · 금화에 더해 병종마다 다른 조건 둘을 채워야 3진할 수 있다.
@@ -3035,7 +3124,14 @@ const EVO2_TRIALS = {
   // 4.25 시즌 신화 셋
   gumiho:   [{ t: 'event', n: 5 }, { t: 'dmg', id: 'gumiho', n: 2500000 }],
   inventor: [{ t: 'endless', n: 22 }, { t: 'series', name: '태엽 공방', ids: ['inventor', 'steammech', 'airship', 'teslaknight'], lv: 22 }],
-  susanoo:  [{ t: 'hard', n: 30 }, { t: 'dmg', id: 'susanoo', n: 3500000 }]
+  susanoo:  [{ t: 'hard', n: 30 }, { t: 'dmg', id: 'susanoo', n: 3500000 }],
+  // 5.2
+  odin:     [{ t: 'hard', n: 20 }, { t: 'series', name: '라그나로크', ids: ['odin', 'thor', 'valkyrie', 'skadi'], lv: 24 }],
+  genie:    [{ t: 'event', n: 5 }, { t: 'dmg', id: 'genie', n: 3000000 }],
+  zhugeliang:[{ t: 'hard', n: 15 }, { t: 'dmg', id: 'zhugeliang', n: 2000000 }],
+  dokkaebi: [{ t: 'perfect', stage: 22 }, { t: 'series', name: '요괴록', ids: ['dokkaebi', 'haetae', 'mudang', 'hwarang'], lv: 20 }],
+  medusa:   [{ t: 'stars', from: 20, to: 30 }, { t: 'series', name: '올림포스', ids: ['medusa', 'spartan', 'hoplite', 'artemis'], lv: 20 }],
+  rifleman: [{ t: 'dmg', id: 'rifleman', n: 800000 }, { t: 'series', name: '태엽 공방', ids: ['rifleman', 'clocksoldier', 'mechanic', 'teslaknight'], lv: 18 }]
 };
 function _trialNum(n) { return n >= 1e6 ? (Math.round(n / 1e5) / 10) + 'M' : n >= 1e4 ? Math.round(n / 1e3) + 'k' : String(Math.round(n)); }
 /* 시련 하나의 진행: { done, text(조건), prog(지금 상태) } */
@@ -3144,11 +3240,19 @@ const EVOLUTIONS3 = {
              plus: '반중력 부양 · 쌍열 플라즈마 포 범위 +30 · 사거리 +60 · 공격 15% 빠름 · 플라즈마 화상 · 보스·중장갑에게 1.5배 · 세 번째 포격마다 미사일 4발 · 갑주 45% · 초당 60 수리',
              add: { areaRadius: 30, range: 60 }, faster: 0.85,
              ab: { armor: 0.45, regen: 60, burn: { dps: 90, dur: 4 }, breaker: 1.5, salvo: { every: 3, n: 4, mul: 0.55, radius: 60 } },
-             shot: 'plasma', castFx: 'plasmablast', atkFx: 'plasmamuzzle', arrive: 'hoverdrop' }
+             shot: 'plasma', castFx: 'plasmablast', atkFx: 'plasmamuzzle', arrive: 'hoverdrop' },
+  // 5.2 오딘: 세계수 앞에 선 만물의 아버지 — 전군을 북돋우고 지키며, 뿌리로 적을 친다
+  odin:    { look: { shape: 'yggodin', body: '#e2c6a8', tunic: '#1a2450', accent: '#ffe08a', grow: 1.05 }, name: '세계수의 만물부', short: '세계수',
+             plus: '등 뒤의 세계수 광배 · 룬 고리 · 지휘 +55% · 지휘 범위 440 · 주변 아군 기절 · 둔화를 풀고 1.5초 기절 면역 · 사거리 +40 · 룬 낙인 (받는 피해 +15%) · 세계수의 심판 3.4배 · 1.6초 정지 · 주변 아군 큰 보호막 · 가속 · 정화',
+             add: { range: 40 }, ab: { rally: { atk: 0.55, radius: 440 }, ward: { dur: 1.5 }, radius: 360, sunmark: { vuln: 0.15, dur: 3 } },
+             active: { name: '세계수의 심판', kind: 'yggdrasil', barrier: 0, mul: 3.4, stun: 1.6, radius: 300, ally: { barrier: 620, haste: { mul: 0.72, dur: 6 }, radius: 440, cleanse: true },
+                       desc: '가장 가까운 적 주변을 세계수의 뿌리로 쳐 큰 피해 · 1.6초 정지, 주변 아군에게 큰 보호막과 6초 가속 · 독 · 화상 정화.' },
+             shot: 'worldrune', castFx: 'yggdrasil', atkFx: 'yggsigil', arrive: 'worldtree' }
 };
 const EVO3_TRIALS = {
   merlin:   [{ t: 'event', n: 6 }, { t: 'dmg', id: 'merlin', n: 6000000 }],
-  catapult: [{ t: 'stars', from: 70, to: 80 }, { t: 'dmg', id: 'catapult', n: 8000000 }]
+  catapult: [{ t: 'stars', from: 70, to: 80 }, { t: 'dmg', id: 'catapult', n: 8000000 }],
+  odin:     [{ t: 'hard', n: 45 }, { t: 'endless', n: 28 }]   // 5.2
 };
 function evo3Trials(s, id) { return (EVO3_TRIALS[id] || []).map(c => Object.assign({ c: c }, trialState(s, c))); }
 function evo3TrialsDone(s, id) { return evo3Trials(s, id).every(x => x.done); }
@@ -3184,7 +3288,7 @@ function growUnit(r, lv) {
   const ab = r.ab;
   if (r.ranged && r.range) r.range = Math.round(r.range * (1 + 0.008 * k));
   if (!ab) return;
-  const support = ab.heal || ab.barrier || ab.haste || ab.cleanse || ab.rally || ab.summon || ab.ward || ab.pacify;
+  const support = ab.heal || ab.barrier || ab.haste || ab.cleanse || ab.rally || ab.summon || ab.ward || ab.pacify || ab.wish;
   if (support && ab.interval) ab.interval = _r2(ab.interval * Math.max(0.7, 1 - 0.02 * k));
   if (ab.radius) ab.radius = Math.round(ab.radius * (1 + 0.015 * k));
   if (ab.haste) ab.haste = { mul: _r2(Math.max(0.5, ab.haste.mul - 0.008 * k)), dur: _r2(ab.haste.dur + 0.1 * k) };
@@ -3226,13 +3330,14 @@ const STAT_LABELS = {
   revive: '부활', chain: '연쇄', summon: '소환', spinup: '예열', weaken: '액막이', sunmark: '낙인',
   reanimate: '해골', range: '사거리', sec: '초', perSec: '/초', times: '번', max: '최대',
   hunter: '사냥', ward: '기절 면역', charge: '돌격', dodge: '회피', feast: '포식', pacify: '독경',
-  armor: '갑주', life: '유지', vanguard: '선봉'
+  armor: '갑주', life: '유지', vanguard: '선봉', wish: '소원'
 };
 function unitRoleStats(r, pw) {
   const ab = r.ab || {}, L = STAT_LABELS, out = [];
   const pct = v => Math.round(v * 100) + '%';
-  const support = ab.heal || ab.barrier || ab.haste || ab.cleanse || ab.rally || ab.summon || ab.ward || ab.pacify;
+  const support = ab.heal || ab.barrier || ab.haste || ab.cleanse || ab.rally || ab.summon || ab.ward || ab.pacify || ab.wish;
   if (ab.heal) out.push([L.heal, Math.round(ab.heal * pw)]);
+  if (ab.wish) out.push([L.wish, pct(ab.wish.heal) + ' · ' + Math.round(ab.wish.barrier * pw) + ' · -' + pct(1 - ab.wish.haste.mul)]);
   if (ab.barrier) out.push([L.barrier, Math.round(ab.barrier * pw)]);
   if (ab.haste) out.push([L.haste, '-' + pct(1 - ab.haste.mul) + ' · ' + ab.haste.dur + L.sec]);
   if (ab.rally) out.push([L.rally, '+' + pct(ab.rally.atk)]);
@@ -3281,7 +3386,7 @@ const HERO_MELEE = { hp: 1.55, armor: 0.3, revive: 0.4, lifesteal: 0.12, vanguar
  *   갑주 +0.1 (최대 0.5). 원래 체력이 아주 큰 근접(만렙 1.5만 이상: 거대 로봇 · 심해 수호자 · 신화 영웅 등)은 그 대가로 공격 −15%.
  * - 탈것 · 날것인데 걸어가는 병사보다 느리던 모습들: 바이크 · 말 · 비행접시 · 근두운 · 위성 등은 모습에 맞게 빠르게 (느려지지는 않는다) */
 const FRONTLINE = { maxBoost: 0.5, refHp: 14000, armor: 0.1, bigHp: 15000, bigAtk: 0.85 };
-const SHAPE_SPEED = { thunderbike: 72, knight_evo: 52, unicorn: 60, ufo: 44, hovertank: 32, solarsat: 38, mechwukong: 66, jetvalk: 80,
+const SHAPE_SPEED = { sleipnir: 64, bagua: 38, djinnking: 36, thunderbike: 72, knight_evo: 52, unicorn: 60, ufo: 44, hovertank: 32, solarsat: 38, mechwukong: 66, jetvalk: 80,
                       icecart: 40, ambulance: 46, azureguan: 48, stormgod: 62, clockforge: 34, skyfox: 40, airship: 40, railgun: 22, megabot: 22, tank: 26, nezha: 100 };
 function frontlineBuild(r) {
   if (r.enemy) return;

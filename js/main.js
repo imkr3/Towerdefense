@@ -3,7 +3,7 @@
  * ======================================================================= */
 
 
-const APP_VERSION = '5.1.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
+const APP_VERSION = '5.2.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
 
 function defaultSave() {
   const lv = {};
@@ -21,7 +21,7 @@ function defaultSave() {
 
 /* 해금된 병종 목록 */
 function unlockedUnits() {
-  const base = ROSTER_UNITS.filter(u => u.unlockStage <= save.cleared + 1);
+  const base = ROSTER_UNITS.filter(u => rosterOpen(save, u));
   const summoned = SEASON_UNITS.filter(u => u.gacha && save.owned[u.id]);
   return base.concat(summoned);
 }
@@ -133,6 +133,10 @@ function normalizeSave(raw) {
     if (!seasonById(s.season)) s.season = 'olympus';
     if (!Array.isArray(s.presets)) s.presets = [];
     s.presets = s.presets.slice(0, 3).map(p => Array.isArray(p) ? p.filter(id => typeof id === 'string' && UNIT_BY_ID[id]).slice(0, LOADOUT_MAX) : []);
+    // 5.2 개발자 모드로 미리 합류한 전장 병종
+    const devUnits = {};
+    if (s.devUnits && typeof s.devUnits === 'object') for (const k in s.devUnits) if (s.devUnits[k] === true && UNIT_BY_ID[k] && !UNIT_BY_ID[k].gacha) devUnits[k] = true;
+    s.devUnits = devUnits;
     s.conquest = conqNormalize(s.conquest);     // 5.0 진행 중인 정벌 (깨졌으면 버린다)
     s.conqRec = conqNormRec(s.conqRec);
     return s;
@@ -961,7 +965,7 @@ let trainSel = null;
 function trainUnits() { return ROSTER_UNITS.concat(SEASON_UNITS.filter(u => u.gacha && save.owned[u.id])); }
 function isSupportUnit(u) {
   const ab = u.ab || {};
-  return !!(ab.heal || ab.barrier || ab.haste || ab.rally || ab.gold || ab.ward || ab.cleanse || ab.noAttack || ab.summon || ab.pacify);
+  return !!(ab.heal || ab.barrier || ab.haste || ab.rally || ab.gold || ab.ward || ab.cleanse || ab.noAttack || ab.summon || ab.pacify || ab.wish);
 }
 /* 이 병종을 지금 키우거나 진화시킬 수 있나 — 타일의 작은 표시와 '키울 수 있음' 분류 */
 function trainReady(u) {
@@ -1010,7 +1014,7 @@ function trainingHeader() {
 }
 
 function allyTile(u) {
-  const unlocked = u.gacha ? true : (u.unlockStage <= save.cleared + 1);
+  const unlocked = u.gacha ? true : rosterOpen(save, u);
   const r = unitFor(save, u.id), lv = save.levels[u.id] || 1, inTeam = save.loadout.includes(u.id);
   const rd = unlocked ? trainReady(u) : null;
   const el = document.createElement('button');
@@ -1105,7 +1109,7 @@ function renderTrainingSort() {
 function buildUnitCard(u) {
   const hardCap = UNIT_LEVEL_HARD_CAP + (save.upgrades.academy || 0);
   const cap = unitLevelCap(save.cleared, save.upgrades.academy);
-    const unlocked = u.gacha ? true : (u.unlockStage <= save.cleared + 1);
+    const unlocked = u.gacha ? true : rosterOpen(save, u);
     const lv = save.levels[u.id] || 1;
     const mul = unitLevelMul(lv);
     const cost = unitTrainCost(u, lv);
@@ -1951,7 +1955,7 @@ let trialSnap = null;
 function trialWatched(id) {
   const u = UNIT_BY_ID[id];
   if (!u || (save.evo2 && save.evo2[id] !== undefined)) return false;
-  return u.gacha ? !!(save.owned && save.owned[id]) : u.unlockStage <= save.cleared + 1;
+  return u.gacha ? !!(save.owned && save.owned[id]) : rosterOpen(save, u);
 }
 function trialSnapshot() {
   const m = {};
@@ -2088,7 +2092,7 @@ function showEndlessResult() {
 let bossMusic = false, bossMusicT = 0, endlessTrack = 'endless', endlessCalm = 0, endlessPre = 0, endlessSeq = 0;
 /* 3.5: 화면 주사율이 90·120Hz 인 폰은 requestAnimationFrame 이 그만큼 자주 와서
  * 같은 장면을 두 배로 그리느라 뜨거워졌다. 60fps(절전은 30fps)로 묶는다. */
-const FRAME_MIN_MS = { auto: 14, high: 14, low: 30 };
+const FRAME_MIN_MS = { hq: 14, auto: 14, high: 14, low: 30 };
 const IDLE_FRAME_MS = 48;      // 멈춤·결과 화면처럼 거의 움직이지 않을 때 (약 20fps)
 const OVER_FRAME_MS = 80;      // 3.16: 전투가 끝나 결과창을 읽는 동안 (약 12fps) — 뒤에선 승리한 병사만 뛴다
 const CROWD_FRAME_MS = 30;     // 3.12: 자동 품질에서 병사가 빽빽할 때 (약 30fps) — 발열이 가장 심한 순간
@@ -2227,6 +2231,23 @@ function initDevMode() {
       saveGame(save);
       refreshTitleBadges();
       toast('모든 전장을 열었습니다');
+    });
+  });
+  // 5.2 모든 캐릭터 해금: 소환 영웅을 모두 손에 넣고, 아직 전장을 못 넘어 잠긴 병종도 합류시킨다 (전장 진행 · 별은 그대로)
+  $('#dev-units').addEventListener('click', () => {
+    const missing = UNITS.filter(u => u.cost > 0 && (u.gacha ? !save.owned[u.id] : u.unlockStage > save.cleared + 1 && !(save.devUnits && save.devUnits[u.id])));
+    if (!missing.length) { toast('이미 모든 캐릭터가 합류해 있습니다'); return; }
+    askConfirm('모든 캐릭터 해금', '소환 영웅 · 전장 병종 ' + missing.length + '종을 모두 합류시킵니다. 레벨 · 진화 · 전장 진행은 그대로입니다.', () => {
+      if (!save.devUnits || typeof save.devUnits !== 'object') save.devUnits = {};
+      for (const u of missing) {
+        if (u.gacha) { save.owned[u.id] = true; if (!save.levels[u.id]) save.levels[u.id] = 1; }
+        else save.devUnits[u.id] = true;
+      }
+      syncLoadout();
+      saveGame(save);
+      refreshTitleBadges();
+      toast('캐릭터 ' + missing.length + '종이 합류했습니다');
+      SFX.levelUp();
     });
   });
 }
