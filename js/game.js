@@ -2322,12 +2322,6 @@ class Battle {
     for (const s of this.pending) {
       // 5.3 수르트의 불꽃 검: 치켜든 동안 기절시키면 끊긴다
       if (s.inferno && s.src && (s.src.dead || s.src.stunT > 0)) { s.done = quiet = true; if (!s.src.dead) this.infernoBroken(s.src); continue; }
-      // 5.5 돌진: 힘을 모으는 동안 기절하면 끊긴다 (불꽃 검과 같이)
-      if (s.charge && s.src && !s.src.dead && s.src.stunT > 0) {
-        s.done = quiet = true; s.src.windT = 0;
-        for (const e of this.fx) if (e.type === 'chargeline' && e.row === s.row && e.x2 === s.x) e.t = 0;
-        continue;
-      }
       s.t -= dt;
       if (s.t > 0) continue;
       if (s.erupt) { s.done = landed = true; this.eruptLand(s); continue; }
