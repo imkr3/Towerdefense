@@ -728,8 +728,13 @@ class Battle {
     return this.allies.find(f=>!f.dead && !f.summoned && f.s.id===id) || null;
   }
   heroTarget(f) {
-    return this.enemies.filter(e=>!e.dead && Math.abs(e.x-f.x)<=f.attackRange+180)
-      .sort((a,b)=>Math.abs(a.x-f.x)-Math.abs(b.x-f.x))[0] || null;
+    let best = null, bd = f.attackRange + 180;
+    for (const e of this.enemies) {
+      if (e.dead) continue;
+      const d = Math.abs(e.x - f.x);
+      if (d < bd || (d === bd && !best)) { best = e; bd = d; }
+    }
+    return best;
   }
   canHeroActive(id) {
     const f=this.heroCaster(id), u=this.stats(id);
@@ -1571,6 +1576,7 @@ class Battle {
       if (f.kbTimer > 0) {
         f.kbTimer -= dt;
         if (f.flyT > 0) { f.flyT -= dt; f.x -= f.dir * f.flyV * dt; } else f.x -= f.dir * 150 * dt;
+        if (f.kbTimer <= 0) f.flyT = 0;     // 5.5: 날아가다 짧은 넉백에 덮이면 남은 비행 시간이 다음 넉백을 멀리 날렸다
         f.x = Math.max(60, Math.min(WORLD - 60, f.x));
         this.holdLine(f);
         continue;
@@ -1715,7 +1721,7 @@ class Battle {
       const w = f.wishN = ((f.wishN === undefined ? -1 : f.wishN) + 1) % 3, W = ab.wish;
       for (const m of mates) {
         if (m.dead || Math.abs(m.x - f.x) > ab.radius) continue;
-        if (w === 0) { if (m !== f) { const filled = m.heal(m.maxHp * W.heal); if (filled > 0) { const row = this.meterRow(f); row.heal = (row.heal || 0) + filled; } } }
+        if (w === 0) { if (m !== f) { const filled = m.heal(m.maxHp * W.heal); if (isAlly && filled > 0) { const row = this.meterRow(f); row.heal = (row.heal || 0) + filled; } } }
         else if (w === 1) m.giveBarrier(W.barrier * f.abMul);
         else if (m !== f) { m.hasteMul = m.hasteT > 0 ? Math.min(m.hasteMul, W.haste.mul) : W.haste.mul; m.hasteT = Math.max(m.hasteT, W.haste.dur); }
       }
@@ -2316,6 +2322,12 @@ class Battle {
     for (const s of this.pending) {
       // 5.3 수르트의 불꽃 검: 치켜든 동안 기절시키면 끊긴다
       if (s.inferno && s.src && (s.src.dead || s.src.stunT > 0)) { s.done = quiet = true; if (!s.src.dead) this.infernoBroken(s.src); continue; }
+      // 5.5 돌진: 힘을 모으는 동안 기절하면 끊긴다 (불꽃 검과 같이)
+      if (s.charge && s.src && !s.src.dead && s.src.stunT > 0) {
+        s.done = quiet = true; s.src.windT = 0;
+        for (const e of this.fx) if (e.type === 'chargeline' && e.row === s.row && e.x2 === s.x) e.t = 0;
+        continue;
+      }
       s.t -= dt;
       if (s.t > 0) continue;
       if (s.erupt) { s.done = landed = true; this.eruptLand(s); continue; }
@@ -2787,10 +2799,11 @@ class Battle {
   }
 
   updateShots(dt) {
+    let anyDone = false;
     for (const s of this.shots) {
       s.t += dt;
       if (s.t < s.dur) continue;
-      s.done = true;
+      s.done = anyDone = true;
       const ab = (s.src && s.src.ab) || {};
       const foes = this.foesOf(s.side);
       const castle = this.castleOf(s.side);
@@ -2812,15 +2825,25 @@ class Battle {
       if (hit) this.hitOne(s.dmg, hit, s.src, s.crit);
       this.fx.push({ type: s.crit ? 'crit' : 'hit', x: hit ? hit.x : s.tx, row: hit ? (hit.row ?? s.y0) : s.y0, dir: s.dir, t: 0.22, life: 0.22, sty: 'shoot', color: s.color });
     }
-    this.shots = this.shots.filter(s => !s.done);
+    if (anyDone) this.shots = this.shots.filter(s => !s.done);
   }
 
   updateFx(dt) {
-    for (const e of this.fx) e.t -= dt;
-    this.fx = this.fx.filter(e => e.t > 0);
-    if (this.fx.length > FX_LIMIT) this.fx.splice(0, this.fx.length - FX_LIMIT);
-    this.dmgFxCount = 0;
-    for (const e of this.fx) if (e.type === 'dmg') this.dmgFxCount++;
+    // 5.5: 매 프레임 새 배열을 만들지 않고 제자리에서 줄인다
+    const fx = this.fx;
+    let n = 0, dmg = 0;
+    for (let i = 0; i < fx.length; i++) {
+      const e = fx[i];
+      e.t -= dt;
+      if (e.t > 0) { fx[n++] = e; if (e.type === 'dmg') dmg++; }
+    }
+    fx.length = n;
+    if (n > FX_LIMIT) {
+      fx.splice(0, n - FX_LIMIT);
+      dmg = 0;
+      for (const e of fx) if (e.type === 'dmg') dmg++;
+    }
+    this.dmgFxCount = dmg;
     if (this.state !== 'play') this.resultTime = (this.resultTime || 0) + dt;
   }
 
