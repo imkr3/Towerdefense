@@ -2263,4 +2263,22 @@ test('5.4: dev mode evolves every unit to its top form, maxes levels and upgrade
   assert.ok(/\[1, 2, 3, 5\]\.indexOf\(raw\.speed\)/.test(fs.readFileSync(path.join(__dirname, '../js/settings.js'), 'utf8')), 'settings keep x5');
 });
 
+test('5.5: leftover flight time no longer throws a later knockback far; a stun breaks a boss charge; an enemy genie heals off the record', () => {
+  const b = battle(); b.update(1 / 30);
+  const a = b.makeAlly(U.knight, 600); b.allies.push(a);
+  a.flyT = 0.6; a.flyV = 1500; a.kbTimer = 0.05;              // 보스 등장 충격파 도중 짧은 넉백에 덮였다
+  for (let i = 0; i < 4; i++) b.step(b.allies, b.enemies, b.enemyCastle, 1 / 30, true);
+  assert.equal(a.flyT, 0, 'flight ends with the knockback');
+  a.kbTimer = 0.42; const x0 = a.x;
+  for (let i = 0; i < 13; i++) b.step(b.allies, b.enemies, b.enemyCastle, 1 / 30, true);
+  assert.ok(Math.abs(a.x - x0) < 70, 'ordinary knockback distance: ' + Math.abs(a.x - x0));
+  const boss = b.spawnEnemy('troll', 900); boss.ab = Object.assign({}, boss.ab, { unshakable: false, stunImmune: false });
+  boss.stunImm = 0; boss.stunT = 0; b.bossAct(boss, { t: 'charge', dist: 300, warn: 1.2 });
+  assert.ok(b.pending.some(p => p.charge));
+  boss.stunT = 1; b.updatePending(1 / 30);
+  assert.ok(!b.pending.some(p => p.charge && !p.done) && boss.windT === 0, 'the charge is broken');
+  const g = fs.readFileSync(path.join(__dirname, '../js/game.js'), 'utf8');
+  assert.ok(/if \(isAlly && filled > 0\) \{ const row = this\.meterRow\(f\)/.test(g), 'wish healing only credits allies');
+});
+
 console.log(count + ' regression checks passed');

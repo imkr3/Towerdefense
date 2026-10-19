@@ -11252,6 +11252,7 @@ const _fill0 = CanvasRenderingContext2D.prototype.fill;
 const _stroke0 = CanvasRenderingContext2D.prototype.stroke;
 /* 굵고 불투명한 선(팔다리·무기 자루·바퀴)은 잉크를 한 겹 밑에 깐다 */
 function inkedStroke(a) {
+  if (!this._depth && (this._noInk || this._skipInk)) return _stroke0.apply(this, arguments);   // 5.5: 그림자 · 잉크 둘 다 없으면 캔버스 상태를 읽지 않는다
   // 4.2: 반투명 빛·'lighter' 합성에는 그림자를 끈다 — 그림자 밑에 깔린 빛은 보이지도 않는데,
   // 반투명 + 그림자는 브라우저가 따로 층을 만들어 합성해야 해서 모양 하나에 수 ms 씩 들었다
   if (this._depth && (this.globalAlpha < 0.9 || this.globalCompositeOperation !== 'source-over')) {
@@ -11293,6 +11294,7 @@ function shadedFillText() {
   _fillText0.apply(this, arguments);
 }
 function inkedFill(a) {
+  if (!this._depth && (this._noInk || this._skipInk)) return _fill0.apply(this, arguments);     // 5.5: 위와 같이
   if (this._depth && shadowless(this)) {
     const sc = this.shadowColor; this.shadowColor = 'transparent'; _fill0.apply(this, arguments); this.shadowColor = sc;
     return;                                          // 반투명·그라디언트에는 잉크 테두리도 없다
@@ -11312,10 +11314,12 @@ function inkedFill(a) {
   this.strokeStyle = ss; this.lineWidth = lw;
 }
 const MODEL = { depth: true, ink: true, blink: false, time: 0, angry: false };
-const _shadeCache = {};
+const _shadeCache = new Map();               // 5.5: 색 → (k → 결과). 매번 열쇠 글자를 만들지 않는다
 function shade(hex, k) {                     // k<0 어둡게, k>0 밝게
-  const key = hex + k;
-  if (_shadeCache[key]) return _shadeCache[key];
+  let byK = _shadeCache.get(hex);
+  if (!byK) _shadeCache.set(hex, byK = new Map());
+  const hit = byK.get(k);
+  if (hit !== undefined) return hit;
   let out = hex;
   const m = /^#([0-9a-f]{6})$/i.exec(hex || '');
   if (m) {
@@ -11323,7 +11327,8 @@ function shade(hex, k) {                     // k<0 어둡게, k>0 밝게
     const f = c => Math.max(0, Math.min(255, Math.round(k < 0 ? c * (1 + k) : c + (255 - c) * k)));
     out = 'rgb(' + f(n >> 16) + ',' + f((n >> 8) & 255) + ',' + f(n & 255) + ')';
   }
-  return (_shadeCache[key] = out);
+  byK.set(k, out);
+  return out;
 }
 /* 잉크 밑칠을 깐 선 */
 function inkStroke(S, w) {          // 잉크는 drawBody 가 선마다 자동으로 깐다
@@ -11410,7 +11415,7 @@ function torso(S, lw) {
   ctx.moveTo(-width * .8, -41 * s); ctx.lineTo(width * .8, -41 * s);
   ctx.lineTo(width, -19 * s); ctx.lineTo(-width, -19 * s); ctx.closePath(); ctx.fill();
   if (!S.flash) {
-    const sc = ctx.shadowColor; ctx.shadowColor = 'transparent';
+    const sc = ctx._depth ? ctx.shadowColor : null; if (sc !== null) ctx.shadowColor = 'transparent';
     ctx.fillStyle = 'rgba(0,0,0,.2)';                          // 등 쪽 그늘
     ctx.beginPath();
     ctx.moveTo(-width * .8, -41 * s); ctx.lineTo(-width * .15, -41 * s);
@@ -11420,7 +11425,7 @@ function torso(S, lw) {
     ctx.fillStyle = shade(S.acc, -0.1);                          // 옷깃
     ctx.beginPath(); ctx.moveTo(-width * .55, -41 * s); ctx.lineTo(width * .55, -41 * s);
     ctx.lineTo(0, -36.5 * s); ctx.closePath(); ctx.fill();
-    ctx.shadowColor = sc;
+    if (sc !== null) ctx.shadowColor = sc;
   }
   ctx.fillStyle = S.flash ? '#fff' : '#353d43';
   ctx.fillRect(-width, -25 * s, width * 2, 3 * s);
@@ -11569,7 +11574,7 @@ function robe(S, w, top, color) {
   ctx.lineTo(w + sway, 0); ctx.quadraticCurveTo(sway * 0.5, 2.5 * s, -w + sway * 1.3, 0);
   ctx.closePath(); ctx.fill();
   if (!S.flash) {
-    const sc = ctx.shadowColor; ctx.shadowColor = 'transparent';
+    const sc = ctx._depth ? ctx.shadowColor : null; if (sc !== null) ctx.shadowColor = 'transparent';
     ctx.fillStyle = 'rgba(0,0,0,.2)';                       // 등 쪽 그늘
     ctx.beginPath(); ctx.moveTo(0, top); ctx.lineTo(-w * 0.1, 1 * s); ctx.lineTo(-w, 0); ctx.closePath(); ctx.fill();
     ctx.strokeStyle = 'rgba(0,0,0,.18)'; ctx.lineWidth = 1.2 * s;   // 주름
@@ -11577,7 +11582,7 @@ function robe(S, w, top, color) {
     ctx.moveTo(w * .12, top * .5); ctx.lineTo(w * .28, -1 * s); ctx.stroke();
     ctx.strokeStyle = shade(S.acc, -0.05); ctx.lineWidth = 1.8 * s;  // 밑단 장식
     ctx.beginPath(); ctx.moveTo(w * 0.94, -1.6 * s); ctx.quadraticCurveTo(0, 0.9 * s, -w * 0.94, -1.6 * s); ctx.stroke();
-    ctx.shadowColor = sc;
+    if (sc !== null) ctx.shadowColor = sc;
   }
   ctx.strokeStyle = S.flash ? '#fff' : '#ffffff35'; ctx.lineWidth = 1.5 * s;
   ctx.beginPath();ctx.moveTo(0, top + 5 * s);ctx.lineTo(w * .35, -4 * s);ctx.stroke();
@@ -11606,11 +11611,11 @@ function shieldShape(S, x, y, w, h, color) {
   ctx.lineWidth = 1.6 * s;
   ctx.stroke();
   if (!S.flash) {                                          // 방패 면의 빛과 그늘
-    const sc = ctx.shadowColor; ctx.shadowColor = 'transparent';
+    const sc = ctx._depth ? ctx.shadowColor : null; if (sc !== null) ctx.shadowColor = 'transparent';
     ctx.fillStyle = 'rgba(255,255,255,.18)';
     ctx.beginPath(); ctx.moveTo(x + 1.5 * s, y + 2 * s); ctx.lineTo(x + w * 0.5, y + 3 * s);
     ctx.lineTo(x + w * 0.5, y + h * 0.9); ctx.lineTo(x + 1.5 * s, y + h * 0.7); ctx.closePath(); ctx.fill();
-    ctx.shadowColor = sc;
+    if (sc !== null) ctx.shadowColor = sc;
   }
   ctx.strokeStyle = S.flash ? '#fff' : '#e8d4a0';ctx.lineWidth = 2 * s;
   ctx.beginPath();ctx.moveTo(x + w * .5, y + h * .2);ctx.lineTo(x + w * .5, y + h * .74);
@@ -11744,12 +11749,12 @@ function head(S, type, radius) {
   ctx.fillStyle = S.col;
   ctx.beginPath(); ctx.arc(0, cy, r, 0, 7); ctx.fill();
   if (!S.flash) {
-    const sc = ctx.shadowColor; ctx.shadowColor = 'transparent';
+    const sc = ctx._depth ? ctx.shadowColor : null; if (sc !== null) ctx.shadowColor = 'transparent';
     ctx.fillStyle = 'rgba(0,0,0,.22)';                        // 뒤통수 그늘
     ctx.beginPath(); ctx.arc(0, cy, r, Math.PI * 0.55, Math.PI * 1.45); ctx.arc(r * 0.35, cy, r * 0.8, Math.PI * 1.35, Math.PI * 0.65, true); ctx.fill();
     ctx.fillStyle = 'rgba(255,255,255,.2)';                   // 이마 빛
     ctx.beginPath(); ctx.ellipse(r * 0.28, cy - r * 0.45, r * 0.38, r * 0.22, -0.5, 0, 7); ctx.fill();
-    ctx.shadowColor = sc;
+    if (sc !== null) ctx.shadowColor = sc;
   }
   ctx.fillStyle = S.acc;
   ctx.strokeStyle = S.acc;
@@ -12095,7 +12100,7 @@ function head(S, type, radius) {
   }
   // 2.8: 얼굴이 가려지지 않는 머리에 눈을 그린다. 투구는 눈구멍에 빛만.
   if (!S.flash && HEAD_EYES[type]) {
-    const sc = ctx.shadowColor; ctx.shadowColor = 'transparent';
+    const sc = ctx._depth ? ctx.shadowColor : null; if (sc !== null) ctx.shadowColor = 'transparent';
     const ex = r * 0.5, ey = cy + r * 0.02;
     ctx._skipInk = true;
     if (MODEL.blink && S.live) {                          // 깜빡
@@ -12112,7 +12117,7 @@ function head(S, type, radius) {
       ctx.beginPath(); ctx.moveTo(ex - 2.4 * s, ey - 3.4 * s); ctx.lineTo(ex + 2.2 * s, ey - 2 * s); ctx.stroke();
     }
     ctx._skipInk = false;
-    ctx.shadowColor = sc;
+    if (sc !== null) ctx.shadowColor = sc;
   } else if (!S.flash && HEAD_VISOR[type]) {
     ctx.fillStyle = 'rgba(255,240,200,.75)';
     ctx.fillRect(r * 0.35, cy + (type === 'greathelm' ? 2.4 : 1.2) * s, 3.4 * s, 1.3 * s);
