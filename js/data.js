@@ -1957,7 +1957,7 @@ STAGES.push(
     W(12,'salamander',4,1.2),W(24,'lavawyrm',1),W(48,'magmaling',8,.45),W(74,'ashcaster',2,3),W(100,'salamander',6,1),W(128,'cinderbat',8,.45),W(156,'magmaling',10,.4),W(186,'salamander',7,.9)]},
   {name:'흑요석 협곡',hint:'흑요석 거인은 단단하고 때린 근접에게 되돌려 줍니다 · 파쇄와 서리로',opening:'calm',baseHp:410000,money:890,rate:115,reward:14200,enemyMul:27.5,mods:['ironclad'],waves:[
     W(12,'salamander',5,1.1),W(22,'obsidian',1),W(46,'magmaling',8,.45),W(72,'obsidian',2,4),W(98,'ashcaster',2,3),W(124,'salamander',6,1),W(150,'obsidian',2,4),W(178,'magmacannon',2,3),W(208,'salamander',7,.9)]},
-  {name:'불티 동굴',hint:'불티 박쥐 떼가 몰려옵니다 · 범위 공격으로 한꺼번에',baseHp:400000,money:895,rate:116,reward:14400,enemyMul:165,mods:['horde'],waves:[
+  {name:'불티 동굴',hint:'불티 박쥐 떼가 몰려옵니다 · 범위 공격으로 한꺼번에',baseHp:400000,money:895,rate:116,reward:14400,enemyMul:125,mods:['horde'],waves:[
     W(12,'cinderbat',8,.4),W(22,'magmaling',6,.5),W(44,'cinderbat',10,.35),W(68,'salamander',5,1.1),W(94,'cinderbat',12,.3),W(120,'ashcaster',2,3),W(146,'cinderbat',14,.3),W(174,'magmaling',10,.4),W(204,'cinderbat',16,.3)]},
   {name:'★ 불사조의 둥지',hint:'불사조는 재에서 한 번 다시 날아오릅니다 · 깃털 예고를 피하고 두 번째 날개짓에 필살을 아끼세요',baseHp:290000,money:905,rate:117,reward:15200,boss:true,enemyMul:33,waves:[
     W(12,'cinderbat',8,.4),W(26,'phoenix',1),W(50,'salamander',5,1.1),W(76,'magmaling',8,.45),W(104,'ashcaster',2,3),W(132,'cinderbat',10,.35),W(162,'salamander',7,.9),W(194,'magmacannon',2,3)]},
@@ -2338,7 +2338,7 @@ const HARD_TUNE = [
   9.6, 7.75, 5.4, 10.5, 8.23, 9.26, 4.76, 4.66, 7.66, 6.83,   // 51~60
   5.03, 4.33, 5.73, 3.13, 6.57, 6.85, 2.12, 2.61, 3.82, 5.31,   // 61~70
   5.26, 2.95, 3.28, 2.42, 3.35, 3.99, 2.99, 5.11, 2.54, 4.73,   // 71~80
-  3.69, 3.37, 3.56, 6.25, 1.05, 4.37, 3.76, 3.43, 1.56, 5.58   // 81~90
+  3.69, 3.37, 3.56, 6.25, 1.39, 4.37, 3.76, 3.43, 1.56, 5.58   // 81~90
 ];
 STAGES.forEach((st, i) => { st.hardTune = HARD_TUNE[i]; });
 /* 4.23 하드코어 보스 전장의 보스 체력 배율 (전장 번호 → hardBoss). 보스 체력을 4.22 의 1.6배로 올리고(HARDCORE.boss.hp 2 → 3.2)
