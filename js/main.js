@@ -3,7 +3,7 @@
  * ======================================================================= */
 
 
-const APP_VERSION = '5.2.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
+const APP_VERSION = '5.3.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
 
 function defaultSave() {
   const lv = {};
@@ -370,6 +370,7 @@ const CHAPTERS = [
   { name: '6막', sub: '잊힌 밀림', from: 50, to: 60 },
   { name: '7막', sub: '홀린 요정 숲', from: 60, to: 70 },
   { name: '8막', sub: '모래폭풍 사막', from: 70, to: 80 },
+  { name: '9막', sub: '불의 산맥', from: 80, to: 90 },   // 5.3
   { name: '정벌', sub: '로그라이크 원정', conquest: true },   // 5.0
   { name: '무한', sub: '끝없는 웨이브', endless: true },
   { name: '원정', sub: '금화 원정', expedition: true },

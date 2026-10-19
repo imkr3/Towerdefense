@@ -150,7 +150,7 @@ function glfxDowngrade(src) {
 /* 5.2 고퀄 덧칠 계열 (없는 연출은 덧칠하지 않는다) */
 const GLFX_HQ_CAT = {};
 for (const [cat, kinds] of Object.entries({
-  fire: 'firestorm firering shellblast plasmablast missilehit solarburn eastwind rocketpunch burst dronestrike starfall',
+  fire: 'firestorm firering shellblast plasmablast missilehit solarburn eastwind rocketpunch burst dronestrike starfall eruption',
   bolt: 'lightning tesla teslacoil boltstrike storm railhit kusanagi',
   light: 'holy pillar excalibur astral runes holoburst laserhit sabercut divestrike slash dragonslash dragonblade inkslash ufoburst gungnir runeveil',
   ice: 'iceburst snowburst',
@@ -628,6 +628,22 @@ class GLFx {
         break;
       }
 
+      /* 5.3 분화: 좁은 용암 기둥이 높이 솟고, 돌덩이와 불똥이 포물선으로 떨어진다 */
+      case 'eruption': {
+        for (let i = 0, n = N(150); i < n; i++) {
+          this.add(x + rnd(-R, R) * 0.25, y - rnd(0, 30) * sc, rnd(-50, 50), rnd(-560, -320) * sc,
+                   rnd(0.5, 1.0), rnd(12, 28) * sc * big, rnd(2, 5) * sc,
+                   i % 3 ? col : white, 1, 1, 0, rnd(-3, 3), 520, 1.4);
+        }
+        for (let i = 0, n = N(40); i < n; i++) {        // 돌덩이 (어둡게, 무겁게 떨어진다)
+          this.add(x + rnd(-20, 20) * sc, y - rnd(20, 60) * sc, rnd(-220, 220) * sc, rnd(-460, -260) * sc,
+                   rnd(0.7, 1.1), rnd(5, 9) * sc, 1, '#5a2a1a', 0.95, 1, 0, 0, 900, 1);
+        }
+        for (let i = 0, n = N(36); i < n; i++) {        // 바닥에 번지는 용암
+          this.add(x + rnd(-R, R), y + rnd(-4, 4), 0, 0, rnd(0.3, 0.7), rnd(40, 90) * sc, 10 * sc, col, 0.75, 1.6, 0, 0, 0, 1.2);
+        }
+        break;
+      }
       /* 치솟는 불길 */
       case 'firestorm': {
         for (let i = 0, n = N(200); i < n; i++) {

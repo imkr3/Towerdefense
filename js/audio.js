@@ -94,6 +94,8 @@ const SFX = {
   arrow:    function () { this.tone(1200, 0.06, 'triangle', 0.09, 500); },
   boom:     function () { this.noise(0.34, 700, 0.34); this.tone(90, 0.3, 'sine', 0.22, 40); },
   die:      function () { this.tone(300, 0.14, 'sawtooth', 0.12, 90); },
+  // 5.3 9막 분화: 땅이 갈라지는 낮은 울림
+  quake:    function () { this.noise(0.7, 260, 0.3); this.tone(55, 0.6, 'sine', 0.24, 32); },
   bossDie:  function () { this.noise(0.6, 500, 0.4); this.tone(150, 0.5, 'sawtooth', 0.25, 45); },
   bossIn:   function () { this.tone(120, 0.5, 'sawtooth', 0.26, 260); this.noise(0.5, 400, 0.24); },
   levelUp:  function () { [523, 659, 784].forEach((f, i) =>
@@ -1035,6 +1037,46 @@ const BGM_STYLES = {
     if (I >= 3 && (x.s === 4 || x.s === 12)) B.snare(x.t, 0.55);
     if (I >= 3 && B.pat('...x.......x..x.', x.s)) B.chordNotes(c, 12, false).forEach(n => B.note('horn', n, x.t, d * 1.2, 0.4));
     if (x.last) B.roll(x, I >= 3 ? 'snare' : 'timp', 12, 15, r - 12);
+  },
+  /* 5.3 9막 '불의 산맥': 무거운 북 · 모루 소리 · 낮은 금관 오스티나토 · 끓어오르는 현 */
+  magma: function (B, x) {
+    const c = x.chord, r = c.root, d = x.dt, I = x.int, t3 = c.iv[1], t5 = c.iv[2];
+    if (x.s === 0) {
+      B.note('pad', r, x.t, 16 * d, 0.8); B.note('pad', r + 7, x.t, 16 * d, 0.6);
+      if (I >= 2) B.chordNotes(c, 12, true).forEach(n => B.note('pad', n, x.t, 16 * d, 0.4));
+      if (I >= 3) B.chordNotes(c, 12, false).forEach(n => B.note('choir', n + 12, x.t, 16 * d, 0.5));
+      if (x.first && I >= 2) B.crash(x.t, 0.6);
+    }
+    if (x.s === 0 || x.s === 10) B.taiko(x.t, x.s === 0 ? 1 : 0.8);
+    else if (x.s === 6 || (I >= 2 && x.s === 14)) B.taiko(x.t, 0.55);
+    if (x.s === 4 || x.s === 12) B.note('bell', r + 24 + (x.s === 12 ? t5 : 0), x.t, d * 1.2, I >= 2 ? 0.45 : 0.3);   // 모루
+    if (B.pat('x..x..x.x..x..x.', x.s)) B.note('lowbrass', r - 12 + [0, 0, 0, 1, 0, 0, t5, 0, 0, 0, 0, 1, 0, 0, 12, 0][x.s], x.t, d * 2.2, x.s % 8 === 0 ? 1 : 0.7);
+    if (x.s === 0 || x.s === 8) B.note('bass', r - 12, x.t, d * 6, 0.9);
+    if (I >= 2 && x.s % 2 === 0) B.note('lowstr', r + [0, t3, t5, 12, t5, t3, 0, 1][(x.s >> 1) % 8], x.t, d * 1.6, 0.42);
+    if (I >= 2 && (x.s === 4 || x.s === 12)) B.snare(x.t, 0.5);
+    if (I >= 3 && x.s % 2 === 1) B.hat(x.t, 0.35);
+    if (I >= 3 && B.pat('...x.......x..x.', x.s)) B.chordNotes(c, 12, false).forEach(n => B.note('horn', n, x.t, d * 1.2, 0.42));
+    if (x.last) B.roll(x, I >= 3 ? 'snare' : 'timp', 12, 15, r - 12);
+  },
+  /* 5.3 도전 '무스펠의 불꽃 거인': 화산 메탈 — 두 발 킥 · 낮게 깔린 기타 · 모루 · 금관 찌르기 */
+  magmarush: function (B, x) {
+    const c = x.chord, r = c.root, d = x.dt, I = x.int, t3 = c.iv[1], t5 = c.iv[2];
+    const pw = [r - 12, r - 5, r];
+    if (x.s === 0) {
+      B.chordNotes(c, 12, true).forEach(n => B.note('pad', n, x.t, 16 * d, 0.35));
+      if (I >= 3) B.chordNotes(c, 12, false).forEach(n => B.note('choir', n + 12, x.t, 16 * d, 0.5));
+      if (x.first) { B.crash(x.t, 1); B.gong(x.t, 0.45); }
+      else if (I >= 2 && x.bar % 2 === 0) B.crash(x.t, 0.65);
+    }
+    if (x.s % 2 === 0 || (I >= 3 && B.pat('...x...x...x...x', x.s))) B.kick(x.t, x.s % 4 === 0 ? 1 : 0.75);
+    if (x.s === 4 || x.s === 12) B.snare(x.t, 1);
+    B.hat(x.t, x.s % 4 === 2 ? 0.9 : 0.45);
+    if (x.s === 8 && I >= 2) B.note('bell', r + 24, x.t, d, 0.4);
+    B.note('sbass', r - 12 + (x.s === 14 ? 1 : 0), x.t, d * 0.9, x.s % 4 === 0 ? 1 : 0.7);
+    if (B.pat('x.x.xx.x.x.xx.x.', x.s)) pw.forEach(n => B.note('gtr', n + (x.s === 13 ? 1 : 0), x.t, (x.s % 8 === 0 ? 2 : 0.7) * d, x.s % 8 === 0 ? 1 : 0.75));
+    if (I >= 2 && B.pat('x...x...x.x.x...', x.s)) B.note('synlead', r + 24 + [0, 0, 0, 0, t3, 0, 0, 0, t5, 0, 12, 0, t5, 0, 0, 0][x.s], x.t, d * 0.9, I >= 3 ? 0.45 : 0.32);
+    if (I >= 2 && B.pat('..x.....x.x...x.', x.s)) { B.chordNotes(c, 12, false).forEach(n => B.note('horn', n, x.t, d, 0.5)); B.note('trumpet', r + 24 + t5, x.t, d, 0.5); }
+    if (x.last) B.roll(x, 'snare', 12, 15);
   },
   /* 4.15 도전 '파라오의 모래시계': 사막 록 — 네 박 킥 · 16분 다르부카 · 반음 꺾이는 신스 베이스 · 기타 · 히자즈 아르페지오 · 금관 찌르기 */
   sandrush: function (B, x) {

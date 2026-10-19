@@ -347,7 +347,7 @@ const POWER_DECKS = {
   core: ['mage', 'colossus', 'thor', 'ra', 'odin', 'merlin', 'herald', 'runeseer', 'priest', 'mudang'],
   debuff: ['ra', 'merlin', 'odin', 'guanyu', 'susanoo', 'frost', 'mudang', 'alchemist', 'anchorguard', 'priest']
 };
-const HARD_FULL = { up: 10, lv: 30, stages: [1, 10, 18, 27, 36, 45, 53, 63, 70, 80], decks: ['buff', 'core', 'debuff', 'combo', 'rec'], min: 0, max: 7, sumMin: 0.15, sumMax: 0.5 };
+const HARD_FULL = { up: 10, lv: 30, stages: [1, 10, 18, 27, 36, 45, 53, 63, 70, 80, 85, 90], decks: ['buff', 'core', 'debuff', 'combo', 'rec'], min: 0, max: 7, sumMin: 0.15, sumMax: 0.5 };
 const EVENT_FULL = { up: 10, lv: 30, decks: ['buff', 'core', 'debuff', 'counter', 'combo', 'rec'], min: 0, max: 7, sumMin: 0.15, sumMax: 0.5 };
 const EVENT_MID = { up: 10, lv: 20, timedMax: 2 };   // 중간 전력: 10판 중 2판 이하
 const ACT3_ENTRY = { up: 10, lv: 14, min: 2, max: 5 };   // 3.3
@@ -369,6 +369,8 @@ const ENDLESS_EXPECT = [                                  // 4.16 무한 전장:
 const ACT7_ENTRY = { up: 10, lv: 24, min: 3, max: 8 };   // 4.15: 6막을 끝낸 수준이면 절반쯤
 const ACT7_LOW = { up: 10, lv: 22, max: 5 };              // 4.15: 6막 입구 수준으론 몇 곳만
 const SMART_ACT7 = { up: 10, lv: 27, slower: 1.05 };     // 4.15: 상한(22+사관학교 5)까지 키우면 전부, 6막보다 오래
+const ACT8_ENTRY = { up: 10, lv: 27, min: 3, max: 8 };   // 5.3: 8막을 끝낸 수준(Lv27)이면 절반쯤
+const SMART_ACT8 = { up: 10, lv: 30, slower: 1.05 };     // 5.3: 만렙이면 전부 (한 곳 여유), 8막보다 오래
 const LEGEND_PROOF_MAX = 1;      // 전설만 편성이 이길 수 있는 최대 판 수
 const COUNTER_MIN = 4;           // 공략 편성이 이겨야 하는 최소 판 수
 
@@ -588,6 +590,23 @@ function check() {
     if (rows.filter(r => !r.win || r.seconds > 420).length > FULL_CLEAR_SLACK) { console.error('  ✗ 7막: 끝까지 키운 공략 편성은 420초 안에 전부 넘어야 한다 (seed ' + seed + ')'); failed++; }
     else if (t7 < t6 * SMART_ACT7.slower * ACT_TIME_SLACK) { console.error(`  ✗ 7막이 6막보다 어렵지 않다: ${Math.round(t7)}초 vs ${Math.round(t6)}초 (seed ${seed})`); failed++; }
     else console.log(`  ✓ 7막 공략 편성 완주 · 6막의 ${(t7 / t6).toFixed(2)}배 걸림 (seed ${seed})`);
+  }
+  // 5.3 9막 '불의 산맥' — 난이도는 새 막으로 올린다: 8막을 끝낸 수준이면 절반, 만렙이면 다 넘되 8막보다 오래
+  {
+    const g = loadEngine(12345); let w = 0;
+    for (let i = 80; i < 90; i++) w += runStage(g, i, ACT8_ENTRY.up, ACT8_ENTRY.lv, false, 'smart').win ? 1 : 0;
+    const tag = `9막 진입 (강화 ${ACT8_ENTRY.up}/Lv${ACT8_ENTRY.lv} 공략 편성) ${w}/10 (기대 ${ACT8_ENTRY.min}~${ACT8_ENTRY.max})`;
+    if (w < ACT8_ENTRY.min || w > ACT8_ENTRY.max) { console.error('  ✗ ' + tag); failed++; } else console.log('  ✓ ' + tag);
+  }
+  for (const seed of [12345, 98765]) {
+    const g = loadEngine(seed), rows = [], rows7 = [];
+    for (let i = 80; i < 90; i++) rows.push(runStage(g, i, SMART_ACT8.up, SMART_ACT8.lv, false, 'smart'));
+    for (let i = 70; i < 80; i++) rows7.push(runStage(g, i, SMART_ACT8.up, SMART_ACT8.lv, false, 'smart'));
+    printTable(rows, SMART_ACT8.up, SMART_ACT8.lv);
+    const t8 = rows.reduce((a, r) => a + r.seconds, 0), t7 = rows7.reduce((a, r) => a + r.seconds, 0);
+    if (rows.filter(r => !r.win || r.seconds > 420).length > FULL_CLEAR_SLACK) { console.error('  ✗ 9막: 만렙 공략 편성은 420초 안에 전부 넘어야 한다 (seed ' + seed + ')'); failed++; }
+    else if (t8 < t7 * SMART_ACT8.slower * ACT_TIME_SLACK) { console.error(`  ✗ 9막이 8막보다 어렵지 않다: ${Math.round(t8)}초 vs ${Math.round(t7)}초 (seed ${seed})`); failed++; }
+    else console.log(`  ✓ 9막 공략 편성 완주 · 8막의 ${(t8 / t7).toFixed(2)}배 걸림 (seed ${seed})`);
   }
   // 4.20: 하드코어는 만렙 기준 — 가장 잘 맞는 편성으로 반쯤 (전장마다 hardTune 으로 맞췄다)
   failed += checkHardFull();

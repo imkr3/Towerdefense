@@ -170,7 +170,7 @@ test('Several heroes can fire their actives back to back (no shared cooldown)',(
 });
 test('Forty stages retain the existing endless unlock threshold',()=>{
   const {STAGES,ENDLESS_UNLOCK_STAGE}=vm.runInContext('({STAGES,ENDLESS_UNLOCK_STAGE})',ctx);
-  assert.equal(STAGES.length,80);assert.equal(ENDLESS_UNLOCK_STAGE,20);
+  assert.equal(STAGES.length,90);assert.equal(ENDLESS_UNLOCK_STAGE,20);   // 5.3: 9막까지 90
   assert.ok(STAGES.slice(20).every(s=>s.waves.length>=8&&s.reward>900));
 });
 test('First expansion victory advances from 20 to 21 and retains old stars',()=>{
@@ -745,7 +745,7 @@ test('Fury: in hardcore and act 2, foes arriving later are tougher', () => {
 const EV = vm.runInContext('({EVENT_STAGES, eventOpen, eventCount})', ctx);
 function evBattle(k, s) { return new Battle(STAGES.length + k, s || save(), EV.EVENT_STAGES[k]); }
 test('Eight event stages (4.15: +1), each with its own new boss, locked behind campaign progress', () => {
-  assert.equal(EV.EVENT_STAGES.length, 8);
+  assert.equal(EV.EVENT_STAGES.length, 10);   // 5.3: +2
   const bosses = new Set();
   EV.EVENT_STAGES.forEach((st, k) => {
     assert.ok(E[st.bossId] && E[st.bossId].boss, st.name); bosses.add(st.bossId);
@@ -754,7 +754,7 @@ test('Eight event stages (4.15: +1), each with its own new boss, locked behind c
     assert.ok(st.event.deck.length === 10 && st.event.deck.every(id => U[id]), 'recommended deck');
     assert.equal(EV.eventOpen({ cleared: st.event.unlock - 1 }, k), false); assert.equal(EV.eventOpen({ cleared: st.event.unlock }, k), true);
   });
-  assert.equal(bosses.size, 8);
+  assert.equal(bosses.size, 10);
 });
 test('Event battles are not campaign progress: they record stars and pay stones once', () => {
   const s = save(); s.stones = 0; s.cleared = 30; const b = evBattle(0, s);
@@ -1825,7 +1825,7 @@ test('4.21: hardcore / challenge bosses carry two affixes (campaign and endless 
     assert.equal(A.bossAffixes(st, i, false).length, 0, 'campaign untouched');
   });
   assert.ok(n >= 20, 'boss stages ' + n);
-  for (const ev of A.EVENT_STAGES) { const k = A.bossAffixes(ev, 0, false); assert.equal(k.length, 3, ev.event.id); assert.equal(new Set(k).size, 3); }   // 4.23: 도전은 셋
+  for (const ev of A.EVENT_STAGES) { const k = A.bossAffixes(ev, 0, false), w = ev.event.id === 'twins' ? 2 : 3; assert.equal(k.length, w, ev.event.id); assert.equal(new Set(k).size, w); }   // 4.23: 도전은 셋 (5.3 쌍왕은 보스가 둘이라 둘씩)
   const bi = STAGES.findIndex(st => st.boss && st.bossId);
   const h = new Battle(bi, save(), null, { hard: true }), c = new Battle(bi, save());
   const hb = h.spawnEnemy(STAGES[bi].bossId, 1200), cb = c.spawnEnemy(STAGES[bi].bossId, 1200);
@@ -2147,6 +2147,77 @@ test('5.2: the Trigram Dragon bewitches only through his formation, not on every
   assert.equal(zg.s.active.charm, 3);
   assert.ok(c.useHeroActive('zhugeliang'), 'cast');
   assert.ok(og.charmT > 0 && og.burnT > 0, 'foes trapped in the formation are bewitched and burn');
+});
+/* ---------------- 5.3 밸런스 기준: 이미 있는 곳은 5.2 보다 어려워지지 않는다 ---------------- */
+test('5.3: existing stages, hardcore and challenges never get harder than the 5.2 baseline', () => {
+  const bad = require('./balance-baseline.js').check();
+  assert.deepEqual(bad, [], 'harder than 5.2 — raise difficulty with new stages, hardcore or challenges instead');
+});
+/* ---------------- 5.3 9막 '불의 산맥' · 도전 둘 ---------------- */
+test('5.3: Act 9 adds ten volcano stages with three bosses, new looks, music, a map chapter and an achievement', () => {
+  const A = STAGES.slice(80, 90);
+  assert.equal(A.length, 10);
+  assert.equal(A.filter(s => s.bossId).map(s => s.bossId).join(','), 'lavawyrm,phoenix,magmalord');
+  assert.ok(A.every(s => s.volcano && s.volcano.ratio > 0), 'every act-9 stage erupts');
+  assert.ok(STAGES.slice(0, 80).every(s => !s.volcano), 'earlier acts untouched');
+  const mus = fs.readFileSync(path.join(__dirname, '../js/music.js'), 'utf8'), render = fs.readFileSync(path.join(__dirname, '../js/render.js'), 'utf8');
+  for (const st of A) { assert.ok(mus.indexOf('  ' + st.music + ': {') >= 0, st.music); assert.ok(render.indexOf('  ' + st.look + ':') >= 0, st.look); }
+  for (const t of ['boss_lavawyrm', 'boss_phoenix', 'boss_magmalord', 'finale7', 'hc_volcano', 'muspel', 'boss_surtr', 'twinsky', 'boss_twins']) assert.ok(mus.indexOf('  ' + t + ': {') >= 0, t);
+  assert.ok(fs.readFileSync(path.join(__dirname, '../js/audio.js'), 'utf8').indexOf('  magma: function (B, x)') >= 0, 'volcano accompaniment');
+  assert.equal(STAGES[79].bossMusic, 'finale6'); assert.equal(STAGES[89].bossMusic, 'finale7');
+  const M = vm.runInContext('({ACHIEVEMENTS})', ctx);
+  assert.ok(M.ACHIEVEMENTS.some(a => a.id === 'campaign90' && a.test({ cleared: 90 }) && !a.test({ cleared: 89 })));
+  assert.ok(/name: '9막', sub: '불의 산맥', from: 80, to: 90/.test(fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8')), 'map chapter');
+  const i18n = fs.readFileSync(path.join(__dirname, '../js/i18n.js'), 'utf8');
+  for (const id of ['salamander', 'magmaling', 'obsidian', 'ashcaster', 'cinderbat', 'magmacannon', 'lavawyrm', 'phoenix', 'magmalord', 'surtr', 'sunking', 'moonqueen']) {
+    assert.ok(render.indexOf("case '" + E[id].shape + "'") >= 0, id + ' drawn');
+    assert.ok(i18n.indexOf("'" + E[id].name + "'") >= 0, id + ' name');
+  }
+});
+test('5.3: eruptions hurt both sides but spare the magma legion; slowed lava-born take more, burns half', () => {
+  const st = STAGES[80], b = new Battle(80, save(), st);
+  const a = b.makeAlly(U.spear, 700); b.allies.push(a);
+  const lava = b.spawnEnemy('salamander', 720), plain = b.spawnEnemy('orcspear', 690);
+  lava.hp = lava.maxHp = plain.hp = plain.maxHp = 1e5;
+  b.eruptLand({ x: 700, r: 90, ratio: 0.2, bossRatio: 0.03, burn: { dps: 50, dur: 3 } });
+  assert.ok(a.hp < a.maxHp * 0.85 && a.burnT > 0, 'ally scorched');
+  assert.ok(plain.hp < plain.maxHp, 'foreign foe scorched too');
+  assert.equal(lava.hp, lava.maxHp, 'magma legion unharmed');
+  b.time = st.volcano.first - 0.02; b.tick(1 / 30);
+  assert.ok(b.pending.some(s => s.erupt) && b.fx.some(f => f.type === 'warn' && f.lava), 'eruption is announced on the ground first');
+  const f = b.makeAlly(U.archer, 600); b.allies.push(f);
+  const h0 = lava.hp; b.hitOne(100, lava, f, false); const plainHit = h0 - lava.hp;
+  lava.slowT = 2; const h1 = lava.hp; b.hitOne(100, lava, f, false);
+  assert.ok(h1 - lava.hp > plainHit * 1.2, 'cold lava cracks');
+});
+test('5.3: Surtr raises his sword — a stun breaks it, otherwise every ally burns for 40%', () => {
+  const k = EV.EVENT_STAGES.findIndex(st => st.event.id === 'muspel');
+  const s = save(); s.cleared = 85; const b = evBattle(k, s); b.update(1 / 30);
+  const a = b.makeAlly(U.knight, 500); b.allies.push(a);
+  const g = b.spawnEnemy('surtr', 900); g.hp = g.maxHp = 1e7;
+  b.bossAct(g, E.surtr.special);
+  assert.ok(g.windT > 0 && b.pending.some(p => p.inferno));
+  for (let i = 0; i < 30 * 4.2; i++) b.updatePending(1 / 30);
+  assert.ok(a.hp <= a.maxHp * 0.61 && a.burnT > 0, 'unbroken flame hits the whole army');
+  const a2 = b.makeAlly(U.knight, 520); b.allies.push(a2);
+  g.stunImm = 0; g.stunT = 0; b.bossAct(g, E.surtr.special); g.stun(1);
+  b.updatePending(1 / 30);
+  assert.ok(!b.pending.some(p => p.inferno) && g.stunT >= 2.9, 'a stun breaks it and he staggers');
+  for (let i = 0; i < 30 * 4.2; i++) b.updatePending(1 / 30);
+  assert.equal(a2.hp, a2.maxHp, 'no flame after a break');
+});
+test('5.3: the twin monarchs must fall together — a lone fall revives, both falling lifts the ward', () => {
+  const k = EV.EVENT_STAGES.findIndex(st => st.event.id === 'twins');
+  const s = save(); s.cleared = 90; const b = evBattle(k, s); b.update(1 / 30);
+  const sun = b.spawnEnemy('sunking', 900), moon = b.spawnEnemy('moonqueen', 1000);
+  sun.hp = 1; sun.takeDamage(10); b.reap(b.enemies, b.allies, b.allyCastle, true);
+  assert.ok(!b.bossDown && b.twinWait.length === 1, 'ward holds while the twin lives');
+  for (let i = 0; i < 30 * 10.5; i++) b.twinTick(1 / 30);
+  assert.ok(b.enemies.some(e => !e.dead && e.kind === 'sunking'), 'the sun king rises again');
+  const sun2 = b.enemies.find(e => !e.dead && e.kind === 'sunking');
+  assert.ok(sun2.hp < sun2.maxHp * 0.65);
+  sun2.takeDamage(1e9); moon.takeDamage(1e9); b.reap(b.enemies, b.allies, b.allyCastle, true);
+  assert.ok(b.bossDown && b.twinWait.length === 0, 'both down: the ward lifts');
 });
 test('5.2: dev mode can unlock roster units without clearing stages; the effects setting migrates once to the new look', () => {
   const R = vm.runInContext('({rosterOpen, availableUnits, ROSTER_UNITS})', ctx);

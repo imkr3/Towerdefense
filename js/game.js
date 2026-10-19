@@ -32,7 +32,7 @@ const KILL_GOLD_RATE = 0.20; // 처치 보상 배율
 
 /* 효과음 헬퍼: 브라우저에서만 동작하고, 같은 소리가 몰릴 때는 솎아낸다 */
 const _sfxAt = {};
-const _sfxGap = { slash: 90, hit: 90, arrow: 110, boom: 140, die: 120, deploy: 40, gold: 200, rally: 250,
+const _sfxGap = { quake: 400, slash: 90, hit: 90, arrow: 110, boom: 140, die: 120, deploy: 40, gold: 200, rally: 250,
                   cannon: 160, zap: 140, rocket: 160, drill: 120, drone: 140, siren: 900,
                   dozer: 200, freeze: 140, saber: 110, rail: 200 };
 function sfx(name) {
@@ -110,6 +110,8 @@ const BOSS_ENRAGE = { atk: 1.6, speed: 1.3, rate: 0.8 };
 const ACT2_FURY = { per30: 0.06, max: 0.6 };
 const COVER_GRACE = 8;       // 근접 전열이 모두 쓰러져도 이 시간 동안은 다음 근접을 내보낼 틈으로 봐 준다
 const STUN_GUARD_BOSS = 2.5;
+const LAVA_FROST_MUL = 1.25;  // 5.3 9막 용암 군단: 둔화된 동안 받는 피해 (서리에 약하다)
+const LAVA_BURN_MUL = 0.5;    // 5.3 용암 군단은 화상이 반만 듣는다
 const WARD_FLOOR = 0.05;     // 보스가 살아 있는 동안 적 요새는 이 아래로 무너지지 않는다
 const CHRONO_RATE = 0.6;     // 시간 주술사가 살아 있으면 카드 재사용 대기가 이 속도로 준다
 const BOSS_MUL_EXP = 0.5;    // 캠페인 보스가 받는 전장 배율의 지수
@@ -410,6 +412,8 @@ class Battle {
     this.bossSpawned = false;
     this.bossDown = false;
     this.chronoOn = false;
+    this.eruptN = 0;            // 5.3 9막 분화 횟수
+    this.twinWait = [];         // 5.3 도전 '해와 달의 쌍왕': 되살아나기를 기다리는 쌍왕
 
     this.queue = [];
     this.mods = {};
@@ -861,6 +865,11 @@ class Battle {
       if (this.storming) this.stormWarned = false;
     }
 
+    // 5.3 9막 '불의 산맥': first 초부터 every 초마다 땅이 갈라져 용암이 솟는다 — 예고 뒤 양쪽 병사 모두에게 최대 체력 비율 피해 (용암 군단은 멀쩡하다)
+    const vol = this.stage.volcano;
+    if (vol && this.time >= vol.first + this.eruptN * vol.every) { this.eruptN++; this.erupt(vol); }
+    if (this.twinWait.length) this.twinTick(dt);
+
     // 4.15 도전 '파라오의 모래시계': 제한 시간 · 모래시계 토템
     if (this.stage.hourglass) this.hourglassTick(this.stage.hourglass, dt);
 
@@ -1198,7 +1207,7 @@ class Battle {
           this.fx.push({ type: 'poof', x: f.x, row: f.row, t: 0.45, life: 0.45, color: f.s.accent, big: true });
         }
       }
-      if (f.boss && isEnemySide) { this.bossDown = true; this.enemyCastle.floor = 0; }   // 결계가 걷힌다
+      if (f.boss && isEnemySide && !this.twinHold(f)) { this.bossDown = true; this.enemyCastle.floor = 0; }   // 결계가 걷힌다 (5.3 쌍왕은 둘 다 쓰러져야)
       // 흡혼귀: 근처에서 쓰러진 아군의 넋을 삼킨다 (불려 나온 것은 넋이 없다)
       if (!isEnemySide && !f.summoned) this.feedSouls(f);
       // 쓰러지는 연출 + 먼지
@@ -1510,7 +1519,7 @@ class Battle {
       // 중독 / 화상 피해
       let dot = 0;
       if (f.poisonT > 0) { dot += f.poisonDps * Math.min(dt, f.poisonT); f.poisonT = Math.max(0, f.poisonT - dt); }
-      if (f.burnT > 0) { dot += f.burnDps * Math.min(dt, f.burnT); f.burnT = Math.max(0, f.burnT - dt); }
+      if (f.burnT > 0) { dot += f.burnDps * Math.min(dt, f.burnT) * (f.ab.lavaborn ? LAVA_BURN_MUL : 1); f.burnT = Math.max(0, f.burnT - dt); }
       if (isAlly) dot *= 1 - 0.05 * Math.min(5, this.save.upgrades.resistance || 0);
       if (dot > 0) {
         if (!isAlly && f.dotBy) { const m = this.meter[f.dotBy] || (this.meter[f.dotBy] = { dmg: 0, taken: 0, n: 0 }); m.dmg += Math.min(dot, Math.max(0, f.hp)); }
@@ -2141,6 +2150,16 @@ class Battle {
         this.shake = Math.max(this.shake, 6);
         break;
       }
+      case 'inferno': {                    // 5.3 수르트: 불꽃 검을 치켜든다 — wind 초 안에 기절시키지 못하면 전장 전체가 불탄다
+        if (f.side !== 'enemy') break;
+        f.windT = a.wind || 4; f.stunImm = 0;          // 기절 보호를 걷는다 — 끊을 틈은 늘 있다
+        this.pending.push({ t: f.windT, side: f.side, inferno: true, src: f, ratio: a.ratio || 0.4, burn: a.burn, x: f.x, r: 0, row: f.row });
+        this.fx.push({ type: 'inferno', src: f, x: f.x, row: f.row, t: f.windT, life: f.windT, color: '#ff5a1e' });
+        this.announce(a.name + ' — 기절로 끊으세요!', f.windT);
+        this.shake = Math.max(this.shake, 6);
+        sfx('bossIn');
+        break;
+      }
       case 'meteor': {                     // 예고 후 떨어지는 폭격
         const n = a.n || 3;
         const front = this.frontline();
@@ -2156,6 +2175,80 @@ class Battle {
         break;
       }
     }
+  }
+
+  /* 5.3 9막 분화: 병사가 선 자리 몇 곳에 붉은 원 → 용암이 솟는다. 양쪽 모두 맞지만 용암 군단(lavaborn)은 멀쩡하다. */
+  erupt(v) {
+    const xs = [];
+    for (const f of this.allies) if (!f.dead && !f.burrowed) xs.push(f.x);
+    for (const f of this.enemies) if (!f.dead && !f.burrowed && !f.ab.hold) xs.push(f.x);
+    const picks = [];
+    for (let k = 0; k < 12 && picks.length < (v.n || 3); k++) {
+      const x = xs.length ? xs[Math.floor(Math.random() * xs.length)] + (Math.random() - 0.5) * 60
+                          : this.allyCastle.x + 300 + Math.random() * Math.max(200, this.enemyCastle.x - this.allyCastle.x - 600);
+      if (picks.every(p => Math.abs(p - x) >= (v.r || 85) * 2)) picks.push(Math.max(this.allyCastle.x + 140, Math.min(this.enemyCastle.x - 140, x)));
+    }
+    picks.forEach((x, i) => {
+      const w = (v.warn || 1.6) + i * 0.15;
+      this.pending.push({ t: w, side: 'none', erupt: true, x: x, r: v.r || 85, ratio: v.ratio || 0.16, bossRatio: v.bossRatio || 0.03, burn: v.burn, row: 1 });
+      this.fx.push({ type: 'warn', x: x, r: v.r || 85, t: w, life: w, lava: true, color: '#ff7a1e' });
+    });
+    if (picks.length && this.eruptN <= 1) this.announce('분화! 붉게 갈라진 땅을 조심하세요', 2.0);
+    sfx('quake');
+  }
+  eruptLand(s) {
+    for (const list of [this.allies, this.enemies]) for (const f of list) {
+      if (f.dead || f.burrowed || f.ab.lavaborn || f.ab.hold || Math.abs(f.x - s.x) > s.r + f.radius) continue;
+      f.takeDamage(f.maxHp * (f.boss ? s.bossRatio : s.ratio), true);
+      if (s.burn) { if (f.burnT <= 0) f.burnDps = 0; f.burnT = Math.max(f.burnT, s.burn.dur); f.burnDps = Math.max(f.burnDps, s.burn.dps); }
+    }
+    this.fx.push({ type: 'cast', kind: 'eruption', x: s.x, row: 1, color: '#ff7a1e', r: s.r, big: true, dir: 1, t: 0.7, life: 0.7 });
+    this.fx.push({ type: 'boom', x: s.x, r: s.r, t: 0.32, life: 0.32 });
+  }
+  /* 5.3 수르트의 불꽃 검이 내리꽂힌다: 아군 모두 최대 체력 비율 피해 + 화상 (성채는 멀쩡) */
+  infernoLand(s) {
+    const f = s.src;
+    if (!f || f.dead) return;
+    f.windT = 0;
+    for (const a of this.allies) {
+      if (a.dead || a.burrowed) continue;
+      a.takeDamage(a.maxHp * s.ratio, true);
+      if (s.burn) { if (a.burnT <= 0) a.burnDps = 0; a.burnT = Math.max(a.burnT, s.burn.dur); a.burnDps = Math.max(a.burnDps, s.burn.dps); }
+    }
+    this.fx.push({ type: 'firewave', x: f.x, row: f.row, dir: f.dir, t: 1.0, life: 1.0 });
+    this.flash = Math.max(this.flash, 0.6);
+    this.announce('무스펠의 불길이 전장을 덮었다', 1.8);
+  }
+  /* 끊었다: 불꽃이 꺼지고 거인이 비틀거린다 (3초 기절) */
+  infernoBroken(f) {
+    f.windT = 0;
+    f.stunT = Math.max(f.stunT, 3); f.stunImm = Math.max(f.stunImm, 3 + STUN_GUARD_BOSS);
+    this.fx.push({ type: 'poof', x: f.x, row: f.row, t: 0.6, life: 0.6, color: '#ffb35a', big: true });
+    this.announce('끊었다! 불꽃이 꺼지고 거인이 비틀거린다', 2.0);
+    sfx('zap');
+  }
+  /* 5.3 쌍왕: 한쪽이 쓰러졌는데 짝이 살아 있으면 window 초 뒤 되살아난다 — 둘을 함께 쓰러뜨려야 결계가 걷힌다 */
+  twinHold(f) {
+    const tw = f.ab.twin;
+    if (!tw) return false;
+    const mate = this.enemies.find(e => !e.dead && e.kind === tw.partner);
+    if (!mate) { this.twinWait = this.twinWait.filter(w => w.id !== tw.partner); return false; }   // 둘 다 쓰러졌다
+    this.twinWait.push({ id: f.kind, t: tw.window || 10, x: f.x, revive: tw.revive || 0.6 });
+    mate.atk = Math.round(mate.atk * (tw.rage || 1.25));
+    this.announce(f.s.name + ' 쓰러짐 — ' + (tw.window || 10) + '초 안에 ' + mate.s.name + '도 쓰러뜨려야 한다!', 2.4);
+    return true;
+  }
+  twinTick(dt) {
+    for (const w of this.twinWait) {
+      w.t -= dt;
+      if (w.t > 0) continue;
+      w.done = true;
+      const g = this.spawnEnemy(w.id, Math.min(this.enemyCastle.x - 120, Math.max(this.allyCastle.x + 300, w.x)));
+      g.hp = Math.round(g.maxHp * w.revive);
+      const nm = g.s.name, c = nm.charCodeAt(nm.length - 1);
+      this.announce(nm + (c >= 0xac00 && c <= 0xd7a3 && (c - 0xac00) % 28 ? '이' : '가') + ' 되살아났다!', 2.2);   // 받침이 있으면 '이'
+    }
+    this.twinWait = this.twinWait.filter(w => !w.done);
   }
 
   /* 4.21 보스 각인의 예고가 끝났을 때. 크게 터졌으면 true (흔들림 · 폭음) */
@@ -2221,8 +2314,12 @@ class Battle {
     if (!this.pending.length) return;
     let landed = false, quiet = false;      // quiet: 터지지 않고 끝난 예고(군자금 탈취 등)도 목록에서 빼야 한다
     for (const s of this.pending) {
+      // 5.3 수르트의 불꽃 검: 치켜든 동안 기절시키면 끊긴다
+      if (s.inferno && s.src && (s.src.dead || s.src.stunT > 0)) { s.done = quiet = true; if (!s.src.dead) this.infernoBroken(s.src); continue; }
       s.t -= dt;
       if (s.t > 0) continue;
+      if (s.erupt) { s.done = landed = true; this.eruptLand(s); continue; }
+      if (s.inferno) { s.done = landed = true; this.infernoLand(s); continue; }
       if (s.charge || s.doom || s.tax) { s.done = true; quiet = true; if (this.resolveAffix(s)) landed = true; continue; }   // 4.21 보스 각인
       s.done = landed = true;
       const foes = this.foesOf(s.side);
@@ -2476,6 +2573,7 @@ class Battle {
       const ta = target.ab;
       if (target.boss || ta.armor || ta.kbImmune) dmg *= src.ab.breaker;
     }
+    if (!target.isCastle && target.ab.lavaborn && target.slowT > 0 && src && src.side !== target.side) dmg *= LAVA_FROST_MUL;   // 5.3 식은 용암은 부서진다
     // 영웅 사냥꾼: 적이 비싼(비용 350 이상) 아군 — 영웅·전설·신화 — 을 골라 두 배로 친다
     // 3.9: 사냥꾼은 영웅을 잡는 데 이골이 나 있다 — 갑주를 꿰뚫고, 선봉의 보호도 통하지 않는다
     // 4.2: 병종 본래 비용으로 본다 — 3진의 출진 비용 +30% 때문에 전차·레일건 같은 전장 병종이 '영웅' 으로 잡혀 4배로 맞았다

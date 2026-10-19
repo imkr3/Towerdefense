@@ -1489,6 +1489,92 @@ const ENEMIES = {
                 { at: 0.12, t: 'enrage', name: '사막의 분노', atk: 1.3, rate: 0.75, speed: 1.25 }
               ],
               abText: '파라오 · 갑주 20% · 한 번 쓰러져도 체력 30% 로 다시 일어남 · 모래폭풍의 포효' },
+  /* ---------- 5.3 9막 '불의 산맥': 용암 군단 (lavaborn — 분화에 다치지 않고 화상은 반만, 둔화되면 받는 피해 +25%) ---------- */
+  salamander:{ name: '불도마뱀', body: '#c8502a', accent: '#ffd23a', tunic: '#5a1e12', shape: 'salamander',
+              hp: 3800, atk: 280, range: 66, speed: 58, interval: 1.0, kb: 2, gold: 70, scale: 1.1,
+              ab: { lavaborn: true, burn: { dps: 80, dur: 3 } }, abText: '용암 몸 · 화상 80/초 · 분화에 다치지 않음 · 서리에 약함' },
+  magmaling:{ name: '용암 덩이', body: '#e8602a', accent: '#ffe08a', tunic: '#3a1a12', shape: 'magmaling',
+              hp: 1600, atk: 150, range: 54, speed: 80, interval: .8, kb: 3, gold: 30, scale: .85,
+              ab: { lavaborn: true, deathBomb: { dmg: 220, radius: 100 } }, abText: '떼 · 빠름 · 쓰러지며 터진다 · 분화에 다치지 않음' },
+  obsidian: { name: '흑요석 거인', body: '#2a2630', accent: '#ff6a2a', tunic: '#1a1620', shape: 'obsidian',
+              hp: 9000, atk: 340, range: 82, speed: 26, interval: 1.8, kb: 1, gold: 220, scale: 1.6, noReinf: true,
+              area: true, areaRadius: 90, ab: { lavaborn: true, kbImmune: true, armor: 0.35, thorns: 0.15 },
+              abText: '검은 유리 몸 · 갑주 35% · 때린 근접에게 15% 되돌림 · 넉백 면역 · 파쇄와 서리로' },
+  ashcaster:{ name: '잿빛 주술사', body: '#6a6268', accent: '#ff8a3a', tunic: '#3a2a2e', shape: 'ashcaster',
+              hp: 2400, atk: 170, range: 250, speed: 30, interval: 1.9, kb: 1, gold: 90, ranged: true, noReinf: true,
+              area: true, areaRadius: 90, ab: { lavaborn: true, burn: { dps: 60, dur: 4 }, weaken: { mul: 0.8, dur: 3 } },
+              abText: '화산재 저주 · 범위 · 화상 · 맞은 아군 공격력 -20% (3초)' },
+  cinderbat:{ name: '불티 박쥐', body: '#3a2024', accent: '#ff9a3a', tunic: '#5a1a12', shape: 'cinderbat',
+              hp: 1400, atk: 130, range: 54, speed: 96, interval: .7, kb: 3, gold: 25, scale: .8,
+              ab: { lavaborn: true, dodge: 0.2, burn: { dps: 50, dur: 2 } }, abText: '불티를 흘리며 나는 박쥐 떼 · 아주 빠름 · 20% 회피' },
+  magmacannon:{ name: '용암 투석병', body: '#5a3a2a', accent: '#ff7a2a', tunic: '#2a2224', shape: 'magmacannon',
+              hp: 3000, atk: 300, range: 330, speed: 28, interval: 2.6, kb: 1, gold: 110, ranged: true, noReinf: true,
+              area: true, areaRadius: 100, scale: 1.15, ab: { lavaborn: true, burn: { dps: 70, dur: 3 } },
+              abText: '용암 덩어리를 멀리 던진다 · 범위 · 화상' },
+  lavawyrm: { name: '용암 거룡', body: '#8a2a1a', accent: '#ffb02a', tunic: '#3a1210', shape: 'lavawyrm',
+              hp: 50000, atk: 1200, range: 120, speed: 20, interval: 2.0, kb: 1, gold: 2600,
+              area: true, areaRadius: 170, scale: 2.4, boss: true,
+              ab: { kbImmune: true, armor: 0.2, lavaborn: true, burn: { dps: 120, dur: 4 } },
+              special: { t: 'meteor', name: '용암 비', cd: 9, n: 4, dmg: 560, radius: 120, warn: 1.1, burn: { dps: 100, dur: 4 }, kind: 'eruption' },
+              phases: [
+                { at: 0.70, t: 'summon', name: '불도마뱀 떼', id: 'salamander', n: 4 },
+                { at: 0.45, t: 'roar',   name: '땅을 가르는 꼬리', r: 440, stun: 1.0, push: 110 },
+                { at: 0.15, t: 'enrage', name: '끓어오르는 피', atk: 1.3, rate: 0.75, speed: 1.3 }
+              ],
+              abText: '용암 거룡 · 갑주 20% · 화상 · 용암 비' },
+  phoenix:  { name: '불사조', body: '#ff7a2a', accent: '#ffe85a', tunic: '#c8301a', shape: 'phoenix',
+              hp: 42000, atk: 1050, range: 260, speed: 18, interval: 2.1, kb: 1, gold: 2800, ranged: true,
+              area: true, areaRadius: 150, scale: 2.3, boss: true,
+              ab: { kbImmune: true, dodge: 0.1, revive: 0.5, lavaborn: true },
+              special: { t: 'meteor', name: '불꽃 깃털', first: 5, cd: 8, n: 5, dmg: 480, radius: 100, warn: 1.0, burn: { dps: 90, dur: 3 }, kind: 'firestorm' },
+              phases: [
+                { at: 0.70, t: 'summon', name: '불티 떼', id: 'cinderbat', n: 6 },
+                { at: 0.40, t: 'summon', name: '용암 방울', id: 'magmaling', n: 6 },
+                { at: 0.12, t: 'enrage', name: '재 속의 불꽃', atk: 1.25, rate: 0.75, speed: 1.2 }
+              ],
+              abText: '불사조 · 한 번 쓰러져도 재에서 체력 50% 로 다시 날아오른다 · 불꽃 깃털' },
+  magmalord:{ name: '용암 군주', body: '#2a1a1a', accent: '#ff5a1a', tunic: '#5a1a10', shape: 'magmalord',
+              hp: 62000, atk: 1400, range: 150, speed: 16, interval: 2.4, kb: 1, gold: 3800,
+              area: true, areaRadius: 200, scale: 2.7, boss: true,
+              ab: { kbImmune: true, armor: 0.25, lavaborn: true },
+              special: { t: 'roar', name: '화산의 포효', cd: 11, r: 460, stun: 1.2, push: 120 },
+              phases: [
+                { at: 0.75, t: 'summon', name: '흑요석 근위대', id: 'obsidian', n: 2 },
+                { at: 0.55, t: 'swap',   name: '대분화',
+                            special: { t: 'meteor', name: '대분화', first: 2, cd: 7, n: 6, dmg: 620, radius: 130, warn: 1.2, burn: { dps: 110, dur: 4 }, kind: 'eruption' } },
+                { at: 0.35, t: 'summon', name: '불도마뱀 군단', id: 'salamander', n: 6 },
+                { at: 0.12, t: 'enrage', name: '산이 무너진다', atk: 1.3, rate: 0.75, speed: 1.25 }
+              ],
+              abText: '용암 군주 · 갑주 25% · 화산의 포효 → 대분화' },
+  /* ---------- 5.3 도전 '무스펠의 불꽃 거인' · '해와 달의 쌍왕' ---------- */
+  surtr:    { name: '불꽃 거인 수르트', body: '#3a1a14', accent: '#ff6a1a', tunic: '#6a1a10', shape: 'surtr',
+              hp: 58000, atk: 1250, range: 140, speed: 16, interval: 2.2, kb: 1, gold: 3600,
+              area: true, areaRadius: 180, scale: 2.7, boss: true,
+              ab: { kbImmune: true, armor: 0.2, lavaborn: true },
+              special: { t: 'inferno', name: '무스펠의 불꽃 검', first: 12, cd: 18, wind: 4, ratio: 0.4, burn: { dps: 120, dur: 4 } },
+              phases: [
+                { at: 0.70, t: 'summon', name: '불도마뱀 떼', id: 'salamander', n: 5 },
+                { at: 0.45, t: 'summon', name: '흑요석 근위대', id: 'obsidian', n: 2 },
+                { at: 0.15, t: 'enrage', name: '라그나로크의 불', atk: 1.3, rate: 0.75, speed: 1.25 }
+              ],
+              abText: '불꽃 검을 치켜들면 4초 안에 기절시켜 끊어야 한다 · 못 끊으면 아군 모두 최대 체력 40% 피해 + 화상' },
+  sunking:  { name: '해의 왕', body: '#e8b04a', accent: '#fff07a', tunic: '#c8601a', shape: 'sunking',
+              hp: 40000, atk: 1100, range: 120, speed: 18, interval: 2.0, kb: 1, gold: 2600,
+              area: true, areaRadius: 150, scale: 2.3, boss: true,
+              ab: { kbImmune: true, armor: 0.15, burn: { dps: 100, dur: 4 }, twin: { partner: 'moonqueen', window: 10, revive: 0.6 } },
+              special: { t: 'meteor', name: '태양 창', cd: 9, n: 4, dmg: 520, radius: 110, warn: 1.1, burn: { dps: 90, dur: 3 }, kind: 'lightning' },
+              phases: [ { at: 0.15, t: 'enrage', name: '정오의 열기', atk: 1.25, rate: 0.75, speed: 1.2 } ],
+              abText: '쌍왕 · 달의 여왕과 10초 안에 함께 쓰러뜨려야 한다 (아니면 먼저 쓰러진 쪽이 되살아난다)' },
+  moonqueen:{ name: '달의 여왕', body: '#c8d8f0', accent: '#9ad8ff', tunic: '#2a2a6a', shape: 'moonqueen',
+              hp: 34000, atk: 950, range: 270, speed: 16, interval: 2.2, kb: 1, gold: 2600, ranged: true,
+              area: true, areaRadius: 140, scale: 2.2, boss: true,
+              ab: { kbImmune: true, dodge: 0.1, twin: { partner: 'sunking', window: 10, revive: 0.6 } },
+              special: { t: 'frost', name: '달빛 서리', first: 6, cd: 10, r: 320, dur: 3 },
+              phases: [
+                { at: 0.60, t: 'summon', name: '별의 시녀', id: 'wisp', n: 3 },
+                { at: 0.15, t: 'enrage', name: '자정의 냉기', atk: 1.25, rate: 0.75, speed: 1.2 }
+              ],
+              abText: '쌍왕 · 해의 왕과 10초 안에 함께 쓰러뜨려야 한다 (아니면 먼저 쓰러진 쪽이 되살아난다)' },
   /* ---------- 4.15 도전 '파라오의 모래시계' ---------- */
   hourglass:{ name: '모래시계 토템', body: '#c8a050', accent: '#ffe08a', tunic: '#6a4a24', shape: 'hourglass',
               hp: 6000, atk: 0, range: 0, speed: 0, interval: 3, kb: 1, gold: 150, scale: 1.3, noReinf: true,
@@ -1856,6 +1942,36 @@ STAGES.push(
 );
 STAGES.slice(ACT7_FROM).forEach(st => { st.storm = SANDSTORM; });
 
+/* 9막 '불의 산맥' (5.3): 사막 너머 하늘을 가린 화산 지대 — 용암 군단 (불도마뱀 · 용암 덩이 · 흑요석 거인 · 잿빛 주술사 · 불티 박쥐 · 용암 투석병). 81~90전장.
+ * 새 기믹 '분화': first 초부터 every 초마다 병사가 선 자리 몇 곳이 붉게 갈라지고, warn 초 뒤 용암이 솟아 최대 체력 ratio 만큼 친다 (양쪽 모두).
+ * 용암 군단(lavaborn)은 분화에 다치지 않고 화상은 반만 듣지만, 둔화된 동안 받는 피해가 +25% — 서리 · 둔화 편성이 열쇠.
+ * 5.3 부터 난이도는 새 전장으로만 올린다: 8막을 다 넘은 만렙 편성에게도 버거운 곳. */
+const ACT8_FROM = 80;
+const VOLCANO = { first: 16, every: 21, n: 3, warn: 1.6, r: 85, ratio: 0.16, bossRatio: 0.03, burn: { dps: 60, dur: 3 } };
+STAGES.push(
+  {name:'잿빛 산기슭',hint:'붉게 갈라진 땅에서 용암이 솟습니다 · 용암 군단은 멀쩡하고 우리만 다칩니다 — 치유와 서리를 챙기세요',baseHp:380000,money:870,rate:112,reward:13500,enemyMul:19,waves:[
+    W(12,'salamander',4,1.2),W(22,'magmaling',6,.5),W(44,'cinderbat',6,.5),W(66,'salamander',5,1.1),W(90,'ashcaster',2,3),W(116,'magmaling',8,.45),W(140,'salamander',6,1),W(168,'cinderbat',8,.45),W(198,'ashcaster',2,3)]},
+  {name:'용암 강',hint:'용암 덩이는 쓰러지며 터집니다 · 원거리로 멀리서 녹이세요',baseHp:395000,money:875,rate:113,reward:13800,enemyMul:63,mods:['blitz'],waves:[
+    W(12,'magmaling',8,.45),W(22,'salamander',4,1.2),W(44,'magmaling',10,.4),W(68,'cinderbat',8,.45),W(94,'salamander',6,1),W(120,'magmaling',12,.35),W(146,'ashcaster',2,3),W(174,'salamander',7,.9),W(204,'magmaling',14,.35)]},
+  {name:'★ 용암 거룡의 둥지',hint:'용암 비 예고를 피하고, 거룡의 꼬리치기엔 넉백 면역 방패로 버티세요 · 둔화하면 더 아프게 맞습니다',baseHp:280000,money:885,rate:114,reward:14500,boss:true,enemyMul:33,waves:[
+    W(12,'salamander',4,1.2),W(24,'lavawyrm',1),W(48,'magmaling',8,.45),W(74,'ashcaster',2,3),W(100,'salamander',6,1),W(128,'cinderbat',8,.45),W(156,'magmaling',10,.4),W(186,'salamander',7,.9)]},
+  {name:'흑요석 협곡',hint:'흑요석 거인은 단단하고 때린 근접에게 되돌려 줍니다 · 파쇄와 서리로',opening:'calm',baseHp:410000,money:890,rate:115,reward:14200,enemyMul:27.5,mods:['ironclad'],waves:[
+    W(12,'salamander',5,1.1),W(22,'obsidian',1),W(46,'magmaling',8,.45),W(72,'obsidian',2,4),W(98,'ashcaster',2,3),W(124,'salamander',6,1),W(150,'obsidian',2,4),W(178,'magmacannon',2,3),W(208,'salamander',7,.9)]},
+  {name:'불티 동굴',hint:'불티 박쥐 떼가 몰려옵니다 · 범위 공격으로 한꺼번에',baseHp:400000,money:895,rate:116,reward:14400,enemyMul:165,mods:['horde'],waves:[
+    W(12,'cinderbat',8,.4),W(22,'magmaling',6,.5),W(44,'cinderbat',10,.35),W(68,'salamander',5,1.1),W(94,'cinderbat',12,.3),W(120,'ashcaster',2,3),W(146,'cinderbat',14,.3),W(174,'magmaling',10,.4),W(204,'cinderbat',16,.3)]},
+  {name:'★ 불사조의 둥지',hint:'불사조는 재에서 한 번 다시 날아오릅니다 · 깃털 예고를 피하고 두 번째 날개짓에 필살을 아끼세요',baseHp:290000,money:905,rate:117,reward:15200,boss:true,enemyMul:33,waves:[
+    W(12,'cinderbat',8,.4),W(26,'phoenix',1),W(50,'salamander',5,1.1),W(76,'magmaling',8,.45),W(104,'ashcaster',2,3),W(132,'cinderbat',10,.35),W(162,'salamander',7,.9),W(194,'magmacannon',2,3)]},
+  {name:'신들의 화로',hint:'용암 투석병과 주술사가 멀리서 쏩니다 · 값싼 병력으로 밀고 들어가 뒷줄을 끊으세요',baseHp:420000,money:910,rate:118,reward:14800,enemyMul:14,mods:['giantslayer'],waves:[
+    W(12,'salamander',4,1.2),W(24,'magmacannon',2,3),W(44,'ashcaster',2,3),W(68,'magmacannon',3,2.5),W(94,'salamander',7,.9),W(120,'ashcaster',3,2.5),W(146,'magmacannon',3,2.5),W(174,'magmaling',10,.4),W(204,'salamander',8,.8)]},
+  {name:'끓는 호수',hint:'김이 오르는 호숫가 · 소환과 치유가 약해집니다 — 진짜 병력으로',baseHp:430000,money:915,rate:119,reward:15000,enemyMul:39,mods:['curse'],waves:[
+    W(12,'magmaling',8,.45),W(22,'salamander',5,1.1),W(46,'obsidian',1),W(72,'cinderbat',10,.35),W(98,'ashcaster',2,3),W(124,'salamander',7,.9),W(152,'obsidian',2,4),W(180,'magmacannon',2,3),W(210,'magmaling',12,.35)]},
+  {name:'분화구 가장자리',hint:'용암 군단의 모든 무리 · 서리 · 범위 · 파쇄 · 치유를 함께',baseHp:400000,money:925,rate:120,reward:15600,enemyMul:131,mods:['horde','curse'],waves:[
+    W(12,'magmaling',10,.4),W(22,'salamander',5,1.1),W(44,'cinderbat',10,.35),W(68,'obsidian',2,4),W(92,'ashcaster',2,3),W(118,'salamander',6,1),W(144,'magmaling',12,.35),W(172,'magmacannon',3,2.5),W(202,'cinderbat',12,.3),W(232,'obsidian',2,4)]},
+  {name:'★ 용암 군주',hint:'군주의 포효 뒤 대분화가 이어집니다 · 붉은 원을 피하고, 흑요석 근위대엔 파쇄를',baseHp:330000,money:940,rate:122,reward:17000,boss:true,enemyMul:22.5,waves:[
+    W(12,'salamander',5,1.1),W(26,'magmalord',1),W(52,'magmaling',10,.4),W(80,'obsidian',2,4),W(110,'ashcaster',3,2.5),W(140,'cinderbat',10,.35),W(170,'salamander',7,.9),W(200,'magmacannon',3,2.5),W(232,'magmaling',12,.35),W(262,'obsidian',2,4)]}
+);
+STAGES.slice(ACT8_FROM).forEach(st => { st.volcano = VOLCANO; });
+
 /* 전장 특성. 어려운 전장에는 특성이 붙어서, 스탯 높은 병종을 몰아 넣는 것만으로는
  * 풀리지 않고 그 특성을 받아칠 병종을 챙겨야 한다. */
 const STAGE_MODS = {
@@ -2046,6 +2162,7 @@ const BOSS_ROLE = { kraken: 'bruiser', tidequeen: 'caster', leviathan: 'bruiser'
                     raptorqueen: 'bruiser', quetzal: 'flyer', jungletyrant: 'bruiser',
                     mushking: 'bruiser', faequeen: 'caster', eldertree: 'bruiser',
                     scorpking: 'bruiser', sphinx: 'caster', sandpharaoh: 'bruiser',
+                    lavawyrm: 'bruiser', phoenix: 'flyer', magmalord: 'bruiser',
                     stormgriffin: 'flyer', cloudking: 'bruiser', skylord: 'caster',
                     troll: 'bruiser', frostgiant: 'bruiser', warlord: 'bruiser',
                     lich: 'caster', spiderqueen: 'caster', drake: 'flyer' };
@@ -2055,18 +2172,21 @@ const BOSS_ESCORT = {
              sky: { back: ['stormwisp', 'skycannon'], front: ['harpy', 'griffinrider'] },
              jungle: { back: ['poisontoad', 'vineshaman'], front: ['raptor', 'lizardman', 'triceratops'] },
              fey: { back: ['satyr', 'wisp'], front: ['sporecap', 'pixie', 'treant'] },
-             sand: { back: ['dunerider', 'sandmage'], front: ['scorpion', 'scarab', 'mummy'] } },
+             sand: { back: ['dunerider', 'sandmage'], front: ['scorpion', 'scarab', 'mummy'] },
+             lava: { back: ['ashcaster', 'magmacannon'], front: ['salamander', 'magmaling', 'obsidian'] } },
   caster:  { back: ['ballista', 'skelarcher', 'plaguer'], front: ['orcshield', 'boneguard', 'orcspear', 'orcberserk', 'chariot', 'dark'], nb: 2, nf: 4,
              sea: { back: ['siren', 'tidecaller'], front: ['clawcrab', 'deepone', 'nagaspear'] },
              sky: { back: ['stormwisp', 'windcaller'], front: ['cloudgiant', 'griffinrider', 'harpy'] },
              jungle: { back: ['vineshaman', 'poisontoad'], front: ['stoneidol', 'lizardman', 'raptor'] },
              fey: { back: ['wisp', 'satyr'], front: ['sporecap', 'treant', 'unicorn'] },
-             sand: { back: ['sandmage', 'dunerider'], front: ['mummy', 'scorpion', 'sandworm'] } },
+             sand: { back: ['sandmage', 'dunerider'], front: ['mummy', 'scorpion', 'sandworm'] },
+             lava: { back: ['ashcaster', 'magmacannon'], front: ['obsidian', 'salamander', 'magmaling'] } },
   flyer:   { back: ['shaman', 'hexer', 'ballista'], front: ['orcshield', 'burrower', 'hellhound', 'boneguard', 'orcberserk', 'golem'], nb: 2, nf: 3,
              sky: { back: ['stormwisp', 'windcaller'], front: ['cloudgiant', 'harpy'] },
              jungle: { back: ['poisontoad', 'vineshaman'], front: ['lizardman', 'raptor'] },
              fey: { back: ['wisp', 'satyr'], front: ['sporecap', 'pixie'] },
-             sand: { back: ['dunerider', 'sandmage'], front: ['scorpion', 'mummy'] } }
+             sand: { back: ['dunerider', 'sandmage'], front: ['scorpion', 'mummy'] },
+             lava: { back: ['ashcaster', 'magmacannon'], front: ['salamander', 'cinderbat'] } }
 };
 /* 전장 번호(0부터) → 그 전장의 보스 */
 const STAGE_BOSS = { 4: 'lich', 9: 'troll', 12: 'lich', 14: 'troll', 16: 'frostgiant', 17: 'drake',
@@ -2075,13 +2195,15 @@ const STAGE_BOSS = { 4: 'lich', 9: 'troll', 12: 'lich', 14: 'troll', 16: 'frostg
                      42: 'stormgriffin', 45: 'cloudking', 49: 'skylord',
                      52: 'raptorqueen', 55: 'quetzal', 59: 'jungletyrant',
                      62: 'mushking', 65: 'faequeen', 69: 'eldertree',
-                     72: 'scorpking', 75: 'sphinx', 79: 'sandpharaoh' };
+                     72: 'scorpking', 75: 'sphinx', 79: 'sandpharaoh',
+                     82: 'lavawyrm', 85: 'phoenix', 89: 'magmalord' };
 const ELITE_FOR = { troll: ['ogre', 1], lich: ['shaman', 2], frostgiant: ['golem', 1],
                     drake: ['hellhound', 3], spiderqueen: ['spider', 4], warlord: ['warchief', 1] };
 /* 그 막의 군단으로 바꾼 호위 (3막 바다 · 4막 천공 · 5막 밀림 · 6막 요정 숲) */
 function actEscort(role, i) {
   const esc0 = BOSS_ESCORT[role];
-  return i >= ACT7_FROM && esc0.sand ? Object.assign({}, esc0, esc0.sand)
+  return i >= ACT8_FROM && esc0.lava ? Object.assign({}, esc0, esc0.lava)
+    : i >= ACT7_FROM && esc0.sand ? Object.assign({}, esc0, esc0.sand)
     : i >= ACT6_FROM && esc0.fey ? Object.assign({}, esc0, esc0.fey)
     : i >= ACT5_FROM && esc0.jungle ? Object.assign({}, esc0, esc0.jungle)
     : i >= ACT4_FROM && esc0.sky ? Object.assign({}, esc0, esc0.sky)
@@ -2178,7 +2300,8 @@ const STAGE_LOOKS = ['meadow', 'wheat', 'river', 'forest', 'graveyard', 'cave', 
   'skyisle', 'skyisle', 'stormspire', 'skyisle', 'stormspire', 'skyisle', 'skyisle', 'stormspire', 'stormspire', 'stormspire',
   'jungle', 'jungle', 'jungle', 'temple', 'jungle', 'temple', 'jungle', 'lavajungle', 'temple', 'lavajungle',
   'feywood', 'mushgrove', 'mushgrove', 'moonglade', 'feywood', 'moonglade', 'feywood', 'moonglade', 'mushgrove', 'feywood',
-  'dunes', 'tombvalley', 'dunes', 'dunes', 'oasis', 'tombvalley', 'tombvalley', 'oasis', 'dunes', 'tombvalley'];
+  'dunes', 'tombvalley', 'dunes', 'dunes', 'oasis', 'tombvalley', 'tombvalley', 'oasis', 'dunes', 'tombvalley',
+  'ashslope', 'lavariver', 'lavariver', 'caldera', 'ashslope', 'caldera', 'lavariver', 'ashslope', 'caldera', 'caldera'];
 const STAGE_MUSIC = ['meadow', 'wheat', 'river', 'wolfwood', 'graveyard', 'cave', 'hills', 'camp', 'canyon', 'fortress',
   'darkwood', 'ruins', 'return', 'shieldwall', 'gate', 'swamp', 'snowpass', 'volcano', 'warcamp', 'throne',
   'blackriver', 'underworld', 'thorngate', 'seal', 'blizzard', 'siege', 'winterthrone', 'desert', 'eclipse', 'mythic',
@@ -2186,7 +2309,8 @@ const STAGE_MUSIC = ['meadow', 'wheat', 'river', 'wolfwood', 'graveyard', 'cave'
   'cloudbridge', 'windcliff', 'griffinnest', 'skybattery', 'thunderspire', 'cloudthrone', 'skygarden', 'stormeye', 'citadelgate', 'skythrone',
   'vinepath', 'toadmarsh', 'raptornest', 'templesteps', 'hornplain', 'serpentaltar', 'mistfalls', 'lavajungle', 'templeheart', 'tyrant',
   'fairyring', 'sporevale', 'mushcourt', 'wispmarsh', 'treehall', 'moonpalace', 'satyrfeast', 'unicornmeadow', 'forestheart', 'elderking',
-  'hotdunes', 'mummyvale', 'scorpnest', 'wormdunes', 'mirage', 'sphinxgate', 'kingsvalley', 'glassdesert', 'stormeye7', 'pharaoh'];
+  'hotdunes', 'mummyvale', 'scorpnest', 'wormdunes', 'mirage', 'sphinxgate', 'kingsvalley', 'glassdesert', 'stormeye7', 'pharaoh',
+  'ashslope', 'lavariver', 'wyrmnest', 'obsidiangorge', 'cindercave', 'phoenixnest', 'godforge', 'boilinglake', 'craterrim', 'magmalord'];
 STAGES.forEach((st, i) => {
   st.look = st.look || STAGE_LOOKS[i] || 'meadow';
   st.music = st.music || STAGE_MUSIC[i] || 'meadow';
@@ -2196,7 +2320,8 @@ STAGES[39].bossMusic = 'finale2';               // 3막의 끝은 따로 한 곡
 STAGES[ACT5_FROM - 1].bossMusic = 'finale3';      // 4막의 끝 (4.0)
 STAGES[ACT6_FROM - 1].bossMusic = 'finale4';      // 5막의 끝 (4.6)
 STAGES[ACT7_FROM - 1].bossMusic = 'finale5';      // 6막의 끝 (4.11)
-STAGES[STAGES.length - 1].bossMusic = 'finale6';
+STAGES[ACT8_FROM - 1].bossMusic = 'finale6';      // 8막의 끝 (4.15)
+STAGES[STAGES.length - 1].bossMusic = 'finale7';   // 9막의 끝 (5.3)
 STAGES.forEach((st, i) => { if (i < 50) st.hardRatio = i === 37 ? 1 : 1.3; });   // 4.18 하드코어 적 배율 바닥: 1~5막은 전장의 1.3배 이상 (38전장 기습은 1배), 6~7막은 0.8배 이상 — 다 키운 편성이 겨우 넘는 곳이라 요새·성채·보스·특성으로 어렵게
 STAGES[79].hardMods = ['blitz', 'curse']; STAGES[79].hardSoft = 0.65; STAGES[79].hardBoss = 0.7; STAGES[75].hardSoft = 0.85; STAGES[75].hardBoss = 0.75;   // 4.18 하드코어 7막의 끝: 되살아나는 파라오 앞에서 다 키운 편성도 무너졌다 — 이 전장만 배율을 조금 덜어 준다   // 7막의 끝 (4.15)
 /* 4.20 하드코어는 '만렙 기준': 강화 10 · Lv30 · 전장을 다 연 계정(병종 · 진화 전부, 소환 영웅 전부)의 가장 잘 맞는 편성이
@@ -2212,7 +2337,8 @@ const HARD_TUNE = [
   4.07, 7.44, 6.33, 3.47, 4.81, 8.35, 7.74, 7.03, 3.21, 8.25,   // 41~50
   9.6, 7.75, 5.4, 10.5, 8.23, 9.26, 4.76, 4.66, 7.66, 6.83,   // 51~60
   5.03, 4.33, 5.73, 3.13, 6.57, 6.85, 2.12, 2.61, 3.82, 5.31,   // 61~70
-  5.26, 2.95, 3.28, 2.42, 3.35, 3.99, 2.99, 5.11, 2.54, 4.73    // 71~80
+  5.26, 2.95, 3.28, 2.42, 3.35, 3.99, 2.99, 5.11, 2.54, 4.73,   // 71~80
+  4, 4, 4, 4, 4, 4, 4, 4, 4, 4    // 81~90
 ];
 STAGES.forEach((st, i) => { st.hardTune = HARD_TUNE[i]; });
 /* 4.23 하드코어 보스 전장의 보스 체력 배율 (전장 번호 → hardBoss). 보스 체력을 4.22 의 1.6배로 올리고(HARDCORE.boss.hp 2 → 3.2)
@@ -2250,7 +2376,8 @@ const BOSS_AFFIXES = {
 const AFFIX_KEYS = Object.keys(BOSS_AFFIXES);
 // 4.23 도전의 보스는 각인 셋 (새 각인 하나씩 더). 가면무도회는 제 기믹이 봉인이라 봉인 각인은 주지 않는다
 const EVENT_AFFIX = { eclipse: ['clone', 'doom', 'starfall'], titan: ['charge', 'pull', 'frenzy'], fleet: ['tax', 'totem', 'seal'], rift: ['pull', 'clone', 'seal'],
-                      demonking: ['doom', 'totem', 'frenzy'], train: ['doom', 'tax', 'starfall'], masque: ['clone', 'doom', 'frenzy'], hourglass: ['totem', 'pull', 'starfall'] };
+                      demonking: ['doom', 'totem', 'frenzy'], train: ['doom', 'tax', 'starfall'], masque: ['clone', 'doom', 'frenzy'], hourglass: ['totem', 'pull', 'starfall'],
+                      muspel: ['charge', 'tax', 'frenzy'], twins: ['starfall', 'seal'] };   // 5.3 (쌍왕은 둘이라 하나씩 적게)
 /* 이 전장의 보스가 쓰는 각인 (하드코어 보스 전장은 짝 36가지 중 28가지를 돌려 가며 — 4.23: 보폭 13 이라 전장마다 다른 짝) */
 function bossAffixes(stage, idx, hard) {
   if (stage && stage.runAffix) return stage.runAffix;          // 5.0 정벌 보스
@@ -2273,7 +2400,8 @@ STAGES.forEach((st, i) => {
     : i < 50 ? 1340 + 12 * (i - 40)                                                              // 4막도
     : i < 60 ? 1380 + 12 * (i - 50)                                                              // 5막 (4.6)
     : i < 70 ? 1380 + 10 * (i - 60)                                                              // 6막 (4.11)
-    : 1360 + 10 * (i - 70);                                                                      // 7막 (4.15)
+    : i < 80 ? 1360 + 10 * (i - 70)                                                              // 7막 (4.15)
+    : 1380 + 10 * (i - 80);                                                                      // 9막 (5.3)
   st.len = base + wiggle + (st.boss ? 120 : 0);
 });
 
@@ -2373,6 +2501,30 @@ EVENT_STAGES.push(
             W(66,'mummy',8,.7), W(88,'scorpion',3,2.5), W(110,'scarab',8,.8), W(132,'sandmage',3,2.5), W(156,'mummy',10,.6),
             W(180,'sandworm',2,4)] }
 );
+/* 5.3 도전 둘 — 난이도는 새 곳으로 (기존 도전은 5.2 기준 그대로).
+ *  - '무스펠의 불꽃 거인': 수르트가 불꽃 검을 치켜들면 4초 안에 기절로 끊어야 한다. 못 끊으면 아군 모두 최대 체력 40% + 화상.
+ *    끊으면 3초 비틀거린다 — 기절을 언제 쓰느냐를 묻는다 (필살을 쿨마다 눌러 버리면 막을 것이 없다).
+ *  - '해와 달의 쌍왕': 보스 둘. 한쪽이 쓰러지면 10초 안에 다른 쪽도 쓰러뜨려야 결계가 걷힌다. 늦으면 먼저 쓰러진 쪽이 체력 60% 로 되살아나고,
+ *    남은 쪽은 격노한다 — 피해를 고르게 나눠 두 체력을 함께 깎아 내려가야 한다. */
+EVENT_STAGES.push(
+  { name: '무스펠의 불꽃 거인', bossId: 'surtr', bossRole: 'bruiser', boss: true, look: 'caldera', music: 'muspel',
+    bossMusic: 'boss_surtr', mods: ['ironclad'], baseHp: 180000, money: 700, rate: 88, reward: 0, enemyMul: 11, bossMul: { hp: 3, atk: 1.3 },
+    fury: { per30: 0.12, max: 1.5 }, len: 1650,
+    event: { id: 'muspel', deck: ['thor','zeus','guanyu','frost','frostlancer','spartan','shield','knight','priest','catapult'],
+             unlock: 80, reward: 60000, stones: 50,
+             mech: '불꽃 검을 치켜들면 4초 안에 기절로 끊으세요 · 못 끊으면 아군 모두 최대 체력 40% 피해 · 끊으면 3초 비틀거림' },
+    waves: [W(2,'salamander',5,.8), W(12,'magmaling',6,.6), W(26,'ashcaster',2,3), W(40,'surtr',1), W(46,'cinderbat',8,.5),
+            W(66,'salamander',6,.8), W(88,'obsidian',2,4), W(110,'magmaling',10,.5), W(132,'magmacannon',2,3), W(156,'salamander',8,.7),
+            W(180,'obsidian',2,4)] },
+  { name: '해와 달의 쌍왕', bossId: 'sunking', bossRole: 'caster', boss: true, look: 'eclipse', music: 'twinsky',
+    bossMusic: 'boss_twins', mods: ['horde'], baseHp: 190000, money: 720, rate: 90, reward: 0, enemyMul: 12, bossMul: { hp: 2.6, atk: 1.3 },
+    fury: { per30: 0.12, max: 1.5 }, len: 1650,
+    event: { id: 'twins', deck: ['merlin','ra','zeus','odin','thor','catapult','mage','pyro','knight','shield'],
+             unlock: 88, reward: 70000, stones: 55,
+             mech: '보스 둘 · 한쪽을 쓰러뜨리면 10초 안에 다른 쪽도 · 늦으면 먼저 쓰러진 쪽이 되살아나고 남은 쪽은 격노 — 두 체력을 함께 깎으세요' },
+    waves: [W(2,'pixie',8,.5), W(14,'unicorn',2,3), W(28,'harpy',6,.6), W(40,'sunking',1), W(40,'moonqueen',1), W(46,'wisp',3,2),
+            W(70,'griffinrider',4,1.4), W(96,'pixie',12,.4), W(122,'unicorn',3,2.5), W(150,'stormwisp',3,2.5), W(180,'harpy',10,.5)] }
+);
 /* 4.18: 다 키운 편성이면 도전 여덟이 모두 성채 100% 로 끝났다 (하드코어보다 쉽다는 말이 맞았다).
  * 도전을 더 억세게: 적 배율 · 보스 체력에 곱한다.
    * 도전마다 여유가 달라(앞의 다섯은 넉넉, 뒤의 셋은 빠듯) 따로 맞춘다: [적 배율, 보스 체력] */
@@ -2380,7 +2532,8 @@ EVENT_STAGES.push(
 // 4.21: 보스 각인을 더하고 승률 목표를 30% 안팎으로 — 각인이 무거운 곳(거신 · 균열 · 모래시계)은 능력치를 오히려 덜었다
 // 4.22: 분신이 돌아올 때마다 덜 채우게 되어(끝나지 않는 판 막기) 분신 도전(월식 · 균열 · 가면무도회)이 쉬워져 다시 올렸다 · 토템 원거리 우선으로 마왕도 조금
 const EVENT_TOUGH = { eclipse: [0.715, 4.256], titan: [4.682, 2.569], fleet: [6.502, 2.515], rift: [3.776, 2.376], demonking: [2.243, 2.942],
-                      train: [4.364, 1.492], masque: [5.23, 2.708], hourglass: [3.381, 1.314] };
+                      train: [4.364, 1.492], masque: [5.23, 2.708], hourglass: [3.381, 1.314],
+                      muspel: [7.935, 1], twins: [7.558, 1] };   // 5.3 새 도전 — 가장 센 편성 1/3 로 맞췄다
 // 4.24: 버프 · 디버프를 몰아 넣은 편성(멀린 · 오딘 · 아서 · 라 · 제갈량 + 북 · 룬 현자 · 사제 · 무당)도 기준에 넣어 다시 맞췄다 — 적 배율이 오르면 보스 체력도 따라 오른다
 // 5.2: 오딘 4진 · 새 3진 다섯을 넣고 하드코어와 같이 다시 맞췄다
 const EVENT_BOSS_HP = 1.6;   // 4.23 도전 보스 체력을 따로 더 (보스가 생각보다 빨리 녹았다) — 잡몹 · 공격은 EVENT_TOUGH 로 맞춘다
@@ -2605,6 +2758,7 @@ const ACHIEVEMENTS = [
   { id:'campaign60',name:'밀림의 왕',desc:'60전장 모두 돌파 (6막 잊힌 밀림)',gold:30000,stone:20,test:s=>s.cleared>=60 },
   { id:'campaign70',name:'숲을 깨운 자',desc:'70전장 모두 돌파 (7막 홀린 요정 숲)',gold:40000,stone:25,test:s=>s.cleared>=70 },
   { id:'campaign80',name:'모래폭풍을 건넌 자',desc:'80전장 모두 돌파 (8막 모래폭풍 사막)',gold:50000,stone:30,test:s=>s.cleared>=80 },
+  { id:'campaign90',name:'불의 산맥을 넘은 자',desc:'90전장 모두 돌파 (9막 불의 산맥)',gold:60000,stone:35,test:s=>s.cleared>=90 },
   { id:'trainStop',name:'기관차를 멈춘 자',desc:'도전 \'폭주 기관차\' 돌파',gold:15000,stone:15,test:s=>!!(s.events && s.events.train) },
   { id:'unmasked',name:'가면을 벗긴 자',desc:'도전 \'그림자 가면무도회\' 돌파',gold:15000,stone:15,test:s=>!!(s.events && s.events.masque) },
   { id:'ultimate',name:'궁극에 이른 자',desc:'병종 하나를 4진',gold:30000,stone:20,test:s=>Object.keys(s.evo3 || {}).length >= 1 },

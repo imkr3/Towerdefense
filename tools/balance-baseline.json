@@ -1,0 +1,2104 @@
+{
+ "global": {
+  "hc.enemyMul": 4.6,
+  "hc.fortMul": 2.4,
+  "hc.cmdMul": 1.5,
+  "hc.stunResist": 0.3,
+  "hc.charmResist": 0.4,
+  "hc.mulFloor": 6.9,
+  "hc.fortFloor": 50000,
+  "hc.soft": 4,
+  "hc.sally": 0.5,
+  "hc.minRatio": 0.8,
+  "hc.castleInv": 1.6666666666666667,
+  "hc.boss.hp": 3.2,
+  "hc.boss.atk": 1.2,
+  "hc.fury.per30": 0.15,
+  "hc.fury.max": 1.5,
+  "awakenTax": 0.06,
+  "eventBossHp": 1.6
+ },
+ "stages": [
+  {
+   "n": 1,
+   "name": "국경 초소",
+   "enemyMul": 1,
+   "baseHp": 2600,
+   "spawns": 12,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 102.81,
+   "hcFort": 50000,
+   "hcBoss": 1,
+   "hcMods": [
+    "blitz"
+   ]
+  },
+  {
+   "n": 2,
+   "name": "밀밭 오솔길",
+   "enemyMul": 1.022,
+   "baseHp": 3200,
+   "spawns": 14,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 103.5,
+   "hcFort": 50000,
+   "hcBoss": 1,
+   "hcMods": [
+    "horde"
+   ]
+  },
+  {
+   "n": 3,
+   "name": "무너진 돌다리",
+   "enemyMul": 1.046,
+   "baseHp": 3800,
+   "spawns": 17,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 83.49,
+   "hcFort": 50000,
+   "hcBoss": 1,
+   "hcMods": [
+    "ironclad"
+   ]
+  },
+  {
+   "n": 4,
+   "name": "늑대 골짜기",
+   "enemyMul": 1.51,
+   "baseHp": 4400,
+   "spawns": 13,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 69.69,
+   "hcFort": 50000,
+   "hcBoss": 1,
+   "hcMods": [
+    "curse"
+   ]
+  },
+  {
+   "n": 5,
+   "name": "★ 리치의 무덤가",
+   "enemyMul": 1.37,
+   "baseHp": 5200,
+   "spawns": 20,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 29.738999999999997,
+   "hcFort": 50000,
+   "hcBoss": 1.03,
+   "hcMods": [
+    "blitz"
+   ]
+  },
+  {
+   "n": 6,
+   "name": "거미 굴",
+   "enemyMul": 1.6,
+   "baseHp": 5600,
+   "spawns": 20,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 81.42000000000002,
+   "hcFort": 50000,
+   "hcBoss": 1,
+   "hcMods": [
+    "horde"
+   ]
+  },
+  {
+   "n": 7,
+   "name": "석궁수의 언덕",
+   "enemyMul": 1.65,
+   "baseHp": 6000,
+   "spawns": 21,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 55.2,
+   "hcFort": 50000,
+   "hcBoss": 1,
+   "hcMods": [
+    "ironclad"
+   ]
+  },
+  {
+   "n": 8,
+   "name": "주술사의 야영지",
+   "enemyMul": 1.71,
+   "baseHp": 6600,
+   "spawns": 26,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 44.505,
+   "hcFort": 50000,
+   "hcBoss": 1,
+   "hcMods": [
+    "curse"
+   ]
+  },
+  {
+   "n": 9,
+   "name": "화약 골짜기",
+   "enemyMul": 1.77,
+   "baseHp": 7200,
+   "spawns": 27,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 25.116000000000003,
+   "hcFort": 50000,
+   "hcBoss": 1,
+   "hcMods": [
+    "blitz"
+   ]
+  },
+  {
+   "n": 10,
+   "name": "★ 트롤 대장의 요새",
+   "enemyMul": 1.63,
+   "baseHp": 8600,
+   "spawns": 26,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "ironclad"
+   ],
+   "hcMul": 20.148,
+   "hcFort": 50000,
+   "hcBoss": 1.08,
+   "hcMods": [
+    "horde",
+    "ironclad"
+   ]
+  },
+  {
+   "n": 11,
+   "name": "흑기사의 숲",
+   "enemyMul": 1.91,
+   "baseHp": 9800,
+   "spawns": 27,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 26.081999999999997,
+   "hcFort": 50000,
+   "hcBoss": 1,
+   "hcMods": [
+    "ironclad"
+   ]
+  },
+  {
+   "n": 12,
+   "name": "망령의 폐허",
+   "enemyMul": 2.5,
+   "baseHp": 10800,
+   "spawns": 33,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 24.909,
+   "hcFort": 50000,
+   "hcBoss": 1,
+   "hcMods": [
+    "curse"
+   ]
+  },
+  {
+   "n": 13,
+   "name": "리치의 재림",
+   "enemyMul": 2.01,
+   "baseHp": 11000,
+   "spawns": 37,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 22.287000000000003,
+   "hcFort": 50000,
+   "hcBoss": 1.13,
+   "hcMods": [
+    "blitz"
+   ]
+  },
+  {
+   "n": 14,
+   "name": "방패벽 관문",
+   "enemyMul": 2.15,
+   "baseHp": 12000,
+   "spawns": 31,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 24.977999999999998,
+   "hcFort": 50000,
+   "hcBoss": 1,
+   "hcMods": [
+    "horde"
+   ]
+  },
+  {
+   "n": 15,
+   "name": "★ 거대 트롤의 문",
+   "enemyMul": 2.36,
+   "baseHp": 13000,
+   "spawns": 36,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "blitz"
+   ],
+   "hcMul": 46.575,
+   "hcFort": 50000,
+   "hcBoss": 1.03,
+   "hcMods": [
+    "blitz",
+    "ironclad"
+   ]
+  },
+  {
+   "n": 16,
+   "name": "역병의 늪",
+   "enemyMul": 3.23,
+   "baseHp": 20000,
+   "spawns": 46,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 70.285104434907,
+   "hcFort": 50000,
+   "hcBoss": 1,
+   "hcMods": [
+    "curse"
+   ]
+  },
+  {
+   "n": 17,
+   "name": "★ 서리 거인의 고개",
+   "enemyMul": 2.05,
+   "baseHp": 22500,
+   "spawns": 45,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "horde"
+   ],
+   "hcMul": 48.852,
+   "hcFort": 54000,
+   "hcBoss": 0.993,
+   "hcMods": [
+    "blitz",
+    "horde"
+   ]
+  },
+  {
+   "n": 18,
+   "name": "★ 화룡의 둥지",
+   "enemyMul": 2.14,
+   "baseHp": 27000,
+   "spawns": 48,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "giantslayer",
+    "ironclad"
+   ],
+   "hcMul": 33.21627906976744,
+   "hcFort": 64800,
+   "hcBoss": 1.15,
+   "hcMods": [
+    "giantslayer",
+    "ironclad"
+   ]
+  },
+  {
+   "n": 19,
+   "name": "대군주의 전조",
+   "enemyMul": 2.33,
+   "baseHp": 26000,
+   "spawns": 44,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 92.46000000000001,
+   "hcFort": 62400,
+   "hcBoss": 1.13,
+   "hcMods": [
+    "ironclad"
+   ]
+  },
+  {
+   "n": 20,
+   "name": "★ 오크 대군주의 왕좌",
+   "enemyMul": 3.57,
+   "baseHp": 30000,
+   "spawns": 56,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "giantslayer",
+    "horde",
+    "ironclad"
+   ],
+   "hcMul": 127.75120839033288,
+   "hcFort": 72000,
+   "hcBoss": 1.13,
+   "hcMods": [
+    "giantslayer",
+    "horde",
+    "ironclad"
+   ]
+  },
+  {
+   "n": 21,
+   "name": "검은 강의 나루",
+   "enemyMul": 2.19,
+   "baseHp": 32000,
+   "spawns": 51,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 55.269,
+   "hcFort": 76800,
+   "hcBoss": 1,
+   "hcMods": [
+    "blitz"
+   ]
+  },
+  {
+   "n": 22,
+   "name": "망자의 행렬",
+   "enemyMul": 1.91,
+   "baseHp": 33500,
+   "spawns": 55,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "horde"
+   ],
+   "hcMul": 62.169000000000004,
+   "hcFort": 80400,
+   "hcBoss": 1.01,
+   "hcMods": [
+    "horde",
+    "ironclad"
+   ]
+  },
+  {
+   "n": 23,
+   "name": "가시 왕관의 성문",
+   "enemyMul": 2.62,
+   "baseHp": 35000,
+   "spawns": 37,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 122.9220233463035,
+   "hcFort": 84000,
+   "hcBoss": 1,
+   "hcMods": [
+    "ironclad"
+   ]
+  },
+  {
+   "n": 24,
+   "name": "★ 명계의 삼중 봉인",
+   "enemyMul": 6.48,
+   "baseHp": 38000,
+   "spawns": 63,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "curse",
+    "giantslayer",
+    "horde"
+   ],
+   "hcMul": 50.34239999999999,
+   "hcFort": 91200,
+   "hcBoss": 1.98,
+   "hcMods": [
+    "curse",
+    "giantslayer",
+    "horde"
+   ]
+  },
+  {
+   "n": 25,
+   "name": "눈보라 추격전",
+   "enemyMul": 3.09,
+   "baseHp": 39500,
+   "spawns": 62,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "blitz"
+   ],
+   "hcMul": 79.8123462547362,
+   "hcFort": 94800,
+   "hcBoss": 1,
+   "hcMods": [
+    "blitz",
+    "horde"
+   ]
+  },
+  {
+   "n": 26,
+   "name": "얼어붙은 공성로",
+   "enemyMul": 3.32,
+   "baseHp": 41000,
+   "spawns": 42,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 107.96183745583038,
+   "hcFort": 98400,
+   "hcBoss": 1,
+   "hcMods": [
+    "horde"
+   ]
+  },
+  {
+   "n": 27,
+   "name": "★ 영원의 겨울 왕좌",
+   "enemyMul": 9.16,
+   "baseHp": 44000,
+   "spawns": 55,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "blitz",
+    "curse",
+    "giantslayer"
+   ],
+   "hcMul": 54.85499999999998,
+   "hcFort": 105600,
+   "hcBoss": 1.1,
+   "hcMods": [
+    "blitz",
+    "curse",
+    "giantslayer"
+   ]
+  },
+  {
+   "n": 28,
+   "name": "불타는 태양 회랑",
+   "enemyMul": 8.1,
+   "baseHp": 45500,
+   "spawns": 64,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "horde",
+    "ironclad"
+   ],
+   "hcMul": 30.839999999999993,
+   "hcFort": 109200,
+   "hcBoss": 1,
+   "hcMods": [
+    "horde",
+    "ironclad"
+   ]
+  },
+  {
+   "n": 29,
+   "name": "황금 일식의 제단",
+   "enemyMul": 4.54,
+   "baseHp": 47500,
+   "spawns": 48,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 121.5746341463415,
+   "hcFort": 114000,
+   "hcBoss": 1.82,
+   "hcMods": [
+    "blitz"
+   ]
+  },
+  {
+   "n": 30,
+   "name": "★ 세 신화의 종착지",
+   "enemyMul": 9.18,
+   "baseHp": 51000,
+   "spawns": 64,
+   "bossHp": 0.65,
+   "bossAtk": 1,
+   "mods": [
+    "blitz",
+    "curse",
+    "giantslayer",
+    "horde"
+   ],
+   "hcMul": 109.07519999999998,
+   "hcFort": 122400,
+   "hcBoss": 0.977,
+   "hcMods": [
+    "blitz",
+    "curse",
+    "giantslayer",
+    "horde"
+   ]
+  },
+  {
+   "n": 31,
+   "name": "난파선 해안",
+   "enemyMul": 19.44,
+   "baseHp": 53000,
+   "spawns": 48,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 269.09999999999997,
+   "hcFort": 127200,
+   "hcBoss": 1,
+   "hcMods": [
+    "ironclad"
+   ]
+  },
+  {
+   "n": 32,
+   "name": "산호초 여울",
+   "enemyMul": 16.2,
+   "baseHp": 55000,
+   "spawns": 66,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 59.28000000000001,
+   "hcFort": 132000,
+   "hcBoss": 1,
+   "hcMods": [
+    "curse"
+   ]
+  },
+  {
+   "n": 33,
+   "name": "★ 크라켄의 만",
+   "enemyMul": 20,
+   "baseHp": 58000,
+   "spawns": 52,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 70.98,
+   "hcFort": 139200,
+   "hcBoss": 1.01,
+   "hcMods": [
+    "blitz"
+   ]
+  },
+  {
+   "n": 34,
+   "name": "안개 등대",
+   "enemyMul": 31.32,
+   "baseHp": 60000,
+   "spawns": 38,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "curse"
+   ],
+   "hcMul": 258.999,
+   "hcFort": 144000,
+   "hcBoss": 1,
+   "hcMods": [
+    "curse",
+    "horde"
+   ]
+  },
+  {
+   "n": 35,
+   "name": "세이렌의 암초",
+   "enemyMul": 29.16,
+   "baseHp": 62000,
+   "spawns": 44,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 242.54100000000003,
+   "hcFort": 148800,
+   "hcBoss": 1,
+   "hcMods": [
+    "ironclad"
+   ]
+  },
+  {
+   "n": 36,
+   "name": "★ 해일 여왕의 신전",
+   "enemyMul": 15.12,
+   "baseHp": 65000,
+   "spawns": 53,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 81.354,
+   "hcFort": 156000,
+   "hcBoss": 1.63,
+   "hcMods": [
+    "curse"
+   ]
+  },
+  {
+   "n": 37,
+   "name": "침몰한 도시",
+   "enemyMul": 41.04,
+   "baseHp": 66000,
+   "spawns": 60,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "horde",
+    "ironclad"
+   ],
+   "hcMul": 365.066,
+   "hcFort": 158400,
+   "hcBoss": 1,
+   "hcMods": [
+    "horde",
+    "ironclad"
+   ]
+  },
+  {
+   "n": 38,
+   "name": "폭풍 해협",
+   "enemyMul": 17.28,
+   "baseHp": 68000,
+   "spawns": 80,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "blitz",
+    "giantslayer"
+   ],
+   "hcMul": 37.92000000000001,
+   "hcFort": 163200,
+   "hcBoss": 1,
+   "hcMods": [
+    "blitz",
+    "giantslayer"
+   ]
+  },
+  {
+   "n": 39,
+   "name": "심연의 문",
+   "enemyMul": 20,
+   "baseHp": 70000,
+   "spawns": 68,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "blitz",
+    "curse",
+    "ironclad"
+   ],
+   "hcMul": 161.72,
+   "hcFort": 168000,
+   "hcBoss": 1,
+   "hcMods": [
+    "blitz",
+    "curse",
+    "ironclad"
+   ]
+  },
+  {
+   "n": 40,
+   "name": "★ 리바이어던의 심연",
+   "enemyMul": 21.6,
+   "baseHp": 76000,
+   "spawns": 77,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 234.52,
+   "hcFort": 182400,
+   "hcBoss": 1.04,
+   "hcMods": [
+    "curse"
+   ]
+  },
+  {
+   "n": 41,
+   "name": "구름 다리",
+   "enemyMul": 23.76,
+   "baseHp": 80000,
+   "spawns": 39,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 116.40200000000002,
+   "hcFort": 192000,
+   "hcBoss": 1,
+   "hcMods": [
+    "blitz"
+   ]
+  },
+  {
+   "n": 42,
+   "name": "바람의 절벽",
+   "enemyMul": 21.6,
+   "baseHp": 82000,
+   "spawns": 37,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 193.44,
+   "hcFort": 196800,
+   "hcBoss": 1,
+   "hcMods": [
+    "horde"
+   ]
+  },
+  {
+   "n": 43,
+   "name": "★ 폭풍 그리폰의 둥지",
+   "enemyMul": 22.68,
+   "baseHp": 85000,
+   "spawns": 38,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 172.809,
+   "hcFort": 204000,
+   "hcBoss": 1.25,
+   "hcMods": [
+    "ironclad"
+   ]
+  },
+  {
+   "n": 44,
+   "name": "천공 포대",
+   "enemyMul": 30.24,
+   "baseHp": 86000,
+   "spawns": 40,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "giantslayer"
+   ],
+   "hcMul": 126.30799999999999,
+   "hcFort": 206400,
+   "hcBoss": 1,
+   "hcMods": [
+    "curse",
+    "giantslayer"
+   ]
+  },
+  {
+   "n": 45,
+   "name": "번개 첨탑",
+   "enemyMul": 28.08,
+   "baseHp": 88000,
+   "spawns": 44,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 162.578,
+   "hcFort": 211200,
+   "hcBoss": 1,
+   "hcMods": [
+    "blitz"
+   ]
+  },
+  {
+   "n": 46,
+   "name": "★ 구름 왕의 옥좌",
+   "enemyMul": 19.44,
+   "baseHp": 90000,
+   "spawns": 44,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 195.39,
+   "hcFort": 216000,
+   "hcBoss": 1.06,
+   "hcMods": [
+    "horde"
+   ]
+  },
+  {
+   "n": 47,
+   "name": "하늘 정원",
+   "enemyMul": 34.56,
+   "baseHp": 92000,
+   "spawns": 51,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "horde",
+    "ironclad"
+   ],
+   "hcMul": 321.9840000000001,
+   "hcFort": 220800,
+   "hcBoss": 1,
+   "hcMods": [
+    "horde",
+    "ironclad"
+   ]
+  },
+  {
+   "n": 48,
+   "name": "폭풍의 눈",
+   "enemyMul": 21.6,
+   "baseHp": 94000,
+   "spawns": 77,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "blitz",
+    "horde"
+   ],
+   "hcMul": 182.78,
+   "hcFort": 225600,
+   "hcBoss": 1,
+   "hcMods": [
+    "blitz",
+    "horde"
+   ]
+  },
+  {
+   "n": 49,
+   "name": "천공 성채의 문",
+   "enemyMul": 23.76,
+   "baseHp": 96000,
+   "spawns": 66,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "blitz",
+    "giantslayer",
+    "ironclad"
+   ],
+   "hcMul": 91.806,
+   "hcFort": 230400,
+   "hcBoss": 1,
+   "hcMods": [
+    "blitz",
+    "giantslayer",
+    "ironclad"
+   ]
+  },
+  {
+   "n": 50,
+   "name": "★ 천공의 군주",
+   "enemyMul": 22.68,
+   "baseHp": 100000,
+   "spawns": 60,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 225.225,
+   "hcFort": 240000,
+   "hcBoss": 1.17,
+   "hcMods": [
+    "horde"
+   ]
+  },
+  {
+   "n": 51,
+   "name": "덩굴 오솔길",
+   "enemyMul": 21.06,
+   "baseHp": 104000,
+   "spawns": 50,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 149.76000000000002,
+   "hcFort": 249600,
+   "hcBoss": 1,
+   "hcMods": [
+    "ironclad"
+   ]
+  },
+  {
+   "n": 52,
+   "name": "독안개 늪",
+   "enemyMul": 19.5,
+   "baseHp": 106000,
+   "spawns": 49,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "curse"
+   ],
+   "hcMul": 120.9,
+   "hcFort": 254400,
+   "hcBoss": 1,
+   "hcMods": [
+    "blitz",
+    "curse"
+   ]
+  },
+  {
+   "n": 53,
+   "name": "★ 랩터 여왕의 둥지",
+   "enemyMul": 16.56,
+   "baseHp": 110000,
+   "spawns": 60,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 81.29454545454546,
+   "hcFort": 264000,
+   "hcBoss": 1.06,
+   "hcMods": [
+    "blitz"
+   ]
+  },
+  {
+   "n": 54,
+   "name": "잊힌 신전의 계단",
+   "enemyMul": 19.98,
+   "baseHp": 112000,
+   "spawns": 40,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "giantslayer"
+   ],
+   "hcMul": 158.8533333333333,
+   "hcFort": 268800,
+   "hcBoss": 1,
+   "hcMods": [
+    "giantslayer",
+    "horde"
+   ]
+  },
+  {
+   "n": 55,
+   "name": "뿔 공룡 평원",
+   "enemyMul": 25.92,
+   "baseHp": 114000,
+   "spawns": 49,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "ironclad"
+   ],
+   "hcMul": 158.01600000000002,
+   "hcFort": 273600,
+   "hcBoss": 1,
+   "hcMods": [
+    "curse",
+    "ironclad"
+   ]
+  },
+  {
+   "n": 56,
+   "name": "★ 깃털 뱀의 제단",
+   "enemyMul": 20.52,
+   "baseHp": 118000,
+   "spawns": 44,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 140.752,
+   "hcFort": 283200,
+   "hcBoss": 1.13,
+   "hcMods": [
+    "curse"
+   ]
+  },
+  {
+   "n": 57,
+   "name": "안개 폭포",
+   "enemyMul": 19.98,
+   "baseHp": 120000,
+   "spawns": 72,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "blitz"
+   ],
+   "hcMul": 72.0135111111111,
+   "hcFort": 288000,
+   "hcBoss": 1,
+   "hcMods": [
+    "blitz",
+    "horde"
+   ]
+  },
+  {
+   "n": 58,
+   "name": "화산 정글",
+   "enemyMul": 30.24,
+   "baseHp": 122000,
+   "spawns": 43,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "blitz",
+    "giantslayer"
+   ],
+   "hcMul": 104.384,
+   "hcFort": 292800,
+   "hcBoss": 1,
+   "hcMods": [
+    "blitz",
+    "giantslayer"
+   ]
+  },
+  {
+   "n": 59,
+   "name": "신전의 심장",
+   "enemyMul": 23.76,
+   "baseHp": 126000,
+   "spawns": 65,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "curse",
+    "horde"
+   ],
+   "hcMul": 134.81599999999997,
+   "hcFort": 302400,
+   "hcBoss": 1,
+   "hcMods": [
+    "curse",
+    "horde"
+   ]
+  },
+  {
+   "n": 60,
+   "name": "★ 밀림의 폭군",
+   "enemyMul": 16.15,
+   "baseHp": 132000,
+   "spawns": 66,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "curse",
+    "ironclad"
+   ],
+   "hcMul": 101.73447619047619,
+   "hcFort": 316800,
+   "hcBoss": 1.19,
+   "hcMods": [
+    "curse",
+    "ironclad"
+   ]
+  },
+  {
+   "n": 61,
+   "name": "요정 고리 숲길",
+   "enemyMul": 35.2,
+   "baseHp": 307000,
+   "spawns": 51,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 141.64480000000003,
+   "hcFort": 736800,
+   "hcBoss": 1,
+   "hcMods": [
+    "blitz"
+   ]
+  },
+  {
+   "n": 62,
+   "name": "독버섯 골짜기",
+   "enemyMul": 61.56,
+   "baseHp": 515000,
+   "spawns": 51,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "horde"
+   ],
+   "hcMul": 197.44799999999998,
+   "hcFort": 1236000,
+   "hcBoss": 1,
+   "hcMods": [
+    "horde",
+    "ironclad"
+   ]
+  },
+  {
+   "n": 63,
+   "name": "★ 버섯 왕의 궁정",
+   "enemyMul": 19,
+   "baseHp": 180000,
+   "spawns": 58,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 87.09600000000002,
+   "hcFort": 432000,
+   "hcBoss": 1.1,
+   "hcMods": [
+    "ironclad"
+   ]
+  },
+  {
+   "n": 64,
+   "name": "홀림불 늪",
+   "enemyMul": 28.62,
+   "baseHp": 299000,
+   "spawns": 55,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "giantslayer"
+   ],
+   "hcMul": 66.35600000000001,
+   "hcFort": 717600,
+   "hcBoss": 1,
+   "hcMods": [
+    "curse",
+    "giantslayer"
+   ]
+  },
+  {
+   "n": 65,
+   "name": "고목의 회랑",
+   "enemyMul": 29.5,
+   "baseHp": 339000,
+   "spawns": 38,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "ironclad"
+   ],
+   "hcMul": 155.05200000000002,
+   "hcFort": 813600,
+   "hcBoss": 1,
+   "hcMods": [
+    "blitz",
+    "ironclad"
+   ]
+  },
+  {
+   "n": 66,
+   "name": "★ 달빛 요정 궁",
+   "enemyMul": 15.12,
+   "baseHp": 194000,
+   "spawns": 49,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 98.0311111111111,
+   "hcFort": 465600,
+   "hcBoss": 1.45,
+   "hcMods": [
+    "horde"
+   ]
+  },
+  {
+   "n": 67,
+   "name": "사티로스의 잔치",
+   "enemyMul": 59,
+   "baseHp": 590000,
+   "spawns": 44,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "curse",
+    "giantslayer"
+   ],
+   "hcMul": 100.06400000000001,
+   "hcFort": 1416000,
+   "hcBoss": 1,
+   "hcMods": [
+    "curse",
+    "giantslayer"
+   ]
+  },
+  {
+   "n": 68,
+   "name": "일각수 초원",
+   "enemyMul": 37.4,
+   "baseHp": 328000,
+   "spawns": 36,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "blitz"
+   ],
+   "hcMul": 78.0912,
+   "hcFort": 787200,
+   "hcBoss": 1,
+   "hcMods": [
+    "blitz",
+    "curse"
+   ]
+  },
+  {
+   "n": 69,
+   "name": "숲의 심장부",
+   "enemyMul": 39.96,
+   "baseHp": 246000,
+   "spawns": 62,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "curse",
+    "horde"
+   ],
+   "hcMul": 113.07200000000002,
+   "hcFort": 590400,
+   "hcBoss": 1,
+   "hcMods": [
+    "curse",
+    "horde"
+   ]
+  },
+  {
+   "n": 70,
+   "name": "★ 고목왕",
+   "enemyMul": 23.5,
+   "baseHp": 215000,
+   "spawns": 69,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "curse",
+    "ironclad"
+   ],
+   "hcMul": 99.828,
+   "hcFort": 516000,
+   "hcBoss": 1.19,
+   "hcMods": [
+    "curse",
+    "ironclad"
+   ]
+  },
+  {
+   "n": 71,
+   "name": "뜨거운 모래언덕",
+   "enemyMul": 32.4,
+   "baseHp": 300000,
+   "spawns": 42,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 126.24000000000001,
+   "hcFort": 720000,
+   "hcBoss": 1,
+   "hcMods": [
+    "ironclad"
+   ]
+  },
+  {
+   "n": 72,
+   "name": "미라의 골짜기",
+   "enemyMul": 27,
+   "baseHp": 320000,
+   "spawns": 43,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "curse"
+   ],
+   "hcMul": 59,
+   "hcFort": 768000,
+   "hcBoss": 1,
+   "hcMods": [
+    "blitz",
+    "curse"
+   ]
+  },
+  {
+   "n": 73,
+   "name": "★ 전갈 왕의 둥지",
+   "enemyMul": 21.6,
+   "baseHp": 240000,
+   "spawns": 43,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 52.47999999999999,
+   "hcFort": 576000,
+   "hcBoss": 1.38,
+   "hcMods": [
+    "blitz"
+   ]
+  },
+  {
+   "n": 74,
+   "name": "모래벌레의 사구",
+   "enemyMul": 24.84,
+   "baseHp": 330000,
+   "spawns": 36,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "giantslayer"
+   ],
+   "hcMul": 44.528000000000006,
+   "hcFort": 792000,
+   "hcBoss": 1,
+   "hcMods": [
+    "giantslayer",
+    "horde"
+   ]
+  },
+  {
+   "n": 75,
+   "name": "신기루 오아시스",
+   "enemyMul": 21,
+   "baseHp": 340000,
+   "spawns": 47,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "blitz"
+   ],
+   "hcMul": 56.28,
+   "hcFort": 816000,
+   "hcBoss": 1,
+   "hcMods": [
+    "blitz",
+    "ironclad"
+   ]
+  },
+  {
+   "n": 76,
+   "name": "★ 스핑크스의 문",
+   "enemyMul": 19.44,
+   "baseHp": 250000,
+   "spawns": 42,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [],
+   "hcMul": 51.057490909090916,
+   "hcFort": 600000,
+   "hcBoss": 0.985,
+   "hcMods": [
+    "curse"
+   ]
+  },
+  {
+   "n": 77,
+   "name": "왕가의 계곡",
+   "enemyMul": 28.08,
+   "baseHp": 350000,
+   "spawns": 42,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "giantslayer"
+   ],
+   "hcMul": 62.19200000000001,
+   "hcFort": 840000,
+   "hcBoss": 1,
+   "hcMods": [
+    "blitz",
+    "giantslayer"
+   ]
+  },
+  {
+   "n": 78,
+   "name": "유리 사막",
+   "enemyMul": 23.76,
+   "baseHp": 360000,
+   "spawns": 35,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "ironclad"
+   ],
+   "hcMul": 89.936,
+   "hcFort": 864000,
+   "hcBoss": 1,
+   "hcMods": [
+    "horde",
+    "ironclad"
+   ]
+  },
+  {
+   "n": 79,
+   "name": "모래폭풍의 눈",
+   "enemyMul": 41.04,
+   "baseHp": 340000,
+   "spawns": 51,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "curse",
+    "horde"
+   ],
+   "hcMul": 77.21600000000001,
+   "hcFort": 816000,
+   "hcBoss": 1,
+   "hcMods": [
+    "curse",
+    "horde"
+   ]
+  },
+  {
+   "n": 80,
+   "name": "★ 모래폭풍의 파라오",
+   "enemyMul": 16.2,
+   "baseHp": 280000,
+   "spawns": 58,
+   "bossHp": 1,
+   "bossAtk": 1,
+   "mods": [
+    "blitz",
+    "ironclad"
+   ],
+   "hcMul": 44.661157894736846,
+   "hcFort": 672000,
+   "hcBoss": 0.861,
+   "hcMods": [
+    "blitz",
+    "curse"
+   ]
+  }
+ ],
+ "events": [
+  {
+   "n": 1,
+   "id": "eclipse",
+   "enemyMul": 9.65,
+   "baseHp": 36000,
+   "spawns": 52,
+   "bossHp": 149.81,
+   "bossAtk": 1.6,
+   "mods": [
+    "curse"
+   ]
+  },
+  {
+   "n": 2,
+   "id": "titan",
+   "enemyMul": 51.5,
+   "baseHp": 42000,
+   "spawns": 36,
+   "bossHp": 18.5,
+   "bossAtk": 1.6,
+   "mods": [
+    "ironclad"
+   ]
+  },
+  {
+   "n": 3,
+   "id": "fleet",
+   "enemyMul": 36.41,
+   "baseHp": 44000,
+   "spawns": 56,
+   "bossHp": 8.05,
+   "bossAtk": 1.6,
+   "mods": [
+    "blitz"
+   ]
+  },
+  {
+   "n": 4,
+   "id": "rift",
+   "enemyMul": 36.63,
+   "baseHp": 48000,
+   "spawns": 49,
+   "bossHp": 19.39,
+   "bossAtk": 1.6,
+   "mods": [
+    "horde"
+   ]
+  },
+  {
+   "n": 5,
+   "id": "demonking",
+   "enemyMul": 20.19,
+   "baseHp": 56000,
+   "spawns": 55,
+   "bossHp": 8.47,
+   "bossAtk": 1.7,
+   "mods": [
+    "curse",
+    "giantslayer"
+   ]
+  },
+  {
+   "n": 6,
+   "id": "train",
+   "enemyMul": 33.17,
+   "baseHp": 150000,
+   "spawns": 62,
+   "bossHp": 7.16,
+   "bossAtk": 1.2,
+   "mods": [
+    "giantslayer"
+   ]
+  },
+  {
+   "n": 7,
+   "id": "masque",
+   "enemyMul": 54.92,
+   "baseHp": 160000,
+   "spawns": 67,
+   "bossHp": 13.86,
+   "bossAtk": 1.3,
+   "mods": [
+    "horde"
+   ]
+  },
+  {
+   "n": 8,
+   "id": "hourglass",
+   "enemyMul": 37.19,
+   "baseHp": 170000,
+   "spawns": 50,
+   "bossHp": 6.31,
+   "bossAtk": 1.3,
+   "mods": [
+    "blitz"
+   ]
+  }
+ ],
+ "enemies": {
+  "assassin": {
+   "hp": 700,
+   "atk": 110,
+   "speed": 70
+  },
+  "ballista": {
+   "hp": 620,
+   "atk": 52,
+   "speed": 26
+  },
+  "bat": {
+   "hp": 320,
+   "atk": 58,
+   "speed": 120
+  },
+  "bloodthrall": {
+   "hp": 2400,
+   "atk": 180,
+   "speed": 46
+  },
+  "boneguard": {
+   "hp": 1800,
+   "atk": 60,
+   "speed": 30
+  },
+  "burrower": {
+   "hp": 1100,
+   "atk": 90,
+   "speed": 55
+  },
+  "chariot": {
+   "hp": 5200,
+   "atk": 280,
+   "speed": 64
+  },
+  "chrono": {
+   "hp": 1300,
+   "atk": 50,
+   "speed": 24
+  },
+  "clawcrab": {
+   "hp": 2600,
+   "atk": 140,
+   "speed": 26
+  },
+  "cloudgiant": {
+   "hp": 3800,
+   "atk": 220,
+   "speed": 22
+  },
+  "cloudking": {
+   "hp": 32000,
+   "atk": 900,
+   "speed": 16
+  },
+  "coalstoker": {
+   "hp": 2600,
+   "atk": 230,
+   "speed": 58
+  },
+  "dancer": {
+   "hp": 1700,
+   "atk": 210,
+   "speed": 112
+  },
+  "dark": {
+   "hp": 3300,
+   "atk": 320,
+   "speed": 34
+  },
+  "deepone": {
+   "hp": 2000,
+   "atk": 160,
+   "speed": 40
+  },
+  "demonking": {
+   "hp": 34000,
+   "atk": 1000,
+   "speed": 18
+  },
+  "demonknight": {
+   "hp": 6400,
+   "atk": 430,
+   "speed": 30
+  },
+  "drake": {
+   "hp": 18000,
+   "atk": 730,
+   "speed": 22
+  },
+  "drummer": {
+   "hp": 900,
+   "atk": 20,
+   "speed": 32
+  },
+  "dunerider": {
+   "hp": 2300,
+   "atk": 210,
+   "speed": 70
+  },
+  "eel": {
+   "hp": 900,
+   "atk": 110,
+   "speed": 105
+  },
+  "eldertree": {
+   "hp": 50000,
+   "atk": 1250,
+   "speed": 14
+  },
+  "faequeen": {
+   "hp": 38000,
+   "atk": 960,
+   "speed": 18
+  },
+  "frostgiant": {
+   "hp": 16800,
+   "atk": 660,
+   "speed": 18
+  },
+  "ghostcaptain": {
+   "hp": 24000,
+   "atk": 760,
+   "speed": 22
+  },
+  "ghostgunner": {
+   "hp": 1500,
+   "atk": 330,
+   "speed": 18
+  },
+  "ghostsailor": {
+   "hp": 1250,
+   "atk": 210,
+   "speed": 88
+  },
+  "goblin": {
+   "hp": 220,
+   "atk": 26,
+   "speed": 42
+  },
+  "golem": {
+   "hp": 10200,
+   "atk": 390,
+   "speed": 17
+  },
+  "griffinrider": {
+   "hp": 1700,
+   "atk": 150,
+   "speed": 60
+  },
+  "handcar": {
+   "hp": 2400,
+   "atk": 260,
+   "speed": 40
+  },
+  "harpy": {
+   "hp": 860,
+   "atk": 100,
+   "speed": 108
+  },
+  "hellhound": {
+   "hp": 1150,
+   "atk": 170,
+   "speed": 115
+  },
+  "hexer": {
+   "hp": 800,
+   "atk": 40,
+   "speed": 30
+  },
+  "imp": {
+   "hp": 760,
+   "atk": 150,
+   "speed": 112
+  },
+  "irontrain": {
+   "hp": 60000,
+   "atk": 420,
+   "speed": 9
+  },
+  "jackalgod": {
+   "hp": 52000,
+   "atk": 1100,
+   "speed": 18
+  },
+  "jailer": {
+   "hp": 3400,
+   "atk": 150,
+   "speed": 26
+  },
+  "jelly": {
+   "hp": 700,
+   "atk": 40,
+   "speed": 50
+  },
+  "jester": {
+   "hp": 2000,
+   "atk": 200,
+   "speed": 30
+  },
+  "jungletyrant": {
+   "hp": 44000,
+   "atk": 1150,
+   "speed": 22
+  },
+  "kraken": {
+   "hp": 26000,
+   "atk": 760,
+   "speed": 16
+  },
+  "leviathan": {
+   "hp": 34000,
+   "atk": 950,
+   "speed": 14
+  },
+  "lich": {
+   "hp": 7000,
+   "atk": 430,
+   "speed": 28
+  },
+  "lizardman": {
+   "hp": 2100,
+   "atk": 200,
+   "speed": 54
+  },
+  "masklord": {
+   "hp": 46000,
+   "atk": 820,
+   "speed": 16
+  },
+  "mirror": {
+   "hp": 1100,
+   "atk": 64,
+   "speed": 30
+  },
+  "mummy": {
+   "hp": 2600,
+   "atk": 220,
+   "speed": 34
+  },
+  "mushking": {
+   "hp": 40000,
+   "atk": 1000,
+   "speed": 20
+  },
+  "nagaspear": {
+   "hp": 1300,
+   "atk": 170,
+   "speed": 48
+  },
+  "ogre": {
+   "hp": 3300,
+   "atk": 48,
+   "speed": 24
+  },
+  "ooze": {
+   "hp": 1500,
+   "atk": 55,
+   "speed": 30
+  },
+  "orcberserk": {
+   "hp": 2250,
+   "atk": 195,
+   "speed": 78
+  },
+  "orccatapult": {
+   "hp": 1200,
+   "atk": 390,
+   "speed": 14
+  },
+  "orcshield": {
+   "hp": 5300,
+   "atk": 98,
+   "speed": 22
+  },
+  "orcspear": {
+   "hp": 400,
+   "atk": 66,
+   "speed": 40
+  },
+  "pixie": {
+   "hp": 950,
+   "atk": 80,
+   "speed": 120
+  },
+  "plaguer": {
+   "hp": 1450,
+   "atk": 120,
+   "speed": 28
+  },
+  "poisontoad": {
+   "hp": 1600,
+   "atk": 95,
+   "speed": 26
+  },
+  "powder": {
+   "hp": 860,
+   "atk": 290,
+   "speed": 62
+  },
+  "quetzal": {
+   "hp": 36000,
+   "atk": 940,
+   "speed": 18
+  },
+  "raptor": {
+   "hp": 1150,
+   "atk": 160,
+   "speed": 132
+  },
+  "raptorqueen": {
+   "hp": 34000,
+   "atk": 900,
+   "speed": 52
+  },
+  "riftcaller": {
+   "hp": 2600,
+   "atk": 90,
+   "speed": 22
+  },
+  "rockling": {
+   "hp": 1900,
+   "atk": 150,
+   "speed": 34
+  },
+  "sandmage": {
+   "hp": 2200,
+   "atk": 150,
+   "speed": 30
+  },
+  "sandpharaoh": {
+   "hp": 56000,
+   "atk": 1350,
+   "speed": 16
+  },
+  "sandworm": {
+   "hp": 7500,
+   "atk": 320,
+   "speed": 40
+  },
+  "sapper": {
+   "hp": 950,
+   "atk": 0,
+   "speed": 74
+  },
+  "satyr": {
+   "hp": 2100,
+   "atk": 150,
+   "speed": 34
+  },
+  "scarab": {
+   "hp": 1800,
+   "atk": 160,
+   "speed": 88
+  },
+  "scorpion": {
+   "hp": 3300,
+   "atk": 250,
+   "speed": 50
+  },
+  "scorpking": {
+   "hp": 46000,
+   "atk": 1150,
+   "speed": 22
+  },
+  "seahook": {
+   "hp": 1400,
+   "atk": 120,
+   "speed": 30
+  },
+  "shaman": {
+   "hp": 1150,
+   "atk": 58,
+   "speed": 30
+  },
+  "siegeram": {
+   "hp": 12000,
+   "atk": 540,
+   "speed": 16
+  },
+  "siren": {
+   "hp": 1000,
+   "atk": 70,
+   "speed": 28
+  },
+  "skelarcher": {
+   "hp": 520,
+   "atk": 55,
+   "speed": 34
+  },
+  "skycannon": {
+   "hp": 1100,
+   "atk": 70,
+   "speed": 14
+  },
+  "skylord": {
+   "hp": 38000,
+   "atk": 1000,
+   "speed": 14
+  },
+  "slinger": {
+   "hp": 260,
+   "atk": 30,
+   "speed": 40
+  },
+  "souleater": {
+   "hp": 2600,
+   "atk": 150,
+   "speed": 40
+  },
+  "sphinx": {
+   "hp": 44000,
+   "atk": 1050,
+   "speed": 16
+  },
+  "spider": {
+   "hp": 520,
+   "atk": 50,
+   "speed": 100
+  },
+  "spiderqueen": {
+   "hp": 16500,
+   "atk": 470,
+   "speed": 22
+  },
+  "sporecap": {
+   "hp": 2700,
+   "atk": 215,
+   "speed": 40
+  },
+  "stoneidol": {
+   "hp": 4400,
+   "atk": 210,
+   "speed": 20
+  },
+  "stoneward": {
+   "hp": 3000,
+   "atk": 60,
+   "speed": 20
+  },
+  "stormgriffin": {
+   "hp": 30000,
+   "atk": 860,
+   "speed": 30
+  },
+  "stormwisp": {
+   "hp": 1200,
+   "atk": 105,
+   "speed": 30
+  },
+  "thief": {
+   "hp": 620,
+   "atk": 38,
+   "speed": 108
+  },
+  "tidecaller": {
+   "hp": 1800,
+   "atk": 60,
+   "speed": 26
+  },
+  "tidequeen": {
+   "hp": 28000,
+   "atk": 820,
+   "speed": 20
+  },
+  "titan": {
+   "hp": 30000,
+   "atk": 900,
+   "speed": 14
+  },
+  "totem": {
+   "hp": 1800,
+   "atk": 0,
+   "speed": 0
+  },
+  "treant": {
+   "hp": 6600,
+   "atk": 290,
+   "speed": 22
+  },
+  "triceratops": {
+   "hp": 5400,
+   "atk": 270,
+   "speed": 30
+  },
+  "troll": {
+   "hp": 12500,
+   "atk": 610,
+   "speed": 20
+  },
+  "unicorn": {
+   "hp": 3700,
+   "atk": 265,
+   "speed": 74
+  },
+  "vampire": {
+   "hp": 20000,
+   "atk": 700,
+   "speed": 26
+  },
+  "vineshaman": {
+   "hp": 1800,
+   "atk": 70,
+   "speed": 24
+  },
+  "voidlord": {
+   "hp": 28000,
+   "atk": 820,
+   "speed": 18
+  },
+  "voidspawn": {
+   "hp": 900,
+   "atk": 120,
+   "speed": 62
+  },
+  "warchief": {
+   "hp": 4600,
+   "atk": 315,
+   "speed": 30
+  },
+  "warlord": {
+   "hp": 22000,
+   "atk": 820,
+   "speed": 17
+  },
+  "windcaller": {
+   "hp": 1700,
+   "atk": 60,
+   "speed": 26
+  },
+  "wisp": {
+   "hp": 1600,
+   "atk": 175,
+   "speed": 46
+  },
+  "wolf": {
+   "hp": 450,
+   "atk": 86,
+   "speed": 92
+  },
+  "wraith": {
+   "hp": 1020,
+   "atk": 118,
+   "speed": 66
+  }
+ },
+ "note": "5.2 기준 — 이 전장 · 도전은 이보다 어려워지지 않는다. 쉬워지는 쪽으로만 다시 쓴다 (--write)."
+}
