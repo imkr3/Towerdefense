@@ -11,6 +11,11 @@
  * ======================================================================= */
 
 const I18N_EN = {
+  // 5.5
+  '게임 저장 데이터가 아닙니다.': 'This is not a game save.', '진화 데이터 오류': 'Bad evolution data', '3진 데이터 오류': 'Bad 3rd-form data',
+  '4진 데이터 오류': 'Bad 4th-form data', '편성 데이터 오류': 'Bad deck data', '일일 임무 데이터 오류': 'Bad daily mission data',
+  '백업은 1MB 이하의 JSON 파일이어야 합니다.': 'The backup must be a JSON file under 1MB.', '지원하지 않는 백업 버전입니다.': 'Unsupported backup version.',
+  '단계 내리기': 'Lower tier', '단계 올리기': 'Raise tier',
   /* ---------------- 병종 ---------------- */
   '창병': 'Spearman', '근접': 'Melee',
   '값싸고 빨리 나오는 징집병입니다. 긴 창으로 적보다 한발 먼저 찌릅니다.': 'Cheap, fast conscript. The long spear lands the first blow.',
@@ -1435,6 +1440,15 @@ const I18N_EN_HTML = {
 
 /* 숫자가 붙은 말. 구절 치환보다 먼저 한다. */
 const I18N_EN_PATTERNS = [
+  // 5.5 영어 화면에 남던 한글
+  [/^전장 (\d+)개 돌파 · 골드 (\d+) · 소환석 (\d+)\. 이 데이터로 교체할까요\? 현재 저장은 자동 백업에 남깁니다\.$/g,
+   '$1 stages cleared · Gold $2 · Summon Stones $3. Replace with this data? Your current save stays in the auto-backup.'],
+  [/^복원하지 않았습니다: (.+)$/g, (m, x) => 'Not restored: ' + t(x)],
+  [/^저장 항목 형식 오류: (\w+)$/g, 'Bad save field: $1'], [/^저장 숫자 오류: (\w+)$/g, 'Bad save number: $1'],
+  [/^저장 능력치 오류: (\w+)$/g, 'Bad save stat: $1'],
+  [/^(\d+)개 칸을 채웠습니다$/g, '$1 slots filled'],
+  [/^추천 편성 (\d+)개 병종을 넣었습니다( \(없는 병종은 뺐습니다\))?$/g, (m, n, x) => 'Added ' + n + ' suggested units' + (x ? ' (units you lack were left out)' : '')],
+  [/^(\d+)분$/g, '$1m'],
   // 5.3 도전 '무스펠의 불꽃 거인' · '해와 달의 쌍왕'
   [/^무스펠의 불꽃 검 — 기절로 끊으세요!$/g, "Muspel's Flaming Sword — break it with a stun!"],
   [/^(.+) 쓰러짐 — (\d+)초 안에 (.+)도 쓰러뜨려야 한다!$/g, '$1 has fallen — fell $3 within $2s too!'],

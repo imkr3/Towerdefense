@@ -13,7 +13,7 @@ const PRESET_COUNT = 3;
 const HOLD_MS = 170;          // 터치: 이만큼 누르고 있으면 끌기 시작
 const DRAG_START_PX = 8;
 
-let fmTarget = null;          // 전장 번호 | 'endless' | 'event:k' | null(그냥 편성)
+let fmTarget = null;          // 전장 번호 | 'hard:i' | 'endless' | 'event:k' | 'exp:k' | null(그냥 편성)
 let fmBack = 'scr-map';
 let fmFilter = 'all';
 let fmFocus = null;           // 오른쪽에 정보를 띄울 병종
@@ -269,8 +269,8 @@ function formationEvoRow(id) {
   row.className = 'fs-evo';
   if (save.evo[id] === undefined) {
     const lv = save.levels[id] || 1;
-    row.innerHTML = '<span class="fe-hint">✦ ' + def.name + ' · ' +
-      (lv >= EVO_LEVEL ? '훈련소에서 진화할 수 있습니다' : '레벨 ' + EVO_LEVEL + '에 진화') + '</span>';
+    row.innerHTML = '<span class="fe-hint">✦ ' + def.name + ' · <span>' +      // 5.5: 안내만 따로 감싸야 통째로 번역된다
+      (lv >= EVO_LEVEL ? '훈련소에서 진화할 수 있습니다' : '레벨 ' + EVO_LEVEL + '에 진화') + '</span></span>';
     return row;
   }
   const form = evoForm(save, id), has2 = !!(def2 && save.evo2 && save.evo2[id] !== undefined);
@@ -280,10 +280,10 @@ function formationEvoRow(id) {
     btn('base', base.short || base.name, 0) + btn('evo', '✦ ' + (def.short || def.name), 1) +
     (has2 ? btn('evo2', '✪ ' + (def2.short || def2.name), 2) : '') + (has3 ? btn('evo3', '✸ ' + (def3.short || def3.name), 3) : '') + '</div>' +
     // 4.2: 3진을 아직 안 했으면 어디서 하는지 알려 준다
-    (def2 && !has2 ? '<span class="fe-hint f3">✪ ' + def2.name + ' · ' +
+    (def2 && !has2 ? '<span class="fe-hint f3">✪ ' + def2.name + ' · <span>' +
       ((save.levels[id] || 1) < EVO2_LEVEL ? '레벨 ' + EVO2_LEVEL + '에 3진'
         : evo2TrialsDone(save, id) ? '훈련소에서 3진할 수 있습니다'
-        : '3진 시련 ' + evo2Trials(save, id).filter(x => x.done).length + ' / ' + evo2Trials(save, id).length + ' · 훈련소에서 확인') + '</span>' : '');
+        : '3진 시련 ' + evo2Trials(save, id).filter(x => x.done).length + ' / ' + evo2Trials(save, id).length + ' · 훈련소에서 확인') + '</span></span>' : '');
   row.querySelectorAll('.evo-form').forEach(b => b.addEventListener('click', () => {
     const want = b.dataset.form;
     if (['base', 'evo', 'evo2', 'evo3'][evoForm(save, id)] === want) return;
@@ -368,7 +368,8 @@ function renderFormationSide() {
   // 3.6: 출진할 전장이 정해져 있으면 그 전장 기준으로, 아니면 다음 전장 기준으로 점검한다
   const evk0 = typeof fmTarget === 'string' && fmTarget.indexOf('event:') === 0 ? +fmTarget.slice(6) : -1;
   const exk0 = typeof fmTarget === 'string' && fmTarget.indexOf('exp:') === 0 ? +fmTarget.slice(4) : -1;
-  const target = typeof fmTarget === 'number' ? STAGES[fmTarget]
+  const hk0 = typeof fmTarget === 'string' && fmTarget.indexOf('hard:') === 0 ? +fmTarget.slice(5) : -1;   // 5.5 하드코어
+  const target = typeof fmTarget === 'number' ? STAGES[fmTarget] : hk0 >= 0 ? STAGES[hk0]
     : evk0 >= 0 ? EVENT_STAGES[evk0] : exk0 >= 0 ? EXPEDITIONS[exk0] : STAGES[Math.min(save.cleared, STAGES.length - 1)];
   if (target && evk0 < 0) side.appendChild(deckCheckEl(target, renderFormation));
 
@@ -413,13 +414,16 @@ function renderFormationSide() {
     go.id = 'btn-formation-go';
     const evk = typeof fmTarget === 'string' && fmTarget.indexOf('event:') === 0 ? +fmTarget.slice(6) : -1;
     const exk = typeof fmTarget === 'string' && fmTarget.indexOf('exp:') === 0 ? +fmTarget.slice(4) : -1;
+    const hk = typeof fmTarget === 'string' && fmTarget.indexOf('hard:') === 0 ? +fmTarget.slice(5) : -1;
     const name = fmTarget === 'endless' ? '무한 전장' : evk >= 0 ? '✦ E' + (evk + 1) + '. ' + EVENT_STAGES[evk].name
+      : hk >= 0 ? '💀 ' + (hk + 1) + '. ' + STAGES[hk].name
       : exk >= 0 ? '💰 G' + (exk + 1) + '. ' + EXPEDITIONS[exk].name : (fmTarget + 1) + '. ' + STAGES[fmTarget].name;
     go.innerHTML = '출진 ▶<small>' + name + '</small>';
     go.addEventListener('click', () => {
       if (fmTarget === 'endless') startEndless();
       else if (evk >= 0) startEvent(evk);
       else if (exk >= 0) startExpedition(exk);
+      else if (hk >= 0) startBattle(hk, true);
       else startBattle(fmTarget);
     });
     side.appendChild(go);

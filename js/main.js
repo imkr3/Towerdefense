@@ -1309,6 +1309,7 @@ function buildUnitCard(u) {
             if (save.loadout.length <= 1) { toast('최소 1개 병종은 편성해야 합니다'); return; }
             save.loadout = save.loadout.filter(id => id !== u.id);
           } else {
+            if (!heroRoom(u.id)) return;      // 5.5: 전설·신화 상한 (넘치면 전투에서 조용히 빠졌다)
             save.loadout.push(u.id);
           }
           saveGame(save);
@@ -1548,6 +1549,20 @@ function renderGacha() {
     '<div class="active-desc">신화 확정까지 ' + (GACHA.mythPity-(save.mythPity||0)) + '회 · 전설 확정까지 ' + (GACHA.pity-save.pity) + '회<br>시즌 변경 시 누적 유지 · 신화 획득 시 두 누적 초기화</div>';
 
   drawBanner(sn);
+}
+
+/* 5.5: 배너 캔버스는 화면 크기를 따라 늘어나므로 창이 바뀌면 다시 그린다 */
+let bannerT = 0;
+function redrawBannerIfShown() {
+  if (!$('#scr-gacha').classList.contains('active')) return;
+  clearTimeout(bannerT);
+  bannerT = setTimeout(() => drawBanner(seasonById(save.season)), 120);
+}
+
+/* 5.5: 다른 진행도로 바뀌면(초기화 · 복원) 화면에 남아 있던 고른 값 · 되돌리기를 비운다 */
+function resetScreenState() {
+  deckUndo = null; conqLast = null; trainSel = null;
+  mapChapter = -1; mapSel = -1; eventSel = 0; expSel = 0;
 }
 
 /* 배너 아트: 시즌 대표 병종을 나란히 세운다 */
@@ -2555,6 +2570,7 @@ function init() {
         const fresh = defaultSave();
         if (!SaveStore.write(fresh, true)) { toast(SaveStore.error); return; }
         save = fresh;
+        resetScreenState();
         refreshTitleBadges();
         toast('기록을 초기화했습니다');
       });
@@ -2665,7 +2681,7 @@ function init() {
   $('#btn-fix').addEventListener('click', () => {
     $('#result').classList.remove('show');
     $('#btn-retry').textContent = '다시 도전';
-    const idx = !battle ? null : battle.expedition ? 'exp:' + battle.expIndex : (!battle.endless && !battle.event ? battle.stageIndex : null);
+    const idx = !battle ? null : battle.expedition ? 'exp:' + battle.expIndex : battle.endless || battle.event ? null : battle.hard ? 'hard:' + battle.stageIndex : battle.stageIndex;
     show('scr-map');                       // 편성에서 '뒤로' 가면 진군도로 (전투 화면이 아니라)
     openFormation(idx);
   });
@@ -2676,9 +2692,9 @@ function init() {
 
   $('#btn-full').addEventListener('click', toggleFullscreen);
   // 전장 캔버스는 Renderer 가 스스로 resize 를 듣는다 (3.10: 예전엔 여기서도 불러 창이 바뀔 때마다 두 번 다시 만들었다)
-  window.addEventListener('resize', resizeTitle);
+  window.addEventListener('resize', () => { resizeTitle(); redrawBannerIfShown(); });
   window.addEventListener('orientationchange', () => {
-    setTimeout(() => { if (renderer) renderer.resize(); resizeTitle(); }, 250);
+    setTimeout(() => { if (renderer) renderer.resize(); resizeTitle(); redrawBannerIfShown(); }, 250);
   });
   // 3.6: 편성 병종을 레벨 낮은 순으로 골드가 닿는 데까지 훈련
   $('#btn-train-deck').addEventListener('click', () => {
@@ -2814,7 +2830,7 @@ window.__androidBack = function () {
     return true;
   }
   if (active.id === 'scr-formation') { if (fmDrag) { dragEnd(); return true; } show(fmBack); return true; }
-  if (['scr-shop','scr-units','scr-gacha','scr-quest'].includes(active.id)) { show('scr-map'); return true; }
+  if (['scr-shop','scr-units','scr-gacha','scr-quest','scr-conquest'].includes(active.id)) { show('scr-map'); return true; }
   if (active.id === 'scr-map') { show('scr-title'); return true; }
   return false;   // 타이틀에서는 앱 종료
 };
@@ -2912,6 +2928,7 @@ window.receiveSaveBackup = function(raw) {
       ' · 소환석 ' + candidate.stones + '. 이 데이터로 교체할까요? 현재 저장은 자동 백업에 남깁니다.', () => {
       if (!SaveStore.write(candidate, true)) { toast(SaveStore.error); return; }
       save=candidate;
+      resetScreenState();
       $('#modal-save').classList.remove('show'); $('#save-warning').hidden=true;
       show('scr-title'); toast('진행도를 복원했습니다.' + (candidate._refund ? ' (3진 금화 ' + candidate._refund.gold + ' 환불)' : ''));
     });
