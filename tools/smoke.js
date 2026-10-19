@@ -459,7 +459,7 @@ async function runSize(browser, size) {
       battle.enemyCastle.hp = 1; battle.enemyCastle.takeDamage(5); battle.update(1 / 30);
       showResult(); out.resultBtn = $('#btn-conq').style.display !== 'none' && $('#btn-retry').style.display === 'none';
       $('#btn-conq').click();
-      out.won = save.conquest.won; out.floor = save.conquest.floor; out.pick = $$('#conq-over .cq-offer').length;
+      out.won = save.conquest.won; out.floor = save.conquest.floor; out.pick = $$('#conq-over .cq-offer').length === 3 + conqEffects(save.conquest).extraPick;   // 5.4: 출발 유물이 수정구면 하나 더 (무작위라 가끔 4장이었다)
       $('#conq-over .cq-offer').click(); out.bless = Object.keys(save.conquest.bless).length;
       const run = save.conquest; run.map[run.floor][0] = { t: 'shop' }; run.scrip = 500; renderConquest();
       $('.cq-node.live').click(); $('.cq-enter').click(); out.shop = $$('#conq-over .cq-offer').length;
@@ -468,7 +468,7 @@ async function runSize(browser, size) {
       out.ended = save.conquest === null && !!$('#conq-over .cq-res'); out.rec = save.conqRec.runs;
       return out;
     });
-    const want = { title: true, lobby: true, startPick: 3, relics: 1, battle: true, deck: 'spear,archer,knight,shield', resultBtn: true, won: 1, floor: 1, pick: 3, bless: 1, shop: 6, spent: true, floor2: 2, ended: true, rec: 1 };
+    const want = { title: true, lobby: true, startPick: 3, relics: 1, battle: true, deck: 'spear,archer,knight,shield', resultBtn: true, won: 1, floor: 1, pick: true, bless: 1, shop: 6, spent: true, floor2: 2, ended: true, rec: 1 };
     const bad = Object.keys(want).filter(k => r[k] !== want[k]);
     if (bad.length) failures.push('정벌 흐름이 어긋난다 ' + JSON.stringify(bad.map(k => k + '=' + r[k])));
     else if (errs.length) failures.push('정벌 화면 오류 ' + errs.join(' | '));

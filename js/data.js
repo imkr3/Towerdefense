@@ -2575,6 +2575,16 @@ const EXPEDITIONS = [
 ];
 EXPEDITIONS.forEach((st, k) => { st.expIndex = k; st.opening = 'rush'; });
 function expeditionOpen(s, k) { return !!EXPEDITIONS[k] && (s.cleared || 0) >= EXPEDITIONS[k].expedition.unlock; }
+/* 5.4 개발자 모드 원정 난이도: 적 · 요새 · 돌파 보상을 같은 배수로 (원본은 그대로 두고 사본을 만든다) */
+const DEV_EXP_MULS = [1, 1.5, 2, 3, 5, 10, 20, 50];
+function devExpMul(s) { const m = s && Number(s.devExpMul); return DEV_EXP_MULS.includes(m) ? m : 1; }
+function expStage(st, mul) {
+  if (!(mul > 1)) return st;
+  return Object.assign({}, st, {
+    enemyMul: Math.round((st.enemyMul || 1) * mul * 100) / 100, baseHp: Math.round(st.baseHp * mul),
+    expedition: Object.assign({}, st.expedition, { reward: Math.round(st.expedition.reward * mul) }), devMul: mul
+  });
+}
 
 /* =======================================================================
  *  무한 전장 - 끝없이 밀려오는 웨이브
@@ -3612,6 +3622,31 @@ function setEvoForm(save, id, form) {
   save.evo[id] = form !== 'base';
   if (save.evo2[id] !== undefined) save.evo2[id] = form === 'evo2' || form === 'evo3';
   if (save.evo3[id] !== undefined) save.evo3[id] = form === 'evo3';
+}
+/* 5.4 개발자 모드: 진화 · 3진 · 4진을 시련 없이 마치고 가장 높은 형태로 (그 형태에 필요한 레벨까지). 바꾼 병종 수 */
+function devEvolveAll(s) {
+  if (!s.evo2) s.evo2 = {};
+  if (!s.evo3) s.evo3 = {};
+  let n = 0;
+  for (const u of UNITS) {
+    const id = u.id;
+    if (!(u.cost > 0) || !EVOLUTIONS[id]) continue;
+    const top = EVOLUTIONS3[id] ? 3 : EVOLUTIONS2[id] ? 2 : 1;
+    if (evoForm(s, id) >= top) continue;
+    s.evo[id] = true;
+    if (top >= 2) s.evo2[id] = true;
+    if (top >= 3) s.evo3[id] = true;
+    const need = top === 3 ? EVO3_LEVEL : top === 2 ? EVO2_LEVEL : EVO_LEVEL;
+    s.levels[id] = Math.max(s.levels[id] || 1, need);
+    n++;
+  }
+  return n;
+}
+/* 5.4 개발자 모드: 성채 강화 모두 최대 · 주어진 병종을 만렙으로 */
+function devMaxAll(s, units) {
+  for (const k in UPGRADES) s.upgrades[k] = UPGRADES[k].max;
+  const cap = UNIT_LEVEL_HARD_CAP + UPGRADES.academy.max;
+  for (const u of units) s.levels[u.id] = Math.max(s.levels[u.id] || 1, cap);
 }
 /* 지금 쓰는 형태: 0 기본 · 1 진화 · 2 3진 · 3 4진 */
 function evoForm(save, id) { return usesEvo3(save, id) ? 3 : usesEvo2(save, id) ? 2 : usesEvo(save, id) ? 1 : 0; }

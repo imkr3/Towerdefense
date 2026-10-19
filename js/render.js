@@ -528,7 +528,7 @@ class Renderer {
       }
       // 가로 묶음 밧줄
       ctx.strokeStyle = '#2a1e12'; ctx.lineWidth = 3.6 * s;
-      for (const yy of [-hgt * 0.72, -hgt * 0.3]) { ctx.beginPath(); ctx.moveTo(-wdt / 2, yy); ctx.lineTo(wdt / 2, yy + 3 * s); ctx.stroke(); }
+      ctx.beginPath(); for (const yy of [-hgt * 0.72, -hgt * 0.3]) { ctx.moveTo(-wdt / 2, yy); ctx.lineTo(wdt / 2, yy + 3 * s); } ctx.stroke();
       // 입구
       ctx.fillStyle = '#1c1610';
       ctx.beginPath(); ctx.moveTo(-20 * s, 0); ctx.lineTo(-20 * s, -44 * s); ctx.lineTo(0, -54 * s); ctx.lineTo(20 * s, -44 * s); ctx.lineTo(20 * s, 0); ctx.closePath(); ctx.fill(); outline(1.6);
@@ -1039,7 +1039,7 @@ class Renderer {
     if (shot === 'fanwind') {                     // 5.2 팔진도 와룡: 세 겹 초승달 바람 칼날 · 실린 불씨
       ctx.save(); ctx.rotate(p * 14);
       ctx.strokeStyle = 'rgba(232,246,255,.95)'; ctx.lineWidth = 2.6 * cs;
-      for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(0, 0, (6 + i * 3) * cs, i * 2.1, i * 2.1 + 2.2); ctx.stroke(); }
+      ctx.beginPath(); for (let i = 0; i < 3; i++) { ctx.moveTo(0 + Math.cos(i * 2.1) * (6 + i * 3) * cs, 0 + Math.sin(i * 2.1) * (6 + i * 3) * cs); ctx.arc(0, 0, (6 + i * 3) * cs, i * 2.1, i * 2.1 + 2.2); } ctx.stroke();
       ctx.restore();
       ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = '#ffb04a';
       for (let i = 0; i < 4; i++) { const a = p * 18 + i * 1.57; ctx.globalAlpha = 0.85; ctx.beginPath(); ctx.arc(Math.cos(a) * 9 * cs, Math.sin(a) * 9 * cs, 1.8 * cs, 0, 7); ctx.fill(); }
@@ -1106,7 +1106,7 @@ class Renderer {
       ctx.save(); ctx.globalCompositeOperation = 'lighter';
       ctx.fillStyle = 'rgba(255,170,50,.35)'; ctx.beginPath(); ctx.arc(0, 0, 11 * cs, 0, 7); ctx.fill();
       ctx.strokeStyle = 'rgba(255,214,90,.8)'; ctx.lineWidth = 1.4 * cs;
-      for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2 + t * 6; ctx.beginPath(); ctx.moveTo(Math.cos(a) * 6 * cs, Math.sin(a) * 6 * cs); ctx.lineTo(Math.cos(a) * 11 * cs, Math.sin(a) * 11 * cs); ctx.stroke(); }
+      ctx.beginPath(); for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2 + t * 6; ctx.moveTo(Math.cos(a) * 6 * cs, Math.sin(a) * 6 * cs); ctx.lineTo(Math.cos(a) * 11 * cs, Math.sin(a) * 11 * cs); } ctx.stroke();
       ctx.fillStyle = '#fff6d0'; ctx.beginPath(); ctx.arc(0, 0, 5 * cs, 0, 7); ctx.fill();
       ctx.restore();
       return true;
@@ -1283,7 +1283,7 @@ class Renderer {
       } else if (shape === 'zhugeliang') { // 4.15 제갈량: 빙글 도는 바람 칼날 (와룡 선생은 불씨를 싣는다)
         ctx.rotate(p * 16);
         ctx.strokeStyle = 'rgba(232,246,255,.9)'; ctx.lineWidth = 2.4 * cs;
-        for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(0, 0, (5 + i * 2.6) * cs, i * 2.1, i * 2.1 + 2); ctx.stroke(); }
+        ctx.beginPath(); for (let i = 0; i < 3; i++) { ctx.moveTo(0 + Math.cos(i * 2.1) * (5 + i * 2.6) * cs, 0 + Math.sin(i * 2.1) * (5 + i * 2.6) * cs); ctx.arc(0, 0, (5 + i * 2.6) * cs, i * 2.1, i * 2.1 + 2); } ctx.stroke();
         ctx.fillStyle = s.color; ctx.beginPath(); ctx.arc(0, 0, 2.6 * cs, 0, 7); ctx.fill();
       } else if (shape === 'odin') {       // 5.2 오딘: 빛으로 빚은 작은 궁니르 · 룬 두 개 · 푸른 꼬리
         ctx.save(); ctx.globalCompositeOperation = 'lighter';
@@ -1553,7 +1553,7 @@ class Renderer {
         ctx.fillStyle = e.color || '#ffffff'; ctx.globalAlpha = p * 0.6;
         ctx.beginPath(); ctx.arc(x, y, (3 + q * 6) * cs, 0, 7); ctx.fill();
         ctx.strokeStyle = 'rgba(255,255,255,' + p + ')'; ctx.lineWidth = 1.3 * cs;
-        for (const a of [-0.45, 0, 0.45]) { ctx.beginPath(); ctx.moveTo(x + dir * Math.cos(a) * 4 * cs, y + Math.sin(a) * 4 * cs); ctx.lineTo(x + dir * Math.cos(a) * (7 + q * 9) * cs, y + Math.sin(a) * (7 + q * 9) * cs); ctx.stroke(); }
+        ctx.beginPath(); for (const a of [-0.45, 0, 0.45]) { ctx.moveTo(x + dir * Math.cos(a) * 4 * cs, y + Math.sin(a) * 4 * cs); ctx.lineTo(x + dir * Math.cos(a) * (7 + q * 9) * cs, y + Math.sin(a) * (7 + q * 9) * cs); } ctx.stroke();
         ctx.restore();
       } else if (e.type === 'hit') {
         // 3.5: 맞는 순간 짧은 섬광. 무거운 일격(보스·영웅·큰 진화)은 불티도 튄다
@@ -1781,7 +1781,7 @@ class Renderer {
         const my = y - 34 * cs - (1 - p) * 22 * cs, mt = tr(e.text || '회피');
         ctx.strokeText(mt, x, my); ctx.fillStyle = '#dff6ff'; ctx.fillText(mt, x, my);
         ctx.strokeStyle = 'rgba(223,246,255,' + (p * 0.7) + ')'; ctx.lineWidth = 2 * cs;
-        for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(x - 14 * cs, y - (4 + i * 8) * cs); ctx.lineTo(x - (22 + (1 - p) * 10) * cs, y - (4 + i * 8) * cs); ctx.stroke(); }
+        ctx.beginPath(); for (let i = 0; i < 3; i++) { ctx.moveTo(x - 14 * cs, y - (4 + i * 8) * cs); ctx.lineTo(x - (22 + (1 - p) * 10) * cs, y - (4 + i * 8) * cs); } ctx.stroke();
         ctx.textAlign = 'left'; ctx.globalAlpha = 1;
       } else if (e.type === 'chain') {                 // 사슬 간수: 날아가 휘감는 쇠사슬
         const x2 = this.screenX(e.x2), y2 = this.rowY(e.row2 || 0) - 28 * cs;
@@ -2570,9 +2570,9 @@ class Renderer {
       case 'sabercut': {                   // 4.4 광선검: 엇갈린 빛줄기
         const cy = gy - 26 * cs, L = (30 + k * 16) * cs;
         ctx.strokeStyle = e.color; ctx.lineWidth = 6 * cs * p + 0.5; ctx.globalAlpha = p * 0.7;
-        for (const tl of [-0.7, 0.7]) { ctx.beginPath(); ctx.moveTo(x - Math.cos(tl) * L, cy - Math.sin(tl) * L); ctx.lineTo(x + Math.cos(tl) * L, cy + Math.sin(tl) * L); ctx.stroke(); }
+        ctx.beginPath(); for (const tl of [-0.7, 0.7]) { ctx.moveTo(x - Math.cos(tl) * L, cy - Math.sin(tl) * L); ctx.lineTo(x + Math.cos(tl) * L, cy + Math.sin(tl) * L); } ctx.stroke();
         ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2 * cs; ctx.globalAlpha = p;
-        for (const tl of [-0.7, 0.7]) { ctx.beginPath(); ctx.moveTo(x - Math.cos(tl) * L, cy - Math.sin(tl) * L); ctx.lineTo(x + Math.cos(tl) * L, cy + Math.sin(tl) * L); ctx.stroke(); }
+        ctx.beginPath(); for (const tl of [-0.7, 0.7]) { ctx.moveTo(x - Math.cos(tl) * L, cy - Math.sin(tl) * L); ctx.lineTo(x + Math.cos(tl) * L, cy + Math.sin(tl) * L); } ctx.stroke();
         break;
       }
       case 'railhit': {                    // 4.4 레일건: 흰 섬광 · 푸른 고리
@@ -3073,7 +3073,7 @@ class Renderer {
           ctx.beginPath(); ctx.moveTo(px, py - 2.4 * sc); ctx.lineTo(px, py + 2.4 * sc); ctx.lineTo(px + 1.8 * sc, py + 0.6 * sc); ctx.stroke(); }
         const sx = x + dir * e.ox * cs, sy = gy - e.h * cs;   // 궁니르 끝
         ctx.globalAlpha = a; ctx.strokeStyle = col; ctx.lineWidth = 1.6 * sc;
-        for (let i = 0; i < 8; i++) { const b = i * Math.PI / 4 + k, L = (6 + q * 14) * sc; ctx.beginPath(); ctx.moveTo(sx + Math.cos(b) * 3 * sc, sy + Math.sin(b) * 3 * sc); ctx.lineTo(sx + Math.cos(b) * L, sy + Math.sin(b) * L); ctx.stroke(); }
+        ctx.beginPath(); for (let i = 0; i < 8; i++) { const b = i * Math.PI / 4 + k, L = (6 + q * 14) * sc; ctx.moveTo(sx + Math.cos(b) * 3 * sc, sy + Math.sin(b) * 3 * sc); ctx.lineTo(sx + Math.cos(b) * L, sy + Math.sin(b) * L); } ctx.stroke();
         if (k < 0.2) this.glOnce(e, 'spark', sx, sy, col, 28 * sc);
         break;
       }
@@ -3089,7 +3089,7 @@ class Renderer {
         const rr = (e.r || 80) * this.zoom * 0.42;
         ctx.globalAlpha = (1 - k) * 0.5; ctx.fillStyle = '#8a8a82'; ctx.beginPath(); ctx.ellipse(x, gy + 1 * sc, rr, rr * 0.2, 0, 0, 7); ctx.fill();
         ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = (1 - k) * 0.6; ctx.strokeStyle = '#9dff6a'; ctx.lineWidth = 1.2 * sc;
-        for (let i = 0; i < 4; i++) { const d = i % 2 ? 1 : -1; ctx.beginPath(); ctx.moveTo(x, gy); ctx.lineTo(x + d * rr * (0.4 + rnd(i) * 0.5), gy + (rnd(i + 3) - 0.5) * 6 * sc); ctx.stroke(); }
+        ctx.beginPath(); for (let i = 0; i < 4; i++) { const d = i % 2 ? 1 : -1; ctx.moveTo(x, gy); ctx.lineTo(x + d * rr * (0.4 + rnd(i) * 0.5), gy + (rnd(i + 3) - 0.5) * 6 * sc); } ctx.stroke();
         break;
       }
       case 'runescar': {                                 // 5.2 궁니르가 꽂힌 자리: 땅에 새겨진 룬 셋이 푸르게 잦아든다
@@ -3189,7 +3189,7 @@ class Renderer {
         const land = k > 0.3;
         if (land) this.glOnce(e, 'teslacoil', x, gy, col, 70 * sc, sc);
         if (!land) { const drop = k / 0.3; ctx.globalAlpha = 0.5; ctx.strokeStyle = '#e8e4dc'; ctx.lineWidth = 3 * sc;
-          for (let i = -1; i <= 1; i++) { ctx.beginPath(); ctx.moveTo(x + i * 14 * sc, gy - 160 * sc * (1 - drop)); ctx.lineTo(x + i * 14 * sc, gy - 160 * sc * (1 - drop) - 40 * sc); ctx.stroke(); } break; }
+          ctx.beginPath(); for (let i = -1; i <= 1; i++) { ctx.moveTo(x + i * 14 * sc, gy - 160 * sc * (1 - drop)); ctx.lineTo(x + i * 14 * sc, gy - 160 * sc * (1 - drop) - 40 * sc); } ctx.stroke(); break; }
         const r = (k - 0.3) / 0.7;
         for (let i = 0, m = n(8); i < m; i++) { const side = i % 2 ? 1 : -1, r0 = rnd(i); x3Smoke(ctx, x + side * (16 + r * 80 * (0.5 + r0)) * sc, gy - (4 + r * 16 * r0) * sc, (6 + r * 12) * sc, (1 - r) * 0.55, '#9a948a', '#e8e4dc'); }
         ctx.globalCompositeOperation = 'lighter';
@@ -3287,7 +3287,7 @@ class Renderer {
         ctx.lineWidth = 3 * sc;
         for (let i = 0; i < 7; i++) { const b = -Math.PI * (0.1 + i * 0.13), L = (40 + (i % 2) * 20) * sc * Math.max(0, q * 1.6 - 0.6);
           if (L <= 0) continue; ctx.beginPath(); ctx.moveTo(x, top + 10 * sc); ctx.quadraticCurveTo(x + Math.cos(b) * L * 0.5, top + Math.sin(b) * L * 0.3, x + Math.cos(b) * L, top + Math.sin(b) * L * 0.8); ctx.stroke(); }
-        for (const d of [-1, 1]) for (let j = 0; j < 2; j++) { ctx.beginPath(); ctx.moveTo(x, gy); ctx.quadraticCurveTo(x + d * (20 + j * 16) * sc * q, gy - 2 * sc, x + d * (50 + j * 30) * sc * q, gy + 2 * sc); ctx.stroke(); }
+        ctx.beginPath(); for (const d of [-1, 1]) for (let j = 0; j < 2; j++) { ctx.moveTo(x, gy); ctx.quadraticCurveTo(x + d * (20 + j * 16) * sc * q, gy - 2 * sc, x + d * (50 + j * 30) * sc * q, gy + 2 * sc); } ctx.stroke();
         if (q >= 1) { ctx.globalAlpha = a * 0.3; ctx.fillStyle = '#c8f07a'; ctx.beginPath(); ctx.arc(x, top - 10 * sc, 60 * sc, 0, 7); ctx.fill(); }
         ctx.globalCompositeOperation = 'source-over';
         if (k > 0.45) { const r = (k - 0.45) / 0.55; ctx.globalAlpha = Math.min(1, (1 - r) * 2); ctx.fillStyle = '#1a1e2a';   // 날아오르는 까마귀 둘
@@ -3477,7 +3477,7 @@ class Renderer {
         ctx.beginPath(); ctx.ellipse(x, gy, R, R * 0.24, 0, 0, 7); ctx.stroke();
         ctx.beginPath(); ctx.ellipse(x, gy, R * 0.62, R * 0.15, 0, 0, 7); ctx.stroke();
         ctx.lineWidth = 0.9 * sc; ctx.globalAlpha = a * 0.45;
-        for (let i = -2; i <= 2; i++) { ctx.beginPath(); ctx.moveTo(x + i * R * 0.36, gy - R * 0.2 * Math.sqrt(1 - (i * 0.36) * (i * 0.36))); ctx.lineTo(x + i * R * 0.36, gy + R * 0.2 * Math.sqrt(1 - (i * 0.36) * (i * 0.36))); ctx.stroke(); }
+        ctx.beginPath(); for (let i = -2; i <= 2; i++) { ctx.moveTo(x + i * R * 0.36, gy - R * 0.2 * Math.sqrt(1 - (i * 0.36) * (i * 0.36))); ctx.lineTo(x + i * R * 0.36, gy + R * 0.2 * Math.sqrt(1 - (i * 0.36) * (i * 0.36))); } ctx.stroke();
         const sy = gy - Math.min(1, k * 1.6) * 92 * sc;                             // 위로 훑는 스캔 막
         ctx.globalAlpha = a * 0.5; ctx.fillStyle = cyan;
         ctx.beginPath(); ctx.ellipse(x, sy, R * 0.85, R * 0.2, 0, 0, 7); ctx.fill();
@@ -4239,7 +4239,9 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
       ctx.beginPath(); ctx.moveTo(-6 * s, -41 * s); ctx.lineTo(6 * s, -41 * s); ctx.lineTo(7 * s, -24 * s); ctx.lineTo(-7 * s, -24 * s); ctx.closePath(); ctx.fill();
       if (hq) {
         ctx.save(); ctx._skipInk = true; ctx.strokeStyle = 'rgba(40,48,58,.55)'; ctx.lineWidth = 0.7 * s;
-        for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) { ctx.beginPath(); ctx.arc((-5 + c * 2.6 + (r % 2) * 1.3) * s, (-38 + r * 3.1) * s, 1.1 * s, 0, Math.PI); ctx.stroke(); }
+        ctx.beginPath();                                       // 5.4 고리 25개를 한 길로 (예전엔 고리마다 따로 그어 오딘 하나가 병사 여섯 몫이었다)
+        for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) { const cx = (-5 + c * 2.6 + (r % 2) * 1.3) * s, cy = (-38 + r * 3.1) * s; ctx.moveTo(cx + 1.1 * s, cy); ctx.arc(cx, cy, 1.1 * s, 0, Math.PI); }
+        ctx.stroke();
         ctx.restore(); ctx._skipInk = false;
       }
       ctx.fillStyle = F3('#3a2a1e'); ctx.fillRect(-8 * s, -27 * s, 16 * s, 3.4 * s);     // 가죽 띠 · 금 고리
@@ -4250,12 +4252,12 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
       ctx.lineTo(11 * s, -37 * s); ctx.quadraticCurveTo(0, -33.5 * s, -12 * s, -38 * s); ctx.fill();
       if (!S.flash) {
         ctx.save(); ctx._skipInk = true; ctx.strokeStyle = furD; ctx.lineWidth = 0.8 * s;
-        for (let i = 0; i < 6; i++) { const x0 = (-9 + i * 3.4) * s; ctx.beginPath(); ctx.moveTo(x0, -43 * s); ctx.lineTo(x0 + 1 * s, -38.5 * s); ctx.stroke(); }
+        ctx.beginPath(); for (let i = 0; i < 6; i++) { const x0 = (-9 + i * 3.4) * s; ctx.moveTo(x0, -43 * s); ctx.lineTo(x0 + 1 * s, -38.5 * s); } ctx.stroke();
         ctx.restore(); ctx._skipInk = false;
         ctx.fillStyle = gold;                                  // 깃 앞의 금 걸쇠: 세 겹 삼각 (발크누트)
         ctx.beginPath(); ctx.arc(5 * s, -37.5 * s, 2.8 * s, 0, 7); ctx.fill();
         ctx.save(); ctx._skipInk = true; ctx.strokeStyle = '#6a4a14'; ctx.lineWidth = 0.6 * s;
-        for (let k = 0; k < 3; k++) { const ox = (k - 1) * 0.9 * s, oy = (k === 1 ? -0.8 : 0.4) * s; ctx.beginPath(); ctx.moveTo(5 * s + ox, -39.2 * s + oy); ctx.lineTo(6.4 * s + ox, -36.6 * s + oy); ctx.lineTo(3.6 * s + ox, -36.6 * s + oy); ctx.closePath(); ctx.stroke(); }
+        ctx.beginPath(); for (let k = 0; k < 3; k++) { const ox = (k - 1) * 0.9 * s, oy = (k === 1 ? -0.8 : 0.4) * s; ctx.moveTo(5 * s + ox, -39.2 * s + oy); ctx.lineTo(6.4 * s + ox, -36.6 * s + oy); ctx.lineTo(3.6 * s + ox, -36.6 * s + oy); ctx.closePath(); } ctx.stroke();
         ctx.restore(); ctx._skipInk = false;
       }
       head(S, 'bald', 8.6 * s);
@@ -4266,7 +4268,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
       if (hq) { ctx.save(); ctx._skipInk = true;
         ctx.fillStyle = 'rgba(120,120,118,.18)'; ctx.beginPath(); ctx.moveTo(-3.5 * s, -47.5 * s); ctx.quadraticCurveTo(-4 * s, -40 * s, 0, -34 * s); ctx.quadraticCurveTo(2.5 * s + sway, -27 * s, 4.5 * s + sway * 1.4, -22.5 * s); ctx.quadraticCurveTo(2 * s, -36 * s, 1 * s, -45.5 * s); ctx.closePath(); ctx.fill();
         ctx.strokeStyle = 'rgba(140,140,135,.55)'; ctx.lineWidth = 0.7 * s;
-        for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo((2 + i * 2.4) * s, -43 * s); ctx.quadraticCurveTo((4 + i * 1.4) * s + sway * 0.6, -35 * s, (4 + i * 0.4) * s + sway * 1.2, -27 * s); ctx.stroke(); }
+        ctx.beginPath(); for (let i = 0; i < 3; i++) { ctx.moveTo((2 + i * 2.4) * s, -43 * s); ctx.quadraticCurveTo((4 + i * 1.4) * s + sway * 0.6, -35 * s, (4 + i * 0.4) * s + sway * 1.2, -27 * s); } ctx.stroke();
         ctx.restore(); ctx._skipInk = false; }
       ctx.fillStyle = F3('#f4f2ec');                           // 아래로 처진 콧수염
       ctx.beginPath(); ctx.moveTo(3.5 * s, -47 * s); ctx.quadraticCurveTo(8 * s, -48.4 * s, 10.4 * s, -46 * s); ctx.quadraticCurveTo(10.8 * s, -43.4 * s, 9.4 * s, -41.6 * s);
@@ -4537,7 +4539,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
       ctx.fillStyle = S.flash ? '#fff' : '#6b7a8a';            // 등 코일
       ctx.fillRect(-14 * s, -48 * s, 6 * s, 20 * s);
       ctx.strokeStyle = S.flash ? '#fff' : '#b08d57'; ctx.lineWidth = 1.6 * s;
-      for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.moveTo(-15 * s, (-46 + i * 5) * s); ctx.lineTo(-7 * s, (-44 + i * 5) * s); ctx.stroke(); }
+      ctx.beginPath(); for (let i = 0; i < 4; i++) { ctx.moveTo(-15 * s, (-46 + i * 5) * s); ctx.lineTo(-7 * s, (-44 + i * 5) * s); } ctx.stroke();
       orb(S, -11 * s, -52 * s, 2.6 * s, S.flash ? '#fff' : acc);
       armWeapon(S, -0.45 + atk * 1.5, () => {
         line(S, 0, 0, 40 * s, -8 * s, 3.4 * s, S.flash ? '#fff' : '#9aa3ab');
@@ -4705,7 +4707,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
         ctx.fillRect(-1.2 * s, -2.8 * s, 2.4 * s, 5.6 * s);
         if (atk > 0.4 && S.live) {                               // 권풍
           ctx._skipInk = true; ctx.globalAlpha = (atk - 0.4) * 1.2; ctx.strokeStyle = '#fff6dc'; ctx.lineWidth = 1.6 * s;
-          for (let i = 0; i < 2; i++) { ctx.beginPath(); ctx.arc(10 * s + i * 7 * s, 0, (5 + i * 3) * s, -1, 1); ctx.stroke(); }
+          ctx.beginPath(); for (let i = 0; i < 2; i++) { ctx.moveTo(10 * s + i * 7 * s + Math.cos(-1) * (5 + i * 3) * s, 0 + Math.sin(-1) * (5 + i * 3) * s); ctx.arc(10 * s + i * 7 * s, 0, (5 + i * 3) * s, -1, 1); } ctx.stroke();
           ctx.globalAlpha = 1; ctx._skipInk = false;
         }
       }, 2 * s);
@@ -4794,7 +4796,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
         line(S, 0, 10 * s, 3 * s, -44 * s, 2.4 * s, S.flash ? '#fff' : '#c9a227');
         ctx.strokeStyle = S.flash ? '#fff' : acc; ctx.lineWidth = 1.8 * s;
         ctx.beginPath(); ctx.ellipse(3 * s, -50 * s, 5 * s, 7 * s, 0, 0, 7); ctx.stroke();
-        for (const k of [-1, 1]) { ctx.beginPath(); ctx.arc(3 * s + k * 5.5 * s, -46 * s + Math.sin(MODEL.time * 4 + k) * 1.2 * s, 2 * s, 0, 7); ctx.stroke(); }
+        ctx.beginPath(); for (const k of [-1, 1]) { ctx.moveTo(3 * s + k * 5.5 * s + 2 * s, -46 * s + Math.sin(MODEL.time * 4 + k) * 1.2 * s); ctx.arc(3 * s + k * 5.5 * s, -46 * s + Math.sin(MODEL.time * 4 + k) * 1.2 * s, 2 * s, 0, 7); } ctx.stroke();
       }, 6 * s);
       break;
     case 'bajie': {
@@ -6156,7 +6158,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
         ctx.save(); ctx._skipInk = true; ctx.globalAlpha *= 0.16 + atk * 0.22;
         ctx.fillStyle = '#f0a020'; ctx.beginPath(); ctx.arc(-6 * s, hov - 14 * s, 24 * s, 0, 7); ctx.fill();
         ctx.globalAlpha *= 1.6; ctx.strokeStyle = '#e8901a'; ctx.lineWidth = 2 * s;
-        for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2 + t * 0.4; ctx.beginPath(); ctx.moveTo(-6 * s + Math.cos(a) * 30 * s, hov - 14 * s + Math.sin(a) * 30 * s); ctx.lineTo(-6 * s + Math.cos(a) * 40 * s, hov - 14 * s + Math.sin(a) * 40 * s); ctx.stroke(); }
+        ctx.beginPath(); for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2 + t * 0.4; ctx.moveTo(-6 * s + Math.cos(a) * 30 * s, hov - 14 * s + Math.sin(a) * 30 * s); ctx.lineTo(-6 * s + Math.cos(a) * 40 * s, hov - 14 * s + Math.sin(a) * 40 * s); } ctx.stroke();
         ctx.restore(); ctx._skipInk = false;
       }
       const pts = [];                                           // 몸: 물결치는 S자
@@ -6352,7 +6354,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
         for (let i = 0; i < 5; i++) { ctx.beginPath(); ctx.arc((-5 + i * 2.5) * s, -21 * s, 2.2 * s, 0, 7); ctx.fill(); } ctx.restore(); ctx._skipInk = false; }
       head(S, 'bald', 8 * s);
       ctx.strokeStyle = F3('#e8d8b0'); ctx.lineWidth = 2.6 * s;  // 굽은 뿔
-      for (const d of [-1, 1]) { ctx.beginPath(); ctx.arc(d * 4 * s - 1 * s, -61 * s, 4.5 * s, Math.PI * (d > 0 ? 1.1 : 1.9), Math.PI * (d > 0 ? 0.2 : 0.8), d < 0); ctx.stroke(); }
+      ctx.beginPath(); for (const d of [-1, 1]) { ctx.moveTo(d * 4 * s - 1 * s + Math.cos(Math.PI * (d > 0 ? 1.1 : 1.9)) * 4.5 * s, -61 * s + Math.sin(Math.PI * (d > 0 ? 1.1 : 1.9)) * 4.5 * s); ctx.arc(d * 4 * s - 1 * s, -61 * s, 4.5 * s, Math.PI * (d > 0 ? 1.1 : 1.9), Math.PI * (d > 0 ? 0.2 : 0.8), d < 0); } ctx.stroke();
       tri(S, 3 * s, -44 * s, 8 * s, -44 * s, 5 * s, -37 * s, F3(shade(st.tunic, -0.1)));      // 염소수염
       arm(S, 8 * s, -46 * s);                                    // 팬 플루트를 입에
       ctx.fillStyle = acc; for (let i = 0; i < 5; i++) ctx.fillRect((8 + i * 1.8) * s, (-52 + i * 0.3) * s, 1.5 * s, (6 + i * 1.6) * s);
@@ -6487,8 +6489,8 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
       legs(S); torso(S, 5 * s);
       head(S, 'bald', 8 * s);
       if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.strokeStyle = shade(st.body, -0.22); ctx.lineWidth = 1.1 * s;   // 붕대 줄
-        for (let i = 0; i < 6; i++) { const y = (-58 + i * 3) * s; ctx.beginPath(); ctx.moveTo(-8 * s, y + 1 * s); ctx.lineTo(8 * s, y - 1 * s); ctx.stroke(); }
-        for (let i = 0; i < 5; i++) { const y = (-39 + i * 4) * s; ctx.beginPath(); ctx.moveTo(-6 * s, y + 1.5 * s); ctx.lineTo(6 * s, y - 1 * s); ctx.stroke(); }
+        ctx.beginPath(); for (let i = 0; i < 6; i++) { const y = (-58 + i * 3) * s; ctx.moveTo(-8 * s, y + 1 * s); ctx.lineTo(8 * s, y - 1 * s); } ctx.stroke();
+        ctx.beginPath(); for (let i = 0; i < 5; i++) { const y = (-39 + i * 4) * s; ctx.moveTo(-6 * s, y + 1.5 * s); ctx.lineTo(6 * s, y - 1 * s); } ctx.stroke();
         ctx.fillStyle = acc; ctx.beginPath(); ctx.arc(4 * s, -51 * s, 1.5 * s, 0, 7); ctx.fill(); x3Glow(S, 4 * s, -51 * s, 2.5 * s, acc, 0.5);
         ctx.strokeStyle = st.body; ctx.lineWidth = 1.8 * s; ctx.beginPath();                                   // 풀린 붕대 끝
         ctx.moveTo(-6 * s, -30 * s); ctx.quadraticCurveTo(-14 * s, -24 * s + Math.sin(t * 3) * 2 * s, -20 * s, -18 * s + Math.sin(t * 3 + 1) * 3 * s); ctx.stroke();
@@ -6560,7 +6562,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
       const bug = (ox, oy, k) => {
         const g = S.moving ? Math.sin(phase * 3 + ox) * 1.5 * s : 0;
         ctx.strokeStyle = F3('#3a2a12'); ctx.lineWidth = 1.2 * s;
-        for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(ox + (-4 + i * 4) * s * k, oy); ctx.lineTo(ox + (-6 + i * 4) * s * k + g, oy + 5 * s * k); ctx.stroke(); }
+        ctx.beginPath(); for (let i = 0; i < 3; i++) { ctx.moveTo(ox + (-4 + i * 4) * s * k, oy); ctx.lineTo(ox + (-6 + i * 4) * s * k + g, oy + 5 * s * k); } ctx.stroke();
         ctx.fillStyle = col; ctx.beginPath(); ctx.ellipse(ox, oy - 3 * s * k, 8 * s * k, 5.5 * s * k, 0, Math.PI, 0); ctx.fill();
         ctx.fillStyle = F3('#3a2a12'); ctx.beginPath(); ctx.arc(ox + 8 * s * k, oy - 2 * s * k, 2.6 * s * k, 0, 7); ctx.fill();
         if (!S.flash) { ctx.strokeStyle = acc; ctx.lineWidth = 0.9 * s; ctx.beginPath(); ctx.moveTo(ox, oy - 8.5 * s * k); ctx.lineTo(ox, oy - 3 * s * k); ctx.stroke();
@@ -6577,12 +6579,12 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
       ctx.strokeStyle = col; ctx.lineWidth = 2.4 * s; ctx.beginPath(); ctx.moveTo(-19 * s, by - 2 * s); ctx.quadraticCurveTo(-30 * s, by - 8 * s + Math.sin(t * 2) * 2 * s, -28 * s, by - 16 * s); ctx.stroke();   // 꼬리
       if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.globalAlpha = 0.85; ctx.fillStyle = acc;                          // 날개
         ctx.beginPath(); ctx.moveTo(-6 * s, by - 6 * s); ctx.quadraticCurveTo(-24 * s, by - 34 * s - Math.sin(t * 2) * 3 * s, -2 * s, by - 26 * s); ctx.quadraticCurveTo(-8 * s, by - 16 * s, 4 * s, by - 6 * s); ctx.fill();
-        ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 0.8 * s; for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(-4 * s, by - 8 * s); ctx.lineTo((-16 + i * 5) * s, by - (28 - i * 3) * s); ctx.stroke(); }
+        ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 0.8 * s; ctx.beginPath(); for (let i = 0; i < 3; i++) { ctx.moveTo(-4 * s, by - 8 * s); ctx.lineTo((-16 + i * 5) * s, by - (28 - i * 3) * s); } ctx.stroke();
         ctx.restore(); ctx._skipInk = false; }
       { const hx = 18 * s, hy = by - 15 * s, hr = 6.5 * s;                                                              // 사람 얼굴 (금빛 줄무늬 네메스)
         ctx.fillStyle = S.flash ? '#fff' : F3('#e0b040'); ctx.beginPath(); ctx.moveTo(hx - hr - 3 * s, hy + 11 * s); ctx.lineTo(hx - hr, hy - hr - 1 * s);
         ctx.lineTo(hx + hr, hy - hr - 1 * s); ctx.lineTo(hx + hr + 3 * s, hy + 11 * s); ctx.lineTo(hx + hr - 2 * s, hy + 4 * s); ctx.lineTo(hx - hr + 2 * s, hy + 4 * s); ctx.closePath(); ctx.fill();
-        if (!S.flash) { ctx.strokeStyle = F3(st.tunic); ctx.lineWidth = 1.2 * s; for (let i = 0; i < 3; i++) { const yy = hy - hr + 3 * s + i * 4 * s; ctx.beginPath(); ctx.moveTo(hx - hr - 1 * s - i * 0.8 * s, yy); ctx.lineTo(hx + hr + 1 * s + i * 0.8 * s, yy); ctx.stroke(); } }
+        if (!S.flash) { ctx.strokeStyle = F3(st.tunic); ctx.lineWidth = 1.2 * s; ctx.beginPath(); for (let i = 0; i < 3; i++) { const yy = hy - hr + 3 * s + i * 4 * s; ctx.moveTo(hx - hr - 1 * s - i * 0.8 * s, yy); ctx.lineTo(hx + hr + 1 * s + i * 0.8 * s, yy); } ctx.stroke(); }
         ctx.fillStyle = S.flash ? '#fff' : F3('#c89a5a'); ctx.beginPath(); ctx.arc(hx + 1.5 * s, hy + 0.5 * s, hr * 0.68, 0, 7); ctx.fill(); }
       if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.fillStyle = acc; ctx.beginPath(); ctx.arc(21.5 * s, by - 15.5 * s, 1.2 * s, 0, 7); ctx.fill(); x3Glow(S, 21.5 * s, by - 15.5 * s, 3 * s, acc, 0.4 + atk * 0.5); ctx.restore(); ctx._skipInk = false; }
       if (S.live && !S.flash && atk > 0.1) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = acc; ctx.globalAlpha = atk * 0.5;   // 눈에서 뿜는 빛
@@ -6853,7 +6855,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
         ctx.save(); ctx._skipInk = true;
         ctx.fillStyle = '#ffd23a'; ctx.globalAlpha = 0.85; ctx.beginPath(); ctx.arc(-4 * s, -56 * s, 15 * s, 0, 7); ctx.fill();
         ctx.strokeStyle = '#fff07a'; ctx.lineWidth = 1.6 * s; ctx.globalAlpha = 0.7;
-        for (let i = 0; i < 12; i++) { const a = t * 0.4 + i * Math.PI / 6; ctx.beginPath(); ctx.moveTo(-4 * s + Math.cos(a) * 17 * s, -56 * s + Math.sin(a) * 17 * s); ctx.lineTo(-4 * s + Math.cos(a) * 23 * s, -56 * s + Math.sin(a) * 23 * s); ctx.stroke(); }
+        ctx.beginPath(); for (let i = 0; i < 12; i++) { const a = t * 0.4 + i * Math.PI / 6; ctx.moveTo(-4 * s + Math.cos(a) * 17 * s, -56 * s + Math.sin(a) * 17 * s); ctx.lineTo(-4 * s + Math.cos(a) * 23 * s, -56 * s + Math.sin(a) * 23 * s); } ctx.stroke();
         ctx.restore(); ctx._skipInk = false;
         if (S.live) x3Glow(S, -4 * s, -56 * s, 16 * s, '#ffd23a', 0.25 + 0.08 * Math.sin(t * 2));
       }
@@ -6977,7 +6979,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
       ctx.fillStyle = F3('#2a2a2e');                            // 소 밀어내기 (앞의 쐐기)
       ctx.beginPath(); ctx.moveTo(32 * s, -20 * s); ctx.lineTo(46 * s, -2 * s); ctx.lineTo(30 * s, -2 * s); ctx.closePath(); ctx.fill();
       if (hq) { ctx.save(); ctx._skipInk = true; ctx.strokeStyle = '#5a5a60'; ctx.lineWidth = 1 * s;
-        for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.moveTo((33 + i * 3) * s, -18 * s + i * 4 * s); ctx.lineTo((32 + i * 3) * s, -2 * s); ctx.stroke(); }
+        ctx.beginPath(); for (let i = 0; i < 4; i++) { ctx.moveTo((33 + i * 3) * s, -18 * s + i * 4 * s); ctx.lineTo((32 + i * 3) * s, -2 * s); } ctx.stroke();
         ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.fillRect(-12 * s, -40 * s, 40 * s, 3 * s);
         ctx.restore(); ctx._skipInk = false; }
       ctx.fillStyle = F3('#fff2c0'); ctx.beginPath(); ctx.arc(31 * s, -32 * s, 4.4 * s, 0, 7); ctx.fill();                    // 전조등
@@ -7075,7 +7077,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
         ctx.save(); ctx.translate(d * 8 * s, -36 * s); ctx.rotate(ang);
         ctx.fillStyle = S.flash ? '#fff' : (d > 0 ? acc : shade(acc, -0.2));
         ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, 13 * s, -0.5, 0.5); ctx.closePath(); ctx.fill();
-        if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = 0.8 * s; for (let i = -2; i <= 2; i++) { ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(i * 0.22) * 13 * s, Math.sin(i * 0.22) * 13 * s); ctx.stroke(); } ctx.restore(); ctx._skipInk = false; }
+        if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = 0.8 * s; ctx.beginPath(); for (let i = -2; i <= 2; i++) { ctx.moveTo(0, 0); ctx.lineTo(Math.cos(i * 0.22) * 13 * s, Math.sin(i * 0.22) * 13 * s); } ctx.stroke(); ctx.restore(); ctx._skipInk = false; }
         ctx.restore();
       }
       break;
@@ -7196,7 +7198,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
         line(S, 0, 4 * s, 4 * s, -30 * s, 2.2 * s, F3('#8a5a2a'));
         for (let i = 0; i < 3; i++) for (let j = 0; j <= i; j++) { ctx.fillStyle = F3('#e8c65a'); ctx.beginPath(); ctx.arc((4 - i * 3 + j * 6) * s, (-32 + i * 4) * s, 1.8 * s, 0, 7); ctx.fill(); }
         ctx.strokeStyle = F3(acc); ctx.lineWidth = 1.4 * s;
-        for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(4 * s, -26 * s); ctx.quadraticCurveTo((8 + i * 3) * s, -18 * s, (6 + i * 4) * s, (-10 + i * 2) * s); ctx.stroke(); }
+        ctx.beginPath(); for (let i = 0; i < 3; i++) { ctx.moveTo(4 * s, -26 * s); ctx.quadraticCurveTo((8 + i * 3) * s, -18 * s, (6 + i * 4) * s, (-10 + i * 2) * s); } ctx.stroke();
       }, 6 * s);
       break;
     }
@@ -7204,7 +7206,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
       legs(S); torso(S, 5 * s);
       ctx.fillStyle = F3(tun); ctx.beginPath(); roundRectPath(ctx, -9 * s, -44 * s, 18 * s, 20 * s, 3 * s); ctx.fill();   // 갑옷 몸통
       if (!S.flash && MODEL.ink) { ctx.save(); ctx._skipInk = true; ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = 1 * s;
-        for (let i = 1; i < 4; i++) { ctx.beginPath(); ctx.moveTo(-9 * s, (-44 + i * 5) * s); ctx.lineTo(9 * s, (-44 + i * 5) * s); ctx.stroke(); } ctx.restore(); ctx._skipInk = false; }
+        ctx.beginPath(); for (let i = 1; i < 4; i++) { ctx.moveTo(-9 * s, (-44 + i * 5) * s); ctx.lineTo(9 * s, (-44 + i * 5) * s); } ctx.stroke(); ctx.restore(); ctx._skipInk = false; }
       ctx.fillStyle = F3(tun); for (const d of [-1, 1]) { ctx.beginPath(); roundRectPath(ctx, (d > 0 ? 6 : -14) * s, -44 * s, 8 * s, 10 * s, 2 * s); ctx.fill(); }   // 소데 (어깨판)
       head(S, 'bald');
       ctx.fillStyle = F3('#2a2a30'); ctx.beginPath(); ctx.arc(0, -52 * s, 10 * s, Math.PI, 0); ctx.fill();        // 투구
@@ -7348,7 +7350,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
       }
       armWeapon(S, -0.22 + atk * 0.5 - charge * 0.35, () => {  // 수정 지팡이: 금 감긴 자루 · 초승달 테 · 은하가 도는 수정 구슬 · 도는 작은 별
         line(S, 0, 6 * s, 3 * s, -50 * s, 3.4 * s, F3('#4a3424'));
-        if (!S.flash) { ctx.strokeStyle = gold; ctx.lineWidth = 1.1 * s; for (let i = 0; i < 6; i++) { const y = (-8 - i * 7) * s; ctx.beginPath(); ctx.moveTo(-1.4 * s, y); ctx.lineTo(4 * s, y - 2.2 * s); ctx.stroke(); } }
+        if (!S.flash) { ctx.strokeStyle = gold; ctx.lineWidth = 1.1 * s; ctx.beginPath(); for (let i = 0; i < 6; i++) { const y = (-8 - i * 7) * s; ctx.moveTo(-1.4 * s, y); ctx.lineTo(4 * s, y - 2.2 * s); } ctx.stroke(); }
         const ox = 3.4 * s, oy = -59 * s, orR = (6.5 + charge * 1.6) * s;
         ctx.strokeStyle = F3(gold); ctx.lineWidth = 2 * s;     // 초승달 테
         ctx.beginPath(); ctx.arc(ox, oy, orR + 3 * s, 0.55 * Math.PI, 2.45 * Math.PI); ctx.stroke();
@@ -7371,7 +7373,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
             ctx.restore(); ctx._skipInk = false; }
           if (live && atk > 0.25) {                               // 쏘는 순간: 구슬에서 뻗는 빛살
             ctx.save(); ctx._skipInk = true; ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = star; ctx.lineWidth = 1.4 * s; ctx.globalAlpha = atk * 0.8;
-            for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4 + t; ctx.beginPath(); ctx.moveTo(ox + Math.cos(a) * orR * 1.2, oy + Math.sin(a) * orR * 1.2); ctx.lineTo(ox + Math.cos(a) * orR * (2.4 + atk), oy + Math.sin(a) * orR * (2.4 + atk)); ctx.stroke(); }
+            ctx.beginPath(); for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4 + t; ctx.moveTo(ox + Math.cos(a) * orR * 1.2, oy + Math.sin(a) * orR * 1.2); ctx.lineTo(ox + Math.cos(a) * orR * (2.4 + atk), oy + Math.sin(a) * orR * (2.4 + atk)); } ctx.stroke();
             ctx.restore(); ctx._skipInk = false; }
         }
       }, 4 * s);
@@ -7470,7 +7472,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
         ctx.fillStyle = '#e8fcff'; ctx.beginPath(); ctx.arc(72 * s - rc, -37 * s, cr * 0.5, 0, 7); ctx.fill();
         ctx.globalAlpha = 0.6; ctx.fillStyle = acc; ctx.beginPath(); ctx.arc(72 * s - rc, -37 * s, cr, 0, 7); ctx.fill();
         ctx.strokeStyle = '#c8f6ff'; ctx.lineWidth = 0.8 * s; ctx.globalAlpha = 0.8;
-        for (let i = 0; i < 4; i++) { const a = t * 9 + i * 1.57; ctx.beginPath(); ctx.moveTo(72 * s - rc + Math.cos(a) * cr * 2.2, -37 * s + Math.sin(a) * cr * 2.2); ctx.lineTo(72 * s - rc + Math.cos(a) * cr * 1.1, -37 * s + Math.sin(a) * cr * 1.1); ctx.stroke(); }
+        ctx.beginPath(); for (let i = 0; i < 4; i++) { const a = t * 9 + i * 1.57; ctx.moveTo(72 * s - rc + Math.cos(a) * cr * 2.2, -37 * s + Math.sin(a) * cr * 2.2); ctx.lineTo(72 * s - rc + Math.cos(a) * cr * 1.1, -37 * s + Math.sin(a) * cr * 1.1); } ctx.stroke();
         ctx.restore(); ctx._skipInk = false;
       }
       ctx.fillStyle = F3(plate);                               // 포탑: 각진 쐐기 · 눈 모양 조준경
@@ -7508,7 +7510,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
         ctx.save(); ctx._skipInk = true; ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = atk * 0.8; ctx.strokeStyle = acc; ctx.lineWidth = 1 * s;
         const cx = 86 * s, cy = -37 * s, rr = (8 + (1 - atk) * 6) * s;
         ctx.beginPath(); ctx.arc(cx, cy, rr, 0, 7); ctx.stroke();
-        for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2 + t * 2; ctx.beginPath(); ctx.moveTo(cx + Math.cos(a) * rr * 0.6, cy + Math.sin(a) * rr * 0.6); ctx.lineTo(cx + Math.cos(a) * rr * 1.4, cy + Math.sin(a) * rr * 1.4); ctx.stroke(); }
+        ctx.beginPath(); for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2 + t * 2; ctx.moveTo(cx + Math.cos(a) * rr * 0.6, cy + Math.sin(a) * rr * 0.6); ctx.lineTo(cx + Math.cos(a) * rr * 1.4, cy + Math.sin(a) * rr * 1.4); } ctx.stroke();
         ctx.restore(); ctx._skipInk = false;
       }
       ctx.restore();
@@ -7568,7 +7570,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
           ctx.fillStyle = F3('#fbfbf6'); ctx.beginPath(); ctx.ellipse(cx, cy, 8 * s, 2.6 * s, a, 0, 7); ctx.fill();
           ctx.fillStyle = F3('#22222a'); ctx.beginPath(); ctx.ellipse(10 * s + Math.cos(a) * 16 * s, Math.sin(a) * 16 * s, 2.4 * s, 1.8 * s, a, 0, 7); ctx.fill(); }
         if (!S.flash && S.live && atk > 0.2) { ctx.save(); ctx._skipInk = true; ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha *= 0.35 * atk; ctx.strokeStyle = '#e8f6ff'; ctx.lineWidth = 2 * s;
-          for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(14 * s, 0, (20 + i * 8) * s, -0.8, 0.8); ctx.stroke(); } ctx.restore(); ctx._skipInk = false; }
+          ctx.beginPath(); for (let i = 0; i < 3; i++) { ctx.moveTo(14 * s + Math.cos(-0.8) * (20 + i * 8) * s, 0 + Math.sin(-0.8) * (20 + i * 8) * s); ctx.arc(14 * s, 0, (20 + i * 8) * s, -0.8, 0.8); } ctx.stroke(); ctx.restore(); ctx._skipInk = false; }
       }, 6 * s);
       break;
     }
@@ -7660,19 +7662,19 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
       legs(S); torso(S, 5.4 * s);
       ctx.fillStyle = F3(tun); ctx.beginPath(); roundRectPath(ctx, -10 * s, -45 * s, 20 * s, 24 * s, 6 * s); ctx.fill();   // 등갑
       if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.strokeStyle = 'rgba(90,60,20,.7)'; ctx.lineWidth = 1 * s;
-        for (let i = 0; i < 5; i++) { ctx.beginPath(); ctx.moveTo(-10 * s, (-42 + i * 5) * s); ctx.lineTo(10 * s, (-40 + i * 5) * s); ctx.stroke(); }
-        for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.moveTo((-7 + i * 5) * s, -45 * s); ctx.lineTo((-8 + i * 5) * s, -21 * s); ctx.stroke(); }
+        ctx.beginPath(); for (let i = 0; i < 5; i++) { ctx.moveTo(-10 * s, (-42 + i * 5) * s); ctx.lineTo(10 * s, (-40 + i * 5) * s); } ctx.stroke();
+        ctx.beginPath(); for (let i = 0; i < 4; i++) { ctx.moveTo((-7 + i * 5) * s, -45 * s); ctx.lineTo((-8 + i * 5) * s, -21 * s); } ctx.stroke();
         ctx.restore(); ctx._skipInk = false; }
       head(S, 'bald');
       ctx.fillStyle = F3(tun); ctx.beginPath(); ctx.arc(0, -53 * s, 10 * s, Math.PI, 0); ctx.lineTo(10 * s, -51 * s); ctx.lineTo(-10 * s, -51 * s); ctx.fill();   // 등나무 투구
-      if (!S.flash) { ctx.strokeStyle = 'rgba(90,60,20,.7)'; ctx.lineWidth = 1 * s; for (let i = -1; i <= 1; i++) { ctx.beginPath(); ctx.moveTo(i * 5 * s, -62 * s); ctx.lineTo(i * 7 * s, -51 * s); ctx.stroke(); } }
+      if (!S.flash) { ctx.strokeStyle = 'rgba(90,60,20,.7)'; ctx.lineWidth = 1 * s; ctx.beginPath(); for (let i = -1; i <= 1; i++) { ctx.moveTo(i * 5 * s, -62 * s); ctx.lineTo(i * 7 * s, -51 * s); } ctx.stroke(); }
       ctx.fillStyle = F3(acc); ctx.beginPath(); ctx.arc(0, -63.5 * s, 2 * s, 0, 7); ctx.fill();
       armWeapon(S, -1.1 + atk * 2, () => {                     // 굽은 칼
         line(S, -4 * s, 0, 6 * s, 0, 3 * s, F3('#3a2a1a'));
         ctx.fillStyle = F3('#d8dce4'); ctx.beginPath(); ctx.moveTo(6 * s, -2.4 * s); ctx.quadraticCurveTo(24 * s, -4 * s, 32 * s, -9 * s); ctx.quadraticCurveTo(28 * s, 1 * s, 6 * s, 2.4 * s); ctx.closePath(); ctx.fill();
       }, 6 * s);
       round_shield(S, 13 * s, -33 * s, 11 * s, F3(x3Hex(tun, 0.08)));                                                // 둥근 등패
-      if (!S.flash) { ctx.strokeStyle = 'rgba(90,60,20,.75)'; ctx.lineWidth = 1 * s; for (let i = 1; i < 4; i++) { ctx.beginPath(); ctx.arc(13 * s, -33 * s, i * 2.6 * s, 0, 7); ctx.stroke(); }
+      if (!S.flash) { ctx.strokeStyle = 'rgba(90,60,20,.75)'; ctx.lineWidth = 1 * s; ctx.beginPath(); for (let i = 1; i < 4; i++) { ctx.moveTo(13 * s + i * 2.6 * s, -33 * s); ctx.arc(13 * s, -33 * s, i * 2.6 * s, 0, 7); } ctx.stroke();
         ctx.fillStyle = acc; ctx.beginPath(); ctx.arc(13 * s, -33 * s, 2 * s, 0, 7); ctx.fill(); }
       break;
     }
@@ -7920,7 +7922,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
         ctx.beginPath(); ctx.moveTo(6.5 * s, 0); ctx.quadraticCurveTo(9 * s, -1.2 * s, 12 * s, -0.8 * s); ctx.lineTo(12 * s, -10.6 * s); ctx.quadraticCurveTo(9 * s, -11 * s, 6.5 * s, -10 * s); ctx.closePath(); ctx.fill();
         if (S.flash) return;
         ctx.save(); ctx._skipInk = true; ctx.strokeStyle = 'rgba(90,60,40,.7)'; ctx.lineWidth = 0.6 * s;
-        for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.moveTo(2 * s, (-7.6 + i * 1.9) * s); ctx.lineTo(5.6 * s, (-7.8 + i * 1.9) * s); ctx.moveTo(7.4 * s, (-8.2 + i * 1.9) * s); ctx.lineTo(11 * s, (-8.4 + i * 1.9) * s); ctx.stroke(); }
+        ctx.beginPath(); for (let i = 0; i < 4; i++) { ctx.moveTo(2 * s, (-7.6 + i * 1.9) * s); ctx.lineTo(5.6 * s, (-7.8 + i * 1.9) * s); ctx.moveTo(7.4 * s, (-8.2 + i * 1.9) * s); ctx.lineTo(11 * s, (-8.4 + i * 1.9) * s); } ctx.stroke();
         ctx.restore(); ctx._skipInk = false;
         if (live) x3Glow(S, 6.5 * s, -6 * s, (4 + charge * 4) * s, '#ffd76a', 0.2 + charge * 0.4);
       }, 4 * s);
@@ -8000,7 +8002,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
       if (!S.flash) {
         ctx.fillStyle = F3('#e8c65a'); ctx.fillRect(-16 * s, -32 * s, 24 * s, 2 * s);
         ctx.save(); ctx._skipInk = true; ctx.strokeStyle = '#e8c65a'; ctx.lineWidth = 1 * s;
-        for (let i = 0; i < 7; i++) { const x = (-15 + i * 3.8) * s; ctx.beginPath(); ctx.moveTo(x, -30 * s); ctx.lineTo(x + Math.sin(t * 4 + i) * 0.8 * s, -26.5 * s); ctx.stroke(); }
+        ctx.beginPath(); for (let i = 0; i < 7; i++) { const x = (-15 + i * 3.8) * s; ctx.moveTo(x, -30 * s); ctx.lineTo(x + Math.sin(t * 4 + i) * 0.8 * s, -26.5 * s); } ctx.stroke();
         ctx.restore(); ctx._skipInk = false;
       }
       ctx.save(); ctx.translate(-4 * s, -29 * s);              // 기수: 혹 위 안장에 앉았다
@@ -8062,7 +8064,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
         ctx.beginPath(); ctx.moveTo(-23 * s, -40 * s + bob); ctx.quadraticCurveTo(-36 * s, -40 * s + w, -45 * s - (S.moving ? 4 * s : 0), -22 * s + w);
         ctx.quadraticCurveTo(-38 * s, -28 * s, -25 * s, -33 * s + bob); ctx.closePath(); ctx.fill();
         if (hq) { ctx.save(); ctx._skipInk = true; ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = 'rgba(138,232,255,.55)'; ctx.lineWidth = 0.9 * s;
-          for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(-24 * s, (-38 + i * 1.8) * s + bob); ctx.quadraticCurveTo((-35 + i) * s, (-37 + i * 2) * s + w, (-44 + i * 2) * s, (-24 + i * 1.5) * s + w); ctx.stroke(); }
+          ctx.beginPath(); for (let i = 0; i < 3; i++) { ctx.moveTo(-24 * s, (-38 + i * 1.8) * s + bob); ctx.quadraticCurveTo((-35 + i) * s, (-37 + i * 2) * s + w, (-44 + i * 2) * s, (-24 + i * 1.5) * s + w); } ctx.stroke();
           ctx.restore(); ctx._skipInk = false; }
       }
       ctx.save(); ctx.translate(0, bob);
@@ -8080,7 +8082,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
       if (!S.flash) {
         ctx.save(); ctx._skipInk = true;
         ctx.fillStyle = 'rgba(120,132,150,.45)';                // 얼룩무늬
-        for (const [dx, dy, r] of [[-18, -37, 2.4], [-12, -31, 2], [-4, -36, 2.6], [5, -30, 1.8], [-20, -30, 1.6], [10, -38, 2]]) { ctx.beginPath(); ctx.arc(dx * s, dy * s, r * s, 0, 7); ctx.fill(); }
+        ctx.beginPath(); for (const [dx, dy, r] of [[-18, -37, 2.4], [-12, -31, 2], [-4, -36, 2.6], [5, -30, 1.8], [-20, -30, 1.6], [10, -38, 2]]) { ctx.moveTo(dx * s + r * s, dy * s); ctx.arc(dx * s, dy * s, r * s, 0, 7); } ctx.fill();
         ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.beginPath(); ctx.ellipse(-2 * s, -39.5 * s, 16 * s, 2.6 * s, 0, Math.PI, 0); ctx.fill();
         ctx.restore(); ctx._skipInk = false;
       }
@@ -8092,8 +8094,8 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
         ctx.strokeStyle = gold; ctx.lineWidth = 1.2 * s; ctx.beginPath();
         ctx.moveTo(15 * s, -29 * s); for (let i = 0; i <= 6; i++) { const x = (15 - i * 6.6) * s; ctx.quadraticCurveTo(x - 3.3 * s, -24.5 * s, x - 6.6 * s, -29 * s); } ctx.stroke();
         ctx.save(); ctx._skipInk = true; ctx.strokeStyle = charge > 0.15 ? rune : '#d8b85a'; ctx.lineWidth = 0.9 * s;
-        for (let i = 0; i < 4; i++) { const px = (-16 + i * 8) * s, py = -35 * s;
-          ctx.beginPath(); ctx.moveTo(px, py - 2.6 * s); ctx.lineTo(px, py + 2.6 * s); ctx.moveTo(px, py - 1.2 * s); ctx.lineTo(px + 2 * s, py - 2.6 * s); if (i % 2) { ctx.moveTo(px, py + 0.4 * s); ctx.lineTo(px + 2 * s, py - 1 * s); } ctx.stroke(); }
+        ctx.beginPath(); for (let i = 0; i < 4; i++) { const px = (-16 + i * 8) * s, py = -35 * s;
+          ctx.moveTo(px, py - 2.6 * s); ctx.lineTo(px, py + 2.6 * s); ctx.moveTo(px, py - 1.2 * s); ctx.lineTo(px + 2 * s, py - 2.6 * s); if (i % 2) { ctx.moveTo(px, py + 0.4 * s); ctx.lineTo(px + 2 * s, py - 1 * s); } } ctx.stroke();
         ctx.restore(); ctx._skipInk = false;
         ctx.fillStyle = gold;                                  // 가슴의 금빛 반달 판 · 금 얼굴 가리개 · 이마 뿔
         ctx.beginPath(); ctx.moveTo(21 * s, -45 * s); ctx.quadraticCurveTo(29 * s, -38 * s, 25 * s, -29 * s); ctx.lineTo(22 * s, -30 * s); ctx.quadraticCurveTo(25 * s, -38 * s, 19 * s, -43 * s); ctx.closePath(); ctx.fill();
@@ -8131,7 +8133,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
       ctx.fillStyle = gold;                                    // 금비늘 갑옷
       ctx.beginPath(); ctx.moveTo(-6.5 * s, -41 * s); ctx.lineTo(6.5 * s, -41 * s); ctx.lineTo(7.5 * s, -24 * s); ctx.lineTo(-7.5 * s, -24 * s); ctx.closePath(); ctx.fill();
       if (hq) { ctx.save(); ctx._skipInk = true; ctx.strokeStyle = 'rgba(120,80,10,.6)'; ctx.lineWidth = 0.7 * s;
-        for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) { ctx.beginPath(); ctx.arc((-5.2 + c * 2.6 + (r % 2) * 1.3) * s, (-38.5 + r * 3) * s, 1.2 * s, 0, Math.PI); ctx.stroke(); }
+        ctx.beginPath(); for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) { ctx.moveTo((-5.2 + c * 2.6 + (r % 2) * 1.3) * s + 1.2 * s, (-38.5 + r * 3) * s); ctx.arc((-5.2 + c * 2.6 + (r % 2) * 1.3) * s, (-38.5 + r * 3) * s, 1.2 * s, 0, Math.PI); } ctx.stroke();
         ctx.restore(); ctx._skipInk = false; }
       ctx.fillStyle = F3('#3a2a1e'); ctx.fillRect(-8 * s, -27 * s, 16 * s, 3.2 * s);
       ctx.fillStyle = F3('#a8b0b6');                           // 늑대털 깃
@@ -8199,7 +8201,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
         ctx.strokeStyle = '#a8865a'; ctx.lineCap = 'round';
         ctx.lineWidth = 6 * s; ctx.beginPath(); ctx.moveTo(tx, -4 * s); ctx.bezierCurveTo(tx - 3 * s, -30 * s, tx + 3 * s, -56 * s, tx, top); ctx.stroke();
         ctx.globalAlpha = 0.75; ctx.lineWidth = 1.5 * s; ctx.strokeStyle = '#d8b878';   // 뿌리: 가늘게 땅으로 파고든다
-        for (const d of [-1, 1]) for (let j = 0; j < 3; j++) { ctx.beginPath(); ctx.moveTo(tx + d * 2 * s, -4 * s); ctx.quadraticCurveTo(tx + d * (9 + j * 6) * s, (-3 + j) * s, tx + d * (20 + j * 8) * s, (1 + j * 0.6) * s); ctx.stroke(); }
+        ctx.beginPath(); for (const d of [-1, 1]) for (let j = 0; j < 3; j++) { ctx.moveTo(tx + d * 2 * s, -4 * s); ctx.quadraticCurveTo(tx + d * (9 + j * 6) * s, (-3 + j) * s, tx + d * (20 + j * 8) * s, (1 + j * 0.6) * s); } ctx.stroke();
         ctx.globalAlpha = 1;
         const lobes = [[0, -8, 16], [-15, 1, 12.5], [15, 1, 12.5], [-24, 11, 9], [24, 11, 9], [-9, 11, 11], [9, 11, 11], [0, -19, 10]];
         ctx.globalAlpha = 0.28; ctx.fillStyle = '#8ccc5a';     // 잎 무리 (반투명 금록)
@@ -8237,8 +8239,8 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
         ctx.beginPath(); ctx.ellipse(0, -1 * s, 32 * s, 8 * s, 0, 0, 7); ctx.stroke();
         ctx.strokeStyle = rune; ctx.beginPath(); ctx.ellipse(0, -1 * s, 25 * s, 6.2 * s, 0, 0, 7); ctx.stroke();
         ctx.lineWidth = 0.9 * s;
-        for (let i = 0; i < 16; i++) { const a = spin + i * Math.PI / 8, px = Math.cos(a) * 28.5 * s, py = -1 * s + Math.sin(a) * 7.1 * s;
-          ctx.beginPath(); ctx.moveTo(px, py - 1.6 * s); ctx.lineTo(px, py + 1.6 * s); if (i % 3 === 0) { ctx.moveTo(px, py - 1.6 * s); ctx.lineTo(px + 1.2 * s, py - 0.4 * s); } else if (i % 3 === 1) { ctx.moveTo(px - 1 * s, py); ctx.lineTo(px + 1 * s, py - 1.2 * s); } ctx.stroke(); }
+        ctx.beginPath(); for (let i = 0; i < 16; i++) { const a = spin + i * Math.PI / 8, px = Math.cos(a) * 28.5 * s, py = -1 * s + Math.sin(a) * 7.1 * s;
+          ctx.moveTo(px, py - 1.6 * s); ctx.lineTo(px, py + 1.6 * s); if (i % 3 === 0) { ctx.moveTo(px, py - 1.6 * s); ctx.lineTo(px + 1.2 * s, py - 0.4 * s); } else if (i % 3 === 1) { ctx.moveTo(px - 1 * s, py); ctx.lineTo(px + 1 * s, py - 1.2 * s); } } ctx.stroke();
         ctx.restore(); ctx._skipInk = false;
       }
       if (!S.flash) {                                          // 영혼의 늑대 둘 (게리 · 프레키): 앉아서 바깥을 본다
@@ -8265,7 +8267,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
       ctx.fillStyle = F3('#f2f0ea');                           // 흰 늑대털 망토 (등 뒤로 길게)
       ctx.beginPath(); ctx.moveTo(-7 * s, -45 * s); ctx.quadraticCurveTo(-22 * s - sway * 2, -26 * s, -25 * s - sway * 3, 1 * s); ctx.lineTo(-4 * s, 1 * s); ctx.closePath(); ctx.fill();
       if (hq) { ctx.save(); ctx._skipInk = true; ctx.strokeStyle = 'rgba(150,160,170,.55)'; ctx.lineWidth = 0.8 * s;
-        for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.moveTo((-8 - i * 2) * s, (-40 + i * 4) * s); ctx.quadraticCurveTo((-14 - i * 3) * s - sway, (-22 + i * 2) * s, (-16 - i * 2.4) * s - sway * 2, 0); ctx.stroke(); }
+        ctx.beginPath(); for (let i = 0; i < 4; i++) { ctx.moveTo((-8 - i * 2) * s, (-40 + i * 4) * s); ctx.quadraticCurveTo((-14 - i * 3) * s - sway, (-22 + i * 2) * s, (-16 - i * 2.4) * s - sway * 2, 0); } ctx.stroke();
         ctx.restore(); ctx._skipInk = false; }
       robe(S, 20 * s, -46 * s, tun);                           // 별하늘 긴 옷
       if (!S.flash) {
@@ -8273,7 +8275,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
         ctx.fillStyle = gold; ctx.beginPath(); ctx.moveTo(-2.4 * s, -45 * s); ctx.lineTo(2.4 * s, -45 * s); ctx.lineTo(4.6 * s, -1 * s); ctx.lineTo(-4.6 * s, -1 * s); ctx.closePath(); ctx.fill();   // 앞섶 룬 띠
         ctx.restore(); ctx._skipInk = false;
         ctx.save(); ctx._skipInk = true; ctx.strokeStyle = charge > 0.15 ? rune : '#6a4a14'; ctx.lineWidth = 0.8 * s;
-        for (let i = 0; i < 5; i++) { const py = (-38 + i * 7.5) * s; ctx.beginPath(); ctx.moveTo(0, py - 2.2 * s); ctx.lineTo(0, py + 2.2 * s); ctx.moveTo(0, py - 1 * s); ctx.lineTo(1.6 * s, py - 2.2 * s); if (i % 2) { ctx.moveTo(0, py + 0.4 * s); ctx.lineTo(-1.6 * s, py - 0.8 * s); } ctx.stroke(); }
+        ctx.beginPath(); for (let i = 0; i < 5; i++) { const py = (-38 + i * 7.5) * s; ctx.moveTo(0, py - 2.2 * s); ctx.lineTo(0, py + 2.2 * s); ctx.moveTo(0, py - 1 * s); ctx.lineTo(1.6 * s, py - 2.2 * s); if (i % 2) { ctx.moveTo(0, py + 0.4 * s); ctx.lineTo(-1.6 * s, py - 0.8 * s); } } ctx.stroke();
         ctx.fillStyle = '#eef4ff';                             // 옷자락의 별
         for (let i = 0; i < 10; i++) { const u = _h(i * 5.3), v = _h(i * 2.9); ctx.globalAlpha = 0.45 + 0.5 * Math.abs(Math.sin(t * 2 + i));
           ctx.fillRect((-15 + u * 28) * s - 0.7 * s, (-36 + v * 32) * s - 0.7 * s, 1.4 * s, 1.4 * s); }
@@ -8660,7 +8662,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
         ctx.fillStyle = scaleL;                                // 배 비늘 (밝은 마디)
         for (let i = 0; i < 8; i++) { ctx.beginPath(); ctx.ellipse((-14 + i * 4) * s, -2.4 * s, 1.8 * s, 1.1 * s, 0, 0, 7); ctx.fill(); }
         ctx.strokeStyle = 'rgba(20,40,20,.4)'; ctx.lineWidth = 0.8 * s;   // 등 비늘 무늬
-        for (let r = 0; r < 2; r++) for (let i = 0; i < 7; i++) { ctx.beginPath(); ctx.arc((-16 + i * 5 + r * 2.5) * s, (-12 - r * 3) * s, 2 * s, 0.3, 2.8); ctx.stroke(); }
+        ctx.beginPath(); for (let r = 0; r < 2; r++) for (let i = 0; i < 7; i++) { ctx.moveTo((-16 + i * 5 + r * 2.5) * s + Math.cos(0.3) * 2 * s, (-12 - r * 3) * s + Math.sin(0.3) * 2 * s); ctx.arc((-16 + i * 5 + r * 2.5) * s, (-12 - r * 3) * s, 2 * s, 0.3, 2.8); } ctx.stroke();
         ctx.restore(); ctx._skipInk = false;
       }
       // 등에 멘 청동 거울 방패 (뒤쪽)
@@ -8799,7 +8801,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
       ctx.fillStyle = F3(tun); ctx.beginPath(); ctx.moveTo(-8 * s, -56 * s); ctx.quadraticCurveTo(-17 * s, -52 * s + sway * 0.5, -19 * s, -44 * s); ctx.lineTo(-15 * s, -45 * s); ctx.closePath(); ctx.fill();
       armWeapon(S, -1.2 + atk * 2.2, () => {                   // 빛의 언월도
         line(S, -24 * s, 0, 48 * s, 0, 3.2 * s, F3('#2a4a3a'));
-        ctx.strokeStyle = F3('#e0b040'); ctx.lineWidth = 1.2 * s; for (let i = 0; i < 6; i++) { ctx.beginPath(); ctx.moveTo((-16 + i * 10) * s, -1.6 * s); ctx.lineTo((-12 + i * 10) * s, 1.6 * s); ctx.stroke(); }
+        ctx.strokeStyle = F3('#e0b040'); ctx.lineWidth = 1.2 * s; ctx.beginPath(); for (let i = 0; i < 6; i++) { ctx.moveTo((-16 + i * 10) * s, -1.6 * s); ctx.lineTo((-12 + i * 10) * s, 1.6 * s); } ctx.stroke();
         ctx.fillStyle = F3('#e8fff6'); ctx.beginPath(); ctx.moveTo(46 * s, -3 * s); ctx.quadraticCurveTo(62 * s, -5 * s, 72 * s, -20 * s); ctx.quadraticCurveTo(78 * s, -2 * s, 64 * s, 7 * s); ctx.lineTo(46 * s, 5 * s); ctx.closePath(); ctx.fill();
         if (live) { ctx.save(); ctx._skipInk = true; ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha *= 0.45 + 0.25 * Math.sin(t * 5); ctx.fillStyle = acc;
           ctx.beginPath(); ctx.moveTo(44 * s, -5 * s); ctx.quadraticCurveTo(62 * s, -8 * s, 74 * s, -26 * s); ctx.quadraticCurveTo(84 * s, -2 * s, 66 * s, 10 * s); ctx.lineTo(44 * s, 7 * s); ctx.closePath(); ctx.fill();
@@ -8834,7 +8836,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
       robe(S, 21 * s, -44 * s, tun);
       if (!S.flash) {                                          // 비단옷 위 금실 구름 무늬
         ctx.save(); ctx._skipInk = true; ctx.strokeStyle = '#ffd98a'; ctx.lineWidth = 1 * s; ctx.globalAlpha *= 0.8;
-        for (const [x, y] of [[-8, -14], [6, -8], [-2, -24]]) { ctx.beginPath(); ctx.arc(x * s, y * s, 3 * s, Math.PI, 0); ctx.arc((x + 5) * s, y * s, 2.2 * s, Math.PI, 0); ctx.stroke(); }
+        ctx.beginPath(); for (const [x, y] of [[-8, -14], [6, -8], [-2, -24]]) { ctx.moveTo(x * s + Math.cos(Math.PI) * 3 * s, y * s + Math.sin(Math.PI) * 3 * s); ctx.arc(x * s, y * s, 3 * s, Math.PI, 0); ctx.arc((x + 5) * s, y * s, 2.2 * s, Math.PI, 0); } ctx.stroke();
         ctx.restore(); ctx._skipInk = false;
       }
       ctx.fillStyle = F3('#fff8fc'); ctx.beginPath(); ctx.ellipse(0, -42 * s, 13 * s, 5.5 * s, 0, 0, 7); ctx.fill();   // 흰 털깃
@@ -9066,7 +9068,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
       if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.fillStyle = '#7ff0ff'; ctx.fillRect(2 * s, -53.6 * s, 6.4 * s, 1.5 * s); ctx.restore(); ctx._skipInk = false;
         if (live) x3Glow(S, 5 * s, -52.8 * s, 2 * s, '#7ff0ff', 0.45 + (MODEL.angry ? 0.3 : 0)); }
       ctx.strokeStyle = F3('#ff5a3a'); ctx.lineWidth = 1.8 * s;  // 봉황 깃 안테나
-      for (const d of [-1, 1]) { ctx.beginPath(); ctx.moveTo(d * 4 * s, -58 * s); ctx.quadraticCurveTo(d * 16 * s, -76 * s + Math.sin(t * 2) * 2 * s, d * 26 * s, -70 * s); ctx.stroke(); }
+      ctx.beginPath(); for (const d of [-1, 1]) { ctx.moveTo(d * 4 * s, -58 * s); ctx.quadraticCurveTo(d * 16 * s, -76 * s + Math.sin(t * 2) * 2 * s, d * 26 * s, -70 * s); } ctx.stroke();
       const ext = 1 + Math.max(atk, S.wind * 0.3) * 0.45;   // 칠 때 여의봉이 쭉 늘어난다
       armWeapon(S, -1.15 + atk * 2, () => {
         const L = 54 * s * ext;
@@ -9103,7 +9105,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
         ctx.fillStyle = F3('#1e2a5a'); ctx.beginPath();
         ctx.moveTo(d * 8 * s, -11 * s); ctx.lineTo(d * 40 * s, -15 * s); ctx.lineTo(d * 40 * s, 9 * s); ctx.lineTo(d * 8 * s, 6 * s); ctx.closePath(); ctx.fill();
         if (hq) { ctx.save(); ctx._skipInk = true; ctx.strokeStyle = '#c9a466'; ctx.lineWidth = 0.9 * s;
-          for (let j = 1; j < 4; j++) { const x0 = d * (8 + j * 8) * s; ctx.beginPath(); ctx.moveTo(x0, (-11 - j) * s); ctx.lineTo(x0, (6 + j * 0.75) * s); ctx.stroke(); }
+          ctx.beginPath(); for (let j = 1; j < 4; j++) { const x0 = d * (8 + j * 8) * s; ctx.moveTo(x0, (-11 - j) * s); ctx.lineTo(x0, (6 + j * 0.75) * s); } ctx.stroke();
           ctx.beginPath(); ctx.moveTo(d * 8 * s, -2.5 * s); ctx.lineTo(d * 40 * s, -3 * s); ctx.stroke();
           ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = 'rgba(120,170,255,' + (0.18 + 0.12 * Math.sin(t * 3 + d)) + ')';
           ctx.beginPath(); ctx.moveTo(d * 10 * s, -10 * s); ctx.lineTo(d * 22 * s, -12 * s); ctx.lineTo(d * 20 * s, -4 * s); ctx.lineTo(d * 10 * s, -3 * s); ctx.closePath(); ctx.fill();
@@ -9608,7 +9610,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
       legs(S); torso(S); head(S, 'feather');
       bow(S, 20 * s, -34 * s, 21 * s, acc);
       if (!S.flash) { ctx.strokeStyle = 'rgba(255,240,200,.7)'; ctx.lineWidth = 0.8 * s;
-        for (let i = 1; i <= 3; i++) { ctx.beginPath(); ctx.moveTo((20 + i * 3) * s, -50 * s + i * 3 * s); ctx.lineTo((20 + i * 3) * s, -18 * s - i * 3 * s); ctx.stroke(); } }
+        ctx.beginPath(); for (let i = 1; i <= 3; i++) { ctx.moveTo((20 + i * 3) * s, -50 * s + i * 3 * s); ctx.lineTo((20 + i * 3) * s, -18 * s - i * 3 * s); } ctx.stroke(); }
       arm(S, 20 * s, -34 * s);
       break;
     case 'galahad':                                            // 갈라하드: 흰 망토 · 날개 투구 · 붉은 십자 방패 · 성배 후광
@@ -9766,7 +9768,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
       ctx.restore();
       if (!S.flash && S.live) { ctx._skipInk = true; ctx.strokeStyle = acc; ctx.lineWidth = 1.8 * s; ctx.globalAlpha = 0.55 + 0.35 * Math.sin(MODEL.time * 6);
         ctx.beginPath(); ctx.arc(0, -52 * s, 14 * s, 0, 7); ctx.stroke();
-        for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3 + MODEL.time; ctx.beginPath(); ctx.moveTo(Math.cos(a) * 14 * s, -52 * s + Math.sin(a) * 14 * s); ctx.lineTo(Math.cos(a) * 19 * s, -52 * s + Math.sin(a) * 19 * s); ctx.stroke(); }
+        ctx.beginPath(); for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3 + MODEL.time; ctx.moveTo(Math.cos(a) * 14 * s, -52 * s + Math.sin(a) * 14 * s); ctx.lineTo(Math.cos(a) * 19 * s, -52 * s + Math.sin(a) * 19 * s); } ctx.stroke();
         ctx.globalAlpha = 1; ctx._skipInk = false; }
       const O = Object.assign({}, S, { lw: 5.6 * s });
       legs(O, 20 * s); torso(O, 6 * s); head(O, 'horn', 8.5 * s);
@@ -9957,7 +9959,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
     case 'skelarcher':                            // 해골 궁수: 뼈 몸통, 낡은 활
       legs(S); head(S, 'skullface', 7.5 * s);
       ctx.strokeStyle = col; ctx.lineWidth = 2 * s;
-      for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(-5 * s, (-38 + i * 5) * s); ctx.lineTo(5 * s, (-38 + i * 5) * s); ctx.stroke(); }
+      ctx.beginPath(); for (let i = 0; i < 3; i++) { ctx.moveTo(-5 * s, (-38 + i * 5) * s); ctx.lineTo(5 * s, (-38 + i * 5) * s); } ctx.stroke();
       line(S, 0, -42 * s, 0, -19 * s, 2.4 * s, col);
       bow(S, 20 * s, -34 * s, 18 * s, S.flash ? '#fff' : acc);
       arm(S, 20 * s, -34 * s);
@@ -9965,7 +9967,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
     case 'boneguard':                             // 해골 방패병: 녹슨 방패와 칼
       legs(S); head(S, 'skullface', 8 * s);
       ctx.strokeStyle = col; ctx.lineWidth = 2.2 * s;
-      for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(-6 * s, (-38 + i * 5) * s); ctx.lineTo(6 * s, (-38 + i * 5) * s); ctx.stroke(); }
+      ctx.beginPath(); for (let i = 0; i < 3; i++) { ctx.moveTo(-6 * s, (-38 + i * 5) * s); ctx.lineTo(6 * s, (-38 + i * 5) * s); } ctx.stroke();
       line(S, 0, -42 * s, 0, -19 * s, 2.6 * s, col);
       armWeapon(S, -0.9 + atk * 1.5, () => line(S, 0, 0, 26 * s, 0, 3 * s, S.flash ? '#fff' : '#8a8f96'), 6 * s);
       shieldShape(S, 12 * s, -48 * s, 16 * s, 34 * s, S.flash ? '#fff' : acc);
@@ -10540,7 +10542,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
       ctx.beginPath(); ctx.ellipse(4 * s, -28 * s, 17 * s, 8 * s, -0.08, 0, Math.PI); ctx.fill();
       if (!S.flash) {
         ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = 1 * s;
-        for (let k = -2; k <= 2; k++) { ctx.beginPath(); ctx.moveTo(4 * s + k * 6 * s, -28 * s); ctx.lineTo(4 * s + k * 5.4 * s, -21 * s); ctx.stroke(); }
+        ctx.beginPath(); for (let k = -2; k <= 2; k++) { ctx.moveTo(4 * s + k * 6 * s, -28 * s); ctx.lineTo(4 * s + k * 5.4 * s, -21 * s); } ctx.stroke();
       }
       leg(10 * s, -sw, col);
       // 등지느러미
@@ -12847,7 +12849,7 @@ const LOOK_LAYERS = {
       g.addColorStop(0, 'rgba(255,170,60,.9)'); g.addColorStop(1, 'rgba(255,90,30,0)');
       ctx.fillStyle = g; ctx.beginPath(); ctx.arc(X, gy - 190, 90, 0, 7); ctx.fill();
       ctx.strokeStyle = '#ff7a2a'; ctx.lineWidth = 3;
-      for (const d of [-1, 0.4, 1]) { ctx.beginPath(); ctx.moveTo(X + d * 20, gy - 188); ctx.quadraticCurveTo(X + d * 60, gy - 120, X + d * 110, gy - 40); ctx.stroke(); }
+      ctx.beginPath(); for (const d of [-1, 0.4, 1]) { ctx.moveTo(X + d * 20, gy - 188); ctx.quadraticCurveTo(X + d * 60, gy - 120, X + d * 110, gy - 40); } ctx.stroke();
       ctx.fillStyle = 'rgba(60,40,40,.35)';
       for (let j = 0; j < 5; j++) { ctx.beginPath(); ctx.arc(X - 10 + j * 14, gy - 214 - j * 22, 18 + j * 6, 0, 7); ctx.fill(); }
     });
@@ -12898,7 +12900,7 @@ const LOOK_LAYERS = {
     repL(R, cam, 0.46, 90, (x, k) => {
       ctx.beginPath(); ctx.moveTo(x, gy);
       ctx.bezierCurveTo(x + 20, gy - 40, x - 10, gy - 60, x + 16, gy - 80 - _h(k) * 20); ctx.stroke();
-      for (let j = 1; j < 5; j++) { const yy = gy - j * 16; ctx.beginPath(); ctx.moveTo(x + 6, yy); ctx.lineTo(x + 13, yy - 5); ctx.stroke(); }
+      ctx.beginPath(); for (let j = 1; j < 5; j++) { const yy = gy - j * 16; ctx.moveTo(x + 6, yy); ctx.lineTo(x + 13, yy - 5); } ctx.stroke();
     });
   } },
   pyramids: { z: 'far', fn: (R, ctx, pal, cam) => {
@@ -13226,7 +13228,7 @@ const LOOK_LAYERS = {
     repL(R, cam, 0.44, P, (x) => {
       ctx.fillRect(x - 2, gy - 84, 4, 84); ctx.fillRect(x - 12, gy - 80, 24, 3);
       ctx.lineWidth = 1;
-      for (const dy of [-80, -74]) { ctx.beginPath(); ctx.moveTo(x - 10, gy + dy); ctx.quadraticCurveTo(x + P / 2, gy + dy + 14, x + P - 10, gy + dy); ctx.stroke(); }
+      ctx.beginPath(); for (const dy of [-80, -74]) { ctx.moveTo(x - 10, gy + dy); ctx.quadraticCurveTo(x + P / 2, gy + dy + 14, x + P - 10, gy + dy); } ctx.stroke();
     });
   } },
   railTrack: { z: 'ground', fn: (R, ctx, pal, cam) => {

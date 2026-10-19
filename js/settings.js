@@ -48,7 +48,7 @@ const Settings = {
       // 5.2: 고퀄 이펙트가 생겼다 — 예전 '자동 · 높음' 은 한 번 고퀄로 옮긴다 (그 뒤에 고른 '절전' 은 그대로 둔다)
       if (raw.fxv !== 52 && (d.quality === 'auto' || d.quality === 'high')) d.quality = 'hq';
       if (d.quality === 'high') d.quality = 'hq';
-      if ([1, 2, 3].indexOf(raw.speed) >= 0) d.speed = raw.speed;
+      if ([1, 2, 3, 5].indexOf(raw.speed) >= 0) d.speed = raw.speed;   // 5 는 5.4 개발자 모드 배속
     }
     this.d = d;
   },

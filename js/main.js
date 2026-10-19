@@ -3,7 +3,7 @@
  * ======================================================================= */
 
 
-const APP_VERSION = '5.3.1';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
+const APP_VERSION = '5.4.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
 
 function defaultSave() {
   const lv = {};
@@ -137,6 +137,8 @@ function normalizeSave(raw) {
     const devUnits = {};
     if (s.devUnits && typeof s.devUnits === 'object') for (const k in s.devUnits) if (s.devUnits[k] === true && UNIT_BY_ID[k] && !UNIT_BY_ID[k].gacha) devUnits[k] = true;
     s.devUnits = devUnits;
+    if (devExpMul(s) > 1) s.devExpMul = devExpMul(s); else delete s.devExpMul;   // 5.4 개발자 모드 원정 난이도
+    if (s.devFast !== true) delete s.devFast;                                       // 5.4 개발자 모드 ×5 배속
     s.conquest = conqNormalize(s.conquest);     // 5.0 진행 중인 정벌 (깨졌으면 버린다)
     s.conqRec = conqNormRec(s.conqRec);
     return s;
@@ -724,7 +726,7 @@ function renderExpSlot() {
     el.innerHTML = '<canvas></canvas><span class="ev-no">G' + (k + 1) + '</span>' +
       '<span class="ev-name">' + (open ? st.name : '🔒 ' + st.name) + '</span>' +
       '<span class="ev-boss">' + st.expedition.tier + '</span>' +
-      '<span class="ev-mark">' + (open ? '💰 ' + fmtNum(expGoldEstimate(st)) : st.expedition.unlock + '전장 돌파 후') + '</span>';
+      '<span class="ev-mark">' + (open ? '💰 ' + fmtNum(expGoldEstimate(expStage(st, devExpMul(save)))) : st.expedition.unlock + '전장 돌파 후') + '</span>';
     drawUnitIcon(el.querySelector('canvas'), ic, 40);
     el.addEventListener('click', () => { expSel = k; SFX.ui(); renderMap(); });
     grid.appendChild(el);
@@ -740,7 +742,7 @@ function expGoldEstimate(st) {
   return st.expedition.reward + Math.round(loot * KILL_GOLD_RATE);
 }
 function renderExpDetail(k) {
-  const st = EXPEDITIONS[k], ex = st.expedition;
+  const st = expStage(EXPEDITIONS[k], devExpMul(save)), ex = st.expedition;
   const box = $('#stage-detail');
   box.innerHTML = '';
   const open = expeditionOpen(save, k), best = save.expeditions[ex.id] || 0;
@@ -753,6 +755,7 @@ function renderExpDetail(k) {
     '<div class="sd-name">' + st.name + '</div>' +
     '<div class="sd-stars">' + starMarks(best) + '</div>' +
     '<div class="sd-event exp"><b>💰 금화 원정</b><span>' + ex.mech + '</span><small>몇 번이고 다시 돌 수 있습니다 · 소환석은 없습니다</small></div>' +
+    (st.devMul ? '<p class="sd-hint">🛠 개발자 난이도 ×' + st.devMul + ' — 적 · 요새 · 돌파 보상이 ×' + st.devMul + '</p>' : '') +
     '<div class="sd-meta">' +
       '<span>돌파 💰' + fmtNum(ex.reward) + '</span>' +
       '<span>보물까지 💰' + fmtNum(expGoldEstimate(st)) + '+</span>' +
@@ -792,11 +795,11 @@ function renderExpDetail(k) {
 }
 function startExpedition(k) {
   if (!expeditionOpen(save, k)) return;
-  const st = EXPEDITIONS[k];
+  const st = expStage(EXPEDITIONS[k], devExpMul(save));   // 5.4 개발자 모드 난이도
   battle = new Battle(STAGES.length + EVENT_STAGES.length + k, save, st);
   battle.expIndex = k;
   $('#scr-battle').classList.remove('hardcore');
-  $('#battle-stage').textContent = '💰 G' + (k + 1) + '. ' + st.name;
+  $('#battle-stage').textContent = '💰 G' + (k + 1) + '. ' + st.name + (st.devMul ? ' · ×' + st.devMul : '');
   beginBattle();
   battle.announce('금화 원정 · ' + st.expedition.mech, 3.6);
 }
@@ -1035,6 +1038,7 @@ function allyTile(u) {
 }
 
 function renderTraining() {
+  detailKeep = detailScroll();          // 5.4 상세 칸 스크롤은 타일을 갈아 끼우기 전에 읽는다 (뒤에 읽으면 240칸 배치를 한 번 더 계산했다)
   trainingHeader();
   const box = $('#units-list');
   const keep = scrollMemo(box);
@@ -1079,13 +1083,19 @@ function refreshTraining(id) {
 }
 
 /* 상세 카드: 고른 병종(또는 적) 하나의 훈련 · 진화 · 편성 카드 */
-let detailShown = null;
+let detailShown = null, detailKeep = null;
+function detailScroll() {
+  const pane = $('#unit-detail'), outer = pane && pane.closest('.screen');
+  return pane ? { pane: pane.scrollTop, outer: outer ? outer.scrollTop : 0 } : null;
+}
 function showTrainingDetail() {
   const pane = $('#unit-detail');
   if (!pane) return;
   // 4.17: 같은 병종을 훈련 · 진화하고 다시 그릴 때는 스크롤을 그대로 둔다 (누를 때마다 맨 위로 튀어 다시 내려야 했다)
-  const same = detailShown === trainSel, keep = same ? pane.scrollTop : 0;
-  const outer = pane.closest('.screen'), keepOuter = same && outer ? outer.scrollTop : 0;
+  const memo = detailKeep || (detailShown === trainSel ? detailScroll() : null);
+  detailKeep = null;
+  const same = detailShown === trainSel, keep = same && memo ? memo.pane : 0;
+  const outer = pane.closest('.screen'), keepOuter = same && memo ? memo.outer : 0;
   detailShown = trainSel;
   pane.innerHTML = '';
   $$('#units-list .unit-tile').forEach(el => el.classList.toggle('sel', el.dataset.unit === trainSel));
@@ -1636,6 +1646,7 @@ function beginBattle() {
   playAccum = 0;
   $('#result').classList.remove('show');
   battle.speed = Settings.get('keepSpeed') ? Settings.get('speed') : 1;
+  if (battle.speed > 3 && !save.devFast) battle.speed = 3;   // ×5 는 개발자 모드에서 켰을 때만
   $('#btn-speed').textContent = '▶▶ ' + battle.speed + 'x';
   $('#btn-speed').classList.toggle('fast', battle.speed > 1);
   $('#btn-pause').textContent = '❚❚';
@@ -2192,6 +2203,11 @@ const DEV_TAPS = 7, DEV_WINDOW_MS = 2500, DEV_MAX = 1e9;   // 한 번에 10억, 
 function devAmount(v) { v = Math.floor(Number(v)); return Number.isFinite(v) && v > 0 ? Math.min(DEV_MAX, v) : 0; }
 function refreshDevNow() {
   $('#dev-now').textContent = '보유 💰 ' + fmtNum(save.coins) + ' · 🔮 ' + fmtNum(save.stones);
+  const m = devExpMul(save);
+  $('#dev-exp-mul').value = String(m);
+  $('#dev-fast').textContent = '전투 ×5 배속: ' + (save.devFast ? '켬' : '끔');
+  $('#dev-fast').classList.toggle('primary', !!save.devFast);
+  $('#dev-exp-note').textContent = m > 1 ? '적 · 적 요새 · 돌파 보상이 모두 ×' + m + ' (원정 화면에 🛠 표시)' : '적 · 적 요새 · 돌파 보상이 같은 배수로 오릅니다';
 }
 function devGive(kind, amount) {
   const n = devAmount(amount);
@@ -2236,21 +2252,76 @@ function initDevMode() {
   });
   // 5.2 모든 캐릭터 해금: 소환 영웅을 모두 손에 넣고, 아직 전장을 못 넘어 잠긴 병종도 합류시킨다 (전장 진행 · 별은 그대로)
   $('#dev-units').addEventListener('click', () => {
-    const missing = UNITS.filter(u => u.cost > 0 && (u.gacha ? !save.owned[u.id] : u.unlockStage > save.cleared + 1 && !(save.devUnits && save.devUnits[u.id])));
+    const missing = devMissingUnits();
     if (!missing.length) { toast('이미 모든 캐릭터가 합류해 있습니다'); return; }
     askConfirm('모든 캐릭터 해금', '소환 영웅 · 전장 병종 ' + missing.length + '종을 모두 합류시킵니다. 레벨 · 진화 · 전장 진행은 그대로입니다.', () => {
-      if (!save.devUnits || typeof save.devUnits !== 'object') save.devUnits = {};
-      for (const u of missing) {
-        if (u.gacha) { save.owned[u.id] = true; if (!save.levels[u.id]) save.levels[u.id] = 1; }
-        else save.devUnits[u.id] = true;
-      }
-      syncLoadout();
-      saveGame(save);
-      refreshTitleBadges();
-      toast('캐릭터 ' + missing.length + '종이 합류했습니다');
-      SFX.levelUp();
+      devJoin(missing);
+      devSaved('캐릭터 ' + missing.length + '종이 합류했습니다');
     });
   });
+  // 5.4 모든 진화: 모든 캐릭터를 합류시키고 진화 · 3진 · 4진을 시련 없이 마친다 (가장 높은 형태로 출진 · 그 형태에 필요한 레벨까지)
+  $('#dev-evo').addEventListener('click', () => {
+    const n = devEvolveTargets().length;
+    if (!n) { toast('이미 모든 진화를 마쳤습니다'); return; }
+    askConfirm('모든 진화 · 3진 · 4진', '모든 캐릭터를 합류시키고 ' + n + '종의 진화 · 3진 · 4진을 시련 없이 마칩니다. 가장 높은 형태로 출진하고, 레벨이 모자라면 그 형태에 필요한 레벨(진화 ' + EVO_LEVEL + ' · 3진 ' + EVO2_LEVEL + ' · 4진 ' + EVO3_LEVEL + ')까지 올립니다. 훈련소에서 형태는 다시 고를 수 있습니다.', () => {
+      devJoin(devMissingUnits());
+      const k = devEvolveAll(save);
+      devSaved('✸ ' + k + '종 진화를 마쳤습니다');
+    });
+  });
+  // 5.4 레벨 · 강화 모두 최대: 성채 강화를 끝까지, 합류한 모든 병종을 만렙(Lv30)으로
+  $('#dev-max').addEventListener('click', () => {
+    askConfirm('레벨 · 강화 모두 최대', '성채 강화를 모두 최대로, 합류한 모든 병종을 Lv' + (UNIT_LEVEL_HARD_CAP + UPGRADES.academy.max) + ' 로 올립니다. 골드는 쓰지 않습니다.', () => {
+      devMaxAll(save, unlockedUnits());
+      devSaved('강화 · 레벨을 모두 최대로 올렸습니다');
+    });
+  });
+  // 5.4 전투 ×5 배속 (배속 버튼이 1 → 2 → 3 → 5 로 돈다)
+  $('#dev-fast').addEventListener('click', () => {
+    if (save.devFast) delete save.devFast; else save.devFast = true;
+    saveGame(save);
+    refreshDevNow();
+    toast(save.devFast ? '▶▶ 배속 버튼에 ×5 가 더해졌습니다' : '▶▶ ×5 배속을 껐습니다');
+  });
+  // 5.4 정벌 군표: 진행 중인 정벌에만
+  $('#dev-scrip').addEventListener('click', () => {
+    if (!save.conquest) { toast('진행 중인 정벌이 없습니다'); return; }
+    save.conquest.scrip = Math.min(1e6, (save.conquest.scrip || 0) + 100);
+    saveGame(save);
+    toast('🎖 군표 +100 (지금 ' + save.conquest.scrip + ')');
+    SFX.gold();
+  });
+  // 5.4 금화 원정 난이도: 적 · 요새 · 돌파 보상이 같은 배수 (×1 이 원래 난이도)
+  const sel = $('#dev-exp-mul');
+  sel.addEventListener('change', () => {
+    const m = Number(sel.value);
+    if (m > 1) save.devExpMul = m; else delete save.devExpMul;
+    saveGame(save);
+    refreshDevNow();
+    toast(m > 1 ? '💰 금화 원정 난이도 ×' + m : '💰 금화 원정 난이도를 되돌렸습니다');
+  });
+}
+/* 5.4 개발자 모드 도우미 */
+function devMissingUnits() {
+  return UNITS.filter(u => u.cost > 0 && (u.gacha ? !save.owned[u.id] : !rosterOpen(save, u)));
+}
+function devJoin(list) {
+  if (!save.devUnits || typeof save.devUnits !== 'object') save.devUnits = {};
+  for (const u of list) {
+    if (u.gacha) { save.owned[u.id] = true; if (!save.levels[u.id]) save.levels[u.id] = 1; }
+    else save.devUnits[u.id] = true;
+  }
+}
+function devEvolveTargets() {
+  return UNITS.filter(u => u.cost > 0 && EVOLUTIONS[u.id] && evoForm(save, u.id) < (EVOLUTIONS3[u.id] ? 3 : EVOLUTIONS2[u.id] ? 2 : 1));
+}
+function devSaved(msg) {
+  syncLoadout();
+  saveGame(save);
+  refreshTitleBadges();
+  refreshDevNow();
+  toast(msg);
+  SFX.levelUp();
 }
 
 /* ------------------------------ 초기화 ------------------------------ */
@@ -2549,7 +2620,8 @@ function init() {
     show('scr-map');
   });
   $('#btn-speed').addEventListener('click', () => {
-    battle.speed = battle.speed === 1 ? 2 : (battle.speed === 2 ? 3 : 1);
+    const seq = save.devFast ? [1, 2, 3, 5] : [1, 2, 3];   // 5.4 개발자 모드 ×5
+    battle.speed = seq[(seq.indexOf(battle.speed) + 1) % seq.length];
     $('#btn-speed').textContent = '▶▶ ' + battle.speed + 'x';
     $('#btn-speed').classList.toggle('fast', battle.speed > 1);
     Settings.set('speed', battle.speed);

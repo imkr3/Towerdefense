@@ -1470,6 +1470,9 @@ body{background:var(--bg0);color:var(--tx)}
 .unit-detail .unit-card{margin:0}
 .ud-empty{color:var(--tx3);font-size:12px;text-align:center;margin-top:30px}
 @media(max-height:450px){.unit-tile{height:62px}.unit-tile canvas{width:32px;height:32px}.training-sort{padding-top:3px}.train-split{padding-top:5px}}
+/* 5.4 훈련소 타일 240칸: 화면 밖 타일은 배치 · 그리기를 건너뛴다 (높이가 정해져 있어 스크롤 막대는 그대로) */
+.unit-grid .unit-tile{content-visibility:auto;contain-intrinsic-size:auto 72px}
+@media(max-height:450px){.unit-grid .unit-tile{contain-intrinsic-size:auto 62px}}
 @media(max-width:700px){.unit-detail{flex-basis:52%}.unit-grid{grid-template-columns:repeat(auto-fill,minmax(62px,1fr))}}
 
 /* 4.9 편성: 분류가 늘어 가로로 넘기고, 정렬 · 작게 보기 */
@@ -1660,3 +1663,10 @@ body:has(#result.show) .toast{top:calc(6px + var(--st))}
 .cq-offer.unit canvas{width:40px;height:40px}
 .cq-offers.recruit .cq-offer{flex:1 1 110px;max-width:150px;padding:6px}
 @media(max-height:420px){.cq-risks .btn{padding:4px 8px}.cq-risks .btn small{font-size:9.5px}}
+/* 5.4 개발자 모드 확장 */
+#modal-dev .dev-card{max-height:92vh;overflow:auto}
+.dev-h{margin:12px 0 2px;font-size:12px;font-weight:900;letter-spacing:.04em;opacity:.75}
+.dev-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+.modal-card .dev-grid .btn{width:100%;padding:8px 6px;font-size:13px}
+.dev-exp select{flex:1 1 auto;padding:8px;border-radius:7px;border:1px solid var(--ln2);background:#0b1520;color:#f0e6c8;font:700 15px sans-serif}
+.dev-exp-note{margin:6px 0 0}

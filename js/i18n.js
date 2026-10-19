@@ -914,7 +914,7 @@ const I18N_EN = {
   '요정 숲의 모든 군단 · 정화 · 화상 · 범위를 함께': 'Every legion of the fey wood · combine cleansing, burn and area attacks',
   '고목왕은 화상 없이는 계속 자랍니다 · 열매 예고를 피하고, 뿌리가 흔들리면 왕명과 필살을': 'The Elder King keeps regrowing unless burned · dodge the marked fruit, and answer the root quake with your Command and ULTs',
   /* ---------------- 4.15 7막 '모래폭풍 사막' · 시즌 삼국지 · 도전 '파라오의 모래시계' ---------------- */
-  '왕국 방어선 · 전 80 전장': 'Realm Defense · 80 battlefields',
+  '왕국 방어선 · 전 80 전장': 'Realm Defense · 80 battlefields', '왕국 방어선 · 전 90 전장': 'Realm Defense · 90 battlefields',
   '7막': 'Act 7', '8막': 'Act 8', '9막': 'Act 9', '모래폭풍 사막': 'Sandstorm Desert',
   '모래폭풍을 건넌 자': 'Storm Crosser', '80전장 모두 돌파 (8막 모래폭풍 사막)': 'Clear all 80 battlefields (Act 8 Sandstorm Desert)',
   '모래폭풍! 원거리 사거리가 줄어듭니다': 'Sandstorm! Ranged reach is shortened', '모래폭풍이 다가옵니다': 'A sandstorm is coming',
@@ -1059,6 +1059,14 @@ const I18N_EN = {
   '이펙트': 'Effects', '고퀄': 'High', '최소': 'Minimal', '빛 번짐 · 연기 · 불티 · 충격파가 더해진 이펙트': 'Effects with glow, smoke, embers and shockwaves',
   '5.1 까지의 이펙트 모습': 'Effects as they looked up to 5.1', '파티클을 끄고 30fps 로': 'Particles off, 30 fps',
   '모든 캐릭터 해금': 'Unlock all characters', '이미 모든 캐릭터가 합류해 있습니다': 'Every character has already joined',
+  // 5.4 개발자 모드 확장
+  '진행 · 육성': 'Progress · training', '모든 진화 · 3진 · 4진': 'Evolve all (4th too)', '레벨 · 강화 모두 최대': 'Max everything',
+  '금화 원정 난이도': 'Gold expedition difficulty', '보통 ×1': 'Normal ×1', '이미 모든 진화를 마쳤습니다': 'Every evolution is already done',
+  '강화 · 레벨을 모두 최대로 올렸습니다': 'All upgrades and levels maxed', '💰 금화 원정 난이도를 되돌렸습니다': '💰 Gold expedition difficulty reset',
+  '적 · 적 요새 · 돌파 보상이 같은 배수로 오릅니다': 'Enemies, the enemy fortress and the clear reward all scale by the same factor',
+  '전투 ×5 배속: 끔': 'Battle ×5 speed: off', '전투 ×5 배속: 켬': 'Battle ×5 speed: on', '정벌 군표 +100': 'Conquest scrip +100',
+  '▶▶ 배속 버튼에 ×5 가 더해졌습니다': '▶▶ The speed button now includes ×5', '▶▶ ×5 배속을 껐습니다': '▶▶ ×5 speed turned off',
+  '진행 중인 정벌이 없습니다': 'No conquest in progress',
   /* ---------------- 5.2 시즌 천일야화 ---------------- */
   '천일야화': 'Arabian Nights', '램프의 마신과 일곱 바다': 'The Genie of the Lamp and the Seven Seas',
   '천 하룻밤의 이야기 속 램프의 마신과 일곱 바다의 선장, 하늘을 나는 양탄자가 왕국의 부름에 응합니다.': 'From the tales of a thousand and one nights, the genie of the lamp, the captain of the seven seas and the flying carpet answer the realm\'s call.',
@@ -1431,6 +1439,14 @@ const I18N_EN_PATTERNS = [
   [/^무스펠의 불꽃 검 — 기절로 끊으세요!$/g, "Muspel's Flaming Sword — break it with a stun!"],
   [/^(.+) 쓰러짐 — (\d+)초 안에 (.+)도 쓰러뜨려야 한다!$/g, '$1 has fallen — fell $3 within $2s too!'],
   [/^(.+)[이가] 되살아났다!$/g, '$1 rose again!'],
+  // 5.4 개발자 모드 확장
+  [/^모든 캐릭터를 합류시키고 (\d+)종의 진화 · 3진 · 4진을 시련 없이 마칩니다\. 가장 높은 형태로 출진하고, 레벨이 모자라면 그 형태에 필요한 레벨\(진화 (\d+) · 3진 (\d+) · 4진 (\d+)\)까지 올립니다\. 훈련소에서 형태는 다시 고를 수 있습니다\.$/g,
+   'Adds every character and completes evolution, 3rd and 4th forms for $1 units without trials. They deploy in their highest form, and levels are raised to what that form needs (evolution $2 · 3rd $3 · 4th $4). You can pick the form again in the barracks.'],
+  [/^✸ (\d+)종 진화를 마쳤습니다$/g, '✸ Evolved $1 units'], [/^🎖 군표 \+100 \(지금 (\d+)\)$/g, '🎖 Scrip +100 (now $1)'],
+  [/^성채 강화를 모두 최대로, 합류한 모든 병종을 Lv(\d+) 로 올립니다\. 골드는 쓰지 않습니다\.$/g, 'Maxes every castle upgrade and raises every joined unit to Lv$1. No gold is spent.'],
+  [/^💰 금화 원정 난이도 ×([\d.]+)$/g, '💰 Gold expedition difficulty ×$1'],
+  [/^적 · 적 요새 · 돌파 보상이 모두 ×([\d.]+) \(원정 화면에 🛠 표시\)$/g, 'Enemies, fortress and clear reward all ×$1 (marked 🛠 on the expedition screen)'],
+  [/^🛠 개발자 난이도 ×([\d.]+) — 적 · 요새 · 돌파 보상이 ×([\d.]+)$/g, '🛠 Developer difficulty ×$1 — enemies, fortress and clear reward ×$2'],
   // 5.2 개발자 모드
   [/^소환 영웅 · 전장 병종 (\d+)종을 모두 합류시킵니다\. 레벨 · 진화 · 전장 진행은 그대로입니다\.$/g, 'Adds all $1 missing summoned heroes and field units. Levels, evolutions and stage progress stay as they are.'],
   [/^캐릭터 (\d+)종이 합류했습니다$/g, '$1 characters joined'],

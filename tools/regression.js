@@ -2238,4 +2238,29 @@ test('5.2: dev mode can unlock roster units without clearing stages; the effects
   for (const k of kinds) if (gl.indexOf("case '" + k + "':") >= 0) assert.ok(new RegExp("['\\s]" + k + "['\\s]").test(gl.slice(gl.indexOf('GLFX_HQ_CAT = {}'), gl.indexOf('class GLFx'))) || ['runeveil', 'sunfall', 'underworld'].includes(k), k + ' has a high-quality category');
 });
 
+test('5.4: dev mode evolves every unit to its top form, maxes levels and upgrades, and scales gold expeditions', () => {
+  const D = vm.runInContext('({devEvolveAll, devMaxAll, evoForm, expStage, devExpMul, EXPEDITIONS, EVOLUTIONS, EVOLUTIONS2, EVOLUTIONS3, UPGRADES, UNIT_LEVEL_HARD_CAP, EVO3_LEVEL})', ctx);
+  const s = { cleared: 0, levels: {}, evo: {}, upgrades: {} };
+  const n = D.devEvolveAll(s);
+  const evolvable = UNITS.filter(u => u.cost > 0 && D.EVOLUTIONS[u.id]);
+  assert.equal(n, evolvable.length, 'every evolvable unit');
+  for (const u of evolvable) assert.equal(D.evoForm(s, u.id), D.EVOLUTIONS3[u.id] ? 3 : D.EVOLUTIONS2[u.id] ? 2 : 1, u.id + ' top form');
+  assert.ok(UNITS.some(u => D.EVOLUTIONS3[u.id] && s.levels[u.id] === D.EVO3_LEVEL), '4th form level raised');
+  assert.equal(D.devEvolveAll(s), 0, 'second run changes nothing');
+  D.devMaxAll(s, UNITS.slice(0, 3));
+  for (const k in D.UPGRADES) assert.equal(s.upgrades[k], D.UPGRADES[k].max);
+  assert.equal(s.levels[UNITS[0].id], D.UNIT_LEVEL_HARD_CAP + D.UPGRADES.academy.max);
+  const g = D.EXPEDITIONS[0], x = D.expStage(g, 5);
+  assert.equal(D.expStage(g, 1), g, 'x1 is the original stage');
+  assert.ok(x !== g && x.baseHp === Math.round(g.baseHp * 5) && x.expedition.reward === Math.round(g.expedition.reward * 5) && Math.abs(x.enemyMul - g.enemyMul * 5) < 0.01);
+  assert.equal(g.expedition.reward, D.EXPEDITIONS[0].expedition.reward, 'original untouched');
+  assert.equal(D.devExpMul({ devExpMul: 7 }), 1, 'only listed multipliers'); assert.equal(D.devExpMul({ devExpMul: 10 }), 10);
+  const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8'), main = fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8');
+  for (const id of ['dev-evo', 'dev-max', 'dev-exp-mul']) assert.ok(html.includes('id="' + id + '"') && main.includes("$('#" + id + "')"), id + ' wired');
+  assert.ok(/expStage\(EXPEDITIONS\[k\], devExpMul\(save\)\)/.test(main), 'expeditions start with the dev multiplier');
+  assert.ok(html.includes('전 ' + STAGES.length + ' 전장'), 'title footer counts every stage');
+  assert.ok(/save\.devFast \? \[1, 2, 3, 5\] : \[1, 2, 3\]/.test(main) && /battle\.speed > 3 && !save\.devFast/.test(main), 'x5 speed only with the dev switch');
+  assert.ok(/\[1, 2, 3, 5\]\.indexOf\(raw\.speed\)/.test(fs.readFileSync(path.join(__dirname, '../js/settings.js'), 'utf8')), 'settings keep x5');
+});
+
 console.log(count + ' regression checks passed');

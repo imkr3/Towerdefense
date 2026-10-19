@@ -44,7 +44,7 @@
       <button class="btn ghost danger" id="btn-reset">기록 초기화</button>
     </div>
   </div>
-  <p class="ver">왕국 방어선 · 전 80 전장 <span class="ver-n" id="ver-n"></span></p>
+  <p class="ver">왕국 방어선 · 전 90 전장 <span class="ver-n" id="ver-n"></span></p>
 </section>
 
 <!-- ===================== 스테이지 선택 ===================== -->
@@ -367,7 +367,23 @@
 </div>
 <div class="dev-quick"><button type="button" class="btn small" data-dev-add="stones:10">+10</button><button type="button" class="btn small" data-dev-add="stones:100">+100</button><button type="button" class="btn small" data-dev-add="stones:1000">+1000</button></div>
 <p class="dev-now" id="dev-now"></p>
-<div class="confirm-btns"><button type="button" class="btn" id="dev-unlock">전장 모두 열기</button><button type="button" class="btn" id="dev-units">모든 캐릭터 해금</button><button type="button" class="btn primary" data-close>닫기</button></div>
+<p class="dev-h">진행 · 육성</p>
+<div class="dev-grid">
+  <button type="button" class="btn" id="dev-unlock">전장 모두 열기</button>
+  <button type="button" class="btn" id="dev-units">모든 캐릭터 해금</button>
+  <button type="button" class="btn" id="dev-evo">모든 진화 · 3진 · 4진</button>
+  <button type="button" class="btn" id="dev-max">레벨 · 강화 모두 최대</button>
+</div>
+<div class="dev-grid">
+  <button type="button" class="btn" id="dev-fast">전투 ×5 배속: 끔</button>
+  <button type="button" class="btn" id="dev-scrip">정벌 군표 +100</button>
+</div>
+<p class="dev-h">금화 원정 난이도</p>
+<div class="dev-row dev-exp">
+  <select id="dev-exp-mul" aria-label="금화 원정 난이도"><option value="1">보통 ×1</option><option value="1.5">×1.5</option><option value="2">×2</option><option value="3">×3</option><option value="5">×5</option><option value="10">×10</option><option value="20">×20</option><option value="50">×50</option></select>
+</div>
+<p class="dev-sub dev-exp-note" id="dev-exp-note"></p>
+<div class="confirm-btns"><button type="button" class="btn primary" data-close>닫기</button></div>
 </div></div>
 <div id="rotate-hint">
   <div class="rot-box">
