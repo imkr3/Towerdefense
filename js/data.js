@@ -302,6 +302,22 @@ const UNITS = [
     cost:320,kb:2,ranged:true,unlockStage:52,
     ab:{pierce:true,breaker:1.6},abText:'거대 쇠뇌 · 일직선 관통 · 보스·중장갑에게 1.6배 · 아주 긴 사거리',
     desc:'바퀴 달린 거대한 쇠뇌입니다. 창만 한 화살이 줄지어 선 적을 꿰뚫고 갑옷까지 뚫습니다.'}),
+  // 5.5 기본 병종 셋 (7막 · 8막 · 9막에서 합류)
+  mk({id:'halberdier',name:'미늘창병',short:'미늘창',role:'긴 자루 근접',shape:'halberdier',castFx:'slash',
+    body:'#2b3038',accent:'#c8ccd4',tunic:'#3a5a8a',hp:1650,atk:86,range:96,speed:34,interval:1.45,
+    cost:250,kb:1,area:true,areaRadius:40,unlockStage:58,
+    ab:{breaker:1.35,push:25},abText:'긴 미늘창 · 앞줄 둘을 함께 벤다 · 대형 · 중장갑에게 1.35배 · 밀쳐 냄',
+    desc:'도끼날과 갈고리가 달린 긴 창을 듭니다. 창보다 멀리서 앞줄을 한꺼번에 베고, 덩치 큰 적을 걸어 넘깁니다.'}),
+  mk({id:'flamer',name:'화염병',short:'화염',role:'화염 방사',shape:'flamer',
+    body:'#2b3038',accent:'#ff8a2a',tunic:'#6a4a2a',hp:900,atk:38,range:150,speed:32,interval:0.7,
+    cost:260,kb:2,ranged:true,area:true,areaRadius:60,unlockStage:68,
+    ab:{burn:{dps:55,dur:3}},abText:'짧은 불길 · 범위 · 화상 55/초 3초 · 빠른 연속 분사',
+    desc:'등에 기름통을 지고 놋쇠 관으로 불길을 내뿜습니다. 멀리는 못 닿지만 몰려든 적을 통째로 태웁니다.'}),
+  mk({id:'hwacha',name:'화차',role:'신기전 수레',shape:'hwacha',
+    body:'#2b3038',accent:'#ff6a3a',tunic:'#7a5a34',hp:800,atk:68,range:400,speed:20,interval:2.4,
+    cost:340,kb:2,ranged:true,area:true,areaRadius:45,unlockStage:78,
+    ab:{salvo:{every:2,n:5,mul:.45,radius:50}},abText:'불화살 범위 · 두 번째 발사마다 신기전 다섯 발이 적에게 꽂힌다 (보스 · 단단한 적 먼저)',
+    desc:'수십 개의 구멍에 신기전을 꽂은 수레입니다. 심지에 불을 붙이면 불화살이 비처럼 쏟아집니다.'}),
   // 소환 전용
   mk({
     id: 'barricade', name: '나무 방벽', role: '구조물', shape: 'barricade',
@@ -875,6 +891,54 @@ SEASON_UNITS.push(
     ab:{bounty:{chance:.12,gold:8}},abText:'굽은 단검 · 값싸고 빠름 · 맞힐 때 12% 확률로 금화 +8',
     desc:'"열려라 참깨!" — 마흔 도적의 졸개입니다. 싸고 날래며, 칼끝에 걸린 적의 주머니를 털어 금화를 챙깁니다.'})
 );
+SEASON_UNITS.push(
+  // 5.5 시즌: 로마 제국 (왔노라 보았노라 이겼노라) — 독재관 · 해방된 검투사 · 백인대장 · 베스타 무녀 · 전차 기수 · 그물 검투사 · 필룸 투창병 · 군단병
+  mk({id:'caesar',name:'카이사르',role:'로마의 독재관',shape:'caesar',castFx:'slash',season:'rome',rarity:'UR',gacha:true,unlockStage:999,
+    body:'#e0b890',accent:'#e8c65a',tunic:'#8e1a2a',hp:1700,atk:118,range:84,speed:34,interval:1.15,
+    cost:560,kb:2,area:true,areaRadius:50,scale:1.25,
+    ab:{rally:{atk:.3,radius:300},interval:3,armor:.2},
+    abText:'월계관의 지휘 · 3초마다 주변 아군 공격력 +30% · 갑주 20% · 왔노라 보았노라 이겼노라',
+    desc:'붉은 망토를 두른 로마의 독재관입니다. 그가 검을 들어 가리키면 군단 전체가 한 몸처럼 움직이고, 적의 전열은 무너집니다.',
+    active:{name:'왔노라 보았노라 이겼노라',kind:'venividivici',cd:55,radius:300,mul:2.6,stun:1,push:80,ally:{haste:{mul:.7,dur:6},barrier:200,radius:360},
+      desc:'가장 가까운 적 주변 피해 · 1초 기절 · 밀쳐 냄, 주변 아군 보호막 · 6초 가속.'}}),
+  mk({id:'spartacus',name:'스파르타쿠스',role:'해방된 검투사',shape:'spartacus',castFx:'slash',season:'rome',rarity:'SSR',gacha:true,unlockStage:999,
+    body:'#c8925a',accent:'#e8c65a',tunic:'#8a3a2a',hp:1600,atk:110,range:76,speed:44,interval:1.0,
+    cost:460,kb:2,area:true,areaRadius:50,scale:1.12,
+    ab:{enrage:1.6,lifesteal:.1},abText:'검과 둥근 방패 · 체력이 깎일수록 공격이 빨라진다 (최대 1.6배) · 흡혈 10% · 해방의 함성',
+    desc:'쇠사슬을 끊고 일어선 검투사입니다. 다칠수록 더 사납게 칼을 휘두르고, 그의 함성에 동료들은 족쇄를 털고 일어납니다.',
+    active:{name:'해방의 함성',kind:'liberation',cd:46,radius:240,mul:2.4,stun:1.2,ally:{cleanse:true,haste:{mul:.75,dur:4},radius:300},
+      desc:'가장 가까운 적 주변 피해 · 1.2초 기절, 주변 아군 중독 · 화상 · 둔화 정화와 4초 가속.'}}),
+  mk({id:'centurion',name:'백인대장',short:'백인대장',role:'군단의 기둥',shape:'centurion',castFx:'slash',season:'rome',rarity:'SR',gacha:true,unlockStage:999,
+    body:'#d8a878',accent:'#c8202a',tunic:'#8e1a2a',hp:1900,atk:66,range:70,speed:30,interval:1.3,
+    cost:340,kb:1,
+    ab:{armor:.35,kbImmune:true,vanguard:{r:150,cut:.12}},abText:'옆으로 솟은 붉은 깃 투구 · 갑주 35% · 넉백 면역 · 곁의 아군이 받는 피해 -12%',
+    desc:'백 명의 병사를 이끄는 노련한 지휘관입니다. 큰 방패를 땅에 박고 버티면, 곁에 선 병사들도 덜 다칩니다.'}),
+  mk({id:'vestal',name:'베스타 무녀',short:'무녀',role:'꺼지지 않는 성화',shape:'vestal',castFx:'firering',season:'rome',rarity:'SR',gacha:true,unlockStage:999,
+    body:'#e8c8a8',accent:'#ff9a3a',tunic:'#f0ece0',hp:680,atk:44,range:220,speed:30,interval:1.7,
+    cost:310,kb:1,ranged:true,
+    ab:{heal:80,cleanse:true,radius:220,interval:4},abText:'성화 · 4초마다 주변 아군 회복 80 · 중독 · 화상 · 둔화 정화 · 불씨를 던진다',
+    desc:'신전의 성화를 지키는 무녀입니다. 성화의 온기로 다친 병사를 돌보고, 불씨를 날려 적을 쫓습니다.'}),
+  mk({id:'biga',name:'전차 기수',short:'전차',role:'두 마리 말 전차',shape:'biga',castFx:'slash',season:'rome',rarity:'SR',gacha:true,unlockStage:999,
+    body:'#c8925a',accent:'#e8c65a',tunic:'#8e1a2a',hp:1300,atk:92,range:74,speed:70,interval:1.2,
+    cost:350,kb:1,area:true,areaRadius:45,
+    ab:{charge:{mul:2.4,dist:130,push:60},dodge:.1},abText:'두 마리 말이 끄는 전차 · 아주 빠름 · 달려온 첫 일격 2.4배 + 밀쳐 냄 · 회피 10%',
+    desc:'원형 경기장을 휩쓸던 전차 기수입니다. 말발굽 소리와 함께 적진으로 뛰어들어 바퀴째 들이받습니다.'}),
+  mk({id:'retiarius',name:'그물 검투사',short:'그물',role:'그물과 삼지창',shape:'retiarius',castFx:'slash',season:'rome',rarity:'R',gacha:true,unlockStage:999,
+    body:'#c8925a',accent:'#d8dce4',tunic:'#3a6a8a',hp:860,atk:56,range:88,speed:44,interval:1.0,
+    cost:235,kb:2,
+    ab:{slow:1.4,crit:{chance:.12,mul:2}},abText:'던지는 그물 · 맞은 적 1.4초 둔화 · 긴 삼지창 · 치명타 12%',
+    desc:'그물과 삼지창만 든 날렵한 검투사입니다. 그물로 발을 묶고 삼지창으로 찌릅니다.'}),
+  mk({id:'pilum',name:'필룸 투창병',short:'필룸',role:'무거운 투창',shape:'pilum',season:'rome',rarity:'R',gacha:true,unlockStage:999,
+    body:'#c8925a',accent:'#c8ccd4',tunic:'#8e1a2a',hp:700,atk:66,range:230,speed:36,interval:1.5,
+    cost:240,kb:2,ranged:true,
+    ab:{sunmark:{vuln:.15,dur:3}},abText:'무거운 투창 · 맞은 적은 방패가 휘어 3초 동안 받는 피해 +15%',
+    desc:'끝이 무른 쇠로 된 투창을 던집니다. 방패에 박히면 휘어 빠지지 않아, 적은 방패를 버리고 맨몸으로 싸워야 합니다.'}),
+  mk({id:'legionary',name:'군단병',short:'군단병',role:'방패 벽',shape:'legionary',castFx:'slash',season:'rome',rarity:'N',gacha:true,unlockStage:999,
+    body:'#c8925a',accent:'#e8c65a',tunic:'#8e1a2a',hp:760,atk:40,range:64,speed:34,interval:1.1,
+    cost:150,kb:2,
+    ab:{armor:.2},abText:'큰 사각 방패 · 짧은 칼 · 갑주 20% · 값싸다',
+    desc:'붉은 사각 방패를 든 로마의 군단병입니다. 방패를 맞대고 서면 화살비도 뚫지 못합니다.'})
+);
 // 전설·신화는 한 명씩만 전장에 설 수 있다. 머릿수로 밀어붙이는 병종이 아니라
 // 판을 바꾸는 특수 병종이기 때문이다.
 SEASON_UNITS.forEach(u => {
@@ -934,7 +998,10 @@ const UNIT_COOLDOWN = {
   // 4.15 삼국지
   jiqiang: 6.2, tengjia: 12.3, huangzhong: 13.4, zhangfei: 21.2, zhaoyun: 26.3, zhugeliang: 44.8, guanyu: 66.4,
   // 5.2 천일야화
-  bandit: 6.5, scimitar: 12.4, camelarcher: 13.9, scheherazade: 20.8, carpet: 25.8, sinbad: 44.2, genie: 67.2
+  bandit: 6.5, scimitar: 12.4, camelarcher: 13.9, scheherazade: 20.8, carpet: 25.8, sinbad: 44.2, genie: 67.2,
+  // 5.5 기본 병종 · 로마 제국
+  halberdier: 14.3, flamer: 15.2, hwacha: 23.5,
+  legionary: 6.7, retiarius: 12.65, pilum: 13.65, vestal: 20.4, centurion: 21.8, biga: 26.1, spartacus: 44.6, caesar: 67.0
 };
 const TIER_FROM = 200, TIER_TO = 560, TIER_MAX = 0.35;
 function costTierMul(cost) {
@@ -998,7 +1065,11 @@ const SEASONS = [
   { id: 'arabian', name: '천일야화', sub: '램프의 마신과 일곱 바다',
     color: '#5ad0e0', accent: '#6a2a8e',
     desc: '천 하룻밤의 이야기 속 램프의 마신과 일곱 바다의 선장, 하늘을 나는 양탄자가 왕국의 부름에 응합니다.',
-    units: ['genie', 'sinbad', 'carpet', 'scheherazade', 'scimitar', 'camelarcher', 'bandit'] }
+    units: ['genie', 'sinbad', 'carpet', 'scheherazade', 'scimitar', 'camelarcher', 'bandit'] },
+  { id: 'rome', name: '로마 제국', sub: '왔노라 보았노라 이겼노라',
+    color: '#e05a4a', accent: '#8e1a2a',
+    desc: '월계관을 쓴 독재관과 사슬을 끊은 검투사, 붉은 방패의 군단이 왕국의 부름에 응합니다.',
+    units: ['caesar', 'spartacus', 'centurion', 'vestal', 'biga', 'retiarius', 'pilum', 'legionary'] }
 ];
 
 /* 소환 풀: 시즌 병종 + (다른 시즌은 낮은 확률로) */
@@ -2760,8 +2831,8 @@ const ACHIEVEMENTS = [
   { id:'campaign40',name:'심연을 건넌 자',desc:'40전장 모두 돌파',gold:12000,stone:10,test:s=>s.cleared>=40 },
   { id: 'awaken1',  name: '세 번째 모습', desc: '병종 하나를 3진',              gold: 5000, stone: 5,
     test: s => Object.keys(s.evo2 || {}).length >= 1 },
-  { id: 'awakenAll', name: '엉뚱한 군대', desc: '3진 10종 모두',                gold: 20000, stone: 15,
-    test: s => Object.keys(EVOLUTIONS2).filter(id => !UNIT_BY_ID[id].gacha).every(id => s.evo2 && s.evo2[id] !== undefined) },   // 4.7: 전장 병종 열 (소환 영웅은 따로)
+  { id: 'awakenAll', name: '엉뚱한 군대', desc: '전장 병종 3진 12종 모두',           gold: 20000, stone: 15,
+    test: s => Object.keys(EVOLUTIONS2).filter(id => !UNIT_BY_ID[id].gacha).every(id => s.evo2 && s.evo2[id] !== undefined) },   // 4.7: 전장 병종 열 (소환 영웅은 따로) · 5.5: 궁수 · 기사가 더해져 열둘 (이미 받은 업적은 그대로)
   { id: 'awakenHero', name: '신들의 신형 장비', desc: '소환 영웅 하나를 3진',      gold: 12000, stone: 10,
     test: s => Object.keys(EVOLUTIONS2).some(id => UNIT_BY_ID[id].gacha && s.evo2 && s.evo2[id] !== undefined) },
   { id:'campaign50',name:'하늘에 오른 자',desc:'50전장 모두 돌파 (5막 천공 요새)',gold:20000,stone:15,test:s=>s.cleared>=50 },
@@ -3062,6 +3133,18 @@ const EVOLUTIONS = {
   scimitar:{ name: '사막의 검무사', short: '검무사', plus: '치명타 30% · 흡혈 10%', ab: { crit: { chance: 0.3, mul: 2.1 }, lifesteal: 0.1 }, cost: { hp: 0.9 } },
   camelarcher:{ name: '사막의 명궁 기병', short: '명궁기병', plus: '사거리 +40 · 치명타 20%', add: { range: 40 }, ab: { crit: { chance: 0.2, mul: 2 } }, cost: { interval: 1.1 } },
   bandit:  { name: '도적단 두목', short: '두목', plus: '금화 확률 25% · 회피 15%', ab: { bounty: { chance: 0.25, gold: 10 }, dodge: 0.15 }, cost: { atk: 0.9 } },
+  // 5.5 기본 병종 · 로마 제국
+  halberdier:  { name: '미늘창 대장', short: '미늘대장', plus: '범위 +20 · 밀쳐 냄 강화 · 파쇄 1.5배', add: { areaRadius: 20 }, ab: { breaker: 1.5, push: 40 }, cost: { speed: 0.9 } },
+  flamer:      { name: '용의 숨결', short: '용숨결', plus: '화상 +40% · 범위 +20', add: { areaRadius: 20 }, mul: { 'burn.dps': 1.4 }, cost: { hp: 0.9 } },
+  hwacha:      { name: '대신기전 화차', short: '대신기전', plus: '신기전 일곱 발 · 사거리 +40', add: { range: 40 }, ab: { salvo: { every: 2, n: 7, mul: 0.45, radius: 55 } }, cost: { interval: 1.1 } },
+  caesar:  { name: '제국의 황제', short: '황제', plus: '지휘 +40% · 갑주 30% · 왔노라 강화', ab: { rally: { atk: 0.4, radius: 320 }, armor: 0.3 }, active: { mul: 3.0, stun: 1.2 }, cost: { 'ab.interval': 1.1 } },
+  spartacus:{ name: '자유의 투사', short: '자유투사', plus: '광분 1.9배 · 흡혈 18% · 해방의 함성 강화', ab: { enrage: 1.9, lifesteal: 0.18 }, active: { mul: 2.8, stun: 1.4 }, cost: { hp: 0.9 } },
+  centurion:{ name: '제1 백인대장', short: '수석백인', plus: '곁의 아군 피해 -18% · 갑주 40%', ab: { vanguard: { r: 170, cut: 0.18 }, armor: 0.4 }, cost: { atk: 0.85 } },
+  vestal:  { name: '대무녀', short: '대무녀', plus: '회복 +40% · 범위 +40', mul: { heal: 1.4 }, abAdd: { radius: 40 }, cost: { 'ab.interval': 1.1 } },
+  biga:    { name: '개선 전차', short: '개선전차', plus: '첫 일격 3배 · 밀쳐 냄 강화', ab: { charge: { mul: 3.0, dist: 130, push: 80 } }, cost: { hp: 0.9 } },
+  retiarius:{ name: '황금 그물 검투사', short: '황금그물', plus: '둔화 2초 · 치명타 25%', ab: { slow: 2.0, crit: { chance: 0.25, mul: 2.1 } }, cost: { hp: 0.9 } },
+  pilum:   { name: '근위 투창병', short: '근위투창', plus: '취약 +25% · 사거리 +30', add: { range: 30 }, ab: { sunmark: { vuln: 0.25, dur: 3 } }, cost: { interval: 1.1 } },
+  legionary:{ name: '근위 군단병', short: '근위군단', plus: '갑주 35% · 넉백 면역', ab: { armor: 0.35, kbImmune: true }, cost: { atk: 0.9 } },
   // 3.0 서유기
   wukong:  { look: { shape: 'wukong_evo', tunic: '#c9a227', accent: '#ffd35a', grow: 1.1 }, name: '투전승불', plus: '분신 최대 6 · 여의봉 강타 강화', ab: { summon: { max: 6 } }, active: { mul: 2.9 }, cost: { atk: 0.85 } },
   nezha:   { name: '삼두육비 나타', short: '삼두육비', plus: '화상 +50% · 혼천릉 강화', mul: { 'burn.dps': 1.5 }, active: { pull: 130, slow: 4 }, cost: { hp: 0.9 } },
@@ -3258,7 +3341,36 @@ const EVOLUTIONS2 = {
   rifleman:{ look: { shape: 'gatling', tunic: '#5a6b3a', accent: '#ffc24a', grow: 1.0 }, name: '개틀링 사수', short: '개틀링',
              plus: '손으로 돌리는 놋쇠 개틀링 · 공격 25% 빠름 · 쏠수록 빨라진다 (최대 1.6배) · 치명타 20%',
              faster: 0.75, ab: { spinup: { per: 0.06, max: 0.6 }, crit: { chance: 0.2, mul: 2 } },
-             shot: 'bullet', castFx: 'bulletpuff', atkFx: 'gatling', arrive: 'gatling' }
+             shot: 'bullet', castFx: 'bulletpuff', atkFx: 'gatling', arrive: 'gatling' },
+  // 5.5 3진 여섯 — 기본 병종 둘 · 영웅(SR) 넷
+  archer:  { look: { shape: 'stormarcher', body: '#2b3038', tunic: '#1f5a4a', accent: '#8affd8', grow: 1.0 }, name: '폭풍의 명궁', short: '폭풍명궁',
+             plus: '바람 깃 망토 · 폭풍을 품은 장궁 · 화살이 줄 선 적을 꿰뚫는다 · 치명타 30% (2.4배) · 사거리 +40',
+             add: { range: 40 }, ab: { pierce: true, crit: { chance: 0.3, mul: 2.4 } },
+             shot: 'windarrow', castFx: 'storm', arrive: 'stormcloud' },
+  knight:  { look: { shape: 'dragonknight', body: '#2b3038', tunic: '#7a1a2a', accent: '#ffb04a', grow: 1.0 }, name: '비룡 기사', short: '비룡기사',
+             plus: '붉은 비룡을 탄다 · 범위 +30 · 화상 (60/초 3초) · 흡혈 12% · 넉백 면역',
+             add: { areaRadius: 30 }, ab: { lifesteal: 0.12, burn: { dps: 60, dur: 3 }, kbImmune: true },
+             castFx: 'dragonslash', arrive: 'dragon' },
+  lancelot:{ look: { shape: 'lakeknight', body: '#2b3038', tunic: '#1a4a7a', accent: '#8ad8ff', grow: 1.0 }, name: '호수의 성기사', short: '호수성기사',
+             plus: '호수의 여인이 내린 은빛 갑옷 · 빛나는 아론다이트 · 치명타 40% (2.4배) · 흡혈 25% · 회피 15%',
+             ab: { crit: { chance: 0.4, mul: 2.4 }, lifesteal: 0.25, dodge: 0.15 },
+             castFx: 'tidal', arrive: 'moon' },
+  ninja:   { look: { shape: 'shadowninja', body: '#1a1a24', tunic: '#2a1a3a', accent: '#c88aff', grow: 1.0 }, name: '그림자 두령', short: '그림자두령',
+             plus: '그림자 분신이 함께 벤다 · 치명타 40% (2.5배) · 회피 30% · 체력 15% 아래 적은 즉사 (보스 제외)',
+             ab: { crit: { chance: 0.4, mul: 2.5 }, dodge: 0.3, execute: 0.15 },
+             castFx: 'inkslash', arrive: 'wisp' },
+  zhaoyun: { look: { shape: 'dragonspear', body: '#2b3038', tunic: '#e8ecf0', accent: '#5ac8ff', grow: 1.0 }, name: '칠진칠출 은룡', short: '은룡',
+             plus: '갑주를 두른 백마 · 용머리 은창 · 회피 30% · 달려온 첫 일격 3.2배 + 크게 밀쳐 냄 · 범위 +30',
+             set: { area: true, areaRadius: 30 }, ab: { dodge: 0.3, charge: { mul: 3.2, dist: 120, push: 70 } },
+             castFx: 'sabercut', arrive: 'dragon' },
+  skadi:   { look: { shape: 'wintergoddess', body: '#e8f0f8', tunic: '#3a6a9a', accent: '#bff0ff', grow: 1.0 }, name: '겨울 산의 여신', short: '겨울여신',
+             plus: '눈 덮인 산의 여신 · 서리 늑대 둘 · 얼음 화살이 꿰뚫고 18% 확률로 얼린다 (1초) · 사거리 +30',
+             add: { range: 30 }, ab: { pierce: true, stun: { chance: 0.18, dur: 1 } },
+             shot: 'snowball', castFx: 'snowburst', arrive: 'snow' },
+  centurion:{ look: { shape: 'aquilifer', body: '#d8a878', tunic: '#8e1a2a', accent: '#e8c65a', grow: 1.0 }, name: '독수리 군기 기수', short: '군기기수',
+             plus: '사자 가죽 망토 · 금독수리 군기 · 곁의 아군 피해 -20% · 3초마다 주변 아군 공격력 +20% · 갑주 45%',
+             ab: { vanguard: { r: 180, cut: 0.2 }, armor: 0.45, rally: { atk: 0.2, radius: 220 }, interval: 3 },
+             castFx: 'shockwave', arrive: 'aquila' }
 };
 
 /* 4.4 3진의 시련: 레벨 20 · 금화에 더해 병종마다 다른 조건 둘을 채워야 3진할 수 있다.
@@ -3295,7 +3407,15 @@ const EVO2_TRIALS = {
   zhugeliang:[{ t: 'hard', n: 15 }, { t: 'dmg', id: 'zhugeliang', n: 2000000 }],
   dokkaebi: [{ t: 'perfect', stage: 22 }, { t: 'series', name: '요괴록', ids: ['dokkaebi', 'haetae', 'mudang', 'hwarang'], lv: 20 }],
   medusa:   [{ t: 'stars', from: 20, to: 30 }, { t: 'series', name: '올림포스', ids: ['medusa', 'spartan', 'hoplite', 'artemis'], lv: 20 }],
-  rifleman: [{ t: 'dmg', id: 'rifleman', n: 800000 }, { t: 'series', name: '태엽 공방', ids: ['rifleman', 'clocksoldier', 'mechanic', 'teslaknight'], lv: 18 }]
+  rifleman: [{ t: 'dmg', id: 'rifleman', n: 800000 }, { t: 'series', name: '태엽 공방', ids: ['rifleman', 'clocksoldier', 'mechanic', 'teslaknight'], lv: 18 }],
+  // 5.5
+  archer:   [{ t: 'dmg', id: 'archer', n: 900000 }, { t: 'series', name: '활 계열', ids: ['archer', 'longbow', 'sniper', 'siegebow'], lv: 18 }],
+  knight:   [{ t: 'perfect', stage: 30 }, { t: 'series', name: '기사 계열', ids: ['knight', 'paladin', 'lancer', 'halberdier'], lv: 18 }],
+  lancelot: [{ t: 'event', n: 3 }, { t: 'series', name: '원탁의 기사', ids: ['lancelot', 'galahad', 'tristan', 'camelotguard'], lv: 20 }],
+  ninja:    [{ t: 'speed', stage: 39, sec: 120 }, { t: 'series', name: '벚꽃 전국', ids: ['ninja', 'samurai', 'kyudo', 'ashigaru'], lv: 20 }],
+  zhaoyun:  [{ t: 'hard', n: 10 }, { t: 'series', name: '삼국지', ids: ['zhaoyun', 'zhangfei', 'huangzhong', 'tengjia'], lv: 20 }],
+  skadi:    [{ t: 'stars', from: 40, to: 50 }, { t: 'series', name: '라그나로크', ids: ['skadi', 'valkyrie', 'viking', 'northarcher'], lv: 20 }],
+  centurion:[{ t: 'perfect', stage: 45 }, { t: 'series', name: '로마 제국', ids: ['centurion', 'legionary', 'pilum', 'retiarius'], lv: 20 }]
 };
 function _trialNum(n) { return n >= 1e6 ? (Math.round(n / 1e5) / 10) + 'M' : n >= 1e4 ? Math.round(n / 1e3) + 'k' : String(Math.round(n)); }
 /* 시련 하나의 진행: { done, text(조건), prog(지금 상태) } */

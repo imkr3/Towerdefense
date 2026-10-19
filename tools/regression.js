@@ -371,9 +371,9 @@ test('A squad brings at most five legends and mythics', () => {
   assert.equal(ids.filter(id => U[id].rarity === 'UR' || U[id].rarity === 'SSR').length, 5);
   assert.ok(ids.includes('spear')); assert.ok(!ids.includes('zeus'));
 });
-test('Ten seasons (5.2: +천일야화), every summon points at a real unit', () => {
+test('Eleven seasons (5.5: +로마 제국), every summon points at a real unit', () => {
   const { SEASONS } = vm.runInContext('({SEASONS})', ctx);
-  assert.equal(SEASONS.length, 10);
+  assert.equal(SEASONS.length, 11);
   for (const sn of SEASONS) for (const id of sn.units) { assert.ok(U[id], id); assert.equal(U[id].season, sn.id); }
   for (const u of UNITS) if (u.ab && u.ab.summon) assert.ok(U[u.ab.summon.id], u.id);
 });
@@ -1180,7 +1180,7 @@ test('4.4: ten units awaken — each drawn, translated and given its own effects
   const render = read('render.js'), i18n = read('i18n.js'), gl = read('gl-fx.js');
   assert.equal(X.EVO2_LEVEL, 20);
   const ids = Object.keys(X.EVOLUTIONS2).filter(id => !U[id].gacha).sort();   // 4.7: 소환 영웅 여섯은 따로 본다
-  assert.deepEqual(ids, ['catapult', 'colossus', 'duelist', 'falconer', 'frost', 'mage', 'priest', 'shield', 'sniper', 'spear']);
+  assert.deepEqual(ids, ['archer', 'catapult', 'colossus', 'duelist', 'falconer', 'frost', 'knight', 'mage', 'priest', 'shield', 'sniper', 'spear']);   // 5.5: + 궁수 · 기사
   for (const id of ids) {
     const e = X.EVOLUTIONS2[id], u = U[id];
     assert.ok(u && X.EVOLUTIONS[id] && X.ROSTER_UNITS.includes(u), id + ' is a campaign unit with a first evolution');
@@ -1357,7 +1357,7 @@ test('4.4: challenges are tougher and each awakened card makes foes stronger the
   assert.ok(H.HARDCORE.enemyMul >= 4 && H.HARDCORE.mulFloor >= 6, 'hardcore multipliers raised');
   const mk = (ids, hard) => { const s = save(); s.cleared = 40; s.loadout = ids; s.levels = {}; s.evo = {}; s.evo2 = {};
     for (const id of ids) { s.levels[id] = 20; s.evo[id] = true; s.evo2[id] = true; } return new Battle(10, s, null, { hard }); };
-  const none = mk(['knight', 'archer'], true), three = mk(['catapult', 'spear', 'mage'], true), plain = mk(['catapult', 'spear', 'mage'], false);
+  const none = mk(['berserk', 'longbow'], true), three = mk(['catapult', 'spear', 'mage'], true), plain = mk(['catapult', 'spear', 'mage'], false);
   assert.equal(none.awakenN, 0); assert.equal(three.awakenN, 3);
   assert.ok(Math.abs(three.enemyMulBase / H.hardcoreEnemyMul(STAGES[10]) - (1 + 3 * H.AWAKEN_TAX)) < 1e-9, 'three cards → +' + 3 * H.AWAKEN_TAX);
   assert.equal(plain.awakenN, 0, 'normal stages are not taxed');
@@ -1460,7 +1460,7 @@ test('4.6: hardcore act 5 and challenge bosses get their own tracks', () => {
 
 /* ---------------- 4.7 소환 영웅의 3진 ---------------- */
 const H47 = ['wukong', 'ra', 'thor', 'merlin', 'valkyrie', 'artemis', 'guanyu', 'gumiho', 'inventor', 'susanoo',   // 4.15: + 관우 · 4.25: + 구미호 · 발명가 · 스사노오
-             'odin', 'genie', 'zhugeliang', 'dokkaebi', 'medusa', 'rifleman'];                                      // 5.2: 등급을 고루 (신화 둘 · 전설 · 영웅 · 희귀 · 일반)
+             'odin', 'genie', 'zhugeliang', 'dokkaebi', 'medusa', 'rifleman', 'lancelot', 'ninja', 'zhaoyun', 'skadi', 'centurion'];   // 5.5: 영웅 다섯                                      // 5.2: 등급을 고루 (신화 둘 · 전설 · 영웅 · 희귀 · 일반)
 test('4.7: two mythic, two legendary and two hero summons awaken — drawn, translated, with their own effects', () => {
   const X = vm.runInContext('({EVOLUTIONS, EVOLUTIONS2, EVO2_TRIALS, evo2Cost})', ctx);
   const read = f => fs.readFileSync(path.join(__dirname, '../js/' + f), 'utf8');
@@ -1468,7 +1468,7 @@ test('4.7: two mythic, two legendary and two hero summons awaken — drawn, tran
   const gacha = Object.keys(X.EVOLUTIONS2).filter(id => U[id].gacha).sort();
   assert.deepEqual(gacha, H47.slice().sort());
   const rar = {}; gacha.forEach(id => { rar[U[id].rarity] = (rar[U[id].rarity] || 0) + 1; });
-  assert.deepEqual(rar, { UR: 8, SSR: 3, SR: 3, R: 1, N: 1 }, 'mythic · legendary · hero · rare · common');   // 4.25: 시즌 신화 셋 더 · 5.2: 등급을 고루
+  assert.deepEqual(rar, { UR: 8, SSR: 3, SR: 8, R: 1, N: 1 }, 'mythic · legendary · hero · rare · common');   // 5.5: 영웅 3진 다섯 더   // 4.25: 시즌 신화 셋 더 · 5.2: 등급을 고루
   const shapes = new Set(Object.values(X.EVOLUTIONS2).map(e => e.look.shape)); assert.equal(shapes.size, Object.keys(X.EVOLUTIONS2).length, 'all third forms look different');
   for (const id of gacha) {
     const e = X.EVOLUTIONS2[id];
@@ -1507,7 +1507,7 @@ test('4.7: summoned third forms charge, beam and dive in battle', () => {
 test('4.7: the "all ten" achievement still means the campaign ten; a summoned awakening has its own', () => {
   const A = vm.runInContext('ACHIEVEMENTS', ctx);
   const all = A.find(a => a.id === 'awakenAll'), hero = A.find(a => a.id === 'awakenHero');
-  const ten = {}; for (const id of ['catapult', 'colossus', 'duelist', 'falconer', 'frost', 'mage', 'priest', 'shield', 'sniper', 'spear']) ten[id] = true;
+  const ten = {}; for (const id of ['archer', 'catapult', 'colossus', 'duelist', 'falconer', 'frost', 'knight', 'mage', 'priest', 'shield', 'sniper', 'spear']) ten[id] = true;   // 5.5: 열둘
   assert.ok(all.test({ evo2: ten }), 'no summons needed');
   assert.ok(!hero.test({ evo2: ten }) && hero.test({ evo2: { ra: true } }));
 });

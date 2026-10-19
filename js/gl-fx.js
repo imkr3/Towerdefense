@@ -152,10 +152,10 @@ const GLFX_HQ_CAT = {};
 for (const [cat, kinds] of Object.entries({
   fire: 'firestorm firering shellblast plasmablast missilehit solarburn eastwind rocketpunch burst dronestrike starfall eruption',
   bolt: 'lightning tesla teslacoil boltstrike storm railhit kusanagi',
-  light: 'holy pillar excalibur astral runes holoburst laserhit sabercut divestrike slash dragonslash dragonblade inkslash ufoburst gungnir runeveil',
+  light: 'venividivici holy pillar excalibur astral runes holoburst laserhit sabercut divestrike slash dragonslash dragonblade inkslash ufoburst gungnir runeveil',
   ice: 'iceburst snowburst',
   water: 'tidal harpoon',
-  dust: 'shockwave dust dozerpush drillspark mechstaff staff rocdive goldbat',
+  dust: 'shockwave dust dozerpush drillspark mechstaff staff rocdive goldbat liberation',
   spirit: 'foxfire foxbead foxstorm reaproll skybind overdrive goldburst wishburst threewish yggdrasil djinnblast bagua petrify',
   steam: 'steamburst',
   spark: 'spark bulletpuff'
@@ -1412,6 +1412,27 @@ class GLFx {
           this.add(x, y - 6 * sc, Math.cos(a) * sp, Math.sin(a) * sp, rnd(0.4, 0.8), rnd(5, 9) * sc, 2 * sc, dust, 1, 1.2, 0, rnd(-8, 8), 1000, 1.2);
         }
         this.add(x, y - 20 * sc, 0, 0, 0.3, 20 * sc, 140 * sc * big, hot, 0.6, 1, 0, 0, 0, 1.5);
+        break;
+      }
+      /* 5.5 왔노라 보았노라 이겼노라 (카이사르): 금빛 고리 · 날리는 월계 잎 · 붉은 불씨 */
+      case 'venividivici': {
+        const gold = [1, 0.86, 0.4], leaf = [0.45, 0.78, 0.35], red = [0.9, 0.2, 0.18], hot = [1, 0.97, 0.85];
+        for (let j = 0; j < 2; j++) for (let i = 0, n = N(40); i < n; i++) { const a = i / n * TAU, sp = (240 + j * 160) * sc;
+          this.add(x, y, Math.cos(a) * sp, Math.sin(a) * sp * 0.24, 0.45 + j * 0.15, 12 * sc, 3 * sc, j ? gold : hot, 0.85, 2.2, a, 0, 0, 1.4); }
+        for (let i = 0, n = N(30); i < n; i++) {                   // 날리는 월계 잎 · 붉은 불씨
+          const a = rnd(-Math.PI * 0.95, -Math.PI * 0.05), sp = rnd(120, 320) * sc;
+          this.add(x + rnd(-R, R) * 0.4, y - rnd(10, 60) * sc, Math.cos(a) * sp, Math.sin(a) * sp, rnd(0.8, 1.4), rnd(7, 11) * sc, rnd(3, 5) * sc, i % 3 ? leaf : red, 0.95, 1.4, a, rnd(-5, 5), 120, 1.6);
+        }
+        this.add(x, y - 110 * sc, 0, -20 * sc, 0.6, 30 * sc, 120 * sc * big, gold, 0.5, 1, 0, 0, 0, 1.6);
+        break;
+      }
+      /* 5.5 해방의 함성 (스파르타쿠스): 붉은 함성 고리 · 튀는 쇠 조각 */
+      case 'liberation': {
+        const red = [0.95, 0.4, 0.22], iron = [0.66, 0.68, 0.72], hot = [1, 0.92, 0.8];
+        for (let j = 0; j < 3; j++) for (let i = 0, n = N(32); i < n; i++) { const a = i / n * TAU, sp = (200 + j * 120) * sc;
+          this.add(x, y - 30 * sc, Math.cos(a) * sp, Math.sin(a) * sp * 0.3, 0.35 + j * 0.1, 10 * sc, 3 * sc, j === 1 ? hot : red, 0.8, 2.2, a, 0, 0, 1.4); }
+        for (let i = 0, n = N(24); i < n; i++) { const a = rnd(-Math.PI * 0.9, -Math.PI * 0.1), sp = rnd(220, 480) * sc;
+          this.add(x, y - 30 * sc, Math.cos(a) * sp, Math.sin(a) * sp, rnd(0.5, 0.9), rnd(5, 8) * sc, 2.4 * sc, iron, 1, 1.2, 0, rnd(-10, 10), 900, 1.2); }
         break;
       }
       /* 5.2 운명의 룬 (오딘): 아군 둘레에 룬 조각이 떠오르며 푸른 고리가 퍼진다 */
