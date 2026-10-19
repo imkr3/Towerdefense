@@ -133,7 +133,7 @@ async function runSize(browser, size) {
   await page.evaluate(()=>{mapChapter=CHAPTERS.findIndex(c=>c.event);eventSel=0;renderMap();});
   await shot(page, 'events-' + size.w);
   const evCards=await page.evaluate(()=>({n:document.querySelectorAll('.event-card').length,open:!document.querySelector('.event-card[data-event="0"]').classList.contains('locked'),locked:document.querySelector('.event-card[data-event="2"]').classList.contains('locked')}));
-  if(evCards.n!==8||!evCards.open||!evCards.locked)throw Error('Event chapter broken: '+JSON.stringify(evCards));
+  if(evCards.n!==10||!evCards.open||!evCards.locked)throw Error('Event chapter broken: '+JSON.stringify(evCards));
   const keepLoadout=await page.evaluate(()=>save.loadout.slice());
   await page.click('.sd-btns .btn.ghost');
   if(!await page.evaluate(()=>save.loadout.length>0&&save.loadout.every(id=>EVENT_STAGES[0].event.deck.includes(id))))throw Error('Recommended event deck not applied');

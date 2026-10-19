@@ -915,7 +915,7 @@ const I18N_EN = {
   '고목왕은 화상 없이는 계속 자랍니다 · 열매 예고를 피하고, 뿌리가 흔들리면 왕명과 필살을': 'The Elder King keeps regrowing unless burned · dodge the marked fruit, and answer the root quake with your Command and ULTs',
   /* ---------------- 4.15 7막 '모래폭풍 사막' · 시즌 삼국지 · 도전 '파라오의 모래시계' ---------------- */
   '왕국 방어선 · 전 80 전장': 'Realm Defense · 80 battlefields',
-  '7막': 'Act 7', '8막': 'Act 8', '모래폭풍 사막': 'Sandstorm Desert',
+  '7막': 'Act 7', '8막': 'Act 8', '9막': 'Act 9', '모래폭풍 사막': 'Sandstorm Desert',
   '모래폭풍을 건넌 자': 'Storm Crosser', '80전장 모두 돌파 (8막 모래폭풍 사막)': 'Clear all 80 battlefields (Act 8 Sandstorm Desert)',
   '모래폭풍! 원거리 사거리가 줄어듭니다': 'Sandstorm! Ranged reach is shortened', '모래폭풍이 다가옵니다': 'A sandstorm is coming',
   '거대 전갈': 'Giant Scorpion', '독침 · 갑주 25% · 중독 70/초': 'Venom stinger · 25% armor · poison 70/s',
