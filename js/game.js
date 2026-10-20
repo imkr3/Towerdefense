@@ -728,8 +728,14 @@ class Battle {
     return this.allies.find(f=>!f.dead && !f.summoned && f.s.id===id) || null;
   }
   heroTarget(f) {
-    return this.enemies.filter(e=>!e.dead && Math.abs(e.x-f.x)<=f.attackRange+180)
-      .sort((a,b)=>Math.abs(a.x-f.x)-Math.abs(b.x-f.x))[0] || null;
+    // 5.9: HUD 가 매 프레임 여러 번 묻는다 — 거르고 정렬하지 않고 한 번 훑어 가장 가까운 적만 찾는다
+    let best = null, bd = f.attackRange + 180;
+    for (const e of this.enemies) {
+      if (e.dead) continue;
+      const d = Math.abs(e.x - f.x);
+      if (d < bd || (d === bd && !best)) { best = e; bd = d; }
+    }
+    return best;
   }
   canHeroActive(id) {
     const f=this.heroCaster(id), u=this.stats(id);
@@ -851,6 +857,7 @@ class Battle {
 
   tick(dt) {
     this.time += dt;
+    this.tickSimFx(dt);
     // 5.0 정벌 축성술: 성채가 조금씩 스스로 고쳐진다
     if (this.run && this.run.regen && !this.allyCastle.dead) { const c = this.allyCastle; c.hp = Math.min(c.maxHp, c.hp + c.maxHp * this.run.regen * dt); }
     // 4.15 7막 모래폭풍: every 초마다 dur 초 동안 모래가 불어 원거리 사거리가 줄어든다 (양쪽 모두). 2초 전에 알린다.
@@ -1382,7 +1389,7 @@ class Battle {
     if (!f.horn && f.trainCd <= tr.warn) {
       f.horn = true;
       this.announce('경적! 기관차가 돌진합니다', tr.warn);
-      this.fx.push({ type: 'warn', x: f.x - (tr.warn + tr.dur) * f.s.speed * tr.mul * 0.5, r: 160, t: tr.warn, life: tr.warn, color: '#ffb03c' });
+      this.fx.push({ type: 'warn', sim: true, x: f.x - (tr.warn + tr.dur) * f.s.speed * tr.mul * 0.5, r: 160, t: tr.warn, life: tr.warn, color: '#ffb03c' });
       sfx('siren');
     }
     if (f.trainCd <= 0) { f.trainCd = tr.every; f.horn = false; f.chargeT = tr.dur; this.shake = Math.max(this.shake, 6); sfx('cannon'); }
@@ -2053,7 +2060,7 @@ class Battle {
         f.windT = a.warn || 1.6;
         // 피해는 보스 공격력이 아니라 맞는 병사 최대 체력의 비율 — 공격력이 큰 보스(거신)의 돌진이 전열을 통째로 지웠다
         this.pending.push({ t: f.windT, side: f.side, charge: true, src: f, x: x1, r: 0, ratio: a.ratio || 0.35, push: a.push || 70, stun: a.stun, row: f.row });
-        this.fx.push({ type: 'chargeline', x: f.x, x2: x1, row: f.row, t: f.windT, life: f.windT, color: '#ff5a3c' });
+        this.fx.push({ type: 'chargeline', sim: true, x: f.x, x2: x1, row: f.row, t: f.windT, life: f.windT, color: '#ff5a3c' });
         sfx('bossIn');
         break;
       }
@@ -2092,14 +2099,14 @@ class Battle {
         }
         if (!tgt) break;
         this.pending.push({ t: a.delay || 4, side: f.side, doom: true, src: f, tgt: tgt, ratio: a.ratio || 0.85, x: tgt.x, r: 0, row: tgt.row });
-        this.fx.push({ type: 'doom', tgt: tgt, x: tgt.x, row: tgt.row, t: a.delay || 4, life: a.delay || 4 });
+        this.fx.push({ type: 'doom', sim: true, tgt: tgt, x: tgt.x, row: tgt.row, t: a.delay || 4, life: a.delay || 4 });
         this.announce('사형 선고: ' + tgt.s.name, 2.2);
         break;
       }
       case 'tax': {                        // 군자금 탈취: 몇 초 뒤 쌓인 군자금을 빼앗는다
         if (f.side !== 'enemy') break;
         this.pending.push({ t: a.delay || 3, side: f.side, tax: true, src: f, ratio: a.ratio || 0.5, x: this.allyCastle.x, r: 0, row: 1 });
-        this.fx.push({ type: 'taxwarn', x: this.allyCastle.x + 40, row: 1, t: a.delay || 3, life: a.delay || 3 });
+        this.fx.push({ type: 'taxwarn', sim: true, x: this.allyCastle.x + 40, row: 1, t: a.delay || 3, life: a.delay || 3 });
         this.announce('군자금 탈취 ' + (a.delay || 3) + '초 전! 지금 출진하라', 2.2);
         break;
       }
@@ -2154,7 +2161,7 @@ class Battle {
         if (f.side !== 'enemy') break;
         f.windT = a.wind || 4; f.stunImm = 0;          // 기절 보호를 걷는다 — 끊을 틈은 늘 있다
         this.pending.push({ t: f.windT, side: f.side, inferno: true, src: f, ratio: a.ratio || 0.4, burn: a.burn, x: f.x, r: 0, row: f.row });
-        this.fx.push({ type: 'inferno', src: f, x: f.x, row: f.row, t: f.windT, life: f.windT, color: '#ff5a1e' });
+        this.fx.push({ type: 'inferno', sim: true, src: f, x: f.x, row: f.row, t: f.windT, life: f.windT, color: '#ff5a1e' });
         this.announce(a.name + ' — 기절로 끊으세요!', f.windT);
         this.shake = Math.max(this.shake, 6);
         sfx('bossIn');
@@ -2191,7 +2198,7 @@ class Battle {
     picks.forEach((x, i) => {
       const w = (v.warn || 1.6) + i * 0.15;
       this.pending.push({ t: w, side: 'none', erupt: true, x: x, r: v.r || 85, ratio: v.ratio || 0.16, bossRatio: v.bossRatio || 0.03, burn: v.burn, row: 1 });
-      this.fx.push({ type: 'warn', x: x, r: v.r || 85, t: w, life: w, lava: true, color: '#ff7a1e' });
+      this.fx.push({ type: 'warn', sim: true, x: x, r: v.r || 85, t: w, life: w, lava: true, color: '#ff7a1e' });
     });
     if (picks.length && this.eruptN <= 1) this.announce('분화! 붉게 갈라진 땅을 조심하세요', 2.0);
     sfx('quake');
@@ -2306,7 +2313,7 @@ class Battle {
       expose: o.expose, src: o.expose ? f : null, noCastle: !!o.noCastle,
       by: f.side === 'ally' ? (f.creditTo || f.s.id) : null
     });
-    this.fx.push({ type: 'warn', x: o.x, r: o.r, t: o.warn, life: o.warn, star: !!o.star,
+    this.fx.push({ type: 'warn', sim: true, x: o.x, r: o.r, t: o.warn, life: o.warn, star: !!o.star,
                    color: f.side === 'ally' ? '#6fc0ff' : '#e0503c' });
   }
 
@@ -2812,13 +2819,28 @@ class Battle {
       if (hit) this.hitOne(s.dmg, hit, s.src, s.crit);
       this.fx.push({ type: s.crit ? 'crit' : 'hit', x: hit ? hit.x : s.tx, row: hit ? (hit.row ?? s.y0) : s.y0, dir: s.dir, t: 0.22, life: 0.22, sty: 'shoot', color: s.color });
     }
-    this.shots = this.shots.filter(s => !s.done);
+    if (this.shots.some(s => s.done)) this.shots = this.shots.filter(s => !s.done);
+  }
+
+  /* 5.9: 공격 예고(경고 원 · 돌진선 · 파멸 · 세금 · 업화)는 실제로 맞는 시각과 같이 가야 한다.
+   * 예전엔 화면 시간으로 줄어서 3배속에선 원이 1/3 쯤 줄었을 때 떨어졌고,
+   * 멈춤 중엔 예고만 사라져 다시 하면 예고 없이 맞았다. 이것들은 전투 시간(tick)으로 줄인다. */
+  tickSimFx(dt) {
+    for (const e of this.fx) if (e.sim) e.t -= dt;
   }
 
   updateFx(dt) {
-    for (const e of this.fx) e.t -= dt;
-    this.fx = this.fx.filter(e => e.t > 0);
-    if (this.fx.length > FX_LIMIT) this.fx.splice(0, this.fx.length - FX_LIMIT);
+    const play = this.state === 'play';
+    let gone = false;
+    for (const e of this.fx) {
+      if (!e.sim || !play) e.t -= dt;
+      if (e.t <= 0) gone = true;
+    }
+    if (gone) this.fx = this.fx.filter(e => e.t > 0);   // 사라진 게 있을 때만 새 배열
+    if (this.fx.length > FX_LIMIT) {                    // 넘치면 오래된 장식부터 — 예고는 남긴다
+      let cut = this.fx.length - FX_LIMIT;
+      this.fx = this.fx.filter(e => e.sim || cut-- <= 0);
+    }
     this.dmgFxCount = 0;
     for (const e of this.fx) if (e.type === 'dmg') this.dmgFxCount++;
     if (this.state !== 'play') this.resultTime = (this.resultTime || 0) + dt;

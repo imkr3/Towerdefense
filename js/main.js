@@ -3,7 +3,7 @@
  * ======================================================================= */
 
 
-const APP_VERSION = '5.8.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
+const APP_VERSION = '5.9.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
 
 function defaultSave() {
   const lv = {};
@@ -164,6 +164,7 @@ function show(id) {
   syncLoadout();
   $$('.screen').forEach(s => s.classList.toggle('active', s.id === id));
   titleAnim.on = (id === 'scr-title');
+  if (id === 'scr-title' || id === 'scr-battle') wakeLoop();
   if (id === 'scr-title') { resizeTitle(); refreshTitleBadges(); refreshConqTitle(); }
   if (id === 'scr-map') renderMap();
   if (id === 'scr-shop') renderShop();
@@ -1766,12 +1767,13 @@ function setPaused(value) {
 /* 5.8: 멈춤 메뉴 — 지금 판의 짧은 전과와 버튼 넷 */
 function renderPauseMenu() {
   if (!battle) return;
-  const clk = battle.time || 0;
+  const hg = !!battle.stage.hourglass;              // 5.9 모래시계 도전은 HUD 처럼 남은 시간
+  const clk = hg ? battle.hourglassLeft() : (battle.time || 0);
   const castle = Math.round(battle.allyCastle.hp / battle.allyCastle.maxHp * 100);
   const foe = Math.round(battle.enemyCastle.hp / battle.enemyCastle.maxHp * 100);
   $('#pause-info').innerHTML =
     '<b class="pl-stage"></b>' +
-    '<span>⏱ ' + Math.floor(clk / 60) + ':' + String(Math.floor(clk % 60)).padStart(2, '0') + '</span>' +
+    '<span>' + (hg ? '⏳ ' : '⏱ ') + Math.floor(clk / 60) + ':' + String(Math.floor(clk % 60)).padStart(2, '0') + '</span>' +
     '<span>처치 <b>' + battle.kills + '</b></span>' +
     '<span>성채 <b>' + castle + '%</b></span>' +
     '<span>적 요새 <b>' + foe + '%</b></span>';
@@ -1781,6 +1783,7 @@ function renderPauseMenu() {
 
 /* 지금 전투를 처음부터 (결과 화면 '다시 도전' · 멈춤 메뉴 '처음부터') */
 function retryBattle() {
+  flushPlayTime();                 // 5.9: '처음부터' 해도 지금까지 싸운 시간은 기록에 남긴다
   if (battle && battle.endless) startEndless();
   else if (battle && battle.event) startEvent(battle.eventIndex);
   else if (battle && battle.expedition) startExpedition(battle.expIndex);
@@ -2168,7 +2171,17 @@ let battleScr = null;
 // 3.10: 매 프레임 문서 전체를 선택자로 훑지 않는다. 살아 있는 목록이라 창이 열리고 닫히면 저절로 바뀐다.
 const openModals = document.getElementsByClassName('modal show');
 const resultEl = document.getElementById('result');
+/* 5.9: 메뉴 화면(타이틀 제외)에선 그릴 것이 없다. 예전엔 그래도 초당 60번 깨어나 배터리를 썼다.
+ * 그럴 땐 다음 프레임을 걸지 않고 쉬다가, show() 가 타이틀 · 전투 화면을 열 때 다시 깨운다. */
+let loopIdle = false;
+function wakeLoop() {
+  if (!loopIdle) return;
+  loopIdle = false;
+  requestAnimationFrame(loop);
+}
 function loop(ts) {
+  battleScr = battleScr || $('#scr-battle');
+  if (!titleAnim.on && !battleScr.classList.contains('active')) { loopIdle = true; return; }
   requestAnimationFrame(loop);
   if (!lastTs) lastTs = ts;
   battleScr = battleScr || $('#scr-battle');
@@ -2610,7 +2623,10 @@ function init() {
         const fresh = defaultSave();
         if (!SaveStore.write(fresh, true)) { toast(SaveStore.error); return; }
         save = fresh;
+        // 5.9: 진군도 · 정벌 화면이 지난 기록의 자리를 들고 있지 않게
+        mapChapter = -1; mapSel = -1; conqLast = null; conqSel = -1;
         refreshTitleBadges();
+        refreshConqTitle();
         $('#modal-save').classList.remove('show');
         toast('기록을 초기화했습니다');
       });
@@ -2686,7 +2702,7 @@ function init() {
   $('#btn-pause').addEventListener('click', () => {
     if ($('.modal.show') || !battle || battle.state !== 'play') return;
     setPaused(!paused);
-    toast(paused ? '일시정지' : '재개');
+    if (!paused) toast('재개');          // 5.9: 멈출 땐 멈춤 메뉴가 뜨므로 알림이 그 위를 가리지 않게
     SFX.ui();
   });
   // 3.8: 멈춘 동안엔 가운데 안내판이나 전장 아무 데나 눌러도 다시 시작한다
@@ -2723,9 +2739,10 @@ function init() {
   $('#btn-fix').addEventListener('click', () => {
     $('#result').classList.remove('show');
     $('#btn-retry').textContent = '다시 도전';
-    const idx = !battle ? null : battle.expedition ? 'exp:' + battle.expIndex : (!battle.endless && !battle.event ? battle.stageIndex : null);
+    const idx = !battle ? null : battle.expedition ? 'exp:' + battle.expIndex : battle.event ? 'event:' + battle.eventIndex
+      : (!battle.endless ? battle.stageIndex : 'endless');
     show('scr-map');                       // 편성에서 '뒤로' 가면 진군도로 (전투 화면이 아니라)
-    openFormation(idx);
+    openFormation(idx, battle && battle.hard);   // 5.9 하드코어 · 도전 · 무한도 같은 곳으로 다시 출진
   });
   $('#btn-tomap').addEventListener('click', () => {
     $('#btn-retry').textContent = '다시 도전';
@@ -2922,7 +2939,7 @@ window.__androidBack = function () {
     return true;
   }
   if (active.id === 'scr-formation') { if (fmDrag) { dragEnd(); return true; } show(fmBack); return true; }
-  if (['scr-shop','scr-units','scr-gacha','scr-quest'].includes(active.id)) { show('scr-map'); return true; }
+  if (['scr-shop','scr-units','scr-gacha','scr-quest','scr-conquest'].includes(active.id)) { show('scr-map'); return true; }   // 5.9 정벌에서 뒤로 가기가 앱을 껐다
   if (active.id === 'scr-map') { show('scr-title'); return true; }
   return false;   // 타이틀에서는 앱 종료
 };

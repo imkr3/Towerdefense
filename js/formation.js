@@ -14,13 +14,15 @@ const HOLD_MS = 170;          // 터치: 이만큼 누르고 있으면 끌기 �
 const DRAG_START_PX = 8;
 
 let fmTarget = null;          // 전장 번호 | 'endless' | 'event:k' | null(그냥 편성)
+let fmHard = false;           // 5.9: 하드코어에서 '편성 고치기' 로 왔으면 출진도 하드코어로
 let fmBack = 'scr-map';
 let fmFilter = 'all';
 let fmFocus = null;           // 오른쪽에 정보를 띄울 병종
 let fmDrag = null;
 
-function openFormation(target) {
+function openFormation(target, hard) {
   fmTarget = (target === undefined) ? null : target;
+  fmHard = !!hard && typeof fmTarget === 'number';
   const active = document.querySelector('.screen.active');
   fmBack = active && active.id !== 'scr-formation' ? active.id : 'scr-map';
   show('scr-formation');
@@ -414,13 +416,13 @@ function renderFormationSide() {
     const evk = typeof fmTarget === 'string' && fmTarget.indexOf('event:') === 0 ? +fmTarget.slice(6) : -1;
     const exk = typeof fmTarget === 'string' && fmTarget.indexOf('exp:') === 0 ? +fmTarget.slice(4) : -1;
     const name = fmTarget === 'endless' ? '무한 전장' : evk >= 0 ? '✦ E' + (evk + 1) + '. ' + EVENT_STAGES[evk].name
-      : exk >= 0 ? '💰 G' + (exk + 1) + '. ' + EXPEDITIONS[exk].name : (fmTarget + 1) + '. ' + STAGES[fmTarget].name;
+      : exk >= 0 ? '💰 G' + (exk + 1) + '. ' + EXPEDITIONS[exk].name : (fmHard ? '💀 ' : '') + (fmTarget + 1) + '. ' + STAGES[fmTarget].name;
     go.innerHTML = '출진 ▶<small>' + name + '</small>';
     go.addEventListener('click', () => {
       if (fmTarget === 'endless') startEndless();
       else if (evk >= 0) startEvent(evk);
       else if (exk >= 0) startExpedition(exk);
-      else startBattle(fmTarget);
+      else startBattle(fmTarget, fmHard);
     });
     side.appendChild(go);
   }
