@@ -1180,7 +1180,7 @@ test('4.4: ten units awaken — each drawn, translated and given its own effects
   const render = read('render.js'), i18n = read('i18n.js'), gl = read('gl-fx.js');
   assert.equal(X.EVO2_LEVEL, 20);
   const ids = Object.keys(X.EVOLUTIONS2).filter(id => !U[id].gacha).sort();   // 4.7: 소환 영웅 여섯은 따로 본다
-  assert.deepEqual(ids, ['archer', 'catapult', 'colossus', 'duelist', 'falconer', 'frost', 'knight', 'mage', 'priest', 'shield', 'sniper', 'spear']);   // 5.5: + 궁수 · 기사
+  assert.deepEqual(ids, ['archer', 'catapult', 'colossus', 'duelist', 'falconer', 'frost', 'halberdier', 'mage', 'priest', 'shield', 'sniper', 'spear']);   // 5.6: + 궁수 · 미늘창병
   for (const id of ids) {
     const e = X.EVOLUTIONS2[id], u = U[id];
     assert.ok(u && X.EVOLUTIONS[id] && X.ROSTER_UNITS.includes(u), id + ' is a campaign unit with a first evolution');
@@ -1507,7 +1507,7 @@ test('4.7: summoned third forms charge, beam and dive in battle', () => {
 test('4.7: the "all ten" achievement still means the campaign ten; a summoned awakening has its own', () => {
   const A = vm.runInContext('ACHIEVEMENTS', ctx);
   const all = A.find(a => a.id === 'awakenAll'), hero = A.find(a => a.id === 'awakenHero');
-  const ten = {}; for (const id of ['archer', 'catapult', 'colossus', 'duelist', 'falconer', 'frost', 'knight', 'mage', 'priest', 'shield', 'sniper', 'spear']) ten[id] = true;   // 5.5: 열둘
+  const ten = {}; for (const id of ['archer', 'catapult', 'colossus', 'duelist', 'falconer', 'frost', 'halberdier', 'mage', 'priest', 'shield', 'sniper', 'spear']) ten[id] = true;   // 5.5: 열둘
   assert.ok(all.test({ evo2: ten }), 'no summons needed');
   assert.ok(!hero.test({ evo2: ten }) && hero.test({ evo2: { ra: true } }));
 });

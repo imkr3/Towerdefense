@@ -8313,9 +8313,11 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
       ctx.fillStyle = F3('#b8bec8'); ctx.beginPath(); roundRectPath(ctx, -7.5 * s, -44 * s, 15 * s, 17 * s, 3 * s); ctx.fill();
       head(S, 'greathelm');
       ctx.fillStyle = F3(acc); ctx.beginPath(); ctx.moveTo(-2 * s, -60 * s); ctx.quadraticCurveTo(-10 * s, -68 * s, -16 * s, -60 * s + Math.sin(t * 6) * 1.5 * s); ctx.lineTo(-2 * s, -57 * s); ctx.closePath(); ctx.fill();
-      armWeapon(S, -0.12 + atk * 0.15, () => {                 // 불꽃 창
+      armWeapon(S, -0.12 + atk * 0.15, () => {                 // 불꽃 미늘창: 창끝 · 도끼날 · 갈고리
         line(S, -18 * s, 0, 56 * s, 0, 3 * s, F3('#5a3a22'));
         tri(S, 56 * s, -4 * s, 72 * s, 0, 56 * s, 4 * s, F3('#e8ecf2'));
+        ctx.fillStyle = F3('#d8dce4'); ctx.beginPath(); ctx.moveTo(46 * s, -1.6 * s); ctx.lineTo(48 * s, -12 * s); ctx.quadraticCurveTo(56 * s, -11 * s, 57 * s, -1.6 * s); ctx.closePath(); ctx.fill();
+        tri(S, 48 * s, 1.6 * s, 45 * s, 8 * s, 53 * s, 1.6 * s, F3('#b8bec8'));
         if (!S.flash && S.live) x3Glow(S, 66 * s, 0, 6 * s, '#ffb04a', 0.2 + 0.1 * Math.sin(t * 5));
       }, 4 * s);
       ctx.restore();

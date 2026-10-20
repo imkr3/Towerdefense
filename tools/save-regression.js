@@ -93,7 +93,7 @@ test('4.3: third forms that no longer exist are refunded once and fall back to t
   const ctx=vm.createContext({console});vm.runInContext(fs.readFileSync('js/data.js','utf8'),ctx);
   vm.runInContext(grab('defaultSave')+grab('normalizeSave'),ctx);
   const cost=id=>vm.runInContext('evo2Cost(UNIT_BY_ID["'+id+'"])',ctx);
-  // 5.5: 궁수 · 기사는 3진이 다시 생겨 남는다 — 3진이 없는 장궁병 · 광전사로 본다
+  // 5.6: 궁수는 3진이 다시 생겨 남는다 — 3진이 없는 장궁병 · 광전사로 본다
   ctx.raw={...old,coins:100,levels:{spear:20,longbow:20,catapult:20,berserk:20},evo:{longbow:true,catapult:true,berserk:false},evo2:{longbow:true,catapult:true,berserk:false,nobody:true}};
   const s=vm.runInContext('normalizeSave(raw)',ctx);
   assert.deepEqual(Object.keys(s.evo2),['catapult'],'only units that still have a third form keep it');

@@ -3347,9 +3347,10 @@ const EVOLUTIONS2 = {
              plus: '바람 깃 망토 · 폭풍을 품은 장궁 · 화살이 줄 선 적을 꿰뚫는다 · 치명타 30% (2.4배) · 사거리 +40',
              add: { range: 40 }, ab: { pierce: true, crit: { chance: 0.3, mul: 2.4 } },
              shot: 'windarrow', castFx: 'storm', arrive: 'stormcloud' },
-  knight:  { look: { shape: 'dragonknight', body: '#2b3038', tunic: '#7a1a2a', accent: '#ffb04a', grow: 1.0 }, name: '비룡 기사', short: '비룡기사',
-             plus: '붉은 비룡을 탄다 · 범위 +30 · 화상 (60/초 3초) · 흡혈 12% · 넉백 면역',
-             add: { areaRadius: 30 }, ab: { lifesteal: 0.12, burn: { dps: 60, dur: 3 }, kbImmune: true },
+  // 처음엔 기사의 3진이었다 — 기사는 공략 편성(특성 맞춤)의 단골이라 3진이 붙자 6막 진입 검사가 10/10 으로 쉬워져, 새 병종 미늘창병에게 옮겼다
+  halberdier:{ look: { shape: 'dragonknight', body: '#2b3038', tunic: '#7a1a2a', accent: '#ffb04a', grow: 1.0 }, name: '비룡 미늘창 기사', short: '비룡기사',
+             plus: '붉은 비룡을 탄다 · 불꽃 미늘창 · 범위 +15 · 화상 (40/초 2초) · 흡혈 8% · 넉백 면역',
+             add: { areaRadius: 15 }, ab: { lifesteal: 0.08, burn: { dps: 40, dur: 2 }, kbImmune: true },
              castFx: 'dragonslash', arrive: 'dragon' },
   lancelot:{ look: { shape: 'lakeknight', body: '#2b3038', tunic: '#1a4a7a', accent: '#8ad8ff', grow: 1.0 }, name: '호수의 성기사', short: '호수성기사',
              plus: '호수의 여인이 내린 은빛 갑옷 · 빛나는 아론다이트 · 치명타 40% (2.4배) · 흡혈 25% · 회피 15%',
@@ -3410,7 +3411,7 @@ const EVO2_TRIALS = {
   rifleman: [{ t: 'dmg', id: 'rifleman', n: 800000 }, { t: 'series', name: '태엽 공방', ids: ['rifleman', 'clocksoldier', 'mechanic', 'teslaknight'], lv: 18 }],
   // 5.5
   archer:   [{ t: 'dmg', id: 'archer', n: 900000 }, { t: 'series', name: '활 계열', ids: ['archer', 'longbow', 'sniper', 'siegebow'], lv: 18 }],
-  knight:   [{ t: 'perfect', stage: 30 }, { t: 'series', name: '기사 계열', ids: ['knight', 'paladin', 'lancer', 'halberdier'], lv: 18 }],
+  halberdier:[{ t: 'perfect', stage: 60 }, { t: 'series', name: '기사 계열', ids: ['halberdier', 'knight', 'paladin', 'lancer'], lv: 18 }],
   lancelot: [{ t: 'event', n: 3 }, { t: 'series', name: '원탁의 기사', ids: ['lancelot', 'galahad', 'tristan', 'camelotguard'], lv: 20 }],
   ninja:    [{ t: 'speed', stage: 39, sec: 120 }, { t: 'series', name: '벚꽃 전국', ids: ['ninja', 'samurai', 'kyudo', 'ashigaru'], lv: 20 }],
   zhaoyun:  [{ t: 'hard', n: 10 }, { t: 'series', name: '삼국지', ids: ['zhaoyun', 'zhangfei', 'huangzhong', 'tengjia'], lv: 20 }],
