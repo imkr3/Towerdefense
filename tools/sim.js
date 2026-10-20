@@ -347,8 +347,8 @@ const POWER_DECKS = {
   core: ['mage', 'colossus', 'thor', 'ra', 'odin', 'merlin', 'herald', 'runeseer', 'priest', 'mudang'],
   debuff: ['ra', 'merlin', 'odin', 'guanyu', 'susanoo', 'frost', 'mudang', 'alchemist', 'anchorguard', 'priest']
 };
-const HARD_FULL = { up: 10, lv: 30, stages: [1, 10, 18, 27, 36, 45, 53, 63, 70, 80, 85, 90], decks: ['buff', 'core', 'debuff', 'combo', 'rec'], min: 0, max: 7, sumMin: 0.15, sumMax: 0.5 };
-const EVENT_FULL = { up: 10, lv: 30, decks: ['buff', 'core', 'debuff', 'counter', 'combo', 'rec'], min: 0, max: 7, sumMin: 0.15, sumMax: 0.5 };
+const HARD_FULL = { up: 10, lv: 30, stages: [1, 10, 18, 27, 36, 45, 53, 63, 70, 80, 85, 90], decks: ['buff', 'core', 'debuff', 'combo', 'rec'], min: 0, max: 5, sumMin: 0.15, sumMax: 0.5 };
+const EVENT_FULL = { up: 10, lv: 30, decks: ['buff', 'core', 'debuff', 'counter', 'combo', 'rec'], min: 0, max: 5, sumMin: 0.15, sumMax: 0.5 };
 const EVENT_MID = { up: 10, lv: 20, timedMax: 2 };   // 중간 전력: 10판 중 2판 이하
 const ACT3_ENTRY = { up: 10, lv: 14, min: 2, max: 5 };   // 3.3
 const SMART_ACT3 = { up: 10, lv: 18 };
