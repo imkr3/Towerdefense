@@ -2263,4 +2263,17 @@ test('5.4: dev mode evolves every unit to its top form, maxes levels and upgrade
   assert.ok(/\[1, 2, 3, 5\]\.indexOf\(raw\.speed\)/.test(fs.readFileSync(path.join(__dirname, '../js/settings.js'), 'utf8')), 'settings keep x5');
 });
 
+test('5.7: the title keeps only useful buttons; reset lives in the save manager; settings can keep the screen awake', () => {
+  const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8'), main = fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8');
+  const title = html.slice(html.indexOf('id="scr-title"'), html.indexOf('<!-- ===================== 스테이지 선택'));
+  assert.ok(!title.includes('id="btn-reset"') && !title.includes('id="btn-full"') && title.includes('id="btn-stats"'), 'reset and fullscreen left the title, records came in');
+  const saveModal = html.slice(html.indexOf('id="modal-save"'), html.indexOf('id="modal-stats"'));
+  assert.ok(saveModal.includes('id="btn-reset"'), 'reset is in the save manager');
+  const settings = html.slice(html.indexOf('id="modal-settings"'), html.indexOf('id="modal-confirm"'));
+  for (const id of ['set-keepAwake', 'btn-full', 'btn-set-howto', 'set-info']) assert.ok(settings.includes('id="' + id + '"'), id + ' in settings');
+  assert.ok(/updateWakeLock\(\);\n}/.test(main) && /navigator\.wakeLock\.request\('screen'\)/.test(main), 'wake lock follows the battle screen');
+  assert.ok(/keepScreenOn\(boolean on\)/.test(fs.readFileSync(path.join(__dirname, '../android/app/src/main/java/com/stickkingdom/war/MainActivity.java'), 'utf8')), 'the Android app keeps the screen on only when asked');
+  assert.ok(/'keepAwake'\]\) \{/.test(fs.readFileSync(path.join(__dirname, '../js/settings.js'), 'utf8')), 'keepAwake is a saved switch');
+});
+
 console.log(count + ' regression checks passed');

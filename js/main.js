@@ -3,7 +3,7 @@
  * ======================================================================= */
 
 
-const APP_VERSION = '5.6.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
+const APP_VERSION = '5.7.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
 
 function defaultSave() {
   const lv = {};
@@ -174,6 +174,7 @@ function show(id) {
   if (id === 'scr-conquest') renderConquest();
   if (id === 'scr-battle' && renderer) renderer.resize();
   if (id !== 'scr-battle') BGM.play(SCREEN_MUSIC[id] || 'map');
+  updateWakeLock();
 }
 
 /* 화면마다 곡: 진군도·임무는 행진, 병영·훈련소·편성은 가벼운 곡, 소환은 신비로운 곡 */
@@ -2556,6 +2557,7 @@ function init() {
         if (!SaveStore.write(fresh, true)) { toast(SaveStore.error); return; }
         save = fresh;
         refreshTitleBadges();
+        $('#modal-save').classList.remove('show');
         toast('기록을 초기화했습니다');
       });
   });
@@ -2708,6 +2710,7 @@ function init() {
     if (document.hidden && playAccum > 0) { flushPlayTime(); saveGame(save); }
     // 앱이 뒤로 가면 음악도 멈춘다 (배터리)
     if (SFX.ctx) { if (document.hidden) SFX.ctx.suspend(); else SFX.ctx.resume(); }
+    updateWakeLock();                 // 5.7 돌아오면 화면 켜 두기를 다시 건다 (뒤로 가면 기기가 풀어 버린다)
     lastTs = 0;
   });
   window.addEventListener('keydown', e => {
@@ -2740,9 +2743,52 @@ function refreshSettingsUI() {
     $('#set-' + k).value = Math.round(d[k] * 100);
     $('#set-' + k + '-v').textContent = Math.round(d[k] * 100);
   }
-  for (const k of ['vibrate', 'dmgNums', 'shake', 'keepSpeed', 'autoActive']) {
+  for (const k of SETTING_SWITCHES) {
     $('#set-' + k).setAttribute('aria-checked', String(!!d[k]));
   }
+  $('#set-info').textContent = '막대 왕국 전쟁 v' + APP_VERSION + ' · 저장 슬롯 ' + SaveStore.slot + (IN_APP ? ' · 안드로이드 앱' : '');
+}
+const SETTING_SWITCHES = ['vibrate', 'dmgNums', 'shake', 'keepSpeed', 'autoActive', 'keepAwake'];
+/* 5.7 안드로이드 앱 안 (이미 전체화면이라 전체화면 버튼이 필요 없다) */
+const IN_APP = typeof window !== 'undefined' && !!(window.AndroidSave || (window.matchMedia && (matchMedia('(display-mode: fullscreen)').matches || matchMedia('(display-mode: standalone)').matches)));
+
+/* 5.7 전투 중에는 화면이 꺼지지 않게 (설정 · 지원하는 기기에서만) */
+let wakeLock = null;
+function updateWakeLock() {
+  const want = Settings.get('keepAwake') && !document.hidden && $('#scr-battle').classList.contains('active');
+  if (window.AndroidSave && typeof window.AndroidSave.keepScreenOn === 'function') {   // 안드로이드 앱: 창 플래그로
+    if (wakeLock !== want) { wakeLock = want; try { window.AndroidSave.keepScreenOn(want); } catch (e) { /* 옛 앱 */ } }
+    return;
+  }
+  if (want && !wakeLock && navigator.wakeLock && navigator.wakeLock.request) {
+    wakeLock = 'pending';
+    navigator.wakeLock.request('screen').then(l => {
+      wakeLock = l; l.addEventListener('release', () => { if (wakeLock === l) wakeLock = null; });
+      if (!Settings.get('keepAwake') || document.hidden || !$('#scr-battle').classList.contains('active')) { wakeLock = null; l.release().catch(() => {}); }
+    }).catch(() => { wakeLock = null; });
+  } else if (!want && wakeLock && wakeLock !== 'pending') {
+    const l = wakeLock; wakeLock = null; l.release().catch(() => {});
+  }
+}
+
+/* 5.7 나의 기록: 저장에 쌓인 숫자를 한눈에 */
+function renderStats() {
+  const st = save.stats || {}, sum = o => Object.values(o || {}).reduce((a, v) => a + (Number(v) || 0), 0);
+  const h = Math.floor((st.playSec || 0) / 3600), m = Math.floor((st.playSec || 0) % 3600 / 60);
+  const owned = UNITS.filter(u => u.gacha && save.owned[u.id]).length, gachaN = UNITS.filter(u => u.gacha).length;
+  const e2 = Object.keys(save.evo2 || {}).length, e3 = Object.keys(save.evo3 || {}).length;
+  const achvN = Object.keys(save.achv || {}).filter(k => save.achv[k]).length;
+  const cq = save.conqRec || {};
+  const rows = [
+    ['플레이 시간', h + '시간 ' + m + '분'], ['전투', fmtNum(st.battles || 0) + '회'],
+    ['승리', fmtNum(st.wins || 0) + '회 (' + (st.battles ? Math.round(100 * (st.wins || 0) / st.battles) : 0) + '%)'],
+    ['돌파한 전장', save.cleared + ' / ' + STAGES.length], ['모은 별', sum(save.stars) + ' / ' + STAGES.length * 3],
+    ['하드코어 돌파', Object.keys(save.hard || {}).length + ' / ' + STAGES.length], ['도전 돌파', Object.keys(save.events || {}).length + ' / ' + EVENT_STAGES.length],
+    ['무한 전장 최고', (save.endlessBest || 0) + '웨이브'], ['처치한 적', fmtNum(save.totalKills || 0)], ['쓰러뜨린 보스', fmtNum(st.bossKills || 0)],
+    ['소환', fmtNum(save.pulls || 0) + '회'], ['소환 영웅', owned + ' / ' + gachaN], ['3진 · 4진', e2 + ' · ' + e3],
+    ['업적', achvN + ' / ' + ACHIEVEMENTS.length], ['정벌 (최고 층 · 정벌)', (cq.best || 0) + '층 · ' + (cq.wins || 0) + '승'], ['금화 원정', fmtNum(save.expRuns || 0) + '회']
+  ];
+  $('#stats-grid').innerHTML = rows.map(([k, v]) => '<div class="stat-cell"><b>' + v + '</b><span>' + k + '</span></div>').join('');
 }
 
 function openSettings() {
@@ -2787,14 +2833,20 @@ function initSettings() {
     $('#set-sfx-v').textContent = e.target.value;
   });
   $('#set-sfx').addEventListener('change', () => SFX.ui());
-  for (const k of ['vibrate', 'dmgNums', 'shake', 'keepSpeed', 'autoActive']) {
+  for (const k of SETTING_SWITCHES) {
     $('#set-' + k).addEventListener('click', () => {
       Settings.set(k, !Settings.get(k));
       refreshSettingsUI();
       if (k === 'vibrate') buzz(20);
+      if (k === 'keepAwake') updateWakeLock();
       SFX.ui();
     });
   }
+  // 5.7 화면 켜 두기를 못 쓰는 기기 · 이미 전체화면인 앱에서는 그 줄 · 버튼을 감춘다
+  if (!(navigator.wakeLock && navigator.wakeLock.request) && !(window.AndroidSave && window.AndroidSave.keepScreenOn)) { $('#set-keepAwake').hidden = true; $('#set-keepAwake').previousElementSibling.hidden = true; }
+  if (IN_APP) $('#btn-full').hidden = true;
+  $('#btn-set-howto').addEventListener('click', () => { $('#modal-settings').classList.remove('show'); $('#modal-howto').classList.add('show'); SFX.ui(); });
+  $('#btn-stats').addEventListener('click', () => { renderStats(); $('#modal-stats').classList.add('show'); SFX.ui(); });
 }
 
 /* 안드로이드 뒤로 가기 처리. true 를 돌려주면 앱이 닫히지 않는다. */

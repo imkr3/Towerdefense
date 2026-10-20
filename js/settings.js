@@ -28,6 +28,7 @@ const Settings = {
       fxv: 52,
       keepSpeed: true,   // 전투 속도 기억
       autoActive: true,  // 3.14: 자동 출진일 때 필살도 자동
+      keepAwake: true,   // 5.7: 전투 중 화면이 꺼지지 않게 (Wake Lock)
       speed: 1
     };
   },
@@ -41,7 +42,7 @@ const Settings = {
       for (const k of ['bgm', 'sfx']) {
         if (typeof raw[k] === 'number' && raw[k] >= 0 && raw[k] <= 1) d[k] = raw[k];
       }
-      for (const k of ['vibrate', 'dmgNums', 'shake', 'keepSpeed', 'autoActive']) {
+      for (const k of ['vibrate', 'dmgNums', 'shake', 'keepSpeed', 'autoActive', 'keepAwake']) {
         if (typeof raw[k] === 'boolean') d[k] = raw[k];
       }
       if (['hq', 'auto', 'high', 'low'].indexOf(raw.quality) >= 0) d.quality = raw.quality;

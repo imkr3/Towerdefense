@@ -1,48 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 졸라맨 기사: 방패를 든 막대 병사 -->
+<!-- 5.7 새 아이콘: 금빛 방패 문장 · 칼을 치켜든 막대 기사 · 뒤로 교차한 창 (안전 구역 66dp 안에) -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-
-    <!-- 몸통 -->
-    <path
-        android:strokeColor="#E8DCC0"
-        android:strokeWidth="5"
-        android:strokeLineCap="round"
-        android:pathData="M54,46 L54,66" />
-    <!-- 다리 -->
-    <path
-        android:strokeColor="#E8DCC0"
-        android:strokeWidth="5"
-        android:strokeLineCap="round"
-        android:pathData="M54,66 L45,80 M54,66 L63,80" />
-    <!-- 창을 든 팔 -->
-    <path
-        android:strokeColor="#E8DCC0"
-        android:strokeWidth="4.5"
-        android:strokeLineCap="round"
-        android:pathData="M54,50 L66,46" />
-    <!-- 창 -->
-    <path
-        android:strokeColor="#C9A227"
-        android:strokeWidth="4"
-        android:strokeLineCap="round"
-        android:pathData="M60,58 L78,32" />
-    <path
-        android:fillColor="#C9A227"
-        android:pathData="M79,28 L84,38 L74,36 z" />
-    <!-- 머리 -->
-    <path
-        android:fillColor="#E8DCC0"
-        android:pathData="M54,28 m-9,0 a9,9 0 1,0 18,0 a9,9 0 1,0 -18,0" />
-    <!-- 투구 -->
-    <path
-        android:fillColor="#C9A227"
-        android:pathData="M43,28 a11,11 0 0,1 22,0 z" />
-    <!-- 방패 -->
-    <path
-        android:fillColor="#8D6A3F"
-        android:pathData="M28,42 L44,45 L44,64 L36,72 L28,64 z" />
+    <!-- 교차한 창 -->
+    <path android:strokeColor="#C8CCD4" android:strokeWidth="2.4" android:strokeLineCap="round"
+        android:pathData="M29,83 L79,31 M79,83 L29,31" />
+    <path android:fillColor="#E8ECF2" android:pathData="M79,31 l4.5,-5 l-1.4,7 z M29,31 l-4.5,-5 l1.4,7 z" />
+    <!-- 금빛 방패 · 붉은 문장 바탕 -->
+    <path android:fillColor="#E0B44A"
+        android:pathData="M54,25 L77,32.5 L77,55 Q77,73.5 54,83 Q31,73.5 31,55 L31,32.5 Z" />
+    <path android:fillColor="#7A1A28"
+        android:pathData="M54,29 L73.3,35.2 L73.3,54.8 Q73.3,70.7 54,78.8 Q34.7,70.7 34.7,54.8 L34.7,35.2 Z" />
+    <!-- 막대 기사 -->
+    <path android:strokeColor="#F4F1E8" android:strokeWidth="3" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M53,50 L53,62 M53,62 L48.3,70.8 M53,62 L58,70.5 M53,52.7 L47,59 M53,52.4 L60.8,47.3" />
+    <path android:fillColor="#F4F1E8" android:pathData="M53,44 m-3.9,0 a3.9,3.9 0 1,0 7.8,0 a3.9,3.9 0 1,0 -7.8,0" />
+    <path android:fillColor="#E0B44A" android:pathData="M48.8,43.4 a4.2,4.2 0 0,1 8.4,0 z" />
+    <!-- 치켜든 칼 -->
+    <path android:strokeColor="#E8ECF2" android:strokeWidth="1.9" android:strokeLineCap="round" android:pathData="M60.8,47.3 L68.2,37.2" />
+    <path android:strokeColor="#E0B44A" android:strokeWidth="1.6" android:strokeLineCap="round" android:pathData="M58.8,45.6 L62.5,49.6" />
+    <path android:fillColor="#FFFFFF" android:pathData="M68.2,37.2 l2.4,-3.7 l-0.3,4.4 z" />
 </vector>

@@ -74,6 +74,13 @@ public class MainActivity extends Activity {
     }
 
     public class SaveBridge {
+        /* 5.7 게임 설정 '전투 중 화면 켜 두기': 전투 화면에서만 켜 둔다 (메뉴에서는 기기 설정대로 꺼진다) */
+        @JavascriptInterface public void keepScreenOn(boolean on) {
+            runOnUiThread(() -> {
+                if (on) getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                else getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            });
+        }
         @JavascriptInterface public void exportSave(String json) {
             if (json == null || json.getBytes(StandardCharsets.UTF_8).length > SAVE_LIMIT) return;
             runOnUiThread(() -> {

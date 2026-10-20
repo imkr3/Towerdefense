@@ -1124,6 +1124,14 @@ const I18N_EN = {
   '기사 계열': 'Knight line',
   '독수리 군기 기수': 'Aquilifer', '군기기수': 'Aquilifer',
   '사자 가죽 망토 · 금독수리 군기 · 곁의 아군 피해 -20% · 3초마다 주변 아군 공격력 +20% · 갑주 45%': 'Lion-pelt cloak · golden eagle standard · allies beside him take 20% less damage · every 3s nearby allies +20% attack · armor 45%',
+  // 5.7 메인 화면 · 설정 · 저장 관리 · 나의 기록
+  '나의 기록': 'My Records', '📊 나의 기록': '📊 My Records', '소리': 'Sound', '화면': 'Display', '전투': 'Battle',
+  '전투 중 화면 켜 두기': 'Keep screen on in battle', '⛶ 전체화면': '⛶ Fullscreen', '📜 교전 수칙': '📜 How to Play',
+  '📤 백업 내보내기': '📤 Export backup', '📂 백업 파일 열기': '📂 Open backup file', '↩ 이전 저장 복원': '↩ Restore previous save',
+  '지금 슬롯의 진행도를 모두 지웁니다': 'Erases all progress in this slot',
+  '플레이 시간': 'Play time', '돌파한 전장': 'Stages cleared', '모은 별': 'Stars', '하드코어 돌파': 'Hardcore cleared', '도전 돌파': 'Challenges cleared',
+  '무한 전장 최고': 'Endless best', '처치한 적': 'Foes defeated', '쓰러뜨린 보스': 'Bosses defeated', '소환': 'Summons', '3진 · 4진': '3rd · 4th forms',
+  '업적': 'Achievements', '정벌 (최고 층 · 정벌)': 'Conquest (best floor · won)', '금화 원정': 'Gold expeditions', ' · 안드로이드 앱': ' · Android app',
   // 5.4 개발자 모드 확장
   '진행 · 육성': 'Progress · training', '모든 진화 · 3진 · 4진': 'Evolve all (4th too)', '레벨 · 강화 모두 최대': 'Max everything',
   '금화 원정 난이도': 'Gold expedition difficulty', '보통 ×1': 'Normal ×1', '이미 모든 진화를 마쳤습니다': 'Every evolution is already done',
@@ -1504,6 +1512,10 @@ const I18N_EN_PATTERNS = [
   [/^무스펠의 불꽃 검 — 기절로 끊으세요!$/g, "Muspel's Flaming Sword — break it with a stun!"],
   [/^(.+) 쓰러짐 — (\d+)초 안에 (.+)도 쓰러뜨려야 한다!$/g, '$1 has fallen — fell $3 within $2s too!'],
   [/^(.+)[이가] 되살아났다!$/g, '$1 rose again!'],
+  // 5.7 나의 기록 · 설정 정보
+  [/^(\d+)시간 (\d+)분$/g, '$1h $2m'], [/^([\d,]+)회 \((\d+)%\)$/g, '$1 ($2%)'], [/^([\d,]+)회$/g, '$1'], [/^(\d+)웨이브$/g, 'Wave $1'],
+  [/^(\d+)층 · (\d+)승$/g, 'Floor $1 · $2 won'],
+  [/^막대 왕국 전쟁 v([\d.]+) · 저장 슬롯 (\d)/g, 'Stick Kingdom War v$1 · save slot $2'],
   // 5.4 개발자 모드 확장
   [/^모든 캐릭터를 합류시키고 (\d+)종의 진화 · 3진 · 4진을 시련 없이 마칩니다\. 가장 높은 형태로 출진하고, 레벨이 모자라면 그 형태에 필요한 레벨\(진화 (\d+) · 3진 (\d+) · 4진 (\d+)\)까지 올립니다\. 훈련소에서 형태는 다시 고를 수 있습니다\.$/g,
    'Adds every character and completes evolution, 3rd and 4th forms for $1 units without trials. They deploy in their highest form, and levels are raised to what that form needs (evolution $2 · 3rd $3 · 4th $4). You can pick the form again in the barracks.'],
