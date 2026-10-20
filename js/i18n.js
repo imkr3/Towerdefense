@@ -1124,6 +1124,10 @@ const I18N_EN = {
   '기사 계열': 'Knight line',
   '독수리 군기 기수': 'Aquilifer', '군기기수': 'Aquilifer',
   '사자 가죽 망토 · 금독수리 군기 · 곁의 아군 피해 -20% · 3초마다 주변 아군 공격력 +20% · 갑주 45%': 'Lion-pelt cloak · golden eagle standard · allies beside him take 20% less damage · every 3s nearby allies +20% attack · armor 45%',
+  // 5.8 멈춤 메뉴
+  '▶ 계속하기': '▶ Resume', '↻ 처음부터': '↻ Restart', '⚙ 설정': '⚙ Settings', '✕ 나가기': '✕ Leave',
+  '전장을 눌러도 다시 시작합니다': 'Tap the battlefield to resume too', '처음부터 다시': 'Restart',
+  '이번 전투를 버리고 처음부터 다시 시작할까요?': 'Abandon this battle and start it over?',
   // 5.7 메인 화면 · 설정 · 저장 관리 · 나의 기록
   '나의 기록': 'My Records', '📊 나의 기록': '📊 My Records', '소리': 'Sound', '화면': 'Display', '전투': 'Battle',
   '전투 중 화면 켜 두기': 'Keep screen on in battle', '⛶ 전체화면': '⛶ Fullscreen', '📜 교전 수칙': '📜 How to Play',
@@ -1512,6 +1516,9 @@ const I18N_EN_PATTERNS = [
   [/^무스펠의 불꽃 검 — 기절로 끊으세요!$/g, "Muspel's Flaming Sword — break it with a stun!"],
   [/^(.+) 쓰러짐 — (\d+)초 안에 (.+)도 쓰러뜨려야 한다!$/g, '$1 has fallen — fell $3 within $2s too!'],
   [/^(.+)[이가] 되살아났다!$/g, '$1 rose again!'],
+  // 5.8 임무 갱신 · 모두 받기
+  [/^다음 갱신까지 (\d+)시간 (\d+)분$/g, 'Next refresh in $1h $2m'], [/^보상 모두 받기 \((\d+)\)$/g, 'Claim all ($1)'],
+  [/^보상 획득! 💰 \+([\d,]+) 🔮 \+(\d+)$/g, 'Rewards claimed! 💰 +$1 🔮 +$2'],
   // 5.7 나의 기록 · 설정 정보
   [/^(\d+)시간 (\d+)분$/g, '$1h $2m'], [/^([\d,]+)회 \((\d+)%\)$/g, '$1 ($2%)'], [/^([\d,]+)회$/g, '$1'], [/^(\d+)웨이브$/g, 'Wave $1'],
   [/^(\d+)층 · (\d+)승$/g, 'Floor $1 · $2 won'],

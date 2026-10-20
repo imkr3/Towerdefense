@@ -3,7 +3,7 @@
  * ======================================================================= */
 
 
-const APP_VERSION = '5.7.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
+const APP_VERSION = '5.8.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
 
 function defaultSave() {
   const lv = {};
@@ -317,7 +317,23 @@ function renderQuest(tab) {
     });
     const note = document.createElement('div');
     note.className = 'quest-card note';
-    note.innerHTML = '<div class="q-name">임무는 매일 자정에 새로 갱신됩니다.</div>';
+    // 5.8: 남은 시간과 '모두 받기'
+    const now = new Date(), mid = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    const left = Math.max(0, Math.round((mid - now) / 60000));
+    const ready = save.daily.list.filter(m => !m.claimed && missionDone(m));
+    note.innerHTML = '<div class="q-name">임무는 매일 자정에 새로 갱신됩니다.</div>' +
+      '<div class="q-reset">다음 갱신까지 ' + Math.floor(left / 60) + '시간 ' + (left % 60) + '분</div>' +
+      (ready.length > 1 ? '<button class="btn primary q-all">보상 모두 받기 (' + ready.length + ')</button>' : '');
+    if (ready.length > 1) note.querySelector('.q-all').addEventListener('click', () => {
+      let g = 0, st = 0;
+      for (const m of ready) { const def = missionById(m.id); m.claimed = true; g += def.gold; st += def.stone; }
+      save.coins += g; save.stones += st;
+      saveGame(save);
+      SFX.gold();
+      toast('보상 획득! 💰 +' + fmtNum(g) + ' 🔮 +' + st);
+      renderQuest('daily');
+      checkAchievements();
+    });
     box.appendChild(note);
 
   } else if (questTab === 'achv') {
@@ -1744,6 +1760,44 @@ function setPaused(value) {
   $('#btn-pause').textContent = paused ? '▶' : '❚❚';
   $('#btn-pause').setAttribute('aria-label', paused ? '전투 재개' : '일시정지');
   $('#pause-label').hidden = !paused;
+  if (paused) renderPauseMenu();
+}
+
+/* 5.8: 멈춤 메뉴 — 지금 판의 짧은 전과와 버튼 넷 */
+function renderPauseMenu() {
+  if (!battle) return;
+  const clk = battle.time || 0;
+  const castle = Math.round(battle.allyCastle.hp / battle.allyCastle.maxHp * 100);
+  const foe = Math.round(battle.enemyCastle.hp / battle.enemyCastle.maxHp * 100);
+  $('#pause-info').innerHTML =
+    '<b class="pl-stage"></b>' +
+    '<span>⏱ ' + Math.floor(clk / 60) + ':' + String(Math.floor(clk % 60)).padStart(2, '0') + '</span>' +
+    '<span>처치 <b>' + battle.kills + '</b></span>' +
+    '<span>성채 <b>' + castle + '%</b></span>' +
+    '<span>적 요새 <b>' + foe + '%</b></span>';
+  $('#pause-info .pl-stage').textContent = $('#battle-stage').textContent;
+  $('#btn-pause-retry').hidden = !!battle.conquest;     // 정벌 전투는 다시 할 수 없다
+}
+
+/* 지금 전투를 처음부터 (결과 화면 '다시 도전' · 멈춤 메뉴 '처음부터') */
+function retryBattle() {
+  if (battle && battle.endless) startEndless();
+  else if (battle && battle.event) startEvent(battle.eventIndex);
+  else if (battle && battle.expedition) startExpedition(battle.expIndex);
+  else startBattle(battle.stageIndex, battle.hard);
+}
+
+/* 5.8: 결과 문구를 줄마다 나눠 — 💡 조언 · ✪ 소식은 왼쪽 정렬 상자로 */
+function setResultLines(lines) {
+  const box = $('#result-desc');
+  box.textContent = '';
+  for (const line of lines) {
+    if (!line) continue;
+    const d = document.createElement('div');
+    d.className = /^💡/.test(line) ? 'rs-tip' : /^([✪★]|새 병종 해금)/.test(line) ? 'rs-news' : 'rs-line';
+    d.textContent = line;
+    box.appendChild(d);
+  }
 }
 
 function refreshAutoBtn() {
@@ -2035,7 +2089,7 @@ function showResult() {
                                 : '강화를 올리거나 편성을 바꿔 다시 도전하세요!');
   }
   appendTrialNews(lines);
-  $('#result-desc').textContent = lines.join('\n');
+  setResultLines(lines);
   // 하드코어의 다음 전장은 이미 돌파한 곳일 때만
   const hasNext = win && battle.stageIndex + 1 < STAGES.length && (!battle.hard || battle.stageIndex + 1 < save.cleared);
   $('#btn-next').style.display = hasNext ? '' : 'none';
@@ -2058,7 +2112,7 @@ function showEventResult() {
     lines.push('공략 · ' + ev.mech);
   }
   appendTrialNews(lines);
-  $('#result-desc').textContent = lines.join('\n');
+  setResultLines(lines);
   $('#btn-next').style.display = 'none';
   $('#btn-fix').style.display = 'none';
   $('#result').classList.add('show');
@@ -2076,7 +2130,7 @@ function showExpResult() {
   if (!win) defeatTips(save, battle.stage, { foePct: battle.enemyCastle.hp / battle.enemyCastle.maxHp * 100, time: battle.time, bossAlive: !!battle.aliveBoss() })
     .forEach(tip => lines.push('💡 ' + tip));
   appendTrialNews(lines);
-  $('#result-desc').textContent = lines.join('\n');
+  setResultLines(lines);
   $('#btn-next').style.display = 'none';
   $('#btn-fix').style.display = win ? 'none' : '';
   $('#btn-retry').textContent = win ? '한 번 더' : '다시 도전';
@@ -2094,7 +2148,7 @@ function showEndlessResult() {
              (battle.stoneGain ? '  ·  소환석 🔮 ' + battle.stoneGain : ''));
   lines.push('처치 ' + battle.kills);
   appendTrialNews(lines);
-  $('#result-desc').textContent = lines.join('\n');
+  setResultLines(lines);
   $('#btn-fix').style.display = 'none';
   $('#btn-next').style.display = 'none';
   $('#btn-retry').textContent = '다시 도전';
@@ -2642,8 +2696,15 @@ function init() {
     toast('재개');
     SFX.ui();
   };
-  $('#pause-label').addEventListener('click', resumeFromTap);
-  $('#pause-label').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); resumeFromTap(); } });
+  // 5.8: 멈춤 메뉴. 버튼 밖 판을 눌러도 다시 시작
+  $('#pause-label').addEventListener('click', e => { if (!e.target.closest('button')) resumeFromTap(); });
+  $('#btn-pause-resume').addEventListener('click', resumeFromTap);
+  $('#btn-pause-set').addEventListener('click', () => { SFX.ui(); openSettings(); });
+  $('#btn-pause-quit').addEventListener('click', () => $('#btn-quit').click());
+  $('#btn-pause-retry').addEventListener('click', () => {
+    if (!battle || battle.state !== 'play') return;
+    askConfirm('처음부터 다시', '이번 전투를 버리고 처음부터 다시 시작할까요?', () => { setPaused(false); retryBattle(); });
+  });
   window.resumeFromTap = resumeFromTap;
   $('#btn-all-act').addEventListener('click', castAllActives);
   $('#btn-command').addEventListener('click', () => {
@@ -2654,12 +2715,7 @@ function init() {
   initSettings();
   initFormation();
   initConquest();
-  $('#btn-retry').addEventListener('click', () => {
-    if (battle && battle.endless) startEndless();
-    else if (battle && battle.event) startEvent(battle.eventIndex);
-    else if (battle && battle.expedition) startExpedition(battle.expIndex);
-    else startBattle(battle.stageIndex, battle.hard);
-  });
+  $('#btn-retry').addEventListener('click', retryBattle);
   $('#btn-next').addEventListener('click', () => {
     $('#btn-retry').textContent = '다시 도전';
     startBattle(battle.stageIndex + 1, battle.hard);

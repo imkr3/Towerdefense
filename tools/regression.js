@@ -1098,9 +1098,9 @@ test('Paused battle resumes from the centre card or a tap on the field', () => {
   const css = fs.readFileSync(path.join(__dirname, '../css/style.css'), 'utf8');
   const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
   assert.ok(/#pause-label\{[^}]*pointer-events:auto/.test(css), 'pause card takes taps');
-  assert.ok(/\$\('#pause-label'\)\.addEventListener\('click', resumeFromTap\)/.test(main), 'card resumes');
+  assert.ok(/\$\('#pause-label'\)\.addEventListener\('click', e => \{ if \(!e\.target\.closest\('button'\)\) resumeFromTap\(\); \}\)/.test(main), 'card resumes');
   assert.ok(/moved <= 6 && paused/.test(main), 'a tap (not a drag) on the field resumes');
-  assert.ok(/id="pause-label" role="button"/.test(html));
+  assert.ok(/id="pause-label" hidden/.test(html) && /id="btn-pause-resume"/.test(html));
 });
 test('Menus stay light: icons cached and painted when visible, formation pool updated in place', () => {
   const render = fs.readFileSync(path.join(__dirname, '../js/render.js'), 'utf8');
@@ -2274,6 +2274,17 @@ test('5.7: the title keeps only useful buttons; reset lives in the save manager;
   assert.ok(/updateWakeLock\(\);\n}/.test(main) && /navigator\.wakeLock\.request\('screen'\)/.test(main), 'wake lock follows the battle screen');
   assert.ok(/keepScreenOn\(boolean on\)/.test(fs.readFileSync(path.join(__dirname, '../android/app/src/main/java/com/stickkingdom/war/MainActivity.java'), 'utf8')), 'the Android app keeps the screen on only when asked');
   assert.ok(/'keepAwake'\]\) \{/.test(fs.readFileSync(path.join(__dirname, '../js/settings.js'), 'utf8')), 'keepAwake is a saved switch');
+});
+
+test('5.8: pause opens a menu (resume · restart · settings · leave); result lines split into tips; foe faces stay on one row', () => {
+  const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8'), main = fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8');
+  const css = fs.readFileSync(path.join(__dirname, '../css/style.css'), 'utf8'), conq = fs.readFileSync(path.join(__dirname, '../js/conquest.js'), 'utf8');
+  for (const id of ['btn-pause-resume', 'btn-pause-retry', 'btn-pause-set', 'btn-pause-quit', 'pause-info']) assert.ok(html.includes('id="' + id + '"'), id);
+  assert.ok(/if \(paused\) renderPauseMenu\(\);/.test(main) && /btn-pause-retry'\)\.hidden = !!battle\.conquest/.test(main), 'menu fills itself; no restart in conquest');
+  assert.ok(/\$\('#btn-retry'\)\.addEventListener\('click', retryBattle\)/.test(main), 'result and pause share one restart');
+  assert.ok(!/result-desc'\)\.textContent = lines/.test(main + conq) && /class="result-desc" id="result-desc"/.test(html), 'result lines go through setResultLines');
+  assert.ok(/\.sd-foes\{flex-wrap:nowrap;overflow-x:auto/.test(css), 'foe faces scroll sideways');
+  assert.ok(/body:has\(#scr-battle\.active\) \.toast\{top:/.test(css), 'battle toasts sit under the minimap');
 });
 
 console.log(count + ' regression checks passed');

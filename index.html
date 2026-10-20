@@ -221,7 +221,18 @@
     <div id="castle-status"><span>왕국 <b id="ally-hp-txt">100%</b></span><div class="castle-track"><i id="ally-hp"></i></div><div class="castle-track enemy"><i id="enemy-hp"></i></div><span>적 요새 <b id="enemy-hp-txt">100%</b></span></div>
     <div class="wave-line"><span id="wave-preview"></span><time id="battle-clock">0:00</time></div>
   </div>
-  <div id="pause-label" role="button" tabindex="0" aria-label="전투 재개" hidden><span class="pl-icon">▶</span>일시정지 <small>화면을 누르면 다시 시작</small></div>
+  <!-- 5.8: 멈추면 작은 메뉴 — 계속 · 처음부터 · 설정 · 나가기. 판 바깥 전장을 눌러도 다시 시작한다 -->
+  <div id="pause-label" hidden>
+    <div class="pl-head"><span class="pl-icon">❚❚</span>일시정지</div>
+    <div class="pl-info" id="pause-info"></div>
+    <div class="pl-btns">
+      <button class="btn primary pl-go" id="btn-pause-resume">▶ 계속하기</button>
+      <button class="btn ghost" id="btn-pause-retry">↻ 처음부터</button>
+      <button class="btn ghost" id="btn-pause-set">⚙ 설정</button>
+      <button class="btn ghost" id="btn-pause-quit">✕ 나가기</button>
+    </div>
+    <small>전장을 눌러도 다시 시작합니다</small>
+  </div>
   <div class="hud-bottom">
     <button type="button" id="btn-all-act" hidden aria-label="준비된 필살 모두 발동">⚡ 필살 모두 <b id="all-act-n">2</b></button>
     <div class="wallet">
@@ -241,7 +252,7 @@
     <div class="result-card">
       <h2 id="result-title">승 리</h2>
       <div class="stars" id="result-stars"></div>
-      <p id="result-desc"></p>
+      <div class="result-desc" id="result-desc"></div>
       <div class="meter" id="result-meter" hidden></div>
       <div class="result-btns">
         <button class="btn" id="btn-retry">다시 도전</button>

@@ -512,7 +512,7 @@ function showConquestResult() {
     if (!info.done) lines.push('정벌 지도로 돌아가 보상을 고르세요');
   } else lines.push('성채가 무너졌습니다 · 원정이 끝났습니다');
   appendTrialNews(lines);
-  $('#result-desc').textContent = lines.join('\n');
+  setResultLines(lines);
   $('#btn-retry').style.display = 'none';
   $('#btn-next').style.display = 'none';
   $('#btn-fix').style.display = 'none';
