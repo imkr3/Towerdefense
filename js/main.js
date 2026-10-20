@@ -3,7 +3,7 @@
  * ======================================================================= */
 
 
-const APP_VERSION = '5.4.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
+const APP_VERSION = '5.5.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
 
 function defaultSave() {
   const lv = {};
