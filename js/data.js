@@ -3365,8 +3365,8 @@ const EVOLUTIONS2 = {
              set: { area: true, areaRadius: 30 }, ab: { dodge: 0.3, charge: { mul: 3.2, dist: 120, push: 70 } },
              castFx: 'sabercut', arrive: 'dragon' },
   skadi:   { look: { shape: 'wintergoddess', body: '#e8f0f8', tunic: '#3a6a9a', accent: '#bff0ff', grow: 1.0 }, name: '겨울 산의 여신', short: '겨울여신',
-             plus: '눈 덮인 산의 여신 · 서리 늑대 둘 · 얼음 화살이 꿰뚫고 18% 확률로 얼린다 (1초) · 사거리 +30',
-             add: { range: 30 }, ab: { pierce: true, stun: { chance: 0.18, dur: 1 } },
+             plus: '눈 덮인 산의 여신 · 서리 늑대 둘 · 얼음 화살이 꿰뚫고 둔화가 1.5배 길다 · 공격 15% 빠름 · 사거리 +30',
+             add: { range: 30 }, faster: 0.85, ab: { pierce: true }, mul: { slow: 1.5 },   // 처음의 얼림(18%)은 9막 진입 공략 편성을 오히려 약하게 했다 (5/10 → 2/10)
              shot: 'snowball', castFx: 'snowburst', arrive: 'snow' },
   centurion:{ look: { shape: 'aquilifer', body: '#d8a878', tunic: '#8e1a2a', accent: '#e8c65a', grow: 1.0 }, name: '독수리 군기 기수', short: '군기기수',
              plus: '사자 가죽 망토 · 금독수리 군기 · 곁의 아군 피해 -20% · 3초마다 주변 아군 공격력 +20% · 갑주 45%',

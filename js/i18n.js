@@ -1118,7 +1118,7 @@ const I18N_EN = {
   '칠진칠출 은룡': 'Silver Dragon of Changban', '은룡': 'Silver Dragon',
   '갑주를 두른 백마 · 용머리 은창 · 회피 30% · 달려온 첫 일격 3.2배 + 크게 밀쳐 냄 · 범위 +30': 'Armored white horse · dragon-head silver spear · dodge 30% · first strike after a charge 3.2x + big knockback · area +30',
   '겨울 산의 여신': 'Goddess of the Winter Peaks', '겨울여신': 'Winter Goddess',
-  '눈 덮인 산의 여신 · 서리 늑대 둘 · 얼음 화살이 꿰뚫고 18% 확률로 얼린다 (1초) · 사거리 +30': 'Goddess of the snowy peaks · two frost wolves · ice arrows pierce and freeze 18% of the time (1s) · range +30',
+  '눈 덮인 산의 여신 · 서리 늑대 둘 · 얼음 화살이 꿰뚫고 둔화가 1.5배 길다 · 공격 15% 빠름 · 사거리 +30': 'Goddess of the snowy peaks · two frost wolves · ice arrows pierce and slow 1.5x longer · attacks 15% faster · range +30',
   '로마 제국': 'Roman Empire',
   '월계관을 쓴 독재관과 사슬을 끊은 검투사, 붉은 방패의 군단이 왕국의 부름에 응합니다.': 'The laurel-crowned dictator, the gladiator who broke his chains and the red-shielded legion answer the realm\'s call.',
   '기사 계열': 'Knight line',
