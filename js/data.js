@@ -314,9 +314,9 @@ const UNITS = [
     ab:{burn:{dps:55,dur:3}},abText:'짧은 불길 · 범위 · 화상 55/초 3초 · 빠른 연속 분사',
     desc:'등에 기름통을 지고 놋쇠 관으로 불길을 내뿜습니다. 멀리는 못 닿지만 몰려든 적을 통째로 태웁니다.'}),
   mk({id:'hwacha',name:'화차',role:'신기전 수레',shape:'hwacha',
-    body:'#2b3038',accent:'#ff6a3a',tunic:'#7a5a34',hp:800,atk:68,range:400,speed:20,interval:2.4,
-    cost:340,kb:2,ranged:true,area:true,areaRadius:45,unlockStage:78,
-    ab:{salvo:{every:2,n:5,mul:.45,radius:50}},abText:'불화살 범위 · 두 번째 발사마다 신기전 다섯 발이 적에게 꽂힌다 (보스 · 단단한 적 먼저)',
+    body:'#2b3038',accent:'#ff6a3a',tunic:'#7a5a34',hp:800,atk:74,range:400,speed:20,interval:2.4,
+    cost:300,kb:2,ranged:true,area:true,areaRadius:45,unlockStage:78,
+    ab:{salvo:{every:2,n:5,mul:.5,radius:50}},abText:'불화살 범위 · 두 번째 발사마다 신기전 다섯 발이 적에게 꽂힌다 (보스 · 단단한 적 먼저)',
     desc:'수십 개의 구멍에 신기전을 꽂은 수레입니다. 심지에 불을 붙이면 불화살이 비처럼 쏟아집니다.'}),
   // 소환 전용
   mk({
@@ -3136,7 +3136,7 @@ const EVOLUTIONS = {
   // 5.5 기본 병종 · 로마 제국
   halberdier:  { name: '미늘창 대장', short: '미늘대장', plus: '범위 +20 · 밀쳐 냄 강화 · 파쇄 1.5배', add: { areaRadius: 20 }, ab: { breaker: 1.5, push: 40 }, cost: { speed: 0.9 } },
   flamer:      { name: '용의 숨결', short: '용숨결', plus: '화상 +40% · 범위 +20', add: { areaRadius: 20 }, mul: { 'burn.dps': 1.4 }, cost: { hp: 0.9 } },
-  hwacha:      { name: '대신기전 화차', short: '대신기전', plus: '신기전 일곱 발 · 사거리 +40', add: { range: 40 }, ab: { salvo: { every: 2, n: 7, mul: 0.45, radius: 55 } }, cost: { interval: 1.1 } },
+  hwacha:      { name: '대신기전 화차', short: '대신기전', plus: '신기전 일곱 발 · 사거리 +40', add: { range: 40 }, ab: { salvo: { every: 2, n: 7, mul: 0.5, radius: 55 } }, cost: { interval: 1.1 } },
   caesar:  { name: '제국의 황제', short: '황제', plus: '지휘 +40% · 갑주 30% · 왔노라 강화', ab: { rally: { atk: 0.4, radius: 320 }, armor: 0.3 }, active: { mul: 3.0, stun: 1.2 }, cost: { 'ab.interval': 1.1 } },
   spartacus:{ name: '자유의 투사', short: '자유투사', plus: '광분 1.9배 · 흡혈 18% · 해방의 함성 강화', ab: { enrage: 1.9, lifesteal: 0.18 }, active: { mul: 2.8, stun: 1.4 }, cost: { hp: 0.9 } },
   centurion:{ name: '제1 백인대장', short: '수석백인', plus: '곁의 아군 피해 -18% · 갑주 40%', ab: { vanguard: { r: 170, cut: 0.18 }, armor: 0.4 }, cost: { atk: 0.85 } },

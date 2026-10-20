@@ -12,3 +12,5 @@
 - 버전: package.json · android/app/build.gradle(versionCode) · .github/workflows/android.yml · sw.js 캐시 · js/main.js APP_VERSION.
 - README 맨 위 변경 기록 + .github/release-notes.md.
 - 검사: `npm run lint` · `node tools/check-assets.js` · `node tools/check-music.js` · `node tools/regression.js` · `node tools/save-regression.js` · `CHROMIUM_PATH=/opt/pw-browsers/chromium node tools/smoke.js` · `node tools/sim.js --check`.
+- 버전을 올리기 전에 그 태그의 릴리스가 이미 있는지 본다 (`gh api repos/imkr3/Towerdefense/releases/tags/v<버전>`). 다른 세션 · 브랜치가 같은 번호를 먼저 쓸 수 있고, 릴리스는 다시 덮어쓸 수 없다 (5.5.0 이 그랬다 → 5.6.0).
+- 이 브랜치는 저장소의 기본 브랜치라, 버전이 바뀐 커밋을 올리면 CI(`npm test` 통과 시)가 그 버전으로 릴리스를 만든다. 작업 중 커밋에는 버전을 올리지 않는다.
