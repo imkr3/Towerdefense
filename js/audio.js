@@ -408,6 +408,7 @@ const BGM = {
     if (this.name === name && (this.src || this.waiters[name])) return;
     this.name = name;
     this.onEnd = onEnd || null;
+    if (this.vol <= 0 && this.out) this.fadeOut(0.2);      // 5.12 소리를 꺼 둔 채 곡이 바뀌면 앞 곡을 멈춘다 (켜면 앞 곡이 다시 들렸다)
     if (!this.ensure() || this.vol <= 0) return;           // 오디오가 열리거나 소리를 켜면 그때
     this.want(name, true).then(buf => { if (this.name === name) this.startBuffer(buf, name); }).catch(() => {});
   },

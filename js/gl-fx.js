@@ -180,6 +180,13 @@ class GLFx {
     // 합성식이 포화형이어서 1 을 넘겨도 흰 덩어리로 터지지는 않는다.
     this.gain = 1.15;
     this.ok = this._init();
+    // 5.12 안드로이드가 뒤로 보낸 사이 GL 을 빼앗아 가면 ok 가 그대로라 연출이 통째로 사라졌다.
+    // 잃는 동안은 renderer 가 Canvas2D 연출로 되돌아가고, 돌려받으면 다시 만든다.
+    canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); this.ok = false; this.clear(); });
+    canvas.addEventListener('webglcontextrestored', () => {
+      this.ok = this._init();
+      if (this.ok && this.onRestore) this.onRestore();
+    });
   }
 
   _init() {

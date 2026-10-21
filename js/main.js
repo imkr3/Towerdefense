@@ -2143,7 +2143,7 @@ function showExpResult() {
   const lines = [];
   lines.push('획득 골드 💰 ' + fmtNum(battle.coins) + (win ? '' : '  (실패 · 절반만)'));
   const carts = (battle.caught || 0) + (battle.fled || 0);
-  if (carts) lines.push('황금 수레 ' + (battle.caught || 0) + ' / ' + carts + ' 대 잡음' + (battle.fled ? ' · ' + battle.fled + '대 놓침' : ''));
+  if (carts) lines.push('황금 수레 ' + (battle.caught || 0) + ' / ' + carts + ' 대 잡음' + (battle.fled ? ' · ' + battle.fled + ' 대 놓침' : ''));
   lines.push('처치 ' + battle.kills + '  ·  남은 성채 ' + Math.round(battle.allyCastle.hp / battle.allyCastle.maxHp * 100) + '%');
   if (!win) defeatTips(save, battle.stage, { foePct: battle.enemyCastle.hp / battle.enemyCastle.maxHp * 100, time: battle.time, bossAlive: !!battle.aliveBoss() })
     .forEach(tip => lines.push('💡 ' + tip));
@@ -2575,9 +2575,12 @@ function drawTitle(dt) {
   ctx.globalAlpha = 1;
 
   // 아래쪽 어둡게
-  const vg = ctx.createLinearGradient(0, h * 0.55, 0, h);
-  vg.addColorStop(0, 'rgba(20,16,22,0)');
-  vg.addColorStop(1, 'rgba(20,16,22,.55)');
+  let vg = L.vg;                                   // 5.12 높이에만 달렸으니 층과 함께 한 번만 만든다
+  if (!vg) {
+    vg = L.vg = ctx.createLinearGradient(0, h * 0.55, 0, h);
+    vg.addColorStop(0, 'rgba(20,16,22,0)');
+    vg.addColorStop(1, 'rgba(20,16,22,.55)');
+  }
   ctx.fillStyle = vg;
   ctx.fillRect(0, h * 0.55, w, h * 0.45);
 }
@@ -2602,6 +2605,7 @@ function init() {
     if (glfx.ok) {
       renderer.glfx = glfx;
       renderer.syncGlSize();          // 창 크기가 바뀌면 renderer.resize() 가 같이 맞춘다
+      glfx.onRestore = () => renderer.syncGlSize();   // 5.12 GL 을 잃었다 돌려받으면 크기를 다시 맞춘다
       // Canvas2D 때문에 4개로 묶어 두었던 제한을 넓힌다. 다만 무한정은 아니다 —
       // 가산 합성이라 너무 많이 겹치면 화면이 빛으로 덮여 전장이 안 보인다.
       if (typeof setCastLimits === 'function') setCastLimits(8, 3);

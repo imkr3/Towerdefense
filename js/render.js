@@ -1979,10 +1979,10 @@ class Renderer {
         const k = 1 - p, ease = 1 - Math.pow(1 - Math.min(1, k / 0.6), 3);
         const rise = ease * 34 * cs + (e.dy || 0);
         let pop = k < 0.12 ? 1 + (k / 0.12) * 0.45 : 1.45 - Math.min(0.45, (k - 0.12) * 3);
-        if (e.bump > 0) { pop += e.bump * 2.5; e.bump = Math.max(0, e.bump - 0.016); }   // 4.13 합쳐질 때 한 번 더 튄다
+        if (e.bump > 0) pop += e.bump * 2.5;        // 4.13 합쳐질 때 한 번 더 튄다 (5.12 줄어드는 것은 전투 시간으로 — Battle.updateFx)
         const jx = e.crit && k < 0.3 ? Math.sin(k * 90) * 2 * cs : 0;
         ctx.globalAlpha = Math.min(1, p * 2.5);
-        ctx.font = 'bold ' + Math.round((e.crit ? 18 : 13) * cs * pop) + 'px sans-serif';
+        ctx.font = dmgFont(Math.round((e.crit ? 18 : 13) * cs * pop));
         ctx.textAlign = 'center';
         ctx.lineWidth = (e.crit ? 4 : 3) * cs;
         ctx.strokeStyle = e.crit ? 'rgba(90,30,0,.85)' : 'rgba(0,0,0,.65)';
@@ -3237,8 +3237,9 @@ class Renderer {
         if (land) this.glOnce(e, 'plasmablast', x, gy, col, 90 * sc, sc);
         ctx.globalCompositeOperation = 'lighter';
         const hy = gy - (1 - q) * 220 * sc - 30 * sc;
-        if (!land) { ctx.globalAlpha = 0.85; for (const dx of [-26, 0, 24]) { const g = ctx.createLinearGradient(0, hy, 0, hy + 70 * sc);
+        if (!land) { ctx.globalAlpha = 0.85; const g = ctx.createLinearGradient(0, hy, 0, hy + 70 * sc);   // 5.12 셋이 같은 그라디언트
           g.addColorStop(0, 'rgba(220,250,255,.9)'); g.addColorStop(1, 'rgba(90,200,255,0)'); ctx.fillStyle = g;
+          for (const dx of [-26, 0, 24]) {
           ctx.beginPath(); ctx.moveTo(x + (dx - 5) * sc, hy); ctx.lineTo(x + (dx + 5) * sc, hy); ctx.lineTo(x + dx * sc, hy + (50 + Math.sin(k * 60) * 10) * sc); ctx.closePath(); ctx.fill(); }
           ctx.globalAlpha = 0.3; ctx.fillStyle = col; ctx.fillRect(x - 40 * sc, hy - 30 * sc, 80 * sc, 30 * sc); }
         else { const r = (k - 0.45) / 0.55;
@@ -12168,8 +12169,10 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
 
   if (st.evo) evoCrest(S);                        // 진화: 머리 위 금빛 문장
 
-  if (wrapped) { delete ctx.fill; delete ctx.stroke; ctx._depth = false; ctx._noInk = false; }
-  if (depthOn) { delete ctx.fillRect; delete ctx.strokeRect; delete ctx.fillText; }
+  // 5.12 delete 대신 원래 함수를 다시 얹는다 — 병사마다 속성을 지웠다 붙였다 하면 V8 이 ctx 를 느린(사전) 모양으로 바꿔
+  // 그 뒤의 ctx.* 호출이 모두 느려진다
+  if (wrapped) { ctx.fill = _fill0; ctx.stroke = _stroke0; ctx._depth = false; ctx._noInk = false; }
+  if (depthOn) { ctx.fillRect = _fillRect0; ctx.strokeRect = _strokeRect0; ctx.fillText = _fillText0; }
 
   if (hurt) {
     ctx.strokeStyle = 'rgba(255,255,255,.8)';
@@ -12288,6 +12291,9 @@ function sub(S, k, lw) {
  * - 팔다리는 굵기가 줄어들고(허벅지 > 정강이), 손과 장화가 있다 */
 const INK = 'rgba(12,16,24,.82)';
 /* 불투명한 면을 칠하면 잉크 테두리도 긋는다. 반투명 빛·그늘, 'lighter' 합성, 작은 장식은 건너뛴다. */
+/* 5.12 피해 숫자 글꼴 문자열을 크기마다 한 번만 만든다 (매 프레임 숫자마다 새로 이어 붙였다) */
+const DMG_FONTS = [];
+function dmgFont(px) { return DMG_FONTS[px] || (DMG_FONTS[px] = 'bold ' + px + 'px sans-serif'); }
 const _fill0 = CanvasRenderingContext2D.prototype.fill;
 const _stroke0 = CanvasRenderingContext2D.prototype.stroke;
 /* 굵고 불투명한 선(팔다리·무기 자루·바퀴)은 잉크를 한 겹 밑에 깐다 */

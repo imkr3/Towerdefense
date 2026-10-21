@@ -2847,6 +2847,7 @@ class Battle {
       const e = fx[i];
       e.t -= dt;
       if (e.t <= 0) continue;
+      if (e.bump > 0) e.bump = Math.max(0, e.bump - dt);   // 피해 숫자가 합쳐질 때 튄 것이 가라앉는다
       fx[w++] = e;
     }
     fx.length = w;
