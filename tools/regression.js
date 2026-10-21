@@ -1150,7 +1150,7 @@ test('Round Table season units and sky foes are drawn and translated', () => {
   const i18n = fs.readFileSync(path.join(__dirname, '../js/i18n.js'), 'utf8');
   const { SEASONS } = vm.runInContext('({SEASONS})', ctx);
   const sn = SEASONS.find(x => x.id === 'camelot');
-  assert.equal(sn.units.slice().sort().join(','), 'arthur,camelotguard,galahad,lancelot,merlin,morgana,tristan');
+  assert.ok('arthur,camelotguard,galahad,lancelot,merlin,morgana,tristan'.split(',').every(id => sn.units.includes(id)), 'season keeps its first units');
   for (const id of sn.units) {
     assert.ok(render.indexOf("case '" + U[id].shape + "'") >= 0, id);
     assert.ok(i18n.indexOf("'" + U[id].name + "'") >= 0, id + ' name');
@@ -1533,8 +1533,8 @@ test('4.9: Sengoku season and the three new basic units are drawn, translated an
   const i18n = fs.readFileSync(path.join(__dirname, '../js/i18n.js'), 'utf8');
   const { SEASONS, EVOLUTIONS, UNIT_COOLDOWN } = vm.runInContext('({SEASONS, EVOLUTIONS, UNIT_COOLDOWN})', ctx);
   const sn = SEASONS.find(x => x.id === 'sengoku');
-  assert.equal(sn.units.slice().sort().join(','), 'ashigaru,kyudo,miko,ninja,samurai,susanoo,tengu');
-  const rar = {}; for (const id of sn.units) rar[U[id].rarity] = (rar[U[id].rarity] || 0) + 1;
+  assert.ok('ashigaru,kyudo,miko,ninja,samurai,susanoo,tengu'.split(',').every(id => sn.units.includes(id)), 'season keeps its first units');
+  const rar = {}; for (const id of sn.units.slice(0, 7)) rar[U[id].rarity] = (rar[U[id].rarity] || 0) + 1;
   assert.deepEqual(rar, { UR: 1, SSR: 1, SR: 2, R: 2, N: 1 });
   for (const id of sn.units.concat(['maceman', 'axethrower', 'siegebow'])) {
     assert.ok(render.indexOf("case '" + U[id].shape + "'") >= 0, id + ' drawn');
@@ -1688,8 +1688,8 @@ test('4.15: Three Kingdoms season — seven drawn, translated, evolvable units; 
   const i18n = fs.readFileSync(path.join(__dirname, '../js/i18n.js'), 'utf8');
   const { SEASONS, EVOLUTIONS, EVOLUTIONS2, EVO2_TRIALS, UNIT_COOLDOWN } = vm.runInContext('({SEASONS, EVOLUTIONS, EVOLUTIONS2, EVO2_TRIALS, UNIT_COOLDOWN})', ctx);
   const sn = SEASONS.find(x => x.id === 'threekingdoms');
-  assert.equal(sn.units.slice().sort().join(','), 'guanyu,huangzhong,jiqiang,tengjia,zhangfei,zhaoyun,zhugeliang');
-  const rar = {}; for (const id of sn.units) rar[U[id].rarity] = (rar[U[id].rarity] || 0) + 1;
+  assert.ok('guanyu,huangzhong,jiqiang,tengjia,zhangfei,zhaoyun,zhugeliang'.split(',').every(id => sn.units.includes(id)), 'season keeps its first units');
+  const rar = {}; for (const id of sn.units.slice(0, 7)) rar[U[id].rarity] = (rar[U[id].rarity] || 0) + 1;
   assert.deepEqual(rar, { UR: 1, SSR: 1, SR: 2, R: 2, N: 1 });
   const cds = Object.values(UNIT_COOLDOWN); assert.equal(new Set(cds).size, cds.length, 'cooldowns stay unique');
   for (const id of sn.units) {
@@ -2113,8 +2113,8 @@ test('5.2: the genie grants wishes in turn (heal → barrier → haste) and Thre
 test('5.2: a new season of seven, each drawn and translated; unique cooldowns', () => {
   const { SEASONS, UNIT_COOLDOWN } = vm.runInContext('({SEASONS, UNIT_COOLDOWN})', ctx);
   const sn = SEASONS.find(x => x.id === 'arabian');
-  assert.equal(sn.units.slice().sort().join(','), 'bandit,camelarcher,carpet,genie,scheherazade,scimitar,sinbad');
-  assert.deepEqual(sn.units.map(id => U[id].rarity).join(), 'UR,SSR,SR,SR,R,R,N');
+  assert.ok('bandit,camelarcher,carpet,genie,scheherazade,scimitar,sinbad'.split(',').every(id => sn.units.includes(id)), 'season keeps its first units');
+  assert.deepEqual(sn.units.slice(0, 7).map(id => U[id].rarity).join(), 'UR,SSR,SR,SR,R,R,N');
   const render = fs.readFileSync(path.join(__dirname, '../js/render.js'), 'utf8'), i18n = fs.readFileSync(path.join(__dirname, '../js/i18n.js'), 'utf8');
   for (const id of sn.units) {
     const u = U[id];
@@ -2299,6 +2299,29 @@ test('5.9: back button — conquest goes to the map, battle opens the pause menu
   assert.ok(/if \(f\.kbTimer <= 0\) f\.flyT = 0;/.test(game), 'leftover flight time is cleared when knockback ends');
   assert.ok(/if \(isAlly && filled > 0\)/.test(game), 'enemy genie heals do not land in the ally meter');
   assert.ok(/cache: 'reload'/.test(sw), 'service worker fetches fresh files on update');
+});
+
+test('5.9: every season gains three (legend · hero · rare/common, no mythic) — drawn, translated, evolvable, unique cooldowns', () => {
+  const render = fs.readFileSync(path.join(__dirname, '../js/render.js'), 'utf8'), i18n = fs.readFileSync(path.join(__dirname, '../js/i18n.js'), 'utf8');
+  const { SEASONS, EVOLUTIONS, UNIT_COOLDOWN } = vm.runInContext('({SEASONS, EVOLUTIONS, UNIT_COOLDOWN})', ctx);
+  const added = { olympus: 'poseidon,athena,centaur', ragnarok: 'freya,jotunn,shieldmaiden', nile: 'horus,sobek,khopesh', yokai: 'bari,jangseung,yhunter',
+    clockwork: 'gearcolossus,arcgunner,grenadier', journey: 'erlang,redboy,spiderdemon', camelot: 'gawain,percival,squire', sengoku: 'tomoe,oni,sohei',
+    threekingdoms: 'lubu,diaochan,crossbow', arabian: 'aladdin,snakecharmer,dervish', rome: 'scipio,scorpio,velites' };
+  const seen = new Set();
+  for (const sn of SEASONS) {
+    const ids = added[sn.id].split(',');
+    assert.equal(sn.units.slice(-3).join(), ids.join(), sn.id + ' gets three more');
+    assert.equal(ids.map(id => U[id].rarity === 'SSR' ? 'L' : U[id].rarity === 'SR' ? 'H' : 'C').join(''), 'LHC', sn.id + ' legend · hero · rare/common');
+    for (const id of ids) {
+      const u = U[id];
+      assert.equal(u.season, sn.id); assert.ok(u.gacha && u.rarity !== 'UR', id);
+      assert.ok(render.indexOf("case '" + u.shape + "'") >= 0, id + ' drawn');
+      assert.ok(i18n.indexOf("'" + u.name + "'") >= 0, id + ' translated');
+      assert.ok(EVOLUTIONS[id], id + ' evolves'); assert.ok(UNIT_COOLDOWN[id] > 0, id + ' cooldown');
+      if (u.rarity === 'SSR') assert.ok(u.active && u.active.name && u.active.cd > 0, id + ' has an ultimate');
+    }
+  }
+  for (const u of UNITS) if (u.cost > 0) { const v = UNIT_COOLDOWN[u.id]; assert.ok(!seen.has(v), 'unique cooldown ' + u.id); seen.add(v); }
 });
 
 console.log(count + ' regression checks passed');

@@ -1265,7 +1265,7 @@ class Renderer {
         for (let i = 0; i < 7; i++) { const a = i / 7 * Math.PI * 2, r = (7.5 + (i % 2) * 2) * cs; ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
         ctx.closePath(); ctx.fill(); ctx.strokeStyle = s.color; ctx.lineWidth = 2 * cs; ctx.stroke();
       }
-      else if (shape === 'javelin') {          // 투창: 긴 나무 자루와 넓은 창끝
+      else if (shape === 'javelin' || shape === 'velites') {          // 투창: 긴 나무 자루와 넓은 창끝
         ctx.strokeStyle = 'rgba(12,16,24,.8)'; ctx.lineWidth = 4.2 * cs;
         ctx.beginPath(); ctx.moveTo(-20 * cs, 0); ctx.lineTo(12 * cs, 0); ctx.stroke();
         ctx.strokeStyle = '#8a6a44'; ctx.lineWidth = 2.4 * cs;
@@ -1284,7 +1284,7 @@ class Renderer {
         ctx.rotate(p * 18);
         ctx.strokeStyle = '#5a3a24'; ctx.lineWidth = 2.4 * cs; ctx.beginPath(); ctx.moveTo(-7 * cs, 0); ctx.lineTo(6 * cs, 0); ctx.stroke();
         ctx.fillStyle = '#c8ccd4'; ctx.beginPath(); ctx.moveTo(4 * cs, -1.5 * cs); ctx.lineTo(10 * cs, -6 * cs); ctx.quadraticCurveTo(12 * cs, 0, 10 * cs, 5 * cs); ctx.lineTo(4 * cs, 1.5 * cs); ctx.closePath(); ctx.fill();
-      } else if (shape === 'siegebow') {   // 4.9 발리스타: 창만 한 화살
+      } else if (shape === 'siegebow' || shape === 'scorpio') {   // 4.9 발리스타: 창만 한 화살
         ctx.strokeStyle = 'rgba(12,16,24,.8)'; ctx.lineWidth = 5 * cs; ctx.beginPath(); ctx.moveTo(-26 * cs, 0); ctx.lineTo(14 * cs, 0); ctx.stroke();
         ctx.strokeStyle = '#8a6a44'; ctx.lineWidth = 3 * cs; ctx.beginPath(); ctx.moveTo(-26 * cs, 0); ctx.lineTo(14 * cs, 0); ctx.stroke();
         ctx.fillStyle = '#d8dce4'; ctx.beginPath(); ctx.moveTo(24 * cs, 0); ctx.lineTo(12 * cs, -5 * cs); ctx.lineTo(12 * cs, 5 * cs); ctx.closePath(); ctx.fill();
@@ -1306,7 +1306,7 @@ class Renderer {
         ctx.strokeStyle = '#8a6a44'; ctx.lineWidth = 2.4 * cs; ctx.beginPath(); ctx.moveTo(-22 * cs, 0); ctx.lineTo(2 * cs, 0); ctx.stroke();
         ctx.strokeStyle = '#a8aeb8'; ctx.lineWidth = 1.4 * cs; ctx.beginPath(); ctx.moveTo(2 * cs, 0); ctx.lineTo(18 * cs, 0); ctx.stroke();
         ctx.fillStyle = '#e4e8ee'; ctx.beginPath(); ctx.moveTo(23 * cs, 0); ctx.lineTo(17 * cs, -2.6 * cs); ctx.lineTo(17 * cs, 2.6 * cs); ctx.closePath(); ctx.fill();
-      } else if (shape === 'flamer' || shape === 'vestal') {   // 5.5 화염병의 불덩이 · 베스타 무녀의 불씨
+      } else if (shape === 'flamer' || shape === 'vestal' || shape === 'redboy') {   // 5.5 화염병의 불덩이 · 베스타 무녀의 불씨
         ctx.save(); ctx.globalCompositeOperation = 'lighter';
         const big = shape === 'flamer' ? 1.3 : 0.8;
         ctx.fillStyle = 'rgba(255,120,30,.55)'; ctx.beginPath(); ctx.ellipse(-4 * cs, 0, 11 * cs * big, 5 * cs * big, 0, 0, 7); ctx.fill();
@@ -1336,6 +1336,14 @@ class Renderer {
         ctx.rotate(Math.sin(p * 20) * 0.5);
         ctx.fillStyle = '#fbf6e8'; ctx.fillRect(-5 * cs, -3 * cs, 10 * cs, 6 * cs);
         ctx.fillStyle = '#e8505a'; ctx.fillRect(-3 * cs, -1.6 * cs, 6 * cs, 0.9 * cs); ctx.fillRect(-0.5 * cs, -2.6 * cs, 0.9 * cs, 5.2 * cs);
+      } else if (shape === 'spiderdemon' || shape === 'snakecharmer' || shape === 'diaochan') {   // 5.9 거미줄 뭉치 · 독 방울 · 꽃잎
+        const c = shape === 'spiderdemon' ? '#f0f0f0' : shape === 'snakecharmer' ? '#6ae05a' : '#f8b0c8';
+        ctx.rotate(p * 10); ctx.fillStyle = c; ctx.strokeStyle = c; ctx.lineWidth = 1 * cs;
+        if (shape === 'spiderdemon') {
+          ctx.beginPath(); for (let i = 0; i < 4; i++) { const a = i * Math.PI / 4; ctx.moveTo(Math.cos(a) * 6 * cs, Math.sin(a) * 6 * cs); ctx.lineTo(-Math.cos(a) * 6 * cs, -Math.sin(a) * 6 * cs); }
+          ctx.stroke(); ctx.beginPath(); ctx.arc(0, 0, 3.4 * cs, 0, 7); ctx.stroke();
+        } else if (shape === 'snakecharmer') { ctx.beginPath(); ctx.ellipse(0, 0, 5 * cs, 3.4 * cs, 0, 0, 7); ctx.fill(); }
+        else for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.ellipse(Math.cos(i * 2.1) * 4 * cs, Math.sin(i * 2.1) * 4 * cs, 3 * cs, 1.8 * cs, i * 2.1, 0, 7); ctx.fill(); }
       } else if (shape === 'alchemist') { // 연금 플라스크: 빙글빙글 돌며 난다
         ctx.rotate(p * 12);
         ctx.fillStyle = '#d8e8e0'; ctx.fillRect(-1.5 * cs, -9 * cs, 3 * cs, 5 * cs);
@@ -8259,6 +8267,468 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
       }, 4 * s);
       break;
     }
+    /* ---------------------- 5.9 기존 시즌에 셋씩 ---------------------- */
+    case 'poseidon': {                                         // 포세이돈: 금 왕관 · 흰 머리와 수염 · 비늘 허리치마 · 파도빛 망토 · 삼지창
+      const t = MODEL.time;
+      cape(S, -1, F3(tun), 1.25);
+      legs(S); torso(S, 6 * s);
+      ctx.fillStyle = F3(acc); ctx.beginPath(); ctx.moveTo(-8 * s, -26 * s); ctx.lineTo(8 * s, -26 * s); ctx.lineTo(9 * s, -13 * s); ctx.lineTo(-9 * s, -13 * s); ctx.closePath(); ctx.fill();
+      if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.strokeStyle = x3Hex(st.accent, -0.3); ctx.lineWidth = 0.9 * s; ctx.beginPath();
+        for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++) { const x = (-6 + c * 4 + (r % 2) * 2) * s, y = (-23 + r * 3.6) * s; ctx.moveTo(x - 2 * s, y); ctx.quadraticCurveTo(x, y + 2.4 * s, x + 2 * s, y); }
+        ctx.stroke(); ctx.restore(); ctx._skipInk = false; }
+      head(S, 'bald');
+      ctx.fillStyle = F3('#f0f4f8'); ctx.beginPath(); ctx.arc(-1 * s, -54 * s, 8.8 * s, Math.PI * 0.85, Math.PI * 1.9); ctx.lineTo(-10 * s, -44 * s); ctx.closePath(); ctx.fill();   // 흰 머리
+      ctx.beginPath(); ctx.moveTo(-2 * s, -49 * s); ctx.quadraticCurveTo(4 * s, -34 * s, 10 * s, -46 * s); ctx.lineTo(8 * s, -50 * s); ctx.closePath(); ctx.fill();                 // 흰 수염
+      for (let i = 0; i < 5; i++) tri(S, (-8 + i * 4) * s, -60 * s, (-6 + i * 4) * s, (-67 - (i % 2) * 3) * s, (-4 + i * 4) * s, -60 * s, F3('#e8c65a'));                     // 왕관
+      armWeapon(S, -0.3 + atk * 0.35, () => {                                                                                        // 삼지창
+        line(S, -20 * s, 0, 52 * s, 0, 2.6 * s, F3('#c8963a'));
+        ctx.fillStyle = F3('#e8c65a'); ctx.fillRect(50 * s, -7 * s, 2.4 * s, 14 * s);
+        for (const dy of [-6, 0, 6]) tri(S, 51 * s, (dy - 1.4) * s, 64 * s + (dy ? -3 : 0) * s, dy * s, 51 * s, (dy + 1.4) * s, F3('#e8f4ff'));
+        if (!S.flash && S.live) x3Glow(S, 58 * s, 0, 8 * s, '#7ae0ff', 0.15 + 0.08 * Math.sin(t * 4));
+      }, 4 * s);
+      break;
+    }
+    case 'athena': {                                           // 아테나: 푸른 깃 코린트 투구 · 흰 키톤 · 금 흉갑 · 메두사 문양 둥근 방패 · 긴 창
+      robe(S, 14 * s, -30 * s, F3(tun));
+      torso(S, 4.6 * s);
+      ctx.fillStyle = F3('#d8b860'); ctx.beginPath(); roundRectPath(ctx, -7 * s, -42 * s, 14 * s, 15 * s, 2 * s); ctx.fill();
+      head(S, 'corinth');
+      ctx.fillStyle = F3('#4a7ab0'); ctx.beginPath(); ctx.moveTo(-8 * s, -62 * s); ctx.quadraticCurveTo(0, -72 * s, 9 * s, -63 * s); ctx.lineTo(6 * s, -61 * s); ctx.quadraticCurveTo(0, -66 * s, -6 * s, -60 * s); ctx.closePath(); ctx.fill();
+      armWeapon(S, -0.25 + atk * 0.3, () => { line(S, -18 * s, 0, 46 * s, 0, 2.2 * s, F3('#8a6a44')); tri(S, 46 * s, -3 * s, 56 * s, 0, 46 * s, 3 * s, F3('#e8ecf2')); }, 4 * s);
+      ctx.fillStyle = F3(acc); ctx.beginPath(); ctx.arc(9 * s, -31 * s, 10 * s, 0, 7); ctx.fill();                                // 아이기스
+      if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.strokeStyle = '#8a6a2a'; ctx.lineWidth = 1.2 * s; ctx.beginPath(); ctx.arc(9 * s, -31 * s, 8 * s, 0, 7); ctx.stroke();
+        ctx.fillStyle = '#5a7a5a'; ctx.beginPath(); ctx.arc(9 * s, -31 * s, 3.2 * s, 0, 7); ctx.fill(); ctx.strokeStyle = '#5a7a5a'; ctx.lineWidth = 1 * s; ctx.beginPath();
+        for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; ctx.moveTo(9 * s + Math.cos(a) * 3 * s, -31 * s + Math.sin(a) * 3 * s); ctx.quadraticCurveTo(9 * s + Math.cos(a + 0.5) * 5 * s, -31 * s + Math.sin(a + 0.5) * 5 * s, 9 * s + Math.cos(a) * 6.5 * s, -31 * s + Math.sin(a) * 6.5 * s); }
+        ctx.stroke(); ctx.restore(); ctx._skipInk = false; }
+      break;
+    }
+    case 'centaur': {                                          // 켄타우로스: 밤색 말의 몸 · 사람 윗몸 · 월계관 · 짧은 활
+      const gait = S.moving ? phase * 1.4 : 0, hide = F3('#8a5a34'), hideD = F3('#6a4226');
+      for (let i = 0; i < 4; i++) { const x = [-16, -11, 6, 11][i] * s, far = i % 2 === 1, sw = Math.sin(gait + i * 1.6) * (S.moving ? 7 : 1) * s;
+        ctx.strokeStyle = far ? hideD : hide; ctx.lineWidth = 3.4 * s; ctx.beginPath(); ctx.moveTo(x, -24 * s); ctx.lineTo(x + sw * 0.5, -12 * s); ctx.lineTo(x + sw, -1.5 * s); ctx.stroke(); }
+      ctx.strokeStyle = F3('#3a2a1e'); ctx.lineWidth = 2.4 * s; ctx.beginPath(); ctx.moveTo(-20 * s, -30 * s); ctx.quadraticCurveTo(-28 * s, -26 * s + Math.sin(MODEL.time * 3) * 2 * s, -25 * s, -14 * s); ctx.stroke();
+      ctx.fillStyle = hide; ctx.beginPath(); ctx.ellipse(-3 * s, -28 * s, 18 * s, 8 * s, 0, 0, 7); ctx.fill();
+      ctx.save(); ctx.translate(10 * s, -12 * s);                                                                                   // 사람 윗몸
+      torso(S, 4.6 * s);
+      ctx.fillStyle = F3(tun); ctx.beginPath(); ctx.moveTo(-6 * s, -42 * s); ctx.lineTo(6 * s, -38 * s); ctx.lineTo(-6 * s, -30 * s); ctx.closePath(); ctx.fill();
+      head(S, 'laurel');
+      bow(S, 20 * s, -36 * s, 22 * s, F3('#6a3a1a'));
+      arm(S, 20 * s, -36 * s);
+      ctx.restore();
+      break;
+    }
+    case 'freya': {                                            // 프레이야: 매 깃 망토 · 금발 땋은 머리 · 초록 드레스 · 브리싱가멘 목걸이 · 빛나는 손
+      const t = MODEL.time;
+      if (!S.flash) { ctx.fillStyle = F3('#b8a080'); ctx.beginPath(); ctx.moveTo(-3 * s, -46 * s);
+        for (let i = 0; i <= 5; i++) { const u = i / 5, w = Math.sin(t * 3 + i) * (S.moving ? 2.4 : 1) * s; ctx.lineTo((-9 - u * 14) * s + w, (-44 + u * 36) * s); ctx.lineTo((-5 - u * 12) * s + w, (-40 + u * 36) * s); }
+        ctx.lineTo(-2 * s, -10 * s); ctx.closePath(); ctx.fill(); }
+      robe(S, 15 * s, -34 * s, F3(tun));
+      torso(S, 4.2 * s);
+      ctx.fillStyle = F3(tun); ctx.beginPath(); ctx.moveTo(-6.5 * s, -42 * s); ctx.lineTo(6.5 * s, -42 * s); ctx.lineTo(7 * s, -30 * s); ctx.lineTo(-7 * s, -30 * s); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = F3(acc); ctx.beginPath(); ctx.arc(0, -41 * s, 3 * s, 0, Math.PI); ctx.fill();
+      head(S, 'circlet');
+      ctx.fillStyle = F3('#f0d070'); ctx.beginPath(); ctx.arc(0, -53 * s, 9 * s, Math.PI * 0.95, Math.PI * 1.95); ctx.lineTo(-10 * s, -46 * s); ctx.closePath(); ctx.fill();
+      line(S, -8 * s, -48 * s, -10 * s, -30 * s, 3 * s, F3('#e8c050'));
+      const hx = 14 * s, hy = -40 * s - (atk > 0 ? atk * 5 * s : 0);
+      arm(S, hx, hy);
+      if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = 'rgba(255,220,120,.6)'; ctx.beginPath(); ctx.arc(hx + 3 * s, hy, 4 * s + Math.sin(t * 6) * 0.8 * s, 0, 7); ctx.fill(); ctx.restore(); ctx._skipInk = false;
+        if (S.live) x3Glow(S, hx + 3 * s, hy, 8 * s, '#ffd870', 0.18); }
+      break;
+    }
+    case 'jotunn': {                                           // 서리 거인: 푸른 피부 · 얼음 뿔 · 서리 수염 · 털가죽 허리 · 고드름 박힌 몽둥이
+      legs(S);
+      ctx.fillStyle = F3(col); ctx.beginPath(); ctx.moveTo(-9 * s, -43 * s); ctx.lineTo(9 * s, -43 * s); ctx.lineTo(8 * s, -23 * s); ctx.lineTo(-8 * s, -23 * s); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = F3('#8a7a64'); ctx.beginPath(); ctx.moveTo(-9 * s, -25 * s); ctx.lineTo(9 * s, -25 * s); ctx.lineTo(10 * s, -13 * s); ctx.lineTo(4 * s, -15 * s); ctx.lineTo(0, -12 * s); ctx.lineTo(-5 * s, -15 * s); ctx.lineTo(-10 * s, -13 * s); ctx.closePath(); ctx.fill();
+      head(S, 'icehorn');
+      ctx.fillStyle = F3('#e8f4ff'); ctx.beginPath(); ctx.moveTo(-1 * s, -48 * s); ctx.quadraticCurveTo(3 * s, -36 * s, 9 * s, -46 * s); ctx.closePath(); ctx.fill();
+      armWeapon(S, -1.2 + atk * 2.0, () => { line(S, -4 * s, 0, 8 * s, 0, 3 * s, F3('#5a4a3a')); ctx.fillStyle = F3('#9ac0d8'); ctx.beginPath(); ctx.ellipse(18 * s, 0, 12 * s, 5 * s, 0, 0, 7); ctx.fill();
+        for (let i = 0; i < 4; i++) tri(S, (10 + i * 5) * s, -4 * s, (12 + i * 5) * s, -10 * s, (14 + i * 5) * s, -4 * s, F3('#e8f8ff')); }, 5 * s);
+      break;
+    }
+    case 'shieldmaiden': {                                     // 방패 처녀: 땋은 금발 · 털 어깨 · 둥근 나무 방패 · 손도끼
+      legs(S); torso(S, 4.8 * s);
+      ctx.fillStyle = F3('#8a6a4a'); ctx.fillRect(-7 * s, -42 * s, 14 * s, 4 * s);
+      head(S, 'bald');
+      ctx.fillStyle = F3('#e8c870'); ctx.beginPath(); ctx.arc(0, -53 * s, 8.8 * s, Math.PI * 0.95, Math.PI * 1.95); ctx.lineTo(-9 * s, -46 * s); ctx.closePath(); ctx.fill();
+      line(S, -8 * s, -48 * s, -11 * s, -33 * s, 2.6 * s, F3('#d8b860'));
+      armWeapon(S, -1.0 + atk * 1.8, () => { line(S, -2 * s, 0, 16 * s, 0, 2.2 * s, F3('#6a4a2a')); ctx.fillStyle = F3('#c8ccd4'); ctx.beginPath(); ctx.moveTo(13 * s, -1 * s); ctx.lineTo(19 * s, -6 * s); ctx.quadraticCurveTo(21 * s, 0, 19 * s, 5 * s); ctx.lineTo(13 * s, 1 * s); ctx.closePath(); ctx.fill(); }, 4 * s);
+      ctx.fillStyle = F3('#9a6a3a'); ctx.beginPath(); ctx.arc(8 * s, -30 * s, 9.5 * s, 0, 7); ctx.fill();
+      if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.strokeStyle = tun; ctx.lineWidth = 2 * s; ctx.beginPath(); for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2; ctx.moveTo(8 * s, -30 * s); ctx.lineTo(8 * s + Math.cos(a) * 9 * s, -30 * s + Math.sin(a) * 9 * s); }
+        ctx.stroke(); ctx.fillStyle = acc; ctx.beginPath(); ctx.arc(8 * s, -30 * s, 2.6 * s, 0, 7); ctx.fill(); ctx.restore(); ctx._skipInk = false; }
+      break;
+    }
+    case 'horus': {                                            // 호루스: 매의 머리 · 흰 관 · 넓은 금 목깃 · 흰 허리치마 · 빛의 활
+      const t = MODEL.time;
+      legs(S); torso(S, 4.8 * s);
+      ctx.fillStyle = F3(tun); ctx.beginPath(); ctx.moveTo(-7 * s, -25 * s); ctx.lineTo(7 * s, -25 * s); ctx.lineTo(10 * s, -13 * s); ctx.lineTo(-8 * s, -13 * s); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = F3(acc); ctx.beginPath(); ctx.ellipse(0, -42 * s, 9 * s, 4 * s, 0, 0, Math.PI); ctx.fill();
+      ctx.fillStyle = F3('#3a4a6a'); ctx.beginPath(); ctx.arc(0, -52 * s, 9 * s, 0, 7); ctx.fill();
+      ctx.fillStyle = F3('#f0ece0'); ctx.beginPath(); ctx.arc(3 * s, -50 * s, 5.5 * s, -0.6, 1.8); ctx.fill();
+      ctx.fillStyle = F3('#e8c65a'); ctx.beginPath(); ctx.moveTo(7 * s, -54 * s); ctx.quadraticCurveTo(15 * s, -53 * s, 12 * s, -47 * s); ctx.lineTo(8 * s, -50 * s); ctx.closePath(); ctx.fill();   // 부리
+      if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.fillStyle = '#1a1a22'; ctx.beginPath(); ctx.arc(4 * s, -54 * s, 1.5 * s, 0, 7); ctx.fill();
+        ctx.strokeStyle = '#1a1a22'; ctx.lineWidth = 1 * s; ctx.beginPath(); ctx.moveTo(4 * s, -52.5 * s); ctx.lineTo(3 * s, -48 * s); ctx.stroke(); ctx.restore(); ctx._skipInk = false; }
+      ctx.fillStyle = F3('#f0ece0'); ctx.beginPath(); ctx.moveTo(-6 * s, -60 * s); ctx.lineTo(6 * s, -60 * s); ctx.lineTo(4 * s, -72 * s); ctx.lineTo(-4 * s, -72 * s); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = F3('#c8302a'); ctx.fillRect(-8 * s, -62 * s, 16 * s, 3 * s);
+      bow(S, 20 * s, -36 * s, 24 * s, F3('#e8c65a'));
+      arm(S, 20 * s, -36 * s);
+      if (!S.flash && S.live) x3Glow(S, 20 * s, -36 * s, 10 * s, '#8ad8ff', 0.12 + 0.06 * Math.sin(t * 4));
+      break;
+    }
+    case 'sobek': {                                            // 소베크: 악어 머리 (아래턱이 벌어진다) · 줄무늬 두건 · 금 목깃 · 갈고리 창
+      legs(S); torso(S, 5.2 * s);
+      ctx.fillStyle = F3(tun); ctx.beginPath(); ctx.moveTo(-7 * s, -25 * s); ctx.lineTo(7 * s, -25 * s); ctx.lineTo(9 * s, -13 * s); ctx.lineTo(-9 * s, -13 * s); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = F3(acc); ctx.beginPath(); ctx.ellipse(0, -42 * s, 9 * s, 4 * s, 0, 0, Math.PI); ctx.fill();
+      const g = F3('#4a7a4a'), gd = F3('#3a5a3a');
+      ctx.fillStyle = F3('#2a4a8a'); ctx.beginPath(); ctx.moveTo(-8 * s, -58 * s); ctx.lineTo(-2 * s, -60 * s); ctx.lineTo(-10 * s, -40 * s); ctx.lineTo(-12 * s, -44 * s); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(-1 * s, -53 * s, 8 * s, 7.5 * s, 0, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(4 * s, -57 * s); ctx.lineTo(22 * s, -54 * s); ctx.lineTo(22 * s, -51 * s); ctx.lineTo(4 * s, -50 * s); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = gd; ctx.beginPath(); ctx.moveTo(4 * s, -49 * s); ctx.lineTo(20 * s, -48 * s - (atk > 0 ? atk * 3 * s : 0)); ctx.lineTo(20 * s, -46 * s); ctx.lineTo(4 * s, -45 * s); ctx.closePath(); ctx.fill();
+      if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.fillStyle = '#f0ece0'; for (let i = 0; i < 5; i++) ctx.fillRect((7 + i * 3) * s, -50.5 * s, 1 * s, 1.6 * s);
+        ctx.fillStyle = '#e8c65a'; ctx.beginPath(); ctx.arc(1 * s, -56 * s, 1.6 * s, 0, 7); ctx.fill(); ctx.restore(); ctx._skipInk = false; }
+      armWeapon(S, -0.3 + atk * 0.4, () => { line(S, -16 * s, 0, 40 * s, 0, 2.4 * s, F3('#6a4a2a')); ctx.strokeStyle = F3('#d8dce4'); ctx.lineWidth = 2 * s; ctx.beginPath(); ctx.moveTo(40 * s, 0); ctx.lineTo(48 * s, 0); ctx.quadraticCurveTo(52 * s, -6 * s, 46 * s, -8 * s); ctx.stroke(); }, 4 * s);
+      break;
+    }
+    case 'khopesh': {                                          // 케페시 전사: 줄무늬 두건 · 맨가슴 · 푸른 허리치마 · 등의 작은 방패 · 낫처럼 굽은 청동 칼
+      ctx.fillStyle = F3('#d8c8a0'); ctx.beginPath(); ctx.ellipse(-9 * s, -33 * s, 5 * s, 8 * s, 0, 0, 7); ctx.fill();
+      legs(S);
+      ctx.fillStyle = F3(col); ctx.beginPath(); ctx.moveTo(-7 * s, -42 * s); ctx.lineTo(7 * s, -42 * s); ctx.lineTo(6.5 * s, -23 * s); ctx.lineTo(-6.5 * s, -23 * s); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = F3(tun); ctx.beginPath(); ctx.moveTo(-7 * s, -25 * s); ctx.lineTo(7 * s, -25 * s); ctx.lineTo(9 * s, -13 * s); ctx.lineTo(-8 * s, -13 * s); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = F3(acc); ctx.fillRect(-7 * s, -26 * s, 14 * s, 2.4 * s);
+      head(S, 'nemes');
+      armWeapon(S, -1.1 + atk * 2.1, () => { line(S, -3 * s, 0, 8 * s, 0, 2.6 * s, F3('#5a3a22')); ctx.fillStyle = F3('#c89a50'); ctx.beginPath(); ctx.moveTo(8 * s, -1.5 * s); ctx.lineTo(16 * s, -1.5 * s);
+        ctx.quadraticCurveTo(28 * s, -4 * s, 26 * s, 6 * s); ctx.quadraticCurveTo(24 * s, 1 * s, 16 * s, 2 * s); ctx.lineTo(8 * s, 1.5 * s); ctx.closePath(); ctx.fill(); }, 4 * s);
+      break;
+    }
+    case 'bari': {                                             // 바리공주: 흰 저고리 · 연보라 치마 · 쪽진 머리 · 꽃 · 생명수 호리병 (물방울이 솟는다)
+      const t = MODEL.time;
+      robe(S, 16 * s, -32 * s, F3(tun));
+      torso(S, 4 * s);
+      ctx.fillStyle = F3('#f8f6f0'); ctx.beginPath(); ctx.moveTo(-7 * s, -43 * s); ctx.lineTo(7 * s, -43 * s); ctx.lineTo(8 * s, -32 * s); ctx.lineTo(-8 * s, -32 * s); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = F3(acc); ctx.beginPath(); ctx.moveTo(0, -38 * s); ctx.lineTo(6 * s, -30 * s); ctx.lineTo(2 * s, -30 * s); ctx.closePath(); ctx.fill();
+      head(S, 'buns');
+      ctx.fillStyle = F3('#f0a8c0'); ctx.beginPath(); ctx.arc(-9 * s, -55 * s, 2.4 * s, 0, 7); ctx.fill();
+      const hx = 13 * s, hy = -38 * s - (atk > 0 ? atk * 5 * s : 0); arm(S, hx, hy);
+      ctx.fillStyle = F3('#c8a050'); ctx.beginPath(); ctx.arc(hx + 2 * s, hy + 2 * s, 3.4 * s, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(hx + 2 * s, hy - 3.4 * s, 2.2 * s, 0, 7); ctx.fill();
+      if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = 'rgba(120,240,200,.55)';
+        for (let i = 0; i < 3; i++) { const y = hy - 8 * s - ((t * 20 + i * 7) % 14) * s; ctx.beginPath(); ctx.arc(hx + 2 * s + Math.sin(t * 3 + i) * 2 * s, y, 1.4 * s, 0, 7); ctx.fill(); }
+        ctx.restore(); ctx._skipInk = false; if (S.live) x3Glow(S, hx + 2 * s, hy, 8 * s, '#7af0c8', 0.16); }
+      break;
+    }
+    case 'jangseung': {                                        // 장승: 통나무 몸 · 부릅뜬 눈과 송곳니 · 검은 관모 · 붉은 글씨 띠 (깡충 뛰며 걷는다)
+      const hop = S.moving ? -Math.abs(Math.sin(phase)) * 5 * s : 0, wood = F3(col), woodD = F3(x3Hex(st.body, -0.25));
+      armWeapon(S, -0.6 + atk * 1.2, () => { line(S, -2 * s, 0, 12 * s, 0, 4 * s, wood); }, 4 * s);      // 짧은 나무 팔 (몸 뒤)
+      ctx.save(); ctx.translate(0, hop);
+      ctx.fillStyle = wood; ctx.beginPath(); roundRectPath(ctx, -9 * s, -66 * s, 18 * s, 66 * s, 4 * s); ctx.fill();
+      if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.strokeStyle = woodD; ctx.lineWidth = 1 * s; ctx.beginPath(); for (let i = 0; i < 4; i++) { ctx.moveTo((-6 + i * 4) * s, -30 * s); ctx.lineTo((-5 + i * 4) * s, -2 * s); } ctx.stroke(); ctx.restore(); ctx._skipInk = false; }
+      ctx.fillStyle = F3('#f0ece0'); ctx.fillRect(-6 * s, -38 * s, 12 * s, 28 * s);
+      if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.fillStyle = acc; for (let i = 0; i < 4; i++) ctx.fillRect(-2.4 * s, (-35 + i * 6.6) * s, 4.8 * s, 4 * s); ctx.restore(); ctx._skipInk = false; }
+      ctx.fillStyle = F3('#1a1a20'); ctx.beginPath(); roundRectPath(ctx, -10 * s, -80 * s, 20 * s, 14 * s, 3 * s); ctx.fill(); ctx.fillRect(-13 * s, -68 * s, 26 * s, 3 * s);
+      if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.fillStyle = '#f8f6f0'; ctx.beginPath(); ctx.arc(-3 * s, -58 * s, 3 * s, 0, 7); ctx.arc(5 * s, -58 * s, 3 * s, 0, 7); ctx.fill();
+        ctx.fillStyle = '#1a1a20'; ctx.beginPath(); ctx.arc(-2 * s, -58 * s, 1.4 * s, 0, 7); ctx.arc(6 * s, -58 * s, 1.4 * s, 0, 7); ctx.fill();
+        ctx.strokeStyle = '#1a1a20'; ctx.lineWidth = 1.4 * s; ctx.beginPath(); ctx.moveTo(-6 * s, -62 * s); ctx.lineTo(0, -61 * s); ctx.moveTo(2 * s, -61 * s); ctx.lineTo(8 * s, -62 * s); ctx.stroke();
+        ctx.fillStyle = acc; ctx.fillRect(-3 * s, -50 * s, 9 * s, 3 * s); ctx.fillStyle = '#f8f6f0'; ctx.fillRect(-2 * s, -50 * s, 1.6 * s, 2.4 * s); ctx.fillRect(4 * s, -50 * s, 1.6 * s, 2.4 * s);
+        ctx.restore(); ctx._skipInk = false; }
+      ctx.restore();
+      break;
+    }
+    case 'yhunter': {                                          // 산척: 전립 · 가죽 조끼 · 등의 전통 · 짧은 각궁
+      ctx.fillStyle = F3('#6a4a2a'); ctx.beginPath(); roundRectPath(ctx, -12 * s, -48 * s, 5 * s, 18 * s, 2 * s); ctx.fill();
+      for (let i = 0; i < 3; i++) line(S, (-11 + i * 1.6) * s, -48 * s, (-12 + i * 1.6) * s, -53 * s, 1 * s, F3('#e8e0c8'));
+      legs(S); torso(S, 4.4 * s);
+      ctx.fillStyle = F3('#8a6a4a'); ctx.fillRect(-7 * s, -42 * s, 14 * s, 12 * s);
+      head(S, 'jeonrip');
+      bow(S, 18 * s, -36 * s, 20 * s, F3('#5a3a1a'));
+      arm(S, 18 * s, -36 * s);
+      break;
+    }
+    case 'gearcolossus': {                                     // 톱니 거상: 놋쇠 몸 · 가슴에서 도는 톱니 · 굴뚝 증기 · 증기 망치
+      const t = MODEL.time, brass = F3(col), brassD = F3(x3Hex(st.body, -0.25));
+      for (const d of [-1, 1]) { const sw = S.moving ? Math.sin(phase + (d > 0 ? 0 : Math.PI)) * 5 * s : 0; ctx.fillStyle = brassD; ctx.beginPath(); roundRectPath(ctx, d * 5 * s - 3.5 * s + sw, -22 * s, 7 * s, 22 * s, 2 * s); ctx.fill(); }
+      ctx.fillStyle = F3('#4a4a50'); ctx.fillRect(-10 * s, -60 * s, 5 * s, 12 * s);
+      if (!S.flash && S.live) { ctx.save(); ctx._skipInk = true; ctx.fillStyle = 'rgba(230,230,224,.5)'; for (let i = 0; i < 3; i++) { const k = (t * 0.8 + i / 3) % 1; ctx.beginPath(); ctx.arc(-7.5 * s - k * 6 * s, -62 * s - k * 16 * s, (2 + k * 4) * s, 0, 7); ctx.fill(); } ctx.restore(); ctx._skipInk = false; }
+      ctx.fillStyle = brass; ctx.beginPath(); roundRectPath(ctx, -13 * s, -50 * s, 26 * s, 30 * s, 5 * s); ctx.fill();
+      ctx.save(); ctx.translate(0, -36 * s); ctx.rotate(t * 1.5); ctx.fillStyle = F3(acc); ctx.beginPath();
+      for (let i = 0; i < 16; i++) { const a = i / 16 * Math.PI * 2, r = i % 2 ? 5 * s : 7 * s; ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
+      ctx.closePath(); ctx.fill(); ctx.fillStyle = brassD; ctx.beginPath(); ctx.arc(0, 0, 2 * s, 0, 7); ctx.fill(); ctx.restore();
+      ctx.fillStyle = brass; ctx.beginPath(); roundRectPath(ctx, -5 * s, -62 * s, 12 * s, 11 * s, 3 * s); ctx.fill();
+      if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.fillStyle = '#ffd870'; ctx.fillRect(2 * s, -58 * s, 4 * s, 2 * s); ctx.restore(); ctx._skipInk = false; }
+      armWeapon(S, -1.3 + atk * 2.2, () => { line(S, -4 * s, 0, 20 * s, 0, 3.4 * s, F3('#5a4a3a')); ctx.fillStyle = F3('#6a6a72'); ctx.beginPath(); roundRectPath(ctx, 18 * s, -8 * s, 12 * s, 16 * s, 2 * s); ctx.fill(); ctx.fillStyle = F3(acc); ctx.fillRect(18 * s, -2 * s, 12 * s, 3 * s); }, 6 * s);
+      break;
+    }
+    case 'arcgunner': {                                        // 번개총 사수: 고글 · 가죽 앞치마 · 등의 축전지와 전선 · 코일 총
+      const t = MODEL.time;
+      ctx.fillStyle = F3('#5a5a62'); ctx.beginPath(); roundRectPath(ctx, -14 * s, -46 * s, 8 * s, 18 * s, 2 * s); ctx.fill();
+      if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.strokeStyle = acc; ctx.lineWidth = 1 * s; ctx.beginPath(); for (let i = 0; i < 4; i++) { ctx.moveTo(-14 * s, (-43 + i * 4) * s); ctx.lineTo(-6 * s, (-43 + i * 4) * s); } ctx.stroke(); ctx.restore(); ctx._skipInk = false; }
+      legs(S); torso(S, 4.6 * s);
+      ctx.fillStyle = F3(tun); ctx.beginPath(); ctx.moveTo(-6 * s, -38 * s); ctx.lineTo(6 * s, -38 * s); ctx.lineTo(7 * s, -16 * s); ctx.lineTo(-7 * s, -16 * s); ctx.closePath(); ctx.fill();
+      head(S, 'goggles');
+      line(S, -10 * s, -40 * s, 6 * s, -34 * s, 1 * s, F3('#2a2a2a'));
+      armWeapon(S, -0.1 + atk * 0.15, () => { ctx.fillStyle = F3('#8a6a44'); ctx.fillRect(-4 * s, -2 * s, 10 * s, 4 * s); ctx.fillStyle = F3('#b88a50'); ctx.fillRect(6 * s, -3 * s, 14 * s, 6 * s);
+        if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.strokeStyle = acc; ctx.lineWidth = 1.2 * s; ctx.beginPath(); for (let i = 0; i < 5; i++) { ctx.moveTo((8 + i * 2.6) * s, -3.4 * s); ctx.lineTo((9.3 + i * 2.6) * s, 3.4 * s); } ctx.stroke(); ctx.restore(); ctx._skipInk = false;
+          if (S.live) x3Glow(S, 22 * s, 0, 6 * s, '#7ad0ff', 0.2 + 0.1 * Math.sin(t * 12)); } }, 4 * s);
+      break;
+    }
+    case 'grenadier': {                                        // 척탄병: 높은 모자 · 단추 줄 외투 · 허리 폭탄 · 심지가 타는 폭탄을 든 손
+      const t = MODEL.time;
+      legs(S); torso(S, 4.8 * s);
+      ctx.fillStyle = F3(tun); ctx.beginPath(); roundRectPath(ctx, -7 * s, -42 * s, 14 * s, 22 * s, 2 * s); ctx.fill();
+      if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.fillStyle = acc; for (let i = 0; i < 4; i++) ctx.fillRect(-0.8 * s, (-39 + i * 5) * s, 1.6 * s, 1.6 * s); ctx.restore(); ctx._skipInk = false; }
+      ctx.fillStyle = F3('#3a3a40'); ctx.beginPath(); ctx.arc(-7 * s, -22 * s, 3 * s, 0, 7); ctx.fill();
+      head(S, 'bald');
+      ctx.fillStyle = F3('#2a2a30'); ctx.beginPath(); ctx.moveTo(-8 * s, -56 * s); ctx.lineTo(8 * s, -56 * s); ctx.lineTo(5 * s, -72 * s); ctx.lineTo(-6 * s, -70 * s); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = F3(acc); ctx.fillRect(-8 * s, -58 * s, 16 * s, 2 * s);
+      const hx = 14 * s - (S.wind > 0 ? S.wind * 8 * s : 0), hy = -46 * s + (atk > 0 ? atk * 6 * s : 0); arm(S, hx, hy);
+      ctx.fillStyle = F3('#2a2a30'); ctx.beginPath(); ctx.arc(hx + 2 * s, hy - 2 * s, 4.2 * s, 0, 7); ctx.fill();
+      line(S, hx + 3 * s, hy - 6 * s, hx + 5 * s, hy - 9 * s, 1 * s, F3('#c8963a'));
+      if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = 'rgba(255,180,80,.8)'; ctx.beginPath(); ctx.arc(hx + 5 * s, hy - 9.5 * s, 1.6 * s + Math.sin(t * 20) * 0.5 * s, 0, 7); ctx.fill(); ctx.restore(); ctx._skipInk = false; }
+      break;
+    }
+    case 'erlang': {                                           // 이랑신: 날개 투구 · 이마의 세 번째 눈 · 푸른 갑옷 · 삼첨양인도 · 곁의 흰 하늘 개
+      const t = MODEL.time;
+      { const dx = -18 * s, bob = S.moving ? Math.abs(Math.sin(phase * 1.5)) * -2 * s : 0, dc = F3('#e8e4dc');
+        ctx.strokeStyle = dc; ctx.lineWidth = 1.6 * s; ctx.beginPath();
+        for (const lx of [-5, -2, 3, 6]) { const sw = S.moving ? Math.sin(phase * 1.5 + lx) * 2 * s : 0; ctx.moveTo(dx + lx * s, -8 * s + bob); ctx.lineTo(dx + lx * s + sw, 0); }
+        ctx.stroke();
+        ctx.fillStyle = dc; ctx.beginPath(); ctx.ellipse(dx, -10 * s + bob, 8 * s, 4 * s, 0, 0, 7); ctx.fill();
+        ctx.beginPath(); ctx.arc(dx + 8 * s, -14 * s + bob, 3.6 * s, 0, 7); ctx.fill(); tri(S, dx + 7 * s, -17 * s + bob, dx + 8 * s, -21 * s + bob, dx + 10 * s, -17 * s + bob, dc); }
+      legs(S); torso(S, 5 * s);
+      ctx.fillStyle = F3(tun); ctx.beginPath(); roundRectPath(ctx, -7.5 * s, -42 * s, 15 * s, 17 * s, 2 * s); ctx.fill();
+      ctx.fillStyle = F3(acc); ctx.fillRect(-7.5 * s, -27 * s, 15 * s, 2.4 * s);
+      head(S, 'winged');
+      if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.fillStyle = '#c8302a'; ctx.beginPath(); ctx.ellipse(3 * s, -57 * s, 1.2 * s, 2.4 * s, 0, 0, 7); ctx.fill(); ctx.fillStyle = '#fff3c0'; ctx.beginPath(); ctx.arc(3 * s, -57 * s, 0.7 * s, 0, 7); ctx.fill(); ctx.restore(); ctx._skipInk = false;
+        if (S.live) x3Glow(S, 3 * s, -57 * s, 5 * s, '#ffd870', 0.15 + 0.08 * Math.sin(t * 3)); }
+      armWeapon(S, -0.35 + atk * 0.45, () => { line(S, -18 * s, 0, 46 * s, 0, 2.4 * s, F3('#6a4a2a')); ctx.fillStyle = F3('#e8ecf2');
+        ctx.beginPath(); ctx.moveTo(46 * s, -5 * s); ctx.lineTo(60 * s, 0); ctx.lineTo(46 * s, 5 * s); ctx.closePath(); ctx.fill();
+        tri(S, 46 * s, -5 * s, 54 * s, -8 * s, 50 * s, -3 * s, F3('#e8ecf2')); tri(S, 46 * s, 5 * s, 54 * s, 8 * s, 50 * s, 3 * s, F3('#e8ecf2')); }, 4 * s);
+      break;
+    }
+    case 'redboy': {                                           // 홍해아: 쌍상투 · 붉은 배두렁이 · 발밑에 도는 불꽃 · 불붙은 화첨창
+      const t = MODEL.time;
+      if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.globalCompositeOperation = 'lighter';
+        for (let i = 0; i < 5; i++) { const a = t * 6 + i * 1.26; ctx.fillStyle = 'rgba(255,' + (110 + i * 20) + ',40,.45)'; ctx.beginPath(); ctx.ellipse(Math.cos(a) * 9 * s, -3 * s + Math.sin(a) * 2 * s, 3 * s, 5 * s, 0, 0, 7); ctx.fill(); }
+        ctx.restore(); ctx._skipInk = false; }
+      legs(S); torso(S, 4 * s);
+      ctx.fillStyle = F3(tun); ctx.beginPath(); ctx.moveTo(-6 * s, -40 * s); ctx.lineTo(6 * s, -40 * s); ctx.lineTo(4 * s, -22 * s); ctx.lineTo(-4 * s, -22 * s); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = F3('#e8c65a'); ctx.beginPath(); ctx.arc(0, -31 * s, 2 * s, 0, 7); ctx.fill();
+      head(S, 'buns');
+      armWeapon(S, -0.4 + atk * 0.5, () => { line(S, -16 * s, 0, 38 * s, 0, 2.2 * s, F3('#8a2a1a')); tri(S, 38 * s, -3 * s, 48 * s, 0, 38 * s, 3 * s, F3('#e8ecf2'));
+        if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = 'rgba(255,140,40,.7)'; ctx.beginPath(); ctx.ellipse(48 * s, 0, 5 * s + Math.sin(t * 14) * s, 2.6 * s, 0, 0, 7); ctx.fill(); ctx.restore(); ctx._skipInk = false; } }, 4 * s);
+      break;
+    }
+    case 'spiderdemon': {                                      // 거미 요정: 등에서 뻗은 거미 다리 여덟 · 보라 옷 · 풀어 헤친 검은 머리 · 실을 뿜는 손
+      const t = MODEL.time;
+      ctx.strokeStyle = F3('#2a1a2a'); ctx.lineWidth = 2 * s;
+      for (let i = 0; i < 4; i++) { const w = Math.sin(t * 4 + i) * 2 * s; for (const d of [-1, 1]) { ctx.beginPath(); ctx.moveTo(-2 * s, -36 * s); ctx.quadraticCurveTo(d * (10 + i * 4) * s, (-52 + i * 6) * s + w, d * (16 + i * 4) * s, (-30 + i * 7) * s); ctx.stroke(); } }
+      robe(S, 14 * s, -32 * s, F3(tun));
+      torso(S, 4 * s);
+      ctx.fillStyle = F3(acc); ctx.beginPath(); ctx.moveTo(-6.5 * s, -42 * s); ctx.lineTo(6.5 * s, -42 * s); ctx.lineTo(7 * s, -30 * s); ctx.lineTo(-7 * s, -30 * s); ctx.closePath(); ctx.fill();
+      head(S, 'bald');
+      ctx.fillStyle = F3('#1a1a22'); ctx.beginPath(); ctx.arc(0, -53 * s, 9 * s, Math.PI * 0.9, Math.PI * 1.95); ctx.lineTo(-11 * s, -36 * s); ctx.lineTo(-8 * s, -46 * s); ctx.closePath(); ctx.fill();
+      const hx = 14 * s, hy = -40 * s; arm(S, hx, hy);
+      if (!S.flash && atk > 0) { ctx.save(); ctx._skipInk = true; ctx.strokeStyle = 'rgba(240,240,240,.8)'; ctx.lineWidth = 0.8 * s; ctx.beginPath(); for (let i = 0; i < 3; i++) { ctx.moveTo(hx, hy); ctx.lineTo(hx + (10 + i * 4) * s, hy + (i - 1) * 4 * s); } ctx.stroke(); ctx.restore(); ctx._skipInk = false; }
+      break;
+    }
+    case 'gawain': {                                           // 가웨인: 해 장식 통투구 · 금 망토 · 붉은 겉옷 · 금 오각별 방패 · 빛나는 장검
+      const t = MODEL.time;
+      cape(S, -1, F3('#e8c65a'), 1.1);
+      legs(S); torso(S, 5.4 * s);
+      ctx.fillStyle = F3('#c8ccd4'); ctx.beginPath(); roundRectPath(ctx, -7.5 * s, -42 * s, 15 * s, 17 * s, 2 * s); ctx.fill();
+      ctx.fillStyle = F3(tun); ctx.beginPath(); ctx.moveTo(-6 * s, -42 * s); ctx.lineTo(6 * s, -42 * s); ctx.lineTo(8 * s, -18 * s); ctx.lineTo(-8 * s, -18 * s); ctx.closePath(); ctx.fill();
+      head(S, 'greathelm');
+      ctx.fillStyle = F3(acc); ctx.beginPath(); for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4, b = a + 0.25; ctx.moveTo(0, -64 * s); ctx.lineTo(Math.cos(a) * 6.4 * s, -64 * s + Math.sin(a) * 6.4 * s); ctx.lineTo(Math.cos(b) * 3 * s, -64 * s + Math.sin(b) * 3 * s); } ctx.fill();
+      ctx.beginPath(); ctx.arc(0, -64 * s, 3.2 * s, 0, 7); ctx.fill();
+      armWeapon(S, -1.2 + atk * 2.1, () => { line(S, -3 * s, 0, 4 * s, 0, 2.6 * s, F3('#5a3a22')); line(S, 4 * s, -5 * s, 4 * s, 5 * s, 2 * s, F3(acc)); line(S, 5 * s, 0, 34 * s, 0, 3.4 * s, F3('#f0f2f6'));
+        if (!S.flash && S.live) x3Glow(S, 26 * s, 0, 8 * s, '#ffe070', 0.15 + 0.07 * Math.sin(t * 3)); }, 5 * s);
+      shieldShape(S, 4 * s, -44 * s, 13 * s, 17 * s, F3(tun));
+      if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.strokeStyle = acc; ctx.lineWidth = 1.2 * s; ctx.beginPath(); const cx = 10.5 * s, cy = -36 * s;
+        for (let i = 0; i <= 5; i++) { const a = -Math.PI / 2 + i * Math.PI * 4 / 5, x = cx + Math.cos(a) * 4.6 * s, y = cy + Math.sin(a) * 4.6 * s; if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y); }
+        ctx.stroke(); ctx.restore(); ctx._skipInk = false; }
+      break;
+    }
+    case 'percival': {                                         // 퍼시벌: 깃 달린 투구 · 흰 십자의 푸른 겉옷 · 사슬 갑옷 · 깃발 단 긴 기창
+      legs(S); torso(S, 5 * s);
+      ctx.fillStyle = F3('#9aa0a8'); ctx.beginPath(); roundRectPath(ctx, -7 * s, -42 * s, 14 * s, 17 * s, 2 * s); ctx.fill();
+      ctx.fillStyle = F3(tun); ctx.beginPath(); ctx.moveTo(-5.5 * s, -41 * s); ctx.lineTo(5.5 * s, -41 * s); ctx.lineTo(7 * s, -18 * s); ctx.lineTo(-7 * s, -18 * s); ctx.closePath(); ctx.fill();
+      if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.fillStyle = acc; ctx.fillRect(-0.8 * s, -38 * s, 1.6 * s, 12 * s); ctx.fillRect(-4 * s, -34 * s, 8 * s, 1.6 * s); ctx.restore(); ctx._skipInk = false; }
+      head(S, 'plume');
+      armWeapon(S, -0.18 + atk * 0.2, () => { line(S, -20 * s, 0, 60 * s, 0, 2.6 * s, F3('#8a6a44')); tri(S, 60 * s, -3 * s, 72 * s, 0, 60 * s, 3 * s, F3('#e8ecf2'));
+        ctx.fillStyle = F3(tun); ctx.beginPath(); ctx.moveTo(44 * s, -1 * s); ctx.lineTo(56 * s, -1 * s); ctx.lineTo(50 * s, -9 * s + Math.sin(MODEL.time * 6) * 1.5 * s); ctx.closePath(); ctx.fill(); }, 4 * s);
+      break;
+    }
+    case 'squire': {                                           // 종자: 사슬 두건 · 푸른 겉옷 · 가죽 띠 · 작은 둥근 방패 · 짧은 칼
+      legs(S); torso(S, 4.6 * s);
+      ctx.fillStyle = F3(tun); ctx.beginPath(); ctx.moveTo(-6 * s, -42 * s); ctx.lineTo(6 * s, -42 * s); ctx.lineTo(7.5 * s, -19 * s); ctx.lineTo(-7.5 * s, -19 * s); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = F3('#5a3a22'); ctx.fillRect(-7 * s, -27 * s, 14 * s, 2 * s);
+      head(S, 'coif');
+      armWeapon(S, -0.9 + atk * 1.5, () => { line(S, -2 * s, 0, 3 * s, 0, 2.4 * s, F3('#5a3a22')); line(S, 3 * s, -3 * s, 3 * s, 3 * s, 1.6 * s, F3('#8a8a90')); line(S, 4 * s, 0, 20 * s, 0, 2.6 * s, F3(acc)); }, 4 * s);
+      ctx.fillStyle = F3('#8a6a3a'); ctx.beginPath(); ctx.arc(8 * s, -31 * s, 6.5 * s, 0, 7); ctx.fill();
+      if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.fillStyle = '#c8ccd4'; ctx.beginPath(); ctx.arc(8 * s, -31 * s, 2 * s, 0, 7); ctx.fill(); ctx.restore(); ctx._skipInk = false; }
+      break;
+    }
+    case 'tomoe': {                                            // 토모에 고젠: 긴 검은 머리 · 흰 머리띠 · 붉은 비단 갑옷 · 긴 나기나타 · 흩날리는 벚꽃
+      const t = MODEL.time;
+      ctx.fillStyle = F3('#1a1a22'); ctx.beginPath(); ctx.moveTo(-6 * s, -56 * s); ctx.quadraticCurveTo(-16 * s, -40 * s + Math.sin(t * 3) * 2 * s, -12 * s, -22 * s); ctx.lineTo(-6 * s, -26 * s); ctx.lineTo(-2 * s, -48 * s); ctx.closePath(); ctx.fill();
+      legs(S);
+      ctx.fillStyle = F3(tun); ctx.beginPath(); ctx.moveTo(-8 * s, -27 * s); ctx.lineTo(8 * s, -27 * s); ctx.lineTo(10 * s, -13 * s); ctx.lineTo(-10 * s, -13 * s); ctx.closePath(); ctx.fill();
+      torso(S, 4.6 * s);
+      ctx.fillStyle = F3(tun); ctx.beginPath(); roundRectPath(ctx, -7 * s, -42 * s, 14 * s, 16 * s, 2 * s); ctx.fill();
+      if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.strokeStyle = acc; ctx.lineWidth = 1 * s; ctx.beginPath(); for (let i = 1; i < 4; i++) { ctx.moveTo(-7 * s, (-42 + i * 4) * s); ctx.lineTo(7 * s, (-42 + i * 4) * s); } ctx.stroke(); ctx.restore(); ctx._skipInk = false; }
+      head(S, 'bald');
+      ctx.fillStyle = F3('#1a1a22'); ctx.beginPath(); ctx.arc(0, -52 * s, 9 * s, Math.PI * 0.9, Math.PI * 2.02); ctx.lineTo(4 * s, -55 * s); ctx.lineTo(-8 * s, -46 * s); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = F3('#f8f6f0'); ctx.fillRect(-9 * s, -57 * s, 18 * s, 2 * s);
+      armWeapon(S, -0.8 + atk * 1.6, () => { line(S, -24 * s, 0, 40 * s, 0, 2.4 * s, F3('#3a2a1a')); ctx.fillStyle = F3('#e8ecf2'); ctx.beginPath(); ctx.moveTo(40 * s, -2 * s); ctx.quadraticCurveTo(52 * s, -4 * s, 58 * s, -10 * s); ctx.quadraticCurveTo(54 * s, 0, 40 * s, 2 * s); ctx.closePath(); ctx.fill(); }, 5 * s);
+      if (!S.flash && S.live) { ctx.save(); ctx._skipInk = true; ctx.fillStyle = 'rgba(248,180,200,.85)'; for (let i = 0; i < 3; i++) { const k = (t * 0.5 + i / 3) % 1; ctx.beginPath(); ctx.ellipse((10 - k * 30) * s, (-60 + k * 50) * s, 1.6 * s, 1 * s, t + i, 0, 7); ctx.fill(); } ctx.restore(); ctx._skipInk = false; }
+      break;
+    }
+    case 'oni': {                                              // 오니: 붉은 피부 · 뿔 · 덥수룩한 머리 · 호랑이 가죽 허리 · 가시 쇠몽둥이
+      legs(S);
+      ctx.fillStyle = F3(col); ctx.beginPath(); ctx.moveTo(-9 * s, -43 * s); ctx.lineTo(9 * s, -43 * s); ctx.lineTo(8 * s, -23 * s); ctx.lineTo(-8 * s, -23 * s); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = F3('#e8a23a'); ctx.beginPath(); ctx.moveTo(-9 * s, -25 * s); ctx.lineTo(9 * s, -25 * s); ctx.lineTo(10 * s, -13 * s); ctx.lineTo(-10 * s, -13 * s); ctx.closePath(); ctx.fill();
+      if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.fillStyle = '#1a1a20'; for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.moveTo((-8 + i * 5) * s, -25 * s); ctx.lineTo((-6 + i * 5) * s, -19 * s); ctx.lineTo((-4 + i * 5) * s, -25 * s); ctx.fill(); } ctx.restore(); ctx._skipInk = false; }
+      head(S, 'bald');
+      ctx.fillStyle = F3('#2a2a30'); ctx.beginPath(); ctx.arc(-1 * s, -54 * s, 9.4 * s, Math.PI * 0.9, Math.PI * 1.75); ctx.lineTo(-11 * s, -44 * s); ctx.closePath(); ctx.fill();   // 덥수룩한 머리
+      for (const hx of [-3, 4]) tri(S, (hx - 2) * s, -60 * s, (hx + 1) * s, -70 * s, (hx + 2.4) * s, -60 * s, F3('#f0e8d0'));                                    // 두 뿔
+      if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.fillStyle = '#f8f6f0'; tri(S, 4 * s, -47 * s, 5 * s, -44 * s, 6 * s, -47 * s, '#f8f6f0'); ctx.restore(); ctx._skipInk = false; }   // 송곳니
+      armWeapon(S, -1.3 + atk * 2.3, () => { line(S, -4 * s, 0, 8 * s, 0, 3 * s, F3('#5a3a22')); ctx.fillStyle = F3('#4a4a52'); ctx.beginPath(); ctx.moveTo(8 * s, -3 * s); ctx.lineTo(34 * s, -5.5 * s); ctx.lineTo(34 * s, 5.5 * s); ctx.lineTo(8 * s, 3 * s); ctx.closePath(); ctx.fill();
+        if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.fillStyle = '#c8ccd4'; for (let i = 0; i < 5; i++) { ctx.beginPath(); ctx.arc((13 + i * 5) * s, (i % 2 ? -4 : 4) * s, 1.3 * s, 0, 7); ctx.fill(); } ctx.restore(); ctx._skipInk = false; } }, 5 * s);
+      break;
+    }
+    case 'sohei': {                                            // 승병: 눈만 내놓은 흰 두건 · 검은 승복 · 염주 · 나기나타
+      robe(S, 13 * s, -28 * s, F3(tun));
+      torso(S, 4.8 * s);
+      ctx.fillStyle = F3(tun); ctx.beginPath(); ctx.moveTo(-7 * s, -43 * s); ctx.lineTo(7 * s, -43 * s); ctx.lineTo(8 * s, -26 * s); ctx.lineTo(-8 * s, -26 * s); ctx.closePath(); ctx.fill();
+      if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.fillStyle = '#8a5a2a'; for (let i = 0; i < 7; i++) { const a = Math.PI * 0.15 + i * Math.PI * 0.1; ctx.beginPath(); ctx.arc(Math.cos(a) * 7 * s, -43 * s + Math.sin(a) * 8 * s, 1.1 * s, 0, 7); ctx.fill(); } ctx.restore(); ctx._skipInk = false; }
+      head(S, 'bald');
+      ctx.fillStyle = F3(acc); ctx.beginPath(); ctx.arc(0, -53 * s, 10 * s, Math.PI * 0.75, Math.PI * 2.25); ctx.lineTo(2 * s, -44 * s); ctx.lineTo(-8 * s, -44 * s); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = F3(col); ctx.fillRect(1 * s, -56 * s, 8 * s, 4 * s);
+      if (!S.flash) { ctx.fillStyle = '#1a1a20'; ctx.fillRect(5 * s, -55 * s, 1.4 * s, 1.4 * s); }
+      armWeapon(S, -0.7 + atk * 1.3, () => { line(S, -22 * s, 0, 38 * s, 0, 2.4 * s, F3('#5a3a22')); ctx.fillStyle = F3('#e8ecf2'); ctx.beginPath(); ctx.moveTo(38 * s, -2 * s); ctx.quadraticCurveTo(50 * s, -4 * s, 54 * s, -9 * s); ctx.quadraticCurveTo(51 * s, 1 * s, 38 * s, 2 * s); ctx.closePath(); ctx.fill(); }, 5 * s);
+      break;
+    }
+    case 'lubu': {                                             // 여포: 붉은 꿩 깃 두 가닥 금관 · 짐승 얼굴 흉갑 · 붉은 망토 · 방천화극
+      const t = MODEL.time;
+      cape(S, -1, F3(tun), 1.2);
+      legs(S); torso(S, 5.4 * s);
+      ctx.fillStyle = F3('#c8a050'); ctx.beginPath(); roundRectPath(ctx, -8 * s, -42 * s, 16 * s, 17 * s, 2 * s); ctx.fill();
+      if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.fillStyle = '#6a4a20'; ctx.beginPath(); ctx.arc(0, -34 * s, 3.4 * s, 0, 7); ctx.fill(); ctx.fillStyle = '#e8c65a'; ctx.fillRect(-2 * s, -35 * s, 1.2 * s, 1.2 * s); ctx.fillRect(0.8 * s, -35 * s, 1.2 * s, 1.2 * s); ctx.restore(); ctx._skipInk = false; }
+      head(S, 'bald');
+      ctx.fillStyle = F3(acc); ctx.beginPath(); ctx.arc(0, -53 * s, 9.3 * s, Math.PI, 0); ctx.fill(); ctx.fillRect(-9.3 * s, -54 * s, 3 * s, 6 * s);
+      ctx.strokeStyle = F3('#c8302a'); ctx.lineWidth = 1.8 * s;
+      for (const d of [-1, 1]) { ctx.beginPath(); ctx.moveTo(d * 3 * s, -61 * s); ctx.quadraticCurveTo(d * 8 * s - 6 * s, -80 * s, -18 * s + d * 6 * s, -84 * s + Math.sin(t * 2 + d) * 2 * s); ctx.stroke(); }
+      armWeapon(S, -0.5 + atk * 0.9, () => { line(S, -20 * s, 0, 50 * s, 0, 2.6 * s, F3('#3a2a1a')); tri(S, 50 * s, -3 * s, 62 * s, 0, 50 * s, 3 * s, F3('#e8ecf2'));
+        ctx.fillStyle = F3('#e8ecf2'); ctx.beginPath(); ctx.moveTo(46 * s, -2 * s); ctx.quadraticCurveTo(44 * s, -14 * s, 52 * s, -16 * s); ctx.quadraticCurveTo(48 * s, -8 * s, 50 * s, -2 * s); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = F3('#c8302a'); ctx.beginPath(); ctx.moveTo(44 * s, 1 * s); ctx.lineTo(40 * s, 8 * s); ctx.lineTo(46 * s, 3 * s); ctx.closePath(); ctx.fill(); }, 4 * s);
+      break;
+    }
+    case 'diaochan': {                                         // 초선: 틀어 올린 머리와 비녀 · 분홍 비단옷 · 나부끼는 띠 · 펼친 부채 · 날리는 꽃잎
+      const t = MODEL.time;
+      robe(S, 16 * s, -32 * s, F3(tun));
+      torso(S, 4 * s);
+      ctx.fillStyle = F3(tun); ctx.beginPath(); ctx.moveTo(-7 * s, -43 * s); ctx.lineTo(7 * s, -43 * s); ctx.lineTo(8 * s, -30 * s); ctx.lineTo(-8 * s, -30 * s); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = F3(acc); ctx.lineWidth = 1.6 * s; ctx.beginPath(); ctx.moveTo(-8 * s, -40 * s); ctx.quadraticCurveTo(-20 * s, -30 * s + Math.sin(t * 3) * 3 * s, -14 * s, -14 * s); ctx.stroke();
+      head(S, 'bald');
+      ctx.fillStyle = F3('#1a1a22'); ctx.beginPath(); ctx.arc(0, -53 * s, 9 * s, Math.PI * 0.9, Math.PI * 2.05); ctx.fill(); ctx.beginPath(); ctx.ellipse(-2 * s, -64 * s, 6 * s, 4.4 * s, 0, 0, 7); ctx.fill();
+      line(S, -9 * s, -66 * s, 6 * s, -62 * s, 1.2 * s, F3('#e8c65a'));
+      const hx = 14 * s, hy = -44 * s - (atk > 0 ? atk * 4 * s : 0); arm(S, hx, hy);
+      ctx.fillStyle = F3('#f8e8f0'); ctx.beginPath(); ctx.moveTo(hx, hy); ctx.arc(hx, hy, 10 * s, -2.4, -0.6); ctx.closePath(); ctx.fill();
+      if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.strokeStyle = acc; ctx.lineWidth = 0.8 * s; ctx.beginPath(); for (let i = 0; i < 5; i++) { const a = -2.4 + i * 0.45; ctx.moveTo(hx, hy); ctx.lineTo(hx + Math.cos(a) * 10 * s, hy + Math.sin(a) * 10 * s); } ctx.stroke();
+        if (S.live) { ctx.fillStyle = 'rgba(248,170,200,.85)'; for (let i = 0; i < 3; i++) { const k = (t * 0.6 + i / 3) % 1; ctx.beginPath(); ctx.ellipse((14 + k * 14) * s, (-58 + k * 30) * s, 1.6 * s, 1 * s, t * 2 + i, 0, 7); ctx.fill(); } }
+        ctx.restore(); ctx._skipInk = false; }
+      break;
+    }
+    case 'crossbow': {                                         // 연노병: 머리 두건 · 녹색 전포 · 위에 화살 상자를 얹은 연발 쇠뇌
+      legs(S); torso(S, 4.4 * s);
+      ctx.fillStyle = F3(tun); ctx.beginPath(); ctx.moveTo(-6.5 * s, -42 * s); ctx.lineTo(6.5 * s, -42 * s); ctx.lineTo(8 * s, -19 * s); ctx.lineTo(-8 * s, -19 * s); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = F3('#3a2a1e'); ctx.fillRect(-7 * s, -27 * s, 14 * s, 2 * s);
+      head(S, 'wrap');
+      armWeapon(S, -0.05 + atk * 0.08, () => { ctx.fillStyle = F3('#8a6a44'); ctx.fillRect(-4 * s, -2 * s, 22 * s, 4 * s); ctx.fillStyle = F3(acc); ctx.fillRect(6 * s, -9 * s, 9 * s, 7 * s);
+        ctx.strokeStyle = F3('#3a2a1a'); ctx.lineWidth = 2 * s; ctx.beginPath(); ctx.moveTo(16 * s, -9 * s); ctx.quadraticCurveTo(20 * s, 0, 16 * s, 9 * s); ctx.stroke(); line(S, 2 * s, -5 * s, 6 * s, -12 * s, 1.4 * s, F3('#5a3a22')); }, 4 * s);
+      break;
+    }
+    case 'aladdin': {                                          // 알라딘: 붉은 터번과 깃 · 맨가슴의 보라 조끼 · 넓은 흰 바지 · 허리의 마법 램프 · 굽은 칼
+      const t = MODEL.time;
+      legs(S);
+      ctx.fillStyle = F3('#f0ece0'); ctx.beginPath(); ctx.moveTo(-6.5 * s, -21 * s); ctx.lineTo(6.5 * s, -21 * s); ctx.quadraticCurveTo(9 * s, -14 * s, 6.5 * s, -10 * s); ctx.lineTo(-7 * s, -10 * s); ctx.quadraticCurveTo(-9 * s, -14 * s, -6.5 * s, -21 * s); ctx.fill();
+      ctx.fillStyle = F3(col); ctx.beginPath(); ctx.moveTo(-7 * s, -42 * s); ctx.lineTo(7 * s, -42 * s); ctx.lineTo(6.5 * s, -23 * s); ctx.lineTo(-6.5 * s, -23 * s); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = F3(tun); ctx.fillRect(-7 * s, -42 * s, 4.5 * s, 18 * s); ctx.fillRect(3 * s, -42 * s, 4 * s, 18 * s);
+      ctx.fillStyle = F3('#c8302a'); ctx.fillRect(-7 * s, -25 * s, 14 * s, 3 * s);
+      ctx.fillStyle = F3(acc); ctx.beginPath(); ctx.ellipse(-8 * s, -20 * s, 4 * s, 2 * s, 0, 0, 7); ctx.fill(); tri(S, -12 * s, -21 * s, -15 * s, -23 * s, -11.5 * s, -19.5 * s, F3(acc));
+      if (!S.flash && S.live) x3Glow(S, -8 * s, -21 * s, 5 * s, '#ffe9a0', 0.12 + 0.06 * Math.sin(t * 3));
+      head(S, 'bald');
+      ctx.fillStyle = F3('#c8302a'); ctx.beginPath(); ctx.ellipse(0, -58 * s, 10 * s, 6 * s, 0, Math.PI, 0); ctx.fill(); ctx.fillRect(-10 * s, -58 * s, 20 * s, 3 * s);
+      ctx.fillStyle = F3(acc); ctx.beginPath(); ctx.arc(4 * s, -59 * s, 1.8 * s, 0, 7); ctx.fill(); line(S, 4 * s, -60 * s, 8 * s, -68 * s, 1.6 * s, F3('#f0ece0'));
+      armWeapon(S, -1.1 + atk * 2.2, () => { line(S, -4 * s, 0, 3 * s, 0, 2.8 * s, F3('#3a2a1a')); ctx.fillStyle = F3('#e4e8ee'); ctx.beginPath(); ctx.moveTo(4 * s, -1.4 * s); ctx.quadraticCurveTo(18 * s, -2 * s, 28 * s, -8 * s); ctx.quadraticCurveTo(20 * s, 3 * s, 4 * s, 2 * s); ctx.closePath(); ctx.fill(); }, 5 * s);
+      break;
+    }
+    case 'snakecharmer': {                                     // 뱀 부리는 이: 주황 터번 · 수염 · 피리 · 앞에 놓인 바구니에서 춤추며 솟는 코브라
+      const t = MODEL.time;
+      legs(S); robe(S, 12 * s, -26 * s, F3(tun)); torso(S, 4.4 * s);
+      ctx.fillStyle = F3(tun); ctx.beginPath(); ctx.moveTo(-6.5 * s, -42 * s); ctx.lineTo(6.5 * s, -42 * s); ctx.lineTo(7 * s, -26 * s); ctx.lineTo(-7 * s, -26 * s); ctx.closePath(); ctx.fill();
+      head(S, 'bald');
+      ctx.fillStyle = F3('#2a2a30'); ctx.beginPath(); ctx.moveTo(1 * s, -48 * s); ctx.quadraticCurveTo(4 * s, -40 * s, 8 * s, -47 * s); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = F3(tun); ctx.beginPath(); ctx.ellipse(0, -58 * s, 10 * s, 6.4 * s, 0, Math.PI, 0); ctx.fill(); ctx.fillRect(-10 * s, -58 * s, 20 * s, 3 * s);
+      line(S, 6 * s, -48 * s, 16 * s, -44 * s, 1.6 * s, F3('#8a5a2a')); arm(S, 12 * s, -45 * s);
+      ctx.fillStyle = F3('#a8783a'); ctx.beginPath(); roundRectPath(ctx, 18 * s, -12 * s, 12 * s, 12 * s, 2 * s); ctx.fill();
+      const sw = Math.sin(t * 3) * 3 * s, rise = atk > 0 ? atk * 4 * s : 0;
+      ctx.strokeStyle = F3(acc); ctx.lineWidth = 2.6 * s; ctx.beginPath(); ctx.moveTo(24 * s, -12 * s); ctx.quadraticCurveTo(24 * s + sw, -22 * s, 22 * s - sw * 0.5, -30 * s - rise); ctx.stroke();
+      ctx.fillStyle = F3(acc); ctx.beginPath(); ctx.ellipse(22 * s - sw * 0.5, -32 * s - rise, 3.4 * s, 4.4 * s, 0, 0, 7); ctx.fill();
+      if (!S.flash) { ctx.fillStyle = '#1a1a20'; ctx.beginPath(); ctx.arc(23.5 * s - sw * 0.5, -33 * s - rise, 0.8 * s, 0, 7); ctx.fill(); }
+      break;
+    }
+    case 'dervish': {                                          // 수피 무희: 높은 펠트 모자 · 넓게 퍼진 흰 치마 · 두 팔 끝의 칼 (빙글빙글 돈다)
+      const t = MODEL.time, spin = t * (atk > 0 ? 14 : 5), flare = (S.moving || atk > 0) ? 1 : 0.75;
+      ctx.fillStyle = F3(tun); ctx.beginPath(); ctx.moveTo(-3 * s, -30 * s); ctx.lineTo(16 * s * flare, -1 * s); ctx.quadraticCurveTo(0, 4 * s, -16 * s * flare, -1 * s); ctx.closePath(); ctx.fill();
+      if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.strokeStyle = 'rgba(0,0,0,.15)'; ctx.lineWidth = 1 * s; ctx.beginPath(); for (let i = 0; i < 5; i++) { const x = Math.sin(spin + i * 1.25) * 14 * s * flare; ctx.moveTo(0, -28 * s); ctx.lineTo(x, -1 * s); } ctx.stroke();
+        ctx.fillStyle = acc; ctx.fillRect(-14 * s * flare, -3 * s, 28 * s * flare, 1.6 * s); ctx.restore(); ctx._skipInk = false; }
+      torso(S, 4 * s);
+      ctx.fillStyle = F3(tun); ctx.beginPath(); roundRectPath(ctx, -6 * s, -42 * s, 12 * s, 14 * s, 2 * s); ctx.fill();
+      head(S, 'bald');
+      ctx.fillStyle = F3('#8a6a4a'); ctx.beginPath(); roundRectPath(ctx, -5 * s, -76 * s, 10 * s, 18 * s, 3 * s); ctx.fill();
+      for (const d of [-1, 1]) { const a = spin * 0.4 + (d > 0 ? 0 : Math.PI), c = Math.cos(a), hx = c * 16 * s, hy = -40 * s + Math.sin(a) * 3 * s; arm(S, hx, hy);
+        ctx.fillStyle = F3('#e4e8ee'); ctx.beginPath(); ctx.moveTo(hx, hy - 1 * s); ctx.quadraticCurveTo(hx + c * 10 * s, hy - 4 * s, hx + c * 16 * s, hy); ctx.lineTo(hx, hy + 1 * s); ctx.closePath(); ctx.fill(); }
+      break;
+    }
+    case 'scipio': {                                           // 스키피오: 흰 깃 투구 · 금 흉갑 · 자주 망토 · 붉은 타원 방패 · 글라디우스
+      cape(S, -1, F3(tun), 1.2);
+      legs(S); torso(S, 5.2 * s);
+      ctx.fillStyle = F3('#d8b060'); ctx.beginPath(); roundRectPath(ctx, -7.5 * s, -42 * s, 15 * s, 17 * s, 3 * s); ctx.fill();
+      ctx.fillStyle = F3('#8a5a2a'); for (let i = 0; i < 5; i++) ctx.fillRect((-7 + i * 3) * s, -25 * s, 2.4 * s, 7 * s);
+      head(S, 'bald');
+      ctx.fillStyle = F3(acc); ctx.beginPath(); ctx.arc(0, -52.5 * s, 9.4 * s, Math.PI, 0); ctx.fill(); ctx.fillRect(4 * s, -53 * s, 3.4 * s, 7 * s);
+      ctx.fillStyle = F3('#f4f2ea'); ctx.beginPath(); ctx.moveTo(-8 * s, -60 * s); ctx.quadraticCurveTo(0, -74 * s, 9 * s, -61 * s); ctx.lineTo(5 * s, -60 * s); ctx.quadraticCurveTo(0, -66 * s, -5 * s, -59 * s); ctx.closePath(); ctx.fill();
+      armWeapon(S, -1.0 + atk * 1.9, () => { line(S, -2 * s, 0, 3 * s, 0, 2.6 * s, F3('#5a3a22')); ctx.fillStyle = F3('#e8ecf2'); ctx.beginPath(); ctx.moveTo(4 * s, -2 * s); ctx.lineTo(22 * s, -1.8 * s); ctx.lineTo(26 * s, 0); ctx.lineTo(22 * s, 1.8 * s); ctx.lineTo(4 * s, 2 * s); ctx.closePath(); ctx.fill(); }, 4 * s);
+      ctx.fillStyle = F3('#8e1a2a'); ctx.beginPath(); ctx.ellipse(10 * s, -31 * s, 6.5 * s, 11 * s, 0, 0, 7); ctx.fill();
+      if (!S.flash) { ctx.save(); ctx._skipInk = true; ctx.strokeStyle = acc; ctx.lineWidth = 1 * s; ctx.beginPath(); ctx.ellipse(10 * s, -31 * s, 5 * s, 9 * s, 0, 0, 7); ctx.stroke(); ctx.fillStyle = acc; ctx.beginPath(); ctx.arc(10 * s, -31 * s, 2.2 * s, 0, 7); ctx.fill(); ctx.restore(); ctx._skipInk = false; }
+      break;
+    }
+    case 'scorpio': {                                          // 스코르피오: 세 다리 받침 위의 쇠뇌 · 꼬인 밧줄 틀 · 뒤에서 겨누는 군단병
+      const charge = Math.max(S.wind, atk > 0 ? 0 : 0.6);
+      ctx.strokeStyle = F3('#5a4a34'); ctx.lineWidth = 2.6 * s; ctx.beginPath(); ctx.moveTo(6 * s, -28 * s); ctx.lineTo(-4 * s, 0); ctx.moveTo(6 * s, -28 * s); ctx.lineTo(16 * s, 0); ctx.moveTo(6 * s, -28 * s); ctx.lineTo(6 * s, 0); ctx.stroke();
+      ctx.save(); ctx.translate(6 * s, -32 * s); ctx.rotate(-0.06);
+      ctx.fillStyle = F3('#7a5a3a'); ctx.beginPath(); roundRectPath(ctx, -18 * s, -2.6 * s, 40 * s, 5.2 * s, 2 * s); ctx.fill();
+      ctx.fillStyle = F3(tun); ctx.beginPath(); roundRectPath(ctx, 4 * s, -10 * s, 8 * s, 20 * s, 1.6 * s); ctx.fill();
+      ctx.strokeStyle = F3('#3a2a1a'); ctx.lineWidth = 2.4 * s; const bend = 3 * s * charge;
+      ctx.beginPath(); ctx.moveTo(8 * s, -8 * s); ctx.lineTo(2 * s - bend, -16 * s); ctx.moveTo(8 * s, 8 * s); ctx.lineTo(2 * s - bend, 16 * s); ctx.stroke();
+      ctx.strokeStyle = F3('#e8e0c8'); ctx.lineWidth = 1 * s; const nock = (-4 - 12 * charge) * s;
+      ctx.beginPath(); ctx.moveTo(2 * s - bend, -16 * s); ctx.lineTo(nock, 0); ctx.lineTo(2 * s - bend, 16 * s); ctx.stroke();
+      if (charge > 0.2) { line(S, nock, 0, 28 * s, 0, 2 * s, F3('#8a6a44')); tri(S, 28 * s, -2.6 * s, 34 * s, 0, 28 * s, 2.6 * s, F3(acc)); }
+      ctx.restore();
+      ctx.save(); ctx.translate(-22 * s, 0); ctx.scale(0.85, 0.85);
+      legs(S); torso(S, 4.6 * s); head(S, 'bald'); ctx.fillStyle = F3('#c8ccd4'); ctx.beginPath(); ctx.arc(0, -52.5 * s, 9.3 * s, Math.PI, 0); ctx.fill(); arm(S, 22 * s, -36 * s);
+      ctx.restore();
+      break;
+    }
+    case 'velites': {                                          // 경보병: 늑대 가죽을 뒤집어쓴 머리 · 짧은 튜닉 · 작은 둥근 방패 · 가벼운 투창
+      ctx.fillStyle = F3('#8a6a3a'); ctx.beginPath(); ctx.arc(-9 * s, -30 * s, 6 * s, 0, 7); ctx.fill();
+      legs(S); torso(S, 4.2 * s);
+      ctx.fillStyle = F3(tun); ctx.beginPath(); ctx.moveTo(-6 * s, -42 * s); ctx.lineTo(6 * s, -42 * s); ctx.lineTo(7.5 * s, -20 * s); ctx.lineTo(-7.5 * s, -20 * s); ctx.closePath(); ctx.fill();
+      head(S, 'bald');
+      ctx.fillStyle = F3('#7a6a5a'); ctx.beginPath(); ctx.arc(0, -53 * s, 10 * s, Math.PI * 0.8, Math.PI * 2.1); ctx.lineTo(-10 * s, -38 * s); ctx.lineTo(-12 * s, -44 * s); ctx.closePath(); ctx.fill();
+      tri(S, -2 * s, -61 * s, 0, -67 * s, 3 * s, -62 * s, F3('#7a6a5a')); tri(S, 4 * s, -61 * s, 7 * s, -66 * s, 8 * s, -59 * s, F3('#7a6a5a'));
+      if (!S.flash) { ctx.fillStyle = '#e8e0c8'; ctx.fillRect(6 * s, -60 * s, 4 * s, 1.2 * s); }
+      armWeapon(S, -0.4 + atk * 0.5, () => { line(S, -14 * s, 0, 24 * s, 0, 1.8 * s, F3('#8a6a44')); tri(S, 24 * s, -2 * s, 30 * s, 0, 24 * s, 2 * s, F3('#e4e8ee')); }, 4 * s);
+      break;
+    }
     /* ---------------------- 5.5 3진 여섯 ---------------------- */
     case 'stormarcher': {                                      // 폭풍의 명궁: 깃털 망토 (바람에 펄럭인다) · 녹색 두건 · 폭풍 룬이 빛나는 큰 장궁 · 발밑의 바람 고리
       const t = MODEL.time, hq = MODEL.ink && !S.flash, live = S.live && !S.flash;
@@ -11768,6 +12238,8 @@ const HUMANOID = {
   stormgod: 1,                                                                         // 4.25
   sinbad: 1, scheherazade: 1, scimitar: 1, bandit: 1, dokkaebiking: 1, gatling: 1,
   halberdier: 1, flamer: 1, caesar: 1, spartacus: 1, centurion: 1, retiarius: 1, pilum: 1, legionary: 1,   // 5.5
+  poseidon: 1, jotunn: 1, shieldmaiden: 1, horus: 1, sobek: 1, khopesh: 1, yhunter: 1, arcgunner: 1, grenadier: 1, erlang: 1, redboy: 1,   // 5.9
+  gawain: 1, percival: 1, squire: 1, tomoe: 1, oni: 1, lubu: 1, crossbow: 1, aladdin: 1, scipio: 1, velites: 1,
   stormarcher: 1, lakeknight: 1, shadowninja: 1, aquilifer: 1,  // 5.2 (지니 · 양탄자 · 낙타 기수는 몸이 떠 있어 팔을 직접 그린다)
   drummer:1, assassin:1, burrower:1, boneguard:1,
   pojol:1, hwarang:1, dokkaebi:1, teslaknight:1, clocksoldier:1, mechanic:1, rifleman:1,
@@ -12087,6 +12559,9 @@ const ATTACK_STYLES = {
 ATTACK_STYLES.thrust += ',drillspear';
 ATTACK_STYLES.heavy += ',bulldozer'; ATTACK_STYLES.cast += ',icecart'; ATTACK_STYLES.shoot += ',railgun';   // 4.4
 ATTACK_STYLES.heavy += ',megabot';
+// 5.9 기존 시즌에 셋씩
+ATTACK_STYLES.thrust += ',poseidon,athena,sobek,erlang,percival,tomoe,sohei,lubu'; ATTACK_STYLES.heavy += ',jotunn,gearcolossus,oni,jangseung';
+ATTACK_STYLES.cast += ',freya,bari,redboy,spiderdemon,diaochan,snakecharmer'; ATTACK_STYLES.shoot += ',centaur,horus,yhunter,arcgunner,grenadier,crossbow,scorpio,velites';
 ATTACK_STYLES.cast += ',ambulance,ufo';
 ATTACK_STYLES.shoot += ',tank,dronepilot';
 // 4.13 4.6~4.11 의 새 병종 · 적도 공격 모양을 갖는다 (모두 기본 '베기' 로 휘두르던 것)
@@ -12873,7 +13348,7 @@ function statusDot(ctx, x, y, s, color) {
 /* 3.8: 아이콘은 한 번 그려 두고 복사만 한다. 편성·훈련소는 칸마다 80여 개를 다시 그리느라
  * 누를 때마다 끊겼다 (폰에서 수십~수백 ms). 모습이 같으면(이름·모양·색·진화·크기) 같은 그림이다. */
 const _iconCache = new Map();
-const ICON_WIDE = { hwacha: 1, biga: 1, catapult: 1, goldcart: 1, knight_evo: 1, catapult_evo: 1, colossus_evo: 1, wukong_evo: 1, wolf: 1, spider: 1, merchant: 1, sniper: 1, drake: 1, hellhound: 1, spiderqueen: 1, lancer: 1, griffinrider: 1, stormgriffin: 1, skycannon: 1,
+const ICON_WIDE = { centaur: 1, scorpio: 1, snakecharmer: 1, erlang: 1, hwacha: 1, biga: 1, catapult: 1, goldcart: 1, knight_evo: 1, catapult_evo: 1, colossus_evo: 1, wukong_evo: 1, wolf: 1, spider: 1, merchant: 1, sniper: 1, drake: 1, hellhound: 1, spiderqueen: 1, lancer: 1, griffinrider: 1, stormgriffin: 1, skycannon: 1,
   ambulance: 1, tank: 1, ufo: 1 };
 /* 4.3 3진: 몸이 크거나 비대칭인 모습은 아이콘 칸에 맞춰 줄이고 옮긴다 [배율, 가로 자리, 세로 자리] */
 const ICON_FIT = { tank: [0.68, 0.42, 0.9], ambulance: [0.78, 0.5, 0.92], ufo: [0.82, 0.5, 0.86], megabot: [0.62, 0.48, 0.96],
