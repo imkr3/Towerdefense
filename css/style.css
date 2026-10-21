@@ -1735,3 +1735,6 @@ body:has(.modal.show) .toast{top:calc(7px + var(--st))}
 .q-reset{margin-top:4px;font-size:12px;font-weight:700;color:var(--au-l,#e8c65a)}
 .q-all{margin-top:8px;width:100%}
 .card .c-name{position:relative;z-index:2}
+/* 5.11 도전 · 금화 원정 목록: 카드가 판보다 길면 안에서 위아래로 넘긴다 (예전엔 넘친 줄이 잘려 아래 도전을 고를 수 없었다) */
+.trail.event-mode .endless-slot{display:block;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;scrollbar-width:thin}
+.trail.event-mode .event-grid{align-content:start;min-height:100%}

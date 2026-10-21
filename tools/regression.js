@@ -745,7 +745,7 @@ test('Fury: in hardcore and act 2, foes arriving later are tougher', () => {
 const EV = vm.runInContext('({EVENT_STAGES, eventOpen, eventCount})', ctx);
 function evBattle(k, s) { return new Battle(STAGES.length + k, s || save(), EV.EVENT_STAGES[k]); }
 test('Eight event stages (4.15: +1), each with its own new boss, locked behind campaign progress', () => {
-  assert.equal(EV.EVENT_STAGES.length, 10);   // 5.3: +2
+  assert.equal(EV.EVENT_STAGES.length, 12);   // 5.3: +2 · 5.11: +2
   const bosses = new Set();
   EV.EVENT_STAGES.forEach((st, k) => {
     assert.ok(E[st.bossId] && E[st.bossId].boss, st.name); bosses.add(st.bossId);
@@ -754,7 +754,7 @@ test('Eight event stages (4.15: +1), each with its own new boss, locked behind c
     assert.ok(st.event.deck.length === 10 && st.event.deck.every(id => U[id]), 'recommended deck');
     assert.equal(EV.eventOpen({ cleared: st.event.unlock - 1 }, k), false); assert.equal(EV.eventOpen({ cleared: st.event.unlock }, k), true);
   });
-  assert.equal(bosses.size, 10);
+  assert.equal(bosses.size, 12);
 });
 test('Event battles are not campaign progress: they record stars and pay stones once', () => {
   const s = save(); s.stones = 0; s.cleared = 30; const b = evBattle(0, s);
@@ -1825,7 +1825,7 @@ test('4.21: hardcore / challenge bosses carry two affixes (campaign and endless 
     assert.equal(A.bossAffixes(st, i, false).length, 0, 'campaign untouched');
   });
   assert.ok(n >= 20, 'boss stages ' + n);
-  for (const ev of A.EVENT_STAGES) { const k = A.bossAffixes(ev, 0, false), w = ev.event.id === 'twins' ? 2 : 3; assert.equal(k.length, w, ev.event.id); assert.equal(new Set(k).size, w); }   // 4.23: 도전은 셋 (5.3 쌍왕은 보스가 둘이라 둘씩)
+  for (const ev of A.EVENT_STAGES) { const k = A.bossAffixes(ev, 0, false), w = ev.event.id === 'twins' ? 2 : ev.event.id === 'phoenixnest' ? 4 : 3; assert.equal(k.length, w, ev.event.id); assert.equal(new Set(k).size, w); }   // 4.23: 도전은 셋 (5.3 쌍왕은 보스가 둘이라 둘씩)
   const bi = STAGES.findIndex(st => st.boss && st.bossId);
   const h = new Battle(bi, save(), null, { hard: true }), c = new Battle(bi, save());
   const hb = h.spawnEnemy(STAGES[bi].bossId, 1200), cb = c.spawnEnemy(STAGES[bi].bossId, 1200);
@@ -2322,6 +2322,26 @@ test('5.9: every season gains three (legend · hero · rare/common, no mythic) �
     }
   }
   for (const u of UNITS) if (u.cost > 0) { const v = UNIT_COOLDOWN[u.id]; assert.ok(!seen.has(v), 'unique cooldown ' + u.id); seen.add(v); }
+});
+
+test('5.11: two harder challenges (three kings · phoenix nest) after the last stage; the challenge list scrolls', () => {
+  const css = fs.readFileSync(path.join(__dirname, '../js/../css/style.css'), 'utf8');
+  const [e11, e12] = EV.EVENT_STAGES.slice(10);
+  assert.equal(e11.event.id, 'threekings'); assert.equal(e12.event.id, 'phoenixnest');
+  assert.ok(e11.event.unlock >= 90 && e12.event.unlock >= 90, 'open after the whole campaign');
+  for (const id of ['leviathan', 'skylord', 'magmalord']) assert.ok(e11.waves.some(w => w.e === id), id);
+  assert.ok(e11.mods.includes('giantslayer') && e12.mods.includes('ironclad') && e12.mods.includes('curse') && e12.volcano);
+  const prev = EV.EVENT_STAGES[9];
+  assert.ok(e11.event.reward > prev.event.reward && e12.event.reward > e11.event.reward, 'bigger rewards for harder fights');
+  assert.ok(/\.trail\.event-mode \.endless-slot\{display:block;overflow-y:auto/.test(css), 'challenge cards scroll inside the panel');
+});
+
+test('5.11: optimisation — the loop sleeps in menus, crowded fights drop resolution, the title backdrop is cached, cheap paint paths', () => {
+  const main = fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8'), render = fs.readFileSync(path.join(__dirname, '../js/render.js'), 'utf8');
+  assert.ok(/if \(!titleAnim\.on && !inBattle\) \{ loopOn = false; return; \}/.test(main) && /wakeLoop\(\);/.test(main), 'loop stops outside battle and title, wakes on show');
+  assert.ok(/this\.resLow \? Math\.min\(cap, RES_LOW_CAP\) : cap/.test(render) && /adaptRes\(dt\)/.test(render), 'adaptive resolution');
+  assert.ok(/function titleLayers\(A\)/.test(main), 'title layers cached');
+  assert.ok(/if \(!this\._depth && \(this\._noInk \|\| this\._skipInk\)\) return _stroke0/.test(render) && /_shadeCache = new Map\(\)/.test(render));
 });
 
 console.log(count + ' regression checks passed');

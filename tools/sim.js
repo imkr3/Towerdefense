@@ -345,10 +345,13 @@ const POWER_DECKS = {
   // 5.2: 몸으로 막는 아서를 오딘보다 앞에 — 자동 출진은 편성 순서대로라, 오딘이 아서보다 싸면 앞줄 없이 지원만 나가 돌격에 무너졌다 (값이 바뀌어도 검사가 흔들리지 않게)
   buff: ['merlin', 'arthur', 'odin', 'ra', 'zhugeliang', 'herald', 'runeseer', 'priest', 'mudang', 'catapult'],
   core: ['mage', 'colossus', 'thor', 'ra', 'odin', 'merlin', 'herald', 'runeseer', 'priest', 'mudang'],
-  debuff: ['ra', 'merlin', 'odin', 'guanyu', 'susanoo', 'frost', 'mudang', 'alchemist', 'anchorguard', 'priest']
+  debuff: ['ra', 'merlin', 'odin', 'guanyu', 'susanoo', 'frost', 'mudang', 'alchemist', 'anchorguard', 'priest'],
+  // 5.11: 5.10 의 새 시즌 캐릭터만 (전설 다섯 · 영웅 다섯) — 새 캐릭터가 기존 곳을 너무 쉽게 만들지 않는지, 새 도전이 그들까지 견디는지
+  newcomer: ['gawain', 'lubu', 'erlang', 'horus', 'bari', 'athena', 'scorpio', 'jotunn', 'percival', 'arcgunner']
 };
-const HARD_FULL = { up: 10, lv: 30, stages: [1, 10, 18, 27, 36, 45, 53, 63, 70, 80, 85, 90], decks: ['buff', 'core', 'debuff', 'combo', 'rec'], min: 0, max: 7, sumMin: 0.15, sumMax: 0.5 };
-const EVENT_FULL = { up: 10, lv: 30, decks: ['buff', 'core', 'debuff', 'counter', 'combo', 'rec'], min: 0, max: 7, sumMin: 0.15, sumMax: 0.5 };
+const HARD_FULL = { up: 10, lv: 30, stages: [1, 10, 18, 27, 36, 45, 53, 63, 70, 80, 85, 90], decks: ['buff', 'core', 'debuff', 'combo', 'rec', 'newcomer'], min: 0, max: 7, sumMin: 0.15, sumMax: 0.5 };   // 5.11 새 캐릭터 편성도
+const EVENT_FULL = { up: 10, lv: 30, decks: ['buff', 'core', 'debuff', 'counter', 'combo', 'rec', 'newcomer'],   // 5.11 새 캐릭터 편성도
+  min: 0, max: 7, sumMin: 0.15, sumMax: 0.5 };
 const EVENT_MID = { up: 10, lv: 20, timedMax: 2 };   // 중간 전력: 10판 중 2판 이하
 const ACT3_ENTRY = { up: 10, lv: 14, min: 2, max: 5 };   // 3.3
 const SMART_ACT3 = { up: 10, lv: 18 };

@@ -91,6 +91,12 @@ const I18N_EN = {
   '회오리': 'Whirlwind', '아프리카': 'Africanus', '공격력 +22% 지휘 · 포위 강화': '+22% attack command · stronger Encirclement',
   '군단 대쇠뇌': 'Legion Great Ballista', '대쇠뇌': 'Great Ballista', '사거리 +40 · 공격 15% 빠름': 'Range +40 · attacks 15% faster',
   '하스타티': 'Hastati',
+  // 5.11 도전 E11 · E12
+  '세 왕의 귀환': 'Return of the Three Kings', '불사조의 둥지': 'Phoenix Nest',
+  '바다 · 하늘 · 불의 왕 셋 — 한 왕이 쓰러지면 다음 왕이 더 성난 채로 온다 · 각인: 봉인 · 사형 선고 · 돌진': 'Three kings of sea, sky and fire — when one falls the next comes angrier · marks: Seal · Death Sentence · Charge',
+  '불꽃 날개를 펼친 불새 — 용암 비와 함께 내려앉는다 · 각인: 수호 토템 · 군자금 탈취 · 유성우 · 광폭': 'The firebird spreads its flaming wings and descends with a rain of lava · marks: Ward Totem · Tax · Meteor Shower · Frenzy',
+  '세 왕이 차례로 — 리바이어던 · 천공의 군주 · 용암 군주 · 비용 350 이상 아군은 4배 피해 · 봉인 — 값싼 병력으로 버티세요': 'Three kings in turn — Leviathan · Sky Lord · Magma Lord · allies costing 350+ take 4x damage · seals — hold with cheap troops',
+  '15초마다 용암이 넷씩 솟습니다 · 중갑 · 저주 · 불사조의 각인 넷 — 중독 · 화상 · 파쇄로 갑옷을 뚫고 흩어져 버티세요': 'Lava erupts in four places every 15s · heavy armor · curse · four phoenix marks — break armor with poison, burns and breakers, and spread out',
   // 5.9 저장 · 백업 오류 · 정벌 단계 버튼 (영어 화면에 한글로 남던 것)
   '게임 저장 데이터가 아닙니다.': 'This is not a game save.', '진화 데이터 오류': 'Bad evolution data', '3진 데이터 오류': 'Bad 3rd-form data',
   '4진 데이터 오류': 'Bad 4th-form data', '편성 데이터 오류': 'Bad deck data', '일일 임무 데이터 오류': 'Bad daily mission data',

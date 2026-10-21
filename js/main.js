@@ -173,6 +173,7 @@ function show(id) {
   if (id === 'scr-quest') { checkAchievements(); renderQuest(); }
   if (id === 'scr-conquest') renderConquest();
   if (id === 'scr-battle' && renderer) renderer.resize();
+  if (id === 'scr-battle' || id === 'scr-title') wakeLoop();
   if (id !== 'scr-battle') BGM.play(SCREEN_MUSIC[id] || 'map');
   updateWakeLock();
 }
@@ -852,7 +853,7 @@ function renderEventDetail(k) {
     '<div class="sd-no">이벤트 E' + (k + 1) + ' · 극악</div>' +
     '<div class="sd-name">' + st.name + '</div>' +
     '<div class="sd-stars">' + starMarks(done) + '</div>' +
-    '<div class="sd-event"><b>' + boss.name + '</b><span>' + boss.abText + '</span><small>공략 · ' + ev.mech + '</small></div>' +
+    '<div class="sd-event"><b>' + boss.name + '</b><span>' + (ev.bossText || boss.abText || '') + '</span><small>공략 · ' + ev.mech + '</small></div>' +
     affixBlock(bossAffixes(st, k, false)) +
     (st.mods ? '<div class="sd-mods">' + st.mods.map(m => {
       const d = STAGE_MODS[m];
@@ -2183,11 +2184,15 @@ let battleScr = null;
 // 3.10: 매 프레임 문서 전체를 선택자로 훑지 않는다. 살아 있는 목록이라 창이 열리고 닫히면 저절로 바뀐다.
 const openModals = document.getElementsByClassName('modal show');
 const resultEl = document.getElementById('result');
+/* 5.11: 메뉴(타이틀 · 전투 밖)에서는 그릴 것이 없다 — 루프를 멈췄다가 화면이 바뀌면 다시 깨운다 (예전엔 매 화면 새로 고침마다 깨어 바로 돌아갔다) */
+let loopOn = false;
+function wakeLoop() { if (loopOn) return; loopOn = true; lastTs = 0; requestAnimationFrame(loop); }
 function loop(ts) {
-  requestAnimationFrame(loop);
-  if (!lastTs) lastTs = ts;
   battleScr = battleScr || $('#scr-battle');
   const inBattle = !titleAnim.on && battle && battleScr.classList.contains('active');
+  if (!titleAnim.on && !inBattle) { loopOn = false; return; }
+  requestAnimationFrame(loop);
+  if (!lastTs) lastTs = ts;
   const modal = inBattle && openModals.length > 0;
   const idle = inBattle && (paused || modal || battle.state !== 'play');
   const minMs = Math.max(FRAME_MIN_MS[Settings.get('quality')] || 14,
@@ -2449,6 +2454,68 @@ function resizeTitle() {
   titleAnim.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 
+/* 5.11: 타이틀의 멈춰 있는 두 층 — 크기가 바뀔 때만 다시 그린다 */
+function titleLayers(A) {
+  const W = A.cv.width, H = A.cv.height;
+  if (A.layers && A.layers.W === W && A.layers.H === H && A.layers.w === A.w && A.layers.h === A.h) return A.layers;
+  const w = A.w, h = A.h, groundY = h * 0.86, dpr = W / w;
+  const mk = () => { const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0); return [c, x]; };
+  const [back, bctx] = mk(), [front, fctx] = mk();
+  {
+    const ctx = bctx;
+    const sky = ctx.createLinearGradient(0, 0, 0, groundY);
+    sky.addColorStop(0, '#2f3f57');
+    sky.addColorStop(0.55, '#8d7f8e');
+    sky.addColorStop(1, '#e3b988');
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, w, h);
+
+    // 저무는 해
+    ctx.fillStyle = 'rgba(255,214,150,.35)';
+    ctx.beginPath(); ctx.arc(w * 0.5, groundY - 40, 92, 0, 7); ctx.fill();
+    ctx.fillStyle = 'rgba(255,236,196,.85)';
+    ctx.beginPath(); ctx.arc(w * 0.5, groundY - 40, 58, 0, 7); ctx.fill();
+  }
+  {
+    const ctx = fctx;
+    // 산맥
+    const ridge = (color, amp, step, base) => {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(-10, groundY + 10);
+      for (let x = -step; x < w + step * 2; x += step) {
+        ctx.lineTo(x, groundY - base);
+        ctx.lineTo(x + step / 2, groundY - base - amp);
+      }
+      ctx.lineTo(w + 20, groundY + 10);
+      ctx.closePath(); ctx.fill();
+    };
+    ridge('rgba(60,58,80,.75)', 120, 210, 30);
+    ridge('rgba(40,40,56,.9)', 76, 140, 6);
+
+    // 성채 실루엣
+    ctx.fillStyle = 'rgba(28,28,38,.95)';
+    const cw = 90, ch = 120;
+    ctx.fillRect(18, groundY - ch, cw, ch);
+    for (let i = 0; i < 4; i++) ctx.fillRect(18 + i * 24, groundY - ch - 14, 15, 16);
+    ctx.fillRect(w - 18 - cw, groundY - ch, cw, ch);
+    for (let i = 0; i < 5; i++) {
+      ctx.beginPath();
+      ctx.moveTo(w - 18 - cw + i * 19, groundY - ch);
+      ctx.lineTo(w - 18 - cw + i * 19 + 9, groundY - ch - 20);
+      ctx.lineTo(w - 18 - cw + i * 19 + 18, groundY - ch);
+      ctx.closePath(); ctx.fill();
+    }
+
+    // 땅
+    ctx.fillStyle = '#3a3040';
+    ctx.fillRect(0, groundY, w, h - groundY);
+    ctx.fillStyle = '#2b2431';
+    ctx.fillRect(0, groundY, w, 4);
+  }
+  return (A.layers = { W, H, w, h, back, front });
+}
+
 function drawTitle(dt) {
   const A = titleAnim;
   if (!A.cv) return;
@@ -2458,18 +2525,9 @@ function drawTitle(dt) {
   const t = A.t;
   const groundY = h * 0.86;
 
-  const sky = ctx.createLinearGradient(0, 0, 0, groundY);
-  sky.addColorStop(0, '#2f3f57');
-  sky.addColorStop(0.55, '#8d7f8e');
-  sky.addColorStop(1, '#e3b988');
-  ctx.fillStyle = sky;
-  ctx.fillRect(0, 0, w, h);
-
-  // 저무는 해
-  ctx.fillStyle = 'rgba(255,214,150,.35)';
-  ctx.beginPath(); ctx.arc(w * 0.5, groundY - 40, 92, 0, 7); ctx.fill();
-  ctx.fillStyle = 'rgba(255,236,196,.85)';
-  ctx.beginPath(); ctx.arc(w * 0.5, groundY - 40, 58, 0, 7); ctx.fill();
+  // 5.11: 하늘 · 해 / 산맥 · 성채 · 땅은 움직이지 않으므로 한 번 그려 두고 붙인다 (구름만 그 사이에서 흐른다)
+  const L = titleLayers(A);
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(L.back, 0, 0); ctx.restore();
 
   // 구름
   ctx.fillStyle = 'rgba(40,36,50,.35)';
@@ -2483,40 +2541,7 @@ function drawTitle(dt) {
     ctx.fill();
   }
 
-  // 산맥
-  const ridge = (color, amp, step, base) => {
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(-10, groundY + 10);
-    for (let x = -step; x < w + step * 2; x += step) {
-      ctx.lineTo(x, groundY - base);
-      ctx.lineTo(x + step / 2, groundY - base - amp);
-    }
-    ctx.lineTo(w + 20, groundY + 10);
-    ctx.closePath(); ctx.fill();
-  };
-  ridge('rgba(60,58,80,.75)', 120, 210, 30);
-  ridge('rgba(40,40,56,.9)', 76, 140, 6);
-
-  // 성채 실루엣
-  ctx.fillStyle = 'rgba(28,28,38,.95)';
-  const cw = 90, ch = 120;
-  ctx.fillRect(18, groundY - ch, cw, ch);
-  for (let i = 0; i < 4; i++) ctx.fillRect(18 + i * 24, groundY - ch - 14, 15, 16);
-  ctx.fillRect(w - 18 - cw, groundY - ch, cw, ch);
-  for (let i = 0; i < 5; i++) {
-    ctx.beginPath();
-    ctx.moveTo(w - 18 - cw + i * 19, groundY - ch);
-    ctx.lineTo(w - 18 - cw + i * 19 + 9, groundY - ch - 20);
-    ctx.lineTo(w - 18 - cw + i * 19 + 18, groundY - ch);
-    ctx.closePath(); ctx.fill();
-  }
-
-  // 땅
-  ctx.fillStyle = '#3a3040';
-  ctx.fillRect(0, groundY, w, h - groundY);
-  ctx.fillStyle = '#2b2431';
-  ctx.fillRect(0, groundY, w, 4);
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(L.front, 0, 0); ctx.restore();
 
   // 부대
   if (!A.cast) A.cast = titleCast();
@@ -2796,7 +2821,7 @@ function init() {
     if (e.key.toLowerCase() === 'a') $('#btn-auto').click();
     if (e.key.toLowerCase() === 'f') { renderer.dragUntil = 0; }
   });
-  requestAnimationFrame(loop);
+  wakeLoop();
 }
 
 document.addEventListener('DOMContentLoaded', init);

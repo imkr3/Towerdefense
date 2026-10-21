@@ -2642,7 +2642,8 @@ const AFFIX_KEYS = Object.keys(BOSS_AFFIXES);
 // 4.23 도전의 보스는 각인 셋 (새 각인 하나씩 더). 가면무도회는 제 기믹이 봉인이라 봉인 각인은 주지 않는다
 const EVENT_AFFIX = { eclipse: ['clone', 'doom', 'starfall'], titan: ['charge', 'pull', 'frenzy'], fleet: ['tax', 'totem', 'seal'], rift: ['pull', 'clone', 'seal'],
                       demonking: ['doom', 'totem', 'frenzy'], train: ['doom', 'tax', 'starfall'], masque: ['clone', 'doom', 'frenzy'], hourglass: ['totem', 'pull', 'starfall'],
-                      muspel: ['charge', 'tax', 'frenzy'], twins: ['starfall', 'seal'] };   // 5.3 (쌍왕은 둘이라 하나씩 적게)
+                      muspel: ['charge', 'tax', 'frenzy'], twins: ['starfall', 'seal'],
+                      threekings: ['seal', 'doom', 'charge'], phoenixnest: ['totem', 'tax', 'starfall', 'frenzy'] };   // 5.11 (불사조는 각인 넷)   // 5.3 (쌍왕은 둘이라 하나씩 적게)
 /* 이 전장의 보스가 쓰는 각인 (하드코어 보스 전장은 짝 36가지 중 28가지를 돌려 가며 — 4.23: 보폭 13 이라 전장마다 다른 짝) */
 function bossAffixes(stage, idx, hard) {
   if (stage && stage.runAffix) return stage.runAffix;          // 5.0 정벌 보스
@@ -2790,6 +2791,31 @@ EVENT_STAGES.push(
     waves: [W(2,'pixie',8,.5), W(14,'unicorn',2,3), W(28,'harpy',6,.6), W(40,'sunking',1), W(40,'moonqueen',1), W(46,'wisp',3,2),
             W(70,'griffinrider',4,1.4), W(96,'pixie',12,.4), W(122,'unicorn',3,2.5), W(150,'stormwisp',3,2.5), W(180,'harpy',10,.5)] }
 );
+/* 5.11 도전 둘 — 5.10 의 새 시즌 캐릭터(전설 11 · 영웅 11)까지 넣은 편성으로 맞췄고, 앞의 도전보다 한 단계 더 어렵다.
+ *  - '세 왕의 귀환': 리바이어던 → 천공의 군주 → 용암 군주가 차례로 온다. 영웅 사냥꾼(비용 350 이상 아군 4배 피해) · 봉인 각인 —
+ *    비싼 전설만 몰아 넣으면 무너진다. 값싼 병력 · 소환물로 버티며 셋을 다 넘어야 한다.
+ *  - '불사조의 둥지': 15초마다 용암이 넷씩 솟고, 중갑 · 저주 · 각인 넷 — 중독 · 화상 · 파쇄로 갑옷을 뚫고, 흩어져서 버틴다. */
+EVENT_STAGES.push(
+  { name: '세 왕의 귀환', bossId: 'skylord', bossRole: 'caster', boss: true, look: 'stormspire', music: 'stormeye', bossMusic: 'hc_boss',
+    mods: ['giantslayer'], baseHp: 210000, money: 740, rate: 92, reward: 0, enemyMul: 12, bossMul: { hp: 2.4, atk: 1.35 },
+    fury: { per30: 0.13, max: 1.6 }, len: 1700,
+    event: { id: 'threekings', deck: ['spear','shield','javelin','catapult','sniper','frost','pyro','priest','musketeer','venom'],
+             unlock: 90, reward: 80000, stones: 60, bossText: '바다 · 하늘 · 불의 왕 셋 — 한 왕이 쓰러지면 다음 왕이 더 성난 채로 온다 · 각인: 봉인 · 사형 선고 · 돌진',
+             mech: '세 왕이 차례로 — 리바이어던 · 천공의 군주 · 용암 군주 · 비용 350 이상 아군은 4배 피해 · 봉인 — 값싼 병력으로 버티세요' },
+    waves: [W(2,'deepone',6,.7), W(16,'eel',4,1), W(30,'siren',2,3), W(40,'leviathan',1), W(52,'deepone',8,.6),
+            W(80,'harpy',8,.5), W(96,'griffinrider',4,1.4), W(110,'skylord',1), W(124,'stormwisp',3,2.5),
+            W(150,'salamander',8,.7), W(170,'obsidian',2,4), W(180,'magmalord',1), W(196,'magmaling',12,.4), W(220,'ashcaster',3,3)] },
+  { name: '불사조의 둥지', bossId: 'phoenix', bossRole: 'caster', boss: true, look: 'lavariver', music: 'phoenixnest', bossMusic: 'boss_phoenix',
+    mods: ['ironclad', 'curse'], baseHp: 220000, money: 760, rate: 94, reward: 0, enemyMul: 13, bossMul: { hp: 2.8, atk: 1.4 },
+    fury: { per30: 0.14, max: 1.6 }, len: 1700,
+    volcano: { first: 12, every: 15, n: 4, warn: 1.5, r: 90, ratio: 0.2, bossRatio: 0.03, burn: { dps: 80, dur: 3 } },
+    event: { id: 'phoenixnest', deck: ['thor','pyro','venom','alchemist','rapriest','shield','knight','frost','priest','catapult'],
+             unlock: 90, reward: 90000, stones: 70, bossText: '불꽃 날개를 펼친 불새 — 용암 비와 함께 내려앉는다 · 각인: 수호 토템 · 군자금 탈취 · 유성우 · 광폭',
+             mech: '15초마다 용암이 넷씩 솟습니다 · 중갑 · 저주 · 불사조의 각인 넷 — 중독 · 화상 · 파쇄로 갑옷을 뚫고 흩어져 버티세요' },
+    waves: [W(2,'salamander',6,.8), W(14,'cinderbat',8,.5), W(28,'ashcaster',2,3), W(40,'phoenix',1), W(48,'magmaling',10,.5),
+            W(70,'obsidian',2,4), W(92,'magmacannon',2,3), W(116,'salamander',8,.7), W(140,'cinderbat',10,.4),
+            W(164,'obsidian',3,3.5), W(190,'ashcaster',3,3), W(214,'magmaling',14,.35)] }
+);
 /* 4.18: 다 키운 편성이면 도전 여덟이 모두 성채 100% 로 끝났다 (하드코어보다 쉽다는 말이 맞았다).
  * 도전을 더 억세게: 적 배율 · 보스 체력에 곱한다.
    * 도전마다 여유가 달라(앞의 다섯은 넉넉, 뒤의 셋은 빠듯) 따로 맞춘다: [적 배율, 보스 체력] */
@@ -2798,7 +2824,8 @@ EVENT_STAGES.push(
 // 4.22: 분신이 돌아올 때마다 덜 채우게 되어(끝나지 않는 판 막기) 분신 도전(월식 · 균열 · 가면무도회)이 쉬워져 다시 올렸다 · 토템 원거리 우선으로 마왕도 조금
 const EVENT_TOUGH = { eclipse: [0.715, 4.256], titan: [4.682, 2.569], fleet: [6.502, 2.515], rift: [3.776, 2.376], demonking: [2.243, 2.942],
                       train: [4.364, 1.492], masque: [5.23, 2.708], hourglass: [3.381, 1.314],
-                      muspel: [7.4, 1], twins: [6.8, 1] };   // 5.3 새 도전 — 가장 센 편성 1/3 로 맞췄다
+                      muspel: [7.4, 1], twins: [6.8, 1],   // 5.3 새 도전 — 가장 센 편성 1/3 로 맞췄다
+                      threekings: [4.8, 1.1], phoenixnest: [2.8, 1.25] };   // 5.11 — 가장 센 편성(새 캐릭터 편성 포함)이 열에 둘쯤
 // 4.24: 버프 · 디버프를 몰아 넣은 편성(멀린 · 오딘 · 아서 · 라 · 제갈량 + 북 · 룬 현자 · 사제 · 무당)도 기준에 넣어 다시 맞췄다 — 적 배율이 오르면 보스 체력도 따라 오른다
 // 5.2: 오딘 4진 · 새 3진 다섯을 넣고 하드코어와 같이 다시 맞췄다
 const EVENT_BOSS_HP = 1.6;   // 4.23 도전 보스 체력을 따로 더 (보스가 생각보다 빨리 녹았다) — 잡몹 · 공격은 EVENT_TOUGH 로 맞춘다
