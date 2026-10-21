@@ -2208,7 +2208,7 @@ test('5.3: Surtr raises his sword — a stun breaks it, otherwise every ally bur
 });
 test('5.3: the twin monarchs must fall together — a lone fall revives, both falling lifts the ward', () => {
   const k = EV.EVENT_STAGES.findIndex(st => st.event.id === 'twins');
-  const s = save(); s.cleared = 90; const b = evBattle(k, s); b.update(1 / 30);
+  const s = save(); s.cleared = 90; const b = evBattle(k, s); b.update(1 / 30); b.qi = b.queue.length;   // 대본의 쌍왕 대신 손으로 세운다
   const sun = b.spawnEnemy('sunking', 900), moon = b.spawnEnemy('moonqueen', 1000);
   sun.hp = 1; sun.takeDamage(10); b.reap(b.enemies, b.allies, b.allyCastle, true);
   assert.ok(!b.bossDown && b.twinWait.length === 1, 'ward holds while the twin lives');
@@ -2218,6 +2218,30 @@ test('5.3: the twin monarchs must fall together — a lone fall revives, both fa
   assert.ok(sun2.hp < sun2.maxHp * 0.65);
   sun2.takeDamage(1e9); moon.takeDamage(1e9); b.reap(b.enemies, b.allies, b.allyCastle, true);
   assert.ok(b.bossDown && b.twinWait.length === 0, 'both down: the ward lifts');
+});
+test('5.12: a revived twin pays no second bounty and the surviving twin rages only once', () => {
+  const k = EV.EVENT_STAGES.findIndex(st => st.event.id === 'twins');
+  const s = save(); s.cleared = 90; const b = evBattle(k, s); b.update(1 / 30); b.qi = b.queue.length;
+  const sun = b.spawnEnemy('sunking', 900), moon = b.spawnEnemy('moonqueen', 1000), atk0 = moon.atk;
+  for (let r = 0; r < 3; r++) {
+    const cur = b.enemies.find(e => !e.dead && e.kind === 'sunking'); cur.takeDamage(1e9); b.reap(b.enemies, b.allies, b.allyCastle, true);
+    for (let i = 0; i < 30 * 10.5; i++) b.twinTick(1 / 30);
+  }
+  assert.equal(b.bossKills, 1, 'only the first fall counts'); assert.ok(moon.atk <= Math.round(atk0 * 1.26), 'rage does not compound');
+  assert.ok(sun.dead && !b.bossDown);
+});
+test('5.12: with three kings in turn, the ward holds until the last one falls and an early chip pulls only the next king', () => {
+  const k = EV.EVENT_STAGES.findIndex(st => st.bossId === 'skylord' && st.name === '세 왕의 귀환');
+  assert.ok(k >= 0);
+  const s = save(); s.cleared = 90; const b = evBattle(k, s); b.update(1 / 30);
+  const kings = () => b.enemies.filter(e => e.boss && !e.dead);
+  b.enemyCastle.hp = b.enemyCastle.maxHp * 0.05; b.update(1 / 30); b.update(1 / 30);
+  assert.equal(kings().length, 1, 'one king bursts out'); const first = kings()[0];
+  b.update(1 / 30); assert.equal(kings().length, 1, 'the others wait while he stands');
+  first.takeDamage(1e9); b.reap(b.enemies, b.allies, b.allyCastle, true);
+  assert.ok(!b.bossDown && b.enemyCastle.floor > 0, 'one king down is not enough');
+  for (let n = 0; n < 2; n++) { b.update(1 / 30); b.update(1 / 30); const kg = kings(); assert.equal(kg.length, 1); kg[0].takeDamage(1e9); b.reap(b.enemies, b.allies, b.allyCastle, true); }
+  assert.ok(b.bossDown, 'the last king lifts the ward'); assert.equal(b.bossKills, 3);
 });
 test('5.2: dev mode can unlock roster units without clearing stages; the effects setting migrates once to the new look', () => {
   const R = vm.runInContext('({rosterOpen, availableUnits, ROSTER_UNITS})', ctx);

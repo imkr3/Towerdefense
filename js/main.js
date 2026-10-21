@@ -1972,6 +1972,8 @@ function recordBattle(b) {
   addStat('kills', b.kills, true);
   addStat('bosses', b.bossKills || 0, true);
   if (b.endless) addStat('endless', b.wavesCleared || 0, true);
+  // 5.12 정벌: 결과창(0.7초 뒤)이 아니라 지금 원정에 반영한다 — 그 사이 앱을 끄면 같은 칸을 또 싸워 금화를 두 번 받았다
+  if (b.conquest) b._conqInfo = conqResolveBattle(b);
   if (b.state === 'win') {
     save.stats.wins++;
     addStat('wins', 1, true);

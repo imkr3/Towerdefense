@@ -518,8 +518,9 @@ class Battle {
 
   canDeploy(id) {
     const u = this.stats(id);
-    return !!u && this.state === 'play' && this.roster.some(r => r.id === id) && !this.fieldFull() &&
-      this.cooldowns[id] <= 0 && this.money >= u.cost && !(this.sealed[id] > 0) &&
+    // 5.12 값싼 검사(재정비 · 군자금)를 먼저 — 병사를 세는 것은 그다음 (HUD 가 매 프레임 카드마다 부른다)
+    return !!u && this.state === 'play' && this.cooldowns[id] <= 0 && this.money >= u.cost && !(this.sealed[id] > 0) &&
+      this.roster.some(r => r.id === id) && !this.fieldFull() &&
       (!u.maxActive || this.activeCount(id) < u.maxActive);
   }
   // 4.2: HUD 가 매 프레임 카드마다 부른다 — 배열을 새로 만들지 않고 센다
@@ -728,8 +729,10 @@ class Battle {
     return this.allies.find(f=>!f.dead && !f.summoned && f.s.id===id) || null;
   }
   heroTarget(f) {
-    return this.enemies.filter(e=>!e.dead && Math.abs(e.x-f.x)<=f.attackRange+180)
-      .sort((a,b)=>Math.abs(a.x-f.x)-Math.abs(b.x-f.x))[0] || null;
+    // 5.12 가장 가까운 적 하나만 찾는다 (HUD 가 매 프레임 여러 번 부른다 — 거르고 줄 세우던 것)
+    let best = null, bd = f.attackRange + 180;
+    for (const e of this.enemies) { if (e.dead) continue; const d = Math.abs(e.x - f.x); if (d <= bd && (!best || d < Math.abs(best.x - f.x))) { best = e; bd = d; } }
+    return best;
   }
   canHeroActive(id) {
     const f=this.heroCaster(id), u=this.stats(id);
@@ -900,7 +903,7 @@ class Battle {
     // 보스가 나오기 전에 요새를 결계까지 깎으면 보스가 먼저 뛰쳐나온다.
     if (this.bossWard) {
       this.enemyCastle.floor = this.bossDown ? 0 : this.enemyCastle.maxHp * WARD_FLOOR;
-      if (!this.bossSpawned && this.wardUp()) this.callBoss();
+      if (this.wardUp() && !this.bossOnField()) this.callBoss();   // 5.12 나와 있는 보스가 없을 때만 다음 보스를 당긴다
     }
     while (this.qi < this.queue.length && this.queue[this.qi].t <= this.time) {
       const entry = this.queue[this.qi];
@@ -1027,16 +1030,30 @@ class Battle {
 
   /* 보스를 앞당겨 부른다 (호위는 원래 오던 때에 온다) */
   callBoss() {
-    const id = this.stage.bossId;
-    let hit = null;
-    for (let j = this.qi; j < this.queue.length; j++) if (this.queue[j].e === id) { hit = this.queue[j]; break; }
+    let hit = null;                                // 5.12 대기열의 다음 보스 (셋이 차례로 오는 도전도)
+    for (let j = this.qi; j < this.queue.length; j++) { const d = ENEMIES[this.queue[j].e]; if (d && d.boss) { hit = this.queue[j]; break; } }
     if (!hit) { this.bossSpawned = true; return; }
+    if (hit.t <= this.time) return;                // 이미 이번에 나온다
     hit.t = this.time;
     const rest = this.queue.slice(this.qi).sort((a, b) => a.t - b.t);
     this.queue.length = this.qi;
     rest.forEach(q => this.queue.push(q));
     this.announce('보스가 요새에서 뛰쳐나온다!', 2.4);
     this.shake = Math.max(this.shake, 12);
+  }
+
+  /* 5.12 지금 싸움터(땅속 · 되살아나기 기다림 포함)에 보스가 있나 */
+  bossOnField() {
+    for (const e of this.enemies) if (e.boss && !e.dead) return true;
+    for (const e of this.burrowers) if (e.boss && !e.dead) return true;
+    return this.twinWait.length > 0;
+  }
+
+  /* 5.12 아직 남은 보스가 있나 (살아 있거나 · 땅속이거나 · 대기열에) — 셋이 차례로 오는 도전 */
+  bossLeft() {
+    if (this.bossOnField()) return true;
+    for (let j = this.qi; j < this.queue.length; j++) { const d = ENEMIES[this.queue[j].e]; if (d && d.boss) return true; }
+    return false;
   }
 
   /* 보스가 버티고 있어 요새가 무너지지 않는 중인가 (화면 표시용) */
@@ -1184,7 +1201,9 @@ class Battle {
         if (b.poison) this.fx.push({ type: 'aura', x: f.x, row: f.row, r: b.radius, t: 0.8, life: 0.8, color: '#b06ae8' });
         else this.fx.push({ type: 'boom', x: f.x, r: b.radius, t: 0.35, life: 0.35 });
       }
-      if (isEnemySide && !f.exploded) {
+      // 5.12 쌍왕: 되살아난 쪽은 처치 보상 · 보스 처치를 다시 주지 않는다 (되살릴 때마다 또 받던 것)
+      const held = f.boss && isEnemySide && this.twinHold(f), repaid = !!f.twinRevived;
+      if (isEnemySide && !f.exploded && !repaid) {
         if (f.ab.flee) this.caught = (this.caught || 0) + 1;      // 3.7 잡은 황금 수레
         const got = Math.round((f.gold || 0) * KILL_GOLD_RATE * this.goldMul);
         this.coins += got;
@@ -1207,7 +1226,8 @@ class Battle {
           this.fx.push({ type: 'poof', x: f.x, row: f.row, t: 0.45, life: 0.45, color: f.s.accent, big: true });
         }
       }
-      if (f.boss && isEnemySide && !this.twinHold(f)) { this.bossDown = true; this.enemyCastle.floor = 0; }   // 결계가 걷힌다 (5.3 쌍왕은 둘 다 쓰러져야)
+      // 결계가 걷힌다 (5.3 쌍왕은 둘 다 쓰러져야, 5.12 보스가 여럿이면 마지막 보스까지)
+      if (f.boss && isEnemySide && !held && !this.bossLeft()) { this.bossDown = true; this.enemyCastle.floor = 0; }
       // 흡혼귀: 근처에서 쓰러진 아군의 넋을 삼킨다 (불려 나온 것은 넋이 없다)
       if (!isEnemySide && !f.summoned) this.feedSouls(f);
       // 쓰러지는 연출 + 먼지
@@ -1218,7 +1238,7 @@ class Battle {
       if (f.boss) {
         this.shake = Math.max(this.shake, 12);
         sfx('bossDie');
-        if (isEnemySide) this.bossKills = (this.bossKills || 0) + 1;
+        if (isEnemySide && !repaid) this.bossKills = (this.bossKills || 0) + 1;
       }
       else sfx('die');
     }
@@ -2235,7 +2255,7 @@ class Battle {
     const mate = this.enemies.find(e => !e.dead && e.kind === tw.partner);
     if (!mate) { this.twinWait = this.twinWait.filter(w => w.id !== tw.partner); return false; }   // 둘 다 쓰러졌다
     this.twinWait.push({ id: f.kind, t: tw.window || 10, x: f.x, revive: tw.revive || 0.6 });
-    mate.atk = Math.round(mate.atk * (tw.rage || 1.25));
+    mate.atk = Math.max(mate.atk, Math.round(mate.baseAtk * (tw.rage || 1.25)));   // 5.12 짝을 잃을 때마다 끝없이 불어나지 않게 (한 번만)
     this.announce(f.s.name + ' 쓰러짐 — ' + (tw.window || 10) + '초 안에 ' + mate.s.name + '도 쓰러뜨려야 한다!', 2.4);
     return true;
   }
@@ -2246,6 +2266,7 @@ class Battle {
       w.done = true;
       const g = this.spawnEnemy(w.id, Math.min(this.enemyCastle.x - 120, Math.max(this.allyCastle.x + 300, w.x)));
       g.hp = Math.round(g.maxHp * w.revive);
+      g.twinRevived = true;
       const nm = g.s.name, c = nm.charCodeAt(nm.length - 1);
       this.announce(nm + (c >= 0xac00 && c <= 0xd7a3 && (c - 0xac00) % 28 ? '이' : '가') + ' 되살아났다!', 2.2);   // 받침이 있으면 '이'
     }
@@ -2813,15 +2834,25 @@ class Battle {
       if (hit) this.hitOne(s.dmg, hit, s.src, s.crit);
       this.fx.push({ type: s.crit ? 'crit' : 'hit', x: hit ? hit.x : s.tx, row: hit ? (hit.row ?? s.y0) : s.y0, dir: s.dir, t: 0.22, life: 0.22, sty: 'shoot', color: s.color });
     }
-    this.shots = this.shots.filter(s => !s.done);
+    let w = 0;                                     // 5.12 제자리에서 줄인다
+    for (let i = 0; i < this.shots.length; i++) if (!this.shots[i].done) this.shots[w++] = this.shots[i];
+    this.shots.length = w;
   }
 
   updateFx(dt) {
-    for (const e of this.fx) e.t -= dt;
-    this.fx = this.fx.filter(e => e.t > 0);
-    if (this.fx.length > FX_LIMIT) this.fx.splice(0, this.fx.length - FX_LIMIT);
-    this.dmgFxCount = 0;
-    for (const e of this.fx) if (e.type === 'dmg') this.dmgFxCount++;
+    // 5.12 매 프레임 새 배열을 만들지 않고 제자리에서 줄인다 (숫자 띄움도 같이 센다)
+    const fx = this.fx;
+    let w = 0, dmg = 0;
+    for (let i = 0; i < fx.length; i++) {
+      const e = fx[i];
+      e.t -= dt;
+      if (e.t <= 0) continue;
+      fx[w++] = e;
+    }
+    fx.length = w;
+    if (w > FX_LIMIT) fx.splice(0, w - FX_LIMIT);
+    for (let i = 0; i < fx.length; i++) if (fx[i].type === 'dmg') dmg++;
+    this.dmgFxCount = dmg;
     if (this.state !== 'play') this.resultTime = (this.resultTime || 0) + dt;
   }
 

@@ -329,7 +329,7 @@ function conqRestCard(run) {
   const b = document.createElement('button'); b.type = 'button'; b.className = 'cq-offer r-rare';
   b.innerHTML = '<i>🎯</i><b>훈련</b><small>희귀 축복</small><em>희귀 축복 셋 중 하나를 고른다</em>';
   b.addEventListener('click', () => {
-    run.pending = { kind: 'bless', opts: conqBlessOffer(run, 3 + conqEffects(run).extraPick, CONQ_ODDS.rest) };
+    run.pending = { kind: 'bless', opts: conqBlessOffer(run, 3 + conqEffects(run).extraPick, CONQ_ODDS.rest), odds: CONQ_ODDS.rest };   // 5.12 다시 굴려도 희귀
     SFX.ui(); conqLeaveRoom(run);
   });
   row.appendChild(a); row.appendChild(b);
@@ -501,7 +501,7 @@ function conqResolveBattle(b) {
   return info;
 }
 function showConquestResult() {
-  const b = battle, info = conqResolveBattle(b) || { win: b.state === 'win' };
+  const b = battle, info = conqResolveBattle(b) || b._conqInfo || { win: b.state === 'win' };
   $('#result-title').textContent = info.done === 'win' ? '정벌 완료!' : info.win ? (info.boss ? '보스 격파' : '정벌 승리') : '정벌 실패';
   $('#result-stars').innerHTML = info.win ? starMarks(b.stars) : '';
   const lines = [];
