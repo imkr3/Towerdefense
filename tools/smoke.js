@@ -277,10 +277,15 @@ async function runSize(browser, size) {
   const glSync = await page.evaluate(() => !renderer.glfx || !renderer.glfx.ok ||
     (renderer.glfx.cv.width === renderer.cv.width && renderer.glfx.cv.height === renderer.cv.height && renderer.glfx.w === renderer.w));
   if (!glSync) failures.push(size.name + ': 연출 층과 전투 캔버스의 크기가 다르다 (파티클이 엉뚱한 곳에 나온다)');
+  // 5.9: 뒤로 가기는 먼저 멈춤 메뉴 → 메뉴의 '나가기'가 포기 확인 → 뒤로 가기로 취소 → 한 번 더 누르면 다시 시작
   await page.evaluate(() => window.__androidBack());
+  if (!(await page.evaluate(() => paused && !$('#pause-label').hidden && !$('.modal.show')))) failures.push(size.name + ': Android 뒤로 가기가 멈춤 메뉴를 열지 않는다');
+  await page.click('#btn-pause-quit');
   if (!(await page.$eval('#modal-confirm', e => e.classList.contains('show')))) failures.push(size.name + ': Android 전투 포기 확인 누락');
   await page.evaluate(() => window.__androidBack());
   if (!(await page.$eval('#scr-battle', e => e.classList.contains('active')))) failures.push(size.name + ': 취소했는데 전투가 끝났다');
+  await page.evaluate(() => window.__androidBack());
+  if (await page.evaluate(() => paused)) failures.push(size.name + ': 멈춤 메뉴에서 뒤로 가기로 다시 시작하지 않는다');
   await page.evaluate(() => window.__androidPause());
   const beforePause = await page.evaluate(() => { battle.cmdCd=0; return {money:battle.money,n:battle.allies.length,t:battle.time}; });
   await page.evaluate(() => { document.querySelector('#cards .card').click(); document.querySelector('#btn-command').click(); });

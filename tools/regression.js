@@ -2287,4 +2287,18 @@ test('5.8: pause opens a menu (resume · restart · settings · leave); result l
   assert.ok(/body:has\(#scr-battle\.active\) \.toast\{top:/.test(css), 'battle toasts sit under the minimap');
 });
 
+test('5.9: back button — conquest goes to the map, battle opens the pause menu; hardcore fix-deck sorties hardcore; training respects the hero cap', () => {
+  const main = fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8'), form = fs.readFileSync(path.join(__dirname, '../js/formation.js'), 'utf8');
+  const game = fs.readFileSync(path.join(__dirname, '../js/game.js'), 'utf8'), sw = fs.readFileSync(path.join(__dirname, '../sw.js'), 'utf8');
+  const back = main.slice(main.indexOf('window.__androidBack'), main.indexOf('window.__androidPause'));
+  assert.ok(back.includes("'scr-conquest'"), 'conquest no longer closes the app');
+  assert.ok(/if \(paused\) resumeFromTap\(\); else \{ setPaused\(true\);/.test(back), 'back in battle pauses first');
+  assert.ok(/battle\.hard \? 'hard:' \+ battle\.stageIndex/.test(main) && /else if \(hk >= 0\) startBattle\(hk, true\)/.test(form), 'hardcore fix-deck keeps hardcore');
+  assert.ok(/if \(!heroRoom\(u\.id\)\) return;[^\n]*\n\s+save\.loadout\.push\(u\.id\);/.test(main), 'training team button checks the hero cap');
+  assert.equal((main.match(/resetScreenState\(\);/g) || []).length, 2, 'reset and restore clear stale screen picks');
+  assert.ok(/if \(f\.kbTimer <= 0\) f\.flyT = 0;/.test(game), 'leftover flight time is cleared when knockback ends');
+  assert.ok(/if \(isAlly && filled > 0\)/.test(game), 'enemy genie heals do not land in the ally meter');
+  assert.ok(/cache: 'reload'/.test(sw), 'service worker fetches fresh files on update');
+});
+
 console.log(count + ' regression checks passed');

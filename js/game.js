@@ -1571,6 +1571,7 @@ class Battle {
       if (f.kbTimer > 0) {
         f.kbTimer -= dt;
         if (f.flyT > 0) { f.flyT -= dt; f.x -= f.dir * f.flyV * dt; } else f.x -= f.dir * 150 * dt;
+        if (f.kbTimer <= 0) f.flyT = 0;     // 5.9: 날아가다 짧은 넉백에 덮이면 남은 비행 시간이 다음 넉백을 멀리 날렸다
         f.x = Math.max(60, Math.min(WORLD - 60, f.x));
         this.holdLine(f);
         continue;
@@ -1715,7 +1716,7 @@ class Battle {
       const w = f.wishN = ((f.wishN === undefined ? -1 : f.wishN) + 1) % 3, W = ab.wish;
       for (const m of mates) {
         if (m.dead || Math.abs(m.x - f.x) > ab.radius) continue;
-        if (w === 0) { if (m !== f) { const filled = m.heal(m.maxHp * W.heal); if (filled > 0) { const row = this.meterRow(f); row.heal = (row.heal || 0) + filled; } } }
+        if (w === 0) { if (m !== f) { const filled = m.heal(m.maxHp * W.heal); if (isAlly && filled > 0) { const row = this.meterRow(f); row.heal = (row.heal || 0) + filled; } } }
         else if (w === 1) m.giveBarrier(W.barrier * f.abMul);
         else if (m !== f) { m.hasteMul = m.hasteT > 0 ? Math.min(m.hasteMul, W.haste.mul) : W.haste.mul; m.hasteT = Math.max(m.hasteT, W.haste.dur); }
       }
