@@ -98,6 +98,14 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: gradle -p android assembleRelease --no-daemon
+      - name: 웹 판 묶기 (압축을 풀어 index.html 을 열거나 아무 웹 서버에 올리면 그대로 돌아간다)
+        env:
+          APP_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist "$RUNNER_TEMP/web/stick-kingdom-war"
+          cp -r index.html sw.js manifest.json icon.svg css js "$RUNNER_TEMP/web/stick-kingdom-war/"
+          (cd "$RUNNER_TEMP/web" && zip -qr -X "$GITHUB_WORKSPACE/dist/stick-kingdom-war-$APP_VERSION-web.zip" stick-kingdom-war)
       - name: APK 내용 및 서명 검증
         env:
           APP_VERSION: ${{ steps.version.outputs.version }}
@@ -125,7 +133,7 @@ jobs:
               cp "$APK" "dist/stick-kingdom-war-$APP_VERSION-dev.apk"
             fi
           done
-          (cd dist && sha256sum *.apk > SHA256SUMS.txt)
+          (cd dist && sha256sum *.apk *.zip > SHA256SUMS.txt)
       - name: 서명 키 정리
         if: always()
         run: rm -f "$RUNNER_TEMP/release.jks"

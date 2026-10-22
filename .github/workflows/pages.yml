@@ -1,0 +1,78 @@
+name: 웹 배포 (GitHub Pages)
+
+# 5.12: 게임을 웹페이지로 그대로 연다 — https://imkr3.github.io/Towerdefense/
+# 기본 브랜치에 게임 파일이 바뀌면 검사(문법 · 정적 · 회귀)를 거친 뒤 게임 파일만 올린다.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'claude/tower-defense-base-g4cj9z'
+    paths:
+      - 'js/**'
+      - 'css/**'
+      - 'index.html'
+      - 'sw.js'
+      - 'manifest.json'
+      - 'icon.svg'
+      - '.github/workflows/pages.yml'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: 검사 · 묶기
+    runs-on: ubuntu-latest
+    outputs:
+      on: ${{ steps.pages.outputs.on }}
+    steps:
+      # 저장소 설정 → Pages → Source 를 'GitHub Actions' 로 한 번 켜 두어야 한다. 꺼져 있으면 빨간 실패 대신 안내만 남기고 넘어간다.
+      - name: Pages 켜져 있는지 보기
+        id: pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh api "repos/${{ github.repository }}/pages" >/dev/null 2>&1; then echo "on=true" >> "$GITHUB_OUTPUT"
+          else echo "on=false" >> "$GITHUB_OUTPUT"; echo "::notice::GitHub Pages 가 꺼져 있다 — Settings → Pages → Source: GitHub Actions 로 켜면 다음 실행부터 배포된다"; fi
+
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 문법 · 정적 · 회귀 검사
+        run: |
+          npm run lint
+          npm run assets
+          npm run regression
+
+      - name: 게임 파일만 모으기
+        run: |
+          mkdir -p _site
+          cp -r index.html sw.js manifest.json icon.svg css js _site/
+          touch _site/.nojekyll
+
+      - uses: actions/configure-pages@v5
+        if: steps.pages.outputs.on == 'true'
+      - uses: actions/upload-pages-artifact@v3
+        if: steps.pages.outputs.on == 'true'
+        with:
+          path: _site
+
+  deploy:
+    name: 배포
+    needs: build
+    if: needs.build.outputs.on == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

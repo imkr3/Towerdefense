@@ -43,7 +43,8 @@ class Renderer {
     this.cv.height = Math.round(this.h * dpr);
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     // zoom: 월드 -> 화면 가로 배율 (한 화면에 약 760 월드유닛)
-    this.zoom = Math.max(0.40, Math.min(1.0, this.w / 760));
+    this.baseZoom = Math.max(0.40, Math.min(1.0, this.w / 760));
+    this.fitZoom();
     // 지면: 하단 HUD 바로 위에 오도록
     const hud = document.querySelector('.hud-bottom');
     const hudH = (hud && hud.offsetHeight) ? hud.offsetHeight : Math.round(this.h * 0.24);
@@ -72,6 +73,8 @@ class Renderer {
     if (this.glfx && this.glfx.ok) this.glfx.clear();
   }
 
+  /* 5.12: 넓은 화면(PC 웹)에서 짧은 전장이 한 화면보다 좁으면 적 요새 너머 빈 땅이 보였다 — 전장이 화면을 꽉 채우게 키운다 */
+  fitZoom() { this.zoom = Math.max(this.baseZoom, this.w / WORLD); }
   viewWidth() { return this.w / this.zoom; }
   clampCam(x) {
     const half = this.viewWidth() / 2;
@@ -139,7 +142,7 @@ class Renderer {
     // 5.9: 바다 물결 · 번개 · 용암처럼 시간에 따라 움직이는 겹이 있으면 초당 15번 다시 그린다
     // (예전엔 카메라가 멈추면 같이 멈췄고, 번개가 친 순간이 남아 하늘이 계속 번쩍였다)
     const anim = this.animLook(look);
-    const key = look + '|' + this.w + 'x' + this.h + '|' + this.groundY + '|' + far + (anim ? '|' + ((this.clock || 0) * 15 | 0) : '');
+    const key = look + '|' + this.w + 'x' + this.h + '|' + this.groundY + '|' + this.zoom + '|' + far + (anim ? '|' + ((this.clock || 0) * 15 | 0) : '');
     if (this._bgKey !== key) {
       if (!this._bg) {
         this._bg = document.createElement('canvas');

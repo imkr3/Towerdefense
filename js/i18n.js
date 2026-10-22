@@ -454,6 +454,7 @@ const I18N_EN = {
   '1MB 이하의 백업 파일을 선택해 주세요.': 'Choose a backup file under 1MB.', '복원하지 않았습니다: ': 'Not restored: ', '백업을 만들지 못했습니다: ': "Couldn't create backup: ",
   '. 이 데이터로 교체할까요? 현재 저장은 자동 백업에 남깁니다.': '. Replace with this data? Your current save stays in the auto-backup.',
   '전체화면을 지원하지 않는 기기입니다': "This device doesn't support fullscreen",
+  '새 버전이 준비됐어요 — 다시 열면 적용됩니다': 'A new version is ready — reopen the game to apply it',
   '백업 파일은 앱 밖에 보관됩니다. 앱을 삭제하기 전에 백업을 따로 저장해 주세요.': 'Backups are stored outside the app. Save one before uninstalling.',
   '▶ 이어하기': '▶ Continue', '필살': 'ULT', '충전': 'CHARGE', '발동!': 'GO!', '초 남음': 's left', '(출전 중에 한 번 더 누르면 발동)': '(tap again while deployed to use)', '시즌 변경 시 누적 유지 · 신화 획득 시 두 누적 초기화': 'Kept when switching seasons · both reset on a Mythic', '회': '', '보상': 'Reward', '출진': 'Deploy', '돌파': 'Cleared', '웨이브': 'waves', '전장': 'Stage', '병종': 'units', '개 칸을 채웠습니다': ' slots filled',
   '단축키': 'Key', '보유': 'owned', '분': 'm', '레벨 +1 · 💰': 'Lv +1 · 💰',

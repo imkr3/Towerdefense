@@ -1701,6 +1701,7 @@ function beginBattle() {
     $('#modal-tutorial').classList.add('show');
     setPaused(true);
   }
+  renderer.fitZoom();
   renderer.cam = renderer.camTarget = renderer.clampCam(ALLY_SPAWN_X + 200);
   renderer.dragUntil = 0;
   lastTs = 0;
@@ -2271,6 +2272,14 @@ function bindCanvasDrag(cv) {
   cv.addEventListener('mousedown', e => down(e.clientX));
   window.addEventListener('mousemove', e => move(e.clientX));
   window.addEventListener('mouseup', up);
+  // 5.12 웹(PC): 마우스 휠 · 터치패드로 전장을 좌우로 넘긴다
+  cv.addEventListener('wheel', e => {
+    if (!renderer) return;
+    const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+    if (!d) return;
+    e.preventDefault();
+    renderer.panBy(-d * (e.deltaMode === 1 ? 16 : 1));
+  }, { passive: false });
 }
 
 /* ------------------------------ 3.10 개발자 모드 ------------------------------ */
@@ -2815,6 +2824,11 @@ function init() {
   });
   window.addEventListener('keydown', e => {
     if (e.repeat || e.ctrlKey || e.metaKey || e.altKey || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+    // 5.12 웹(PC): Esc 는 안드로이드 뒤로 가기와 같다 (창 닫기 · 멈춤 메뉴 · 앞 화면)
+    if (e.key === 'Escape') { if (!document.fullscreenElement && window.__androidBack()) e.preventDefault(); return; }
+    if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && renderer && battle && $('#scr-battle').classList.contains('active') && !$('.modal.show')) {
+      e.preventDefault(); renderer.panBy(e.key === 'ArrowLeft' ? 120 : -120); return;
+    }
     if (!battle || battle.state !== 'play' || !$('#scr-battle').classList.contains('active') || $('.modal.show')) return;
     if (e.code === 'Space') { e.preventDefault(); $('#btn-pause').click(); return; }
     if (!canBattleInput()) return;
@@ -2984,6 +2998,14 @@ window.__androidPause = function () {
 // 오프라인 지원 (http/https 로 열었을 때만)
 if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  // 5.12 웹: 새 버전이 깔리면 — 타이틀이면 바로 다시 열고, 그 밖이면 알려만 준다 (싸우는 중에 끊지 않는다)
+  const hadSw = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadSw) return;                                   // 처음 깔린 것은 새 버전이 아니다
+    const t = document.querySelector('.screen.active');
+    if (t && t.id === 'scr-title' && !document.querySelector('.modal.show')) { try { saveGame(save); } catch (e) { /* 저장 실패해도 다시 연다 */ } location.reload(); }
+    else toast('새 버전이 준비됐어요 — 다시 열면 적용됩니다');
+  });
 }
 
 
