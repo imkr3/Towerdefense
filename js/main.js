@@ -1580,7 +1580,7 @@ function redrawBannerIfShown() {
 /* 5.9: 다른 진행도로 바뀌면(초기화 · 복원) 화면에 남아 있던 고른 값 · 되돌리기를 비운다 */
 function resetScreenState() {
   deckUndo = null; conqLast = null; trainSel = null;
-  mapChapter = -1; mapSel = -1; eventSel = 0; expSel = 0;
+  mapChapter = -1; mapSel = -1; eventSel = 0; expSel = 0; conqSel = -1;
 }
 
 /* 배너 아트: 시즌 대표 병종을 나란히 세운다 */
@@ -1797,6 +1797,7 @@ function renderPauseMenu() {
 
 /* 지금 전투를 처음부터 (결과 화면 '다시 도전' · 멈춤 메뉴 '처음부터') */
 function retryBattle() {
+  flushPlayTime();                 // 5.9: '처음부터' 해도 지금까지 싸운 시간은 기록에 남긴다
   if (battle && battle.endless) startEndless();
   else if (battle && battle.event) startEvent(battle.eventIndex);
   else if (battle && battle.expedition) startExpedition(battle.expIndex);
@@ -2652,6 +2653,7 @@ function init() {
         save = fresh;
         resetScreenState();
         refreshTitleBadges();
+        refreshConqTitle();
         $('#modal-save').classList.remove('show');
         toast('기록을 초기화했습니다');
       });
@@ -2727,7 +2729,7 @@ function init() {
   $('#btn-pause').addEventListener('click', () => {
     if ($('.modal.show') || !battle || battle.state !== 'play') return;
     setPaused(!paused);
-    toast(paused ? '일시정지' : '재개');
+    if (!paused) toast('재개');          // 5.9: 멈출 땐 멈춤 메뉴가 뜨므로 알림이 그 위를 가리지 않게
     SFX.ui();
   });
   // 3.8: 멈춘 동안엔 가운데 안내판이나 전장 아무 데나 눌러도 다시 시작한다
@@ -2764,9 +2766,10 @@ function init() {
   $('#btn-fix').addEventListener('click', () => {
     $('#result').classList.remove('show');
     $('#btn-retry').textContent = '다시 도전';
-    const idx = !battle ? null : battle.expedition ? 'exp:' + battle.expIndex : battle.endless || battle.event ? null : battle.hard ? 'hard:' + battle.stageIndex : battle.stageIndex;
+    const idx = !battle ? null : battle.expedition ? 'exp:' + battle.expIndex : battle.event ? 'event:' + battle.eventIndex
+      : battle.endless ? 'endless' : battle.hard ? 'hard:' + battle.stageIndex : battle.stageIndex;
     show('scr-map');                       // 편성에서 '뒤로' 가면 진군도로 (전투 화면이 아니라)
-    openFormation(idx);
+    openFormation(idx);   // 하드코어 · 도전 · 무한도 같은 곳으로 다시 출진
   });
   $('#btn-tomap').addEventListener('click', () => {
     $('#btn-retry').textContent = '다시 도전';

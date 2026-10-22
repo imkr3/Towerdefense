@@ -1701,6 +1701,8 @@ body:has(#result.show) .toast{top:calc(6px + var(--st))}
 .toast{top:calc(7px + var(--st));max-width:min(560px,70vw);font-size:12px;padding:6px 16px;line-height:1.3}
 body:has(#scr-battle.active) .toast{top:calc(100px + var(--st))}
 body:has(.modal.show) .toast{top:calc(7px + var(--st))}
+/* 5.9: 위 줄이 4.19 결과 화면 규칙을 덮어 업적 알림이 결과 별을 가렸다 — 결과 화면에선 다시 맨 위로 */
+body:has(#result.show) .toast{top:calc(6px + var(--st))}
 /* 진군도 전장 정보: 적 얼굴은 한 줄로 옆으로 넘긴다 — 두 줄이 되면 편성 점검이 출진 버튼 뒤로 숨었다 */
 .sd-foes{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;flex-shrink:0}
 .sd-foes::-webkit-scrollbar{display:none}
@@ -1738,3 +1740,10 @@ body:has(.modal.show) .toast{top:calc(7px + var(--st))}
 /* 5.11 도전 · 금화 원정 목록: 카드가 판보다 길면 안에서 위아래로 넘긴다 (예전엔 넘친 줄이 잘려 아래 도전을 고를 수 없었다) */
 .trail.event-mode .endless-slot{display:block;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;scrollbar-width:thin}
 .trail.event-mode .event-grid{align-content:start;min-height:100%}
+/* 5.9: 가로 폰(높이 420 이하)에서 설정 카드가 넘쳐 닫기 버튼이 아래로 숨었다 — 줄 간격을 줄이고 버튼 줄은 아래에 붙여 둔다 */
+@media(max-height:420px){
+  .settings-card h3{margin:0 0 4px}
+  .settings-card .set-grid{gap:3px 10px;margin:0 0 6px}
+  .settings-card .set-sec{margin-top:3px}
+  .settings-card .set-btns{position:sticky;bottom:-10px;margin:0;padding:6px 0 4px;background:inherit}
+}

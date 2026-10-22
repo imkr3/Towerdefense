@@ -180,6 +180,18 @@ class GLFx {
     // 합성식이 포화형이어서 1 을 넘겨도 흰 덩어리로 터지지는 않는다.
     this.gain = 1.15;
     this.ok = this._init();
+    // 5.9: 안드로이드 WebView 는 앱이 뒤로 갔다 오면 GL 컨텍스트를 잃곤 한다.
+    // 예전엔 ok 가 그대로라 연출은 사라진 채 파티클 계산만 계속 돌았다.
+    canvas.addEventListener('webglcontextlost', (e) => {
+      e.preventDefault();                       // 이걸 해야 restored 가 온다
+      this.ok = false;
+      this.count = 0;
+      this.lights.length = 0;
+    });
+    canvas.addEventListener('webglcontextrestored', () => {
+      this.ok = this._init();
+      if (this.ok) this.gl.viewport(0, 0, this.cv.width, this.cv.height);
+    });
   }
 
   _init() {
@@ -328,7 +340,9 @@ class GLFx {
     const sx = scrollX || 0;
     if (this.lights.length) {                     // 5.2 고퀄 조명: 짧게 번쩍이고 사라진다
       for (const L of this.lights) { L.t += dt; L.x += sx; }
-      this.lights = this.lights.filter(L => L.t < L.life);
+      let k = 0;                                  // 제자리에서 걸러 매 프레임 새 배열을 만들지 않는다
+      for (const L of this.lights) if (L.t < L.life) this.lights[k++] = L;
+      this.lights.length = k;
     }
     let n = this.count;
     for (let i = 0; i < n; ) {
