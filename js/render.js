@@ -156,7 +156,18 @@ class Renderer {
         this._bgCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
         this._skyKey = null;                 // 그라디언트는 컨텍스트에 매여 있다
       }
-      this.paintBackground(this._bgCtx, look, far / BG_FAR_PAR);
+      const split = anim ? this.bgSplit(look) : 0;
+      if (split > 0) {
+        // 5.14 움직이는 겹 앞까지(하늘 · 능선 …)는 카메라가 움직일 때만 다시 그려 두고, 초당 15번은 그 뒤만 덧칠한다
+        const skey = key.slice(0, key.lastIndexOf('|'));
+        if (!this._bgPre) { this._bgPre = document.createElement('canvas'); this._bgPreCtx = this._bgPre.getContext('2d', { alpha: false }); }
+        if (this._bgPre.width !== bw || this._bgPre.height !== bh) {
+          this._bgPre.width = bw; this._bgPre.height = bh; this._bgPreCtx.setTransform(dpr, 0, 0, dpr, 0, 0); this._bgPreKey = null; this._skyKey = null;
+        }
+        if (this._bgPreKey !== skey) { this.paintBackground(this._bgPreCtx, look, far / BG_FAR_PAR, 0, split); this._bgPreKey = skey; }
+        this._bgCtx.save(); this._bgCtx.setTransform(1, 0, 0, 1, 0, 0); this._bgCtx.drawImage(this._bgPre, 0, 0); this._bgCtx.restore();
+        this.paintBackground(this._bgCtx, look, far / BG_FAR_PAR, split);
+      } else this.paintBackground(this._bgCtx, look, far / BG_FAR_PAR);
       this._bgKey = key;
     }
     this.ctx.drawImage(this._bg, 0, 0, this.w, this._bg.height * this.w / this._bg.width);
@@ -209,9 +220,27 @@ class Renderer {
     const m = main.getTransform();
     this._ulH = Math.min(H, Math.ceil((this.rowY(2) + 34 * this.cs) * m.d + Math.abs(m.f) + 2));
     if (l.canvas.width !== W || l.canvas.height !== H) { l.canvas.width = W; l.canvas.height = H; }
-    else { l.setTransform(1, 0, 0, 1, 0, 0); l.clearRect(0, 0, W, this._ulH); }
+    else { l.setTransform(1, 0, 0, 1, 0, 0); l.clearRect(0, 0, W, this._ulH); }   // 비우기는 띠 전체 (남은 그림이 나중에 비치지 않게)
     l.setTransform(m);
+    this._ulTop = 1e9;                                  // 이번에 그린 맨 위 (CSS 픽셀) — 그 위 하늘은 비우지도 칠하지도 붙이지도 않는다
     return l;
+  }
+
+  /* 5.14 첫 움직이는 겹의 단계 번호 (paintBackground 의 from/to 와 같은 셈) */
+  bgSplit(look) {
+    const memo = this._bgSplitMemo || (this._bgSplitMemo = new Map());
+    let v = memo.get(look);
+    if (v === undefined) {
+      const pal = FIELD_LOOKS[look] || FIELD_LOOKS.meadow, layers = pal.layers || [];
+      const seq = [null, 'ridge'];
+      for (const n of layers) { const L = LOOK_LAYERS[n]; if (L && L.z === 'far') seq.push(L); }
+      seq.push('ridge');
+      for (const n of layers) { const L = LOOK_LAYERS[n]; if (L && L.z === 'back') seq.push(L); }
+      v = seq.findIndex(x => x && x.anim);
+      if (v < 0) v = 0;
+      memo.set(look, v);
+    }
+    return v;
   }
 
   animLook(look) {
@@ -225,7 +254,8 @@ class Renderer {
     return v;
   }
 
-  paintBackground(ctx, look, cam) {
+  /* 5.14 from · to: 그릴 단계 범위 (0 하늘·별·해 · 1 먼 능선 · 먼 겹들 · 가까운 능선 · 뒤 겹들 · 안개 — bgSteps 순서) */
+  paintBackground(ctx, look, cam, from = 0, to = 1e9) {
     const w = this.w, h = this.h, gy = this.groundY;
     const pal = FIELD_LOOKS[look] || FIELD_LOOKS.meadow;
 
@@ -238,70 +268,72 @@ class Renderer {
       this._sky = g;
       this._skyKey = key;
     }
-    ctx.fillStyle = this._sky;
-    ctx.fillRect(0, 0, w, h);
+    if (from <= 0) {
+      ctx.fillStyle = this._sky;
+      ctx.fillRect(0, 0, w, h);
 
-    if (pal.stars) {                                   // 별
-      for (let i = 0; i < 70; i++) {
-        const x = ((_h(i) * (w + 400) - cam * 0.02) % (w + 400) + w + 400) % (w + 400) - 200;
-        const y = _h(i + 99) * gy * 0.6;
-        ctx.globalAlpha = 0.3 + _h(i + 7) * 0.6;
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(x, y, 1 + (_h(i + 3) > 0.85 ? 1 : 0), 1 + (_h(i + 3) > 0.85 ? 1 : 0));
-      }
-      ctx.globalAlpha = 1;
-    }
-    if (pal.aurora) {                                  // 오로라
-      for (let k = 0; k < 3; k++) {
-        const g = ctx.createLinearGradient(0, gy * 0.05, 0, gy * 0.45);
-        const c = ['rgba(120,255,200,', 'rgba(140,160,255,', 'rgba(220,130,255,'][k];
-        g.addColorStop(0, c + '0)'); g.addColorStop(0.5, c + '.22)'); g.addColorStop(1, c + '0)');
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.moveTo(-20, gy * 0.35);
-        for (let x = -20; x <= w + 40; x += 40) ctx.lineTo(x, gy * (0.18 + 0.08 * Math.sin(x * 0.006 + k * 2 - cam * 0.0008) + k * 0.05));
-        ctx.lineTo(w + 40, gy * 0.5); ctx.lineTo(-20, gy * 0.5); ctx.closePath(); ctx.fill();
-      }
-    }
-
-    // 해 / 달 / 일식
-    if (!pal.noOrb) {
-      const ox = ((this.w * 0.74 - cam * 0.05) % (this.w + 240) + this.w + 240) % (this.w + 240) - 120;
-      const oy = gy * 0.2;
-      if (pal.eclipse) {
-        for (let k = 3; k >= 1; k--) {
-          ctx.fillStyle = 'rgba(255,200,120,' + (0.12 * k) + ')';
-          ctx.beginPath(); ctx.arc(ox, oy, 30 + k * 12, 0, 7); ctx.fill();
+      if (pal.stars) {                                   // 별
+        for (let i = 0; i < 70; i++) {
+          const x = ((_h(i) * (w + 400) - cam * 0.02) % (w + 400) + w + 400) % (w + 400) - 200;
+          const y = _h(i + 99) * gy * 0.6;
+          ctx.globalAlpha = 0.3 + _h(i + 7) * 0.6;
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(x, y, 1 + (_h(i + 3) > 0.85 ? 1 : 0), 1 + (_h(i + 3) > 0.85 ? 1 : 0));
         }
-        ctx.strokeStyle = '#ffe0a0'; ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.arc(ox, oy, 31, 0, 7); ctx.stroke();
-        ctx.fillStyle = '#120a10';
-        ctx.beginPath(); ctx.arc(ox, oy, 29, 0, 7); ctx.fill();
-      } else {
-        ctx.fillStyle = pal.orbGlow;
-        ctx.beginPath(); ctx.arc(ox, oy, 44, 0, 7); ctx.fill();
-        ctx.fillStyle = pal.orb;
-        ctx.beginPath(); ctx.arc(ox, oy, 30, 0, 7); ctx.fill();
-        if (pal.moon) {
-          ctx.fillStyle = pal.sky0;
-          ctx.beginPath(); ctx.arc(ox - 13, oy - 8, 27, 0, 7); ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+      if (pal.aurora) {                                  // 오로라
+        for (let k = 0; k < 3; k++) {
+          const g = ctx.createLinearGradient(0, gy * 0.05, 0, gy * 0.45);
+          const c = ['rgba(120,255,200,', 'rgba(140,160,255,', 'rgba(220,130,255,'][k];
+          g.addColorStop(0, c + '0)'); g.addColorStop(0.5, c + '.22)'); g.addColorStop(1, c + '0)');
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.moveTo(-20, gy * 0.35);
+          for (let x = -20; x <= w + 40; x += 40) ctx.lineTo(x, gy * (0.18 + 0.08 * Math.sin(x * 0.006 + k * 2 - cam * 0.0008) + k * 0.05));
+          ctx.lineTo(w + 40, gy * 0.5); ctx.lineTo(-20, gy * 0.5); ctx.closePath(); ctx.fill();
         }
       }
-    }
 
-    // 구름
-    if (pal.cloud) {
-      ctx.fillStyle = pal.cloud;
-      const cpar = cam * 0.12;
-      for (let i = 0; i < 9; i++) {
-        const cx = ((i * 260 - cpar) % 2340 + 2340) % 2340 - 260;
-        const cy = 46 + ((i * 53) % 5) * 24;
-        const cr = 20 + (i % 3) * 9;
-        ctx.beginPath();
-        ctx.arc(cx, cy, cr, 0, 7);
-        ctx.arc(cx + cr * 0.9, cy + 5, cr * 0.7, 0, 7);
-        ctx.arc(cx - cr * 0.9, cy + 6, cr * 0.6, 0, 7);
-        ctx.fill();
+      // 해 / 달 / 일식
+      if (!pal.noOrb) {
+        const ox = ((this.w * 0.74 - cam * 0.05) % (this.w + 240) + this.w + 240) % (this.w + 240) - 120;
+        const oy = gy * 0.2;
+        if (pal.eclipse) {
+          for (let k = 3; k >= 1; k--) {
+            ctx.fillStyle = 'rgba(255,200,120,' + (0.12 * k) + ')';
+            ctx.beginPath(); ctx.arc(ox, oy, 30 + k * 12, 0, 7); ctx.fill();
+          }
+          ctx.strokeStyle = '#ffe0a0'; ctx.lineWidth = 3;
+          ctx.beginPath(); ctx.arc(ox, oy, 31, 0, 7); ctx.stroke();
+          ctx.fillStyle = '#120a10';
+          ctx.beginPath(); ctx.arc(ox, oy, 29, 0, 7); ctx.fill();
+        } else {
+          ctx.fillStyle = pal.orbGlow;
+          ctx.beginPath(); ctx.arc(ox, oy, 44, 0, 7); ctx.fill();
+          ctx.fillStyle = pal.orb;
+          ctx.beginPath(); ctx.arc(ox, oy, 30, 0, 7); ctx.fill();
+          if (pal.moon) {
+            ctx.fillStyle = pal.sky0;
+            ctx.beginPath(); ctx.arc(ox - 13, oy - 8, 27, 0, 7); ctx.fill();
+          }
+        }
+      }
+
+      // 구름
+      if (pal.cloud) {
+        ctx.fillStyle = pal.cloud;
+        const cpar = cam * 0.12;
+        for (let i = 0; i < 9; i++) {
+          const cx = ((i * 260 - cpar) % 2340 + 2340) % 2340 - 260;
+          const cy = 46 + ((i * 53) % 5) * 24;
+          const cr = 20 + (i % 3) * 9;
+          ctx.beginPath();
+          ctx.arc(cx, cy, cr, 0, 7);
+          ctx.arc(cx + cr * 0.9, cy + 5, cr * 0.7, 0, 7);
+          ctx.arc(cx - cr * 0.9, cy + 6, cr * 0.6, 0, 7);
+          ctx.fill();
+        }
       }
     }
 
@@ -342,16 +374,20 @@ class Renderer {
         });
       }
     };
-    if (!pal.noRidge) ridge(pal.ridgeFar, gy * 0.42, 160, 0.12, 35, 4, pal.snowcap);
+    const run = i => i >= from && i < to;
+    let i = 1;
+    if (run(i++) && !pal.noRidge) ridge(pal.ridgeFar, gy * 0.42, 160, 0.12, 35, 4, pal.snowcap);
     const layers = pal.layers || [];
-    layers.forEach(n => { const L = LOOK_LAYERS[n]; if (L && L.z === 'far') L.fn(this, ctx, pal, cam); });
-    if (!pal.noRidge) ridge(pal.ridge, gy * 0.24, 110, 0.28, 16, 7, pal.snowcap);
-    layers.forEach(n => { const L = LOOK_LAYERS[n]; if (L && L.z === 'back') L.fn(this, ctx, pal, cam); });
+    for (const n of layers) { const L = LOOK_LAYERS[n]; if (L && L.z === 'far' && run(i++)) L.fn(this, ctx, pal, cam); }
+    if (run(i++) && !pal.noRidge) ridge(pal.ridge, gy * 0.24, 110, 0.28, 16, 7, pal.snowcap);
+    for (const n of layers) { const L = LOOK_LAYERS[n]; if (L && L.z === 'back' && run(i++)) L.fn(this, ctx, pal, cam); }
 
-    const mist = ctx.createLinearGradient(0, gy - 60, 0, gy);
-    mist.addColorStop(0, 'rgba(0,0,0,0)'); mist.addColorStop(1, pal.fog || pal.sky1);
-    ctx.globalAlpha = pal.fog ? 1 : 0.2; ctx.fillStyle = mist;
-    ctx.fillRect(0, gy - 60, w, 60); ctx.globalAlpha = 1;
+    if (run(i)) {
+      const mist = ctx.createLinearGradient(0, gy - 60, 0, gy);
+      mist.addColorStop(0, 'rgba(0,0,0,0)'); mist.addColorStop(1, pal.fog || pal.sky1);
+      ctx.globalAlpha = pal.fog ? 1 : 0.2; ctx.fillStyle = mist;
+      ctx.fillRect(0, gy - 60, w, 60); ctx.globalAlpha = 1;
+    }
 
   }
 
@@ -544,6 +580,7 @@ class Renderer {
     const s = this.cs;
     const wdt = 112 * s, hgt = 150 * s;
 
+    if (this._deferMarks) { const ty = y - hgt - 120 * s; if (ty < this._ulTop) this._ulTop = ty; }
     ctx.save();
     ctx.translate(x, y);
     ctx.fillStyle = 'rgba(0,0,0,.20)';
@@ -882,6 +919,7 @@ class Renderer {
       ctx.restore();
     }
 
+    if (this._deferMarks) { const ty = y - hop - kbLift - top - 60 * s; if (ty < this._ulTop) this._ulTop = ty; }   // 5.14 주변광 층: 그린 맨 위
     ctx.save();
     ctx.translate(x + f.dir * lunge, y + breathe - hop - kbLift);
     ctx.scale(f.dir, 1);
@@ -3931,55 +3969,64 @@ class Renderer {
     // 예전엔 어느 전장이든 한낮처럼 하얗게 떠 보였다. 체력바 · 표식 · 연출은 물들이지 않는다.
     const amb = this.ambientFor(look), layer = amb && this.unitLayer(ctx);
     if (layer) { this.ctx = layer; this._deferMarks = true; this._marks.length = 0; this._castleBars.length = 0; this._torches.length = 0; }
-    this.drawCastle(battle.allyCastle, false);
-    this.drawCastle(battle.enemyCastle, true);
+    try {
+      this.drawCastle(battle.allyCastle, false);
+      this.drawCastle(battle.enemyCastle, true);
 
-    // 3.10: 그릴 순서 목록은 프레임마다 새로 만들지 않고 다시 쓴다
-    const all = this._drawList || (this._drawList = []);
-    all.length = 0;
-    for (const f of battle.allies) all.push(f);
-    for (const f of battle.enemies) all.push(f);
-    all.sort(byRowX);
-    let onScreen = 0;
-    for (const f of all) { const sx = this.screenX(f.x); if (sx > -140 && sx < this.w + 140) onScreen++; }
-    this._onScreen = onScreen;
-    // 3.12: 자동 품질에서 병사가 빽빽하면(발열의 주범) 잉크 테두리를 끄고, 루프에 프레임을 늦추라고 알린다.
-    // 켜고 끄는 문턱을 달리 둬 경계에서 깜빡이지 않게 한다.
-    const qs = typeof Settings === 'undefined' ? 'auto' : Settings.get('quality');
-    const auto = qs === 'auto' || qs === 'hq';       // 5.2 고퀄도 빽빽하면 스스로 줄인다
-    if (!auto) this.crowded = false;
-    else if (onScreen >= CROWD_ON) this.crowded = true;
-    else if (onScreen <= CROWD_OFF) this.crowded = false;
-    const ink = MODEL.ink;
-    if (this.crowded) MODEL.ink = false;
-    this.drawGuardBeams(battle);                     // 4.21 수호 토템 → 보스 빛줄기 (병사 뒤에)
-    for (const f of all) this.drawFighter(f);
-    MODEL.ink = ink;
-    if (battle.burrowers) for (const b of battle.burrowers) this.drawBurrow(b);
-    if (layer) {
-      this._fxOnlyCorpse = true; this.drawFx(battle); this._fxOnlyCorpse = false;
-      layer.save();
-      layer.setTransform(1, 0, 0, 1, 0, 0);
-      layer.globalCompositeOperation = 'source-atop';   // 그린 곳만 물들인다
-      layer.globalAlpha = amb.a; layer.fillStyle = amb.c;
-      const W = layer.canvas.width, H = this._ulH;
-      layer.fillRect(0, 0, W, H);
-      layer.restore();
-      this.ctx = ctx; this._deferMarks = false;
-      ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(layer.canvas, 0, 0, W, H, 0, 0, W, H); ctx.restore();
-      if (amb.a > 0.16 && !this.crowded) {               // 횃불 둘레의 따뜻한 빛 (주변광이 짙을수록 또렷)
-        const T = this._torches, r = 48 * this.cs, t = this.clock || 0;
-        ctx.save(); ctx.globalCompositeOperation = 'lighter';
-        for (let i = 0; i < T.length; i += 2) {
-          const fl = 1 + Math.sin(t * 11 + T[i]) * 0.08, g = ctx.createRadialGradient(T[i], T[i + 1], 0, T[i], T[i + 1], r * fl);
-          g.addColorStop(0, 'rgba(255,170,70,' + (amb.a * 0.9) + ')'); g.addColorStop(1, 'rgba(255,140,40,0)');
-          ctx.fillStyle = g; ctx.fillRect(T[i] - r * 1.1, T[i + 1] - r * 1.1, r * 2.2, r * 2.2);
+      // 3.10: 그릴 순서 목록은 프레임마다 새로 만들지 않고 다시 쓴다
+      const all = this._drawList || (this._drawList = []);
+      all.length = 0;
+      for (const f of battle.allies) all.push(f);
+      for (const f of battle.enemies) all.push(f);
+      all.sort(byRowX);
+      let onScreen = 0;
+      for (const f of all) { const sx = this.screenX(f.x); if (sx > -140 && sx < this.w + 140) onScreen++; }
+      this._onScreen = onScreen;
+      // 3.12: 자동 품질에서 병사가 빽빽하면(발열의 주범) 잉크 테두리를 끄고, 루프에 프레임을 늦추라고 알린다.
+      // 켜고 끄는 문턱을 달리 둬 경계에서 깜빡이지 않게 한다.
+      const qs = typeof Settings === 'undefined' ? 'auto' : Settings.get('quality');
+      const auto = qs === 'auto' || qs === 'hq';       // 5.2 고퀄도 빽빽하면 스스로 줄인다
+      if (!auto) this.crowded = false;
+      else if (onScreen >= CROWD_ON) this.crowded = true;
+      else if (onScreen <= CROWD_OFF) this.crowded = false;
+      const ink = MODEL.ink;
+      if (this.crowded) MODEL.ink = false;
+      this.drawGuardBeams(battle);                     // 4.21 수호 토템 → 보스 빛줄기 (병사 뒤에)
+      for (const f of all) this.drawFighter(f);
+      MODEL.ink = ink;
+      if (battle.burrowers) for (const b of battle.burrowers) this.drawBurrow(b);
+      if (layer) {
+        for (const e of battle.fx) if (e.type === 'corpse') { const ty = this.rowY(e.row) - 110 * this.cs * (e.scale || 1); if (ty < this._ulTop) this._ulTop = ty; }
+        this._fxOnlyCorpse = true; this.drawFx(battle); this._fxOnlyCorpse = false;
+        layer.save();
+        layer.setTransform(1, 0, 0, 1, 0, 0);
+        layer.globalCompositeOperation = 'source-atop';   // 그린 곳만 물들인다
+        layer.globalAlpha = amb.a; layer.fillStyle = amb.c;
+        const W = layer.canvas.width, H = this._ulH, m = ctx.getTransform();
+        // 그린 맨 위(넉넉히 · 흔들림 · 불티 여유)부터만
+        const Y = Math.max(0, Math.min(H, Math.floor(Math.min(this._ulTop, this.groundY) * m.d + m.f - 24 * m.d)));
+        if (H > Y) {
+          layer.fillRect(0, Y, W, H - Y);
+          layer.restore();
+          ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(layer.canvas, 0, Y, W, H - Y, 0, Y, W, H - Y); ctx.restore();
+        } else layer.restore();
+        this.ctx = ctx; this._deferMarks = false;
+        if (amb.a > 0.16 && !this.crowded) {               // 횃불 둘레의 따뜻한 빛 (주변광이 짙을수록 또렷)
+          const T = this._torches, r = 48 * this.cs, t = this.clock || 0;
+          ctx.save(); ctx.globalCompositeOperation = 'lighter';
+          for (let i = 0; i < T.length; i += 2) {
+            const fl = 1 + Math.sin(t * 11 + T[i]) * 0.08, g = ctx.createRadialGradient(T[i], T[i + 1], 0, T[i], T[i + 1], r * fl);
+            g.addColorStop(0, 'rgba(255,170,70,' + (amb.a * 0.9) + ')'); g.addColorStop(1, 'rgba(255,140,40,0)');
+            ctx.fillStyle = g; ctx.fillRect(T[i] - r * 1.1, T[i + 1] - r * 1.1, r * 2.2, r * 2.2);
+          }
+          ctx.restore();
         }
-        ctx.restore();
+        for (const c of this._castleBars) this.drawCastleBar(c, c === battle.enemyCastle);
+        for (const f of this._marks) this.drawFighterMarks(f);
+        this._corpseInLayer = true;
       }
-      for (const c of this._castleBars) this.drawCastleBar(c, c === battle.enemyCastle);
-      for (const f of this._marks) this.drawFighterMarks(f);
-      this._corpseInLayer = true;
+    } finally {                                         // 그리다 오류가 나도 다음 프레임이 층에 갇히지 않게
+      if (this.ctx !== ctx) { this.ctx = ctx; this._deferMarks = false; this._fxOnlyCorpse = false; }
     }
 
     this.drawShots(battle);
