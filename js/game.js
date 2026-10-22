@@ -2823,7 +2823,10 @@ class Battle {
       if (hit) this.hitOne(s.dmg, hit, s.src, s.crit);
       this.fx.push({ type: s.crit ? 'crit' : 'hit', x: hit ? hit.x : s.tx, row: hit ? (hit.row ?? s.y0) : s.y0, dir: s.dir, t: 0.22, life: 0.22, sty: 'shoot', color: s.color });
     }
-    if (this.shots.some(s => s.done)) this.shots = this.shots.filter(s => !s.done);
+    const shots = this.shots;                        // 5.15: 끝난 탄은 제자리에서 지운다
+    let w = 0;
+    for (let i = 0; i < shots.length; i++) if (!shots[i].done) shots[w++] = shots[i];
+    shots.length = w;
   }
 
   /* 5.9: 공격 예고(경고 원 · 돌진선 · 파멸 · 세금 · 업화)는 실제로 맞는 시각과 같이 가야 한다.
@@ -2835,12 +2838,15 @@ class Battle {
 
   updateFx(dt) {
     const play = this.state === 'play';
-    let gone = false;
-    for (const e of this.fx) {
+    // 5.15: 사라진 것은 제자리에서 당겨 지운다 (예전엔 거의 매 프레임 새 배열을 만들었다)
+    const fx = this.fx;
+    let w = 0;
+    for (let i = 0; i < fx.length; i++) {
+      const e = fx[i];
       if (!e.sim || !play) e.t -= dt;
-      if (e.t <= 0) gone = true;
+      if (e.t > 0) fx[w++] = e;
     }
-    if (gone) this.fx = this.fx.filter(e => e.t > 0);   // 사라진 게 있을 때만 새 배열
+    fx.length = w;
     if (this.fx.length > FX_LIMIT) {                    // 넘치면 오래된 장식부터 — 예고는 남긴다
       let cut = this.fx.length - FX_LIMIT;
       this.fx = this.fx.filter(e => e.sim || cut-- <= 0);
