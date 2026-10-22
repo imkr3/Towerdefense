@@ -927,6 +927,7 @@ class Renderer {
       ctx.globalAlpha = Math.min(1, spawnK * 2.5);
       ctx.scale(pop, pop);
     }
+    const ga = ctx.globalAlpha;                            // 5.15: 오라 · 상태 표시가 나타나는 중 투명도를 1 로 되돌리지 않게
     ctx.strokeStyle = f.side === 'ally' ? '#9cdef0' : '#efab91';
     ctx.lineWidth = 1.2 * s;
     ctx.beginPath(); ctx.ellipse(0, 2, 20 * s * wk, 5 * s, 0, 0, 7); ctx.stroke();
@@ -937,115 +938,115 @@ class Renderer {
         const glow = f.s.rarity === 'UR' ? 0.62
                    : (f.s.rarity === 'SSR' ? 0.5 : 0.28);
         const pulse = 0.85 + Math.sin(f.bob * 1.4) * 0.15;
-        ctx.globalAlpha = glow * pulse;
+        ctx.globalAlpha = ga * (glow * pulse);
         ctx.fillStyle = f.s.accent;
         ctx.beginPath();
         ctx.ellipse(0, 1, 24 * s * pulse, 6.5 * s * pulse, 0, 0, 7);
         ctx.fill();
-        ctx.globalAlpha = glow * 0.55;
+        ctx.globalAlpha = ga * (glow * 0.55);
         ctx.strokeStyle = f.s.accent;
         ctx.lineWidth = 1.6 * s;
         ctx.beginPath();
         ctx.ellipse(0, 1, 30 * s * pulse, 8 * s * pulse, 0, 0, 7);
         ctx.stroke();
-        ctx.globalAlpha = 1;
+        ctx.globalAlpha = ga;
     }
     if (f.s.evo) {                                         // 진화한 병사: 발밑 금빛 문양 (4.1 3진은 청록 + 도는 별 셋)
       const pulse = 0.85 + Math.sin(f.bob * 1.8) * 0.15;
       if (f.s.evo2) {
-        ctx.fillStyle = f.s.evo3 ? '#ffd76a' : '#7ff0ff'; ctx.globalAlpha = 0.75;
+        ctx.fillStyle = f.s.evo3 ? '#ffd76a' : '#7ff0ff'; ctx.globalAlpha = ga * 0.75;
         for (let i = 0; i < 3; i++) { const a = clk * 1.6 + i * 2.094, x = Math.cos(a) * 30 * s * wk, y = 1 + Math.sin(a) * 8 * s;
           ctx.beginPath(); ctx.moveTo(x, y - 3 * s); ctx.lineTo(x + 2 * s, y); ctx.lineTo(x, y + 3 * s); ctx.lineTo(x - 2 * s, y); ctx.closePath(); ctx.fill(); }
       }
-      ctx.globalAlpha = 0.55 * pulse;
+      ctx.globalAlpha = ga * (0.55 * pulse);
       ctx.strokeStyle = f.s.evo3 ? '#e0b0ff' : f.s.evo2 ? '#7ff0ff' : '#f6d365';
       ctx.lineWidth = 1.8 * s;
       ctx.beginPath(); ctx.ellipse(0, 1, 26 * s * wk, 7 * s, 0, 0, 7); ctx.stroke();
-      ctx.globalAlpha = 0.3 * pulse;
+      ctx.globalAlpha = ga * (0.3 * pulse);
       ctx.beginPath(); ctx.ellipse(0, 1, 33 * s * pulse * wk, 9 * s * pulse, 0, 0, 7); ctx.stroke();
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = ga;
     }
     if (f.veilT > 0) {                                     // 안개화: 붉은 안개가 소용돌이친다
       ctx.fillStyle = '#e04b6a';
       for (let i = 0; i < 7; i++) {
         const a = clk * 1.3 + i * 0.9, rr = (26 + (i % 3) * 10) * s;
-        ctx.globalAlpha = 0.16 + (i % 2) * 0.08;
+        ctx.globalAlpha = ga * (0.16 + (i % 2) * 0.08);
         ctx.beginPath(); ctx.ellipse(Math.cos(a) * rr, -38 * s + Math.sin(a * 1.4) * 22 * s, 18 * s, 10 * s, a, 0, 7); ctx.fill();
       }
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = ga;
     }
     if (f.shadow) {                                        // 4.6 그림자 분신: 보랏빛 연기가 몸을 감고 피어오른다
       ctx.fillStyle = '#7a3ab8';
       for (let i = 0; i < 5; i++) {
         const k = ((clk * 0.7 + i / 5) % 1);
-        ctx.globalAlpha = 0.28 * (1 - k);
+        ctx.globalAlpha = ga * (0.28 * (1 - k));
         ctx.beginPath(); ctx.arc(Math.sin(i * 2.3 + clk) * 12 * s, -(8 + k * 70) * s, (7 + k * 9) * s, 0, 7); ctx.fill();
       }
-      ctx.globalAlpha = 0.5 + Math.sin(clk * 4) * 0.15;
+      ctx.globalAlpha = ga * (0.5 + Math.sin(clk * 4) * 0.15);
       ctx.strokeStyle = '#c06aff'; ctx.lineWidth = 1.8 * s;
       ctx.beginPath(); ctx.ellipse(0, 1, 26 * s, 7 * s, 0, 0, 7); ctx.stroke();
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = ga;
     }
     if (f.reflectT > 0) {                                  // 반사 결계: 보랏빛 육각 막
       const pulse = 0.85 + Math.sin(clk * 8) * 0.15;
-      ctx.globalAlpha = 0.28 * pulse;
+      ctx.globalAlpha = ga * (0.28 * pulse);
       ctx.fillStyle = '#b784e0';
       ctx.beginPath(); ctx.ellipse(0, -40 * s, 44 * s, 56 * s, 0, 0, 7); ctx.fill();
-      ctx.globalAlpha = 0.85;
+      ctx.globalAlpha = ga * 0.85;
       ctx.strokeStyle = '#e8d0ff'; ctx.lineWidth = 2 * s;
       ctx.beginPath();
       for (let i = 0; i <= 6; i++) { const a = i / 6 * Math.PI * 2 + clk * 0.8; const px = Math.cos(a) * 46 * s, py = -40 * s + Math.sin(a) * 58 * s; i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }
       ctx.stroke();
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = ga;
     }
     if (f.guardCut > 0) {                                  // 4.21 수호 토템이 지키는 동안: 금빛 방패 고리
       const pulse = 0.85 + Math.sin(clk * 6) * 0.15;
-      ctx.globalAlpha = 0.22 * pulse;
+      ctx.globalAlpha = ga * (0.22 * pulse);
       ctx.fillStyle = '#ffd76a';
       ctx.beginPath(); ctx.ellipse(0, -40 * s, 46 * s, 58 * s, 0, 0, 7); ctx.fill();
-      ctx.globalAlpha = 0.8 * pulse;
+      ctx.globalAlpha = ga * (0.8 * pulse);
       ctx.strokeStyle = '#fff0b8'; ctx.lineWidth = 2.2 * s;
       ctx.setLineDash([7 * s, 5 * s]); ctx.lineDashOffset = -clk * 30 * s;
       ctx.beginPath(); ctx.ellipse(0, -40 * s, 48 * s, 60 * s, 0, 0, 7); ctx.stroke();
       ctx.setLineDash([]);
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = ga;
     }
     if (f.frenzyT > 0) {                                   // 4.23 광폭: 붉은 불꽃이 몸을 휘감고 위로 솟는다
       const pulse = 0.75 + Math.sin(clk * 14) * 0.25;
-      ctx.globalAlpha = 0.28 * pulse;
+      ctx.globalAlpha = ga * (0.28 * pulse);
       ctx.fillStyle = '#ff5a2a';
       ctx.beginPath(); ctx.ellipse(0, -40 * s, 44 * s, 60 * s, 0, 0, 7); ctx.fill();
-      ctx.globalAlpha = 0.85 * pulse;
+      ctx.globalAlpha = ga * (0.85 * pulse);
       ctx.fillStyle = '#ffb347';
       for (let i = 0; i < 5; i++) {
         const k = (clk * 1.6 + i / 5) % 1, px = Math.sin(i * 2.1 + clk * 3) * 30 * s, py = -10 * s - k * 90 * s;
         ctx.beginPath(); ctx.moveTo(px - 4 * s * (1 - k), py); ctx.lineTo(px, py - 12 * s * (1 - k)); ctx.lineTo(px + 4 * s * (1 - k), py); ctx.fill();
       }
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = ga;
     }
     if (f.windT > 0) {                                     // 4.21 돌진 준비: 발밑에서 붉은 흙먼지가 일고 몸이 앞으로 쏠린다
-      ctx.globalAlpha = 0.5 + Math.sin(clk * 20) * 0.2;
+      ctx.globalAlpha = ga * (0.5 + Math.sin(clk * 20) * 0.2);
       ctx.strokeStyle = '#ff5a3c'; ctx.lineWidth = 3 * s;
       for (let i = 0; i < 3; i++) { const k = ((clk * 2.4 + i / 3) % 1); ctx.beginPath(); ctx.ellipse(-k * 30 * s, 1, (16 + k * 26) * s, (4 + k * 6) * s, 0, 0, 7); ctx.stroke(); }
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = ga;
     }
     if (f.exposedT > 0) {                                  // 약점 노출: 핵 자리에 금빛 과녁
       const pulse = 0.75 + Math.sin(clk * 10) * 0.25;
       ctx.strokeStyle = '#ffd35a'; ctx.lineWidth = 3 * s;
-      ctx.globalAlpha = pulse;
+      ctx.globalAlpha = ga * pulse;
       ctx.beginPath(); ctx.arc(0, -40 * s, 22 * s * (1.1 - pulse * 0.2), 0, 7); ctx.stroke();
       ctx.beginPath(); ctx.arc(0, -40 * s, 10 * s, 0, 7); ctx.stroke();
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = ga;
     }
     if (f.enraged || f.furious) {                          // 광폭화·격노한 보스의 붉은 기운
       const pulse = 0.8 + Math.sin(f.bob * 3.2) * 0.2;
-      ctx.globalAlpha = 0.45 * pulse;
+      ctx.globalAlpha = ga * (0.45 * pulse);
       ctx.strokeStyle = '#ff5a3c';
       ctx.lineWidth = 2.4 * s;
       ctx.beginPath();
       ctx.ellipse(0, 1, 34 * s * pulse, 9 * s * pulse, 0, 0, 7);
       ctx.stroke();
-      ctx.globalAlpha = 0.3 * pulse;
+      ctx.globalAlpha = ga * (0.3 * pulse);
       for (let i = 0; i < 3; i++) {
         const a = f.bob * 1.6 + i * 2.1;
         ctx.beginPath();
@@ -1053,7 +1054,7 @@ class Renderer {
         ctx.fillStyle = '#ff7a4c';
         ctx.fill();
       }
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = ga;
     }
     if (moving && !vehicle) {                              // 발자국 먼지: 발이 닿을 때마다 뒤로 퍼진다 (탈것은 스스로 먼지를 낸다)
       const ph = ((f.bob / Math.PI) % 1 + 1) % 1;
@@ -1096,7 +1097,7 @@ class Renderer {
     const veiled = f.veilT > 0 || (f.ab.glamour && !f.unveiled);
     if (veiled) ctx.globalAlpha *= (f.veilT > 0 ? 0.32 : 0.4) + Math.sin(clk * 6) * 0.06;
     drawBody(ctx, f.s, s, false, f.kbTimer > 0, f.bob, moving, atk, wind, won);
-    if (veiled) ctx.globalAlpha = 1;
+    if (veiled) ctx.globalAlpha = ga;
     MODEL.blink = false; MODEL.angry = false;
     if (f.petrifyUntil > this.sceneTime && f.stunT > 0) {   // 5.2 석화의 여제에게 굳은 적: 잿빛 돌로 바래고 금이 간다
       const a0 = ctx.globalAlpha;
@@ -1506,8 +1507,10 @@ class Renderer {
       ctx.strokeStyle = s.color; ctx.lineWidth = (s.area ? 4 : 2) * cs;
       ctx.globalAlpha = 0.32;
       const tail = Math.max(0, p - 0.1);
+      const tx = this.screenX(s.x + (s.tx - s.x) * tail);
+      if ((x < -40 && tx < -40) || (x > this.w + 40 && tx > this.w + 40)) { ctx.restore(); continue; }   // 5.15: 화면 밖 탄은 건너뛴다
       ctx.beginPath();
-      ctx.moveTo(this.screenX(s.x + (s.tx - s.x) * tail), this.rowY(s.y0) - 36 * cs - Math.sin(tail * Math.PI) * arcH);
+      ctx.moveTo(tx, this.rowY(s.y0) - 36 * cs - Math.sin(tail * Math.PI) * arcH);
       ctx.lineTo(x, y); ctx.stroke(); ctx.restore();
       ctx.save();
       ctx.translate(x, y);
@@ -1670,6 +1673,8 @@ class Renderer {
       if (only ? e.type !== 'corpse' : (skipC && e.type === 'corpse')) continue;   // 5.14 쓰러지는 몸은 주변광 층에서
       const p = e.t / e.life;
       const x = this.screenX(e.x);
+      // 5.15: 제자리에서 끝나는 작은 연출(맞음 · 쓰러짐 · 피해 숫자 등)은 화면 밖이면 그리지 않는다
+      if (FX_LOCAL[e.type]) { const m = 140 * cs * (e.scale || 1); if (x < -m || x > this.w + m) continue; }
       const y = this.rowY(e.row || 0) - 28 * cs;
       if(e.type==='mythic') {
         const k=1-p, radius=Math.min(e.r*this.zoom,260*cs), ground=this.rowY(e.row);
@@ -2240,7 +2245,7 @@ class Renderer {
         const k = 1 - p, ease = 1 - Math.pow(1 - Math.min(1, k / 0.6), 3);
         const rise = ease * 34 * cs + (e.dy || 0);
         let pop = k < 0.12 ? 1 + (k / 0.12) * 0.45 : 1.45 - Math.min(0.45, (k - 0.12) * 3);
-        if (e.bump > 0) { pop += e.bump * 2.5; e.bump = Math.max(0, e.bump - 0.016); }   // 4.13 합쳐질 때 한 번 더 튄다
+        if (e.bump > 0) { pop += e.bump * 2.5; e.bump = Math.max(0, e.bump - (this._frameDt || 0.016)); }   // 4.13 합쳐질 때 한 번 더 튄다
         const jx = e.crit && k < 0.3 ? Math.sin(k * 90) * 2 * cs : 0;
         ctx.globalAlpha = Math.min(1, p * 2.5);
         ctx.font = 'bold ' + Math.round((e.crit ? 18 : 13) * cs * pop) + 'px sans-serif';
@@ -12482,8 +12487,10 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
 
   if (st.evo) evoCrest(S);                        // 진화: 머리 위 금빛 문장
 
-  if (wrapped) { delete ctx.fill; delete ctx.stroke; ctx._depth = false; ctx._noInk = false; }
-  if (depthOn) { delete ctx.fillRect; delete ctx.strokeRect; delete ctx.fillText; }
+  // 5.15: delete 대신 원래 함수를 다시 넣는다. 프로퍼티를 지우면 V8 이 문맥 객체를 느린 사전 모드로 바꿔
+  // 그 뒤 매 프레임 수천 번의 ctx.* 호출이 전부 느려진다.
+  if (wrapped) { ctx.fill = _fill0; ctx.stroke = _stroke0; ctx._depth = false; ctx._noInk = false; }
+  if (depthOn) { ctx.fillRect = _fillRect0; ctx.strokeRect = _strokeRect0; ctx.fillText = _fillText0; }
 
   if (hurt) {
     ctx.strokeStyle = 'rgba(255,255,255,.8)';
@@ -12501,6 +12508,7 @@ function drawBody(ctx, st, s, flash, hurt, phase, moving, atk, wind, cheer) {
  * 망토는 사람 모양이 아닌 병종(수레·짐승·기계)에는 두르지 않는다. */
 const NO_CAPE = { catapult: 1, scarab: 1, fenrir: 1, airship: 1, steammech: 1, merchant: 1,
   medusa: 1, sniper: 1, turret: 1, barricade: 1, colossus: 1, lancer: 1, siegebow: 1, camelarcher: 1 };
+const FX_LOCAL = { corpse: 1, hit: 1, release: 1, dmg: 1, crit: 1, chill: 1, stun: 1, miss: 1 };   // 5.15 화면 밖이면 건너뛰는 연출
 const EVO_BARE = { genie: 1 };   // 5.2 진화해도 망토 · 군기를 달지 않는다 (램프의 마신은 제 그림에서 금장식이 는다)
 function evoCape(S) {
   const { ctx, s } = S;
@@ -12761,9 +12769,10 @@ function armSwing(S) {
   hand(S, hx, hy);
 }
 
+const ARMORED_TORSO = { shield: 1, knight: 1, knight_evo: 1, spear_evo: 1, thor_evo: 1, wukong_evo: 1, paladin: 1, colossus: 1, dark: 1, orcshield: 1, warchief: 1, warlord: 1 };
 function torso(S, lw) {
   const { ctx, s } = S;
-  const armored = ['shield','knight','knight_evo','spear_evo','thor_evo','wukong_evo','paladin','colossus','dark','orcshield','warchief','warlord'].includes(S.raw.shape);
+  const armored = ARMORED_TORSO[S.raw.shape] === 1;
   const width = armored ? 8 * s : 5.5 * s;
   ctx.fillStyle = S.tun;
   ctx.beginPath();
@@ -12802,11 +12811,12 @@ function arm(S, hx, hy) {
   inkStroke(S, S.lw * 0.9); ctx.stroke();
 }
 
+const WIND_K = { heavy: 1.15, cast: 0.9, slash: 0.6, thrust: 0.25, shoot: 0.12 };
 function armWeapon(S, angle, drawWeapon, gripY) {
   const { ctx, s } = S;
   const st = S.style || 'slash';
   // 준비 동작: 내려찍기는 크게 뒤로, 마법은 지팡이를 치켜들고, 찌르기·쏘기는 조금만.
-  const windK = { heavy: 1.15, cast: 0.9, slash: 0.6, thrust: 0.25, shoot: 0.12 }[st];
+  const windK = WIND_K[st];
   angle -= S.wind * windK + (S.cheer ? 0.9 : 0);
   // 4.13 걸을 때는 걸음에 맞춰 무기를 든 팔이 흔들린다 (모두 같은 자세로 굳어 행진하던 것)
   if (S.live && S.moving && S.atk <= 0 && S.wind <= 0) angle += Math.sin(S.phase * 2) * 0.13;
