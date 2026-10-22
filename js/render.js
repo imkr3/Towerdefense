@@ -163,6 +163,57 @@ class Renderer {
     this.paintGround(this.ctx, look, this.cam);
   }
 
+  /* 5.14 위기 테두리 (작게 그려 늘려 쓴다 — 부드러운 그라디언트라 흐려도 티가 안 난다) */
+  dangerVignette() {
+    if (this._dv) return this._dv;
+    const c = document.createElement('canvas'); c.width = 192; c.height = 96;
+    const g = c.getContext('2d'), gr = g.createRadialGradient(96, 48, 30, 96, 48, 110);
+    gr.addColorStop(0, 'rgba(235,40,30,0)'); gr.addColorStop(0.45, 'rgba(235,40,30,0)'); gr.addColorStop(0.8, 'rgba(235,40,30,.75)'); gr.addColorStop(1, 'rgba(235,40,30,1)');
+    g.setTransform(1, 0, 0, 0.5, 0, 24); g.fillStyle = gr; g.fillRect(0, -48, 192, 192);
+    return (this._dv = c);
+  }
+
+  /* 5.14 전장 주변광: 하늘색에서 정한다. 어두운 하늘(밤 · 동굴 · 물속 · 용암)일수록 짙게, 밝은 낮엔 칠하지 않는다.
+   * 설정 '절전' 에선 끈다 (한 장 더 칠한다). FIELD_LOOKS[look].ambient = { c, a } 로 따로 정할 수 있다. */
+  ambientFor(look) {
+    if (typeof Settings !== 'undefined' && Settings.get('quality') === 'low') return null;
+    const memo = this._ambMemo || (this._ambMemo = new Map());
+    let v = memo.get(look);
+    if (v === undefined) {
+      const pal = FIELD_LOOKS[look] || FIELD_LOOKS.meadow;
+      if (pal.ambient !== undefined) v = pal.ambient;
+      else {
+        const a = this.rgbOf(pal.sky0), b = this.rgbOf(pal.sky1);
+        const lum = 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2];
+        const d = Math.max(0, Math.min(1, (0.5 - lum) / 0.4));
+        const k = d > 0 ? 0.62 - d * 0.22 : 1;           // 어두운 곳은 하늘빛을 낮춰 그늘로
+        const ch = i => Math.round(((a[i] + b[i]) / 2) * k * 255);
+        // 밝은 낮 전장은 물들여도 거의 티가 안 난다 — 한 장 더 칠하는 값을 아낀다
+        v = d > 0.08 ? { c: 'rgb(' + ch(0) + ',' + ch(1) + ',' + ch(2) + ')', a: 0.1 + d * 0.26 } : null;
+      }
+      memo.set(look, v);
+    }
+    return v;
+  }
+
+  /* 5.14 주변광을 입힐 병사 층 — 화면과 같은 크기 · 같은 변환으로 비워 돌려준다 */
+  unitLayer(main) {
+    const W = this.cv.width, H = this.cv.height;
+    let l = this._ul;
+    if (!l) {
+      const c = document.createElement('canvas');
+      l = this._ul = c.getContext('2d');
+      this._marks = []; this._castleBars = []; this._torches = [];
+    }
+    // 병사는 맨 아랫줄 발밑보다 아래로 내려가지 않는다 — 그 아래(카드 판 자리)는 비우지도 칠하지도 않는다
+    const m = main.getTransform();
+    this._ulH = Math.min(H, Math.ceil((this.rowY(2) + 34 * this.cs) * m.d + Math.abs(m.f) + 2));
+    if (l.canvas.width !== W || l.canvas.height !== H) { l.canvas.width = W; l.canvas.height = H; }
+    else { l.setTransform(1, 0, 0, 1, 0, 0); l.clearRect(0, 0, W, this._ulH); }
+    l.setTransform(m);
+    return l;
+  }
+
   animLook(look) {
     const memo = this._animLooks || (this._animLooks = new Map());
     let v = memo.get(look);
@@ -328,19 +379,105 @@ class Renderer {
     return this._gb;
   }
 
+  /* 5.14 땅 무늬 한 장 (가로로 이어 붙여도 이음매가 없게). 전장 · 화면 크기마다 한 번만 그린다. */
+  groundTile(look) {
+    const h = this.h, gy = this.groundY, dpr = this.cv.width / this.w, cs = this.cs;
+    const key = look + '|' + h + '|' + gy + '|' + dpr + '|' + cs;
+    if (this._gtKey === key) return this._gt;
+    this._gtKey = key;
+    const pal = FIELD_LOOKS[look] || FIELD_LOOKS.meadow;
+    const mat = GROUND_MAT[look] || 'dirt';
+    if (mat === 'none') return (this._gt = null);
+    const T = 512, gh = Math.max(4, h - gy - 2);
+    const c = this._gtCanvas || (this._gtCanvas = document.createElement('canvas'));
+    c.width = Math.round(T * dpr); c.height = Math.max(1, Math.round(gh * dpr)); c._w = T;
+    const g = c.getContext('2d');
+    g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, T, gh);
+    let seed = 0; for (let i = 0; i < look.length; i++) seed = (seed * 31 + look.charCodeAt(i)) | 0;
+    const R = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+    const wrap = (x, m, fn) => { fn(x); if (x < m) fn(x + T); if (x > T - m) fn(x - T); };   // 끝에 걸친 것은 반대편에도
+    const lite = shade(pal.ground, 0.16), dark = pal.groundDark, speck = pal.speck;
+    // 얼룩: 밝고 어두운 넓은 자국
+    for (let i = 0; i < 26; i++) {
+      const x = R() * T, y = 6 + R() * (gh - 6), rx = (12 + R() * 34) * cs, ry = (1.6 + R() * 4) * cs, up = R() < 0.5;
+      g.fillStyle = up ? 'rgba(255,255,255,.05)' : 'rgba(0,0,0,.07)';
+      wrap(x, rx, xx => { g.beginPath(); g.ellipse(xx, y, rx, ry, 0, 0, 7); g.fill(); });
+    }
+    // 잔 점
+    g.fillStyle = speck;
+    for (let i = 0; i < 46; i++) { const x = R() * T, y = 8 + R() * (gh - 10), ww = (2 + R() * 9) * cs; wrap(x, ww, xx => g.fillRect(xx, y, ww, Math.max(1, 1.6 * cs))); }
+    if (mat === 'sand' || mat === 'seabed') {               // 바람 · 물결 자국
+      g.lineCap = 'round';
+      for (let i = 0; i < 16; i++) {
+        const x = R() * T, y = 10 + R() * (gh - 14), L = (22 + R() * 40) * cs, bend = (1.5 + R() * 2.5) * cs;
+        wrap(x, L, xx => {
+          g.strokeStyle = 'rgba(0,0,0,.09)'; g.lineWidth = 1.4 * cs;
+          g.beginPath(); g.moveTo(xx - L / 2, y + 1.2 * cs); g.quadraticCurveTo(xx, y - bend + 1.2 * cs, xx + L / 2, y + 1.2 * cs); g.stroke();
+          g.strokeStyle = 'rgba(255,248,225,.22)'; g.lineWidth = 1.1 * cs;
+          g.beginPath(); g.moveTo(xx - L / 2, y); g.quadraticCurveTo(xx, y - bend, xx + L / 2, y); g.stroke();
+        });
+      }
+    }
+    if (mat !== 'grass' && mat !== 'snow') {                // 자갈: 그늘진 아래 · 빛 받은 위
+      for (let i = 0; i < (mat === 'rock' || mat === 'ash' ? 26 : 16); i++) {
+        const x = R() * T, y = 8 + R() * (gh - 10), r = (1.2 + R() * 2.8) * cs;
+        wrap(x, r * 2, xx => {
+          g.fillStyle = dark; g.beginPath(); g.ellipse(xx, y, r * 1.35, r, 0, 0, 7); g.fill();
+          g.fillStyle = mat === 'ash' ? 'rgba(200,190,185,.35)' : lite; g.beginPath(); g.ellipse(xx - r * 0.3, y - r * 0.35, r * 0.7, r * 0.45, 0, 0, 7); g.fill();
+        });
+      }
+    }
+    if (mat === 'rock' || mat === 'ash') {                  // 갈라진 금
+      g.strokeStyle = 'rgba(0,0,0,.22)'; g.lineWidth = 1.1 * cs; g.lineJoin = 'round';
+      for (let i = 0; i < 9; i++) {
+        const x = R() * T, y = 8 + R() * (gh - 14), n = 3 + (R() * 3 | 0), pts = [];
+        let px = 0, py = 0; for (let k = 0; k < n; k++) { pts.push([px, py]); px += (5 + R() * 9) * cs; py += (R() - 0.5) * 5 * cs; }
+        wrap(x, 60 * cs, xx => { g.beginPath(); pts.forEach(([a, b], k) => k ? g.lineTo(xx + a, y + b) : g.moveTo(xx + a, y + b)); g.stroke(); });
+      }
+    }
+    if (mat === 'seabed') {                                 // 조개 · 작은 소라
+      for (let i = 0; i < 10; i++) {
+        const x = R() * T, y = 10 + R() * (gh - 14), r = (1.6 + R() * 1.6) * cs, col = R() < 0.5 ? '#f0c8c0' : '#f4ecd8';
+        wrap(x, r * 2, xx => { g.fillStyle = col; g.beginPath(); g.arc(xx, y, r, Math.PI, 0); g.closePath(); g.fill(); });
+      }
+    }
+    if (mat === 'snow') {                                   // 눈 더미 · 반짝임
+      for (let i = 0; i < 14; i++) {
+        const x = R() * T, y = 4 + R() * (gh * 0.7), rx = (8 + R() * 22) * cs, ry = (1.5 + R() * 2.5) * cs;
+        wrap(x, rx, xx => { g.fillStyle = 'rgba(255,255,255,.55)'; g.beginPath(); g.ellipse(xx, y, rx, ry, 0, Math.PI, 0); g.fill();
+          g.fillStyle = 'rgba(120,140,170,.12)'; g.beginPath(); g.ellipse(xx, y + ry * 0.4, rx, ry * 0.6, 0, 0, Math.PI); g.fill(); });
+      }
+      g.fillStyle = '#ffffff';
+      for (let i = 0; i < 30; i++) { const x = R() * T, y = 6 + R() * (gh - 8); g.fillRect(x, y, 1.2 * cs, 1.2 * cs); }
+    }
+    if (mat === 'grass') {                                  // 풀포기: 땅 윗단을 따라 촘촘히, 앞쪽엔 드문드문
+      const cols = [shade(pal.ground, 0.22), speck, shade(pal.ground, -0.18), lite];
+      const tuft = (x, y, hgt) => {
+        const n = 3 + (R() * 3 | 0);
+        for (let k = 0; k < n; k++) {
+          const a = (k - (n - 1) / 2) * 0.32 + (R() - 0.5) * 0.2, L = hgt * (0.6 + R() * 0.5);
+          g.strokeStyle = cols[(R() * cols.length) | 0]; g.lineWidth = Math.max(0.8, 1.15 * cs); g.lineCap = 'round';
+          wrap(x, 12 * cs, xx => { g.beginPath(); g.moveTo(xx, y); g.quadraticCurveTo(xx + Math.sin(a) * L * 0.4, y - L * 0.6, xx + Math.sin(a) * L, y - Math.cos(a) * L); g.stroke(); });
+        }
+      };
+      for (let x = 0; x < T; x += (5 + R() * 9) * cs) tuft(x, 3.5 + R() * 2.5, (5 + R() * 6) * cs);
+      for (let i = 0; i < 22; i++) tuft(R() * T, 12 + R() * (gh - 14), (2.5 + R() * 4) * cs);
+    }
+    return (this._gt = c);
+  }
+
   paintGround(ctx, look, cam) {
     const w = this.w, h = this.h, gy = this.groundY;
     const pal = FIELD_LOOKS[look] || FIELD_LOOKS.meadow;
     const layers = pal.layers || [];
     // 땅 바탕 (미리 그려 둔 것)
     ctx.drawImage(this.groundBase(look), 0, gy + 2, w, h - gy - 2);
-    // 땅 무늬
-    ctx.fillStyle = pal.speck;
-    const step = 64;
-    const off = ((-cam * this.zoom) % step + step) % step;
-    for (let x = off - step; x < w + step; x += step) {
-      const yy = gy + 26 + ((x * 7) % 44);
-      ctx.fillRect(x, yy, 14, 3);
+    // 땅 무늬 — 5.14 전장마다 재질(풀 · 모래 · 눈 · 바위 · 재 · 바닷속 · 흙)이 다른 무늬 한 장을 이어 붙여 흘린다
+    const tile = this.groundTile(look);
+    if (tile) {
+      const T = tile._w, gh = h - gy - 2;
+      const off = ((-cam * this.zoom) % T + T) % T;
+      for (let x = off - T; x < w; x += T) ctx.drawImage(tile, x, gy + 2, T, gh);
     }
     layers.forEach(n => { const L = LOOK_LAYERS[n]; if (L && L.z === 'ground') L.fn(this, ctx, pal, cam); });
     layers.forEach(n => { const L = LOOK_LAYERS[n]; if (L && L.z === 'top') L.fn(this, ctx, pal, cam); });
@@ -417,6 +554,7 @@ class Renderer {
     const INKC = 'rgba(12,16,24,.8)';
     const outline = w => { ctx.strokeStyle = INKC; ctx.lineWidth = w * s; ctx.stroke(); };
     const torch = (tx, ty) => {                           // 흔들리는 횃불
+      if (this._deferMarks && !c.dead) this._torches.push(x + tx, y + ty - 3 * s);   // 5.14 어두운 전장에선 둘레를 따로 밝힌다
       ctx.fillStyle = '#4a3a28'; ctx.fillRect(tx - 1.5 * s, ty, 3 * s, 10 * s);
       const f = 1 + Math.sin(tt * 13 + tx) * 0.18;
       ctx.fillStyle = 'rgba(255,170,60,.28)';
@@ -444,6 +582,17 @@ class Renderer {
         ctx.beginPath(); ctx.arc(sx + Math.sin(k * 5 + i) * 8 * s, sy - k * 60 * s, (6 + k * 14) * s, 0, 7); ctx.fill();
       }
     };
+
+    // 5.14 무너짐: 쓰러진 본진은 흔들리며 땅속으로 주저앉는다 (땅 위만 보이게 잘라 부서져 내리는 것처럼)
+    let fall = 0;
+    if (c.dead) { c._fallT = (c._fallT || 0) + (this._frameDt || 0); fall = Math.min(1, c._fallT / 1.2); }
+    if (fall > 0) {
+      ctx.save();
+      ctx.beginPath(); ctx.rect(-wdt * 1.6, -hgt * 2.2, wdt * 3.2, hgt * 2.2 + 5 * s); ctx.clip();
+      const e = fall * fall;
+      ctx.translate(Math.sin(c._fallT * 47) * 3.2 * s * (1 - fall * 0.6), e * hgt * 0.72);
+      ctx.rotate((isEnemy ? 1 : -1) * e * 0.07);
+    }
 
     if (!isEnemy) {
       /* 왕국 성채: 가운데 성벽 + 양옆 둥근 탑 */
@@ -594,7 +743,11 @@ class Renderer {
       }
     }
 
-    if (c.hitFlash > 0) {
+    if (fall > 0) {
+      ctx.restore();
+      this.castleRubble(c, wdt, hgt, s, fall, isEnemy);
+    }
+    if (c.hitFlash > 0 && !c.dead) {                  // 5.14 쓰러진 뒤엔 전투가 멈춰 번쩍임이 줄지 않고 흰 판으로 남았다
       ctx.globalAlpha = 0.4 * Math.min(1, c.hitFlash / 0.15);
       ctx.fillStyle = '#fff';
       ctx.fillRect(-wdt / 2, -hgt, wdt, hgt);
@@ -621,7 +774,44 @@ class Renderer {
       ctx.restore();
     }
     ctx.restore();
+    if (this._deferMarks) this._castleBars.push(c);
+    else this.drawCastleBar(c, isEnemy);
+  }
 
+  /* 5.14 본진이 무너질 때: 밑동에서 피어오르는 흙먼지 · 튀어 오르는 돌조각 · 남는 잔해 더미 (원점은 본진 발밑) */
+  castleRubble(c, wdt, hgt, s, fall, isEnemy) {
+    const ctx = this.ctx, t = c._fallT || 0;
+    const stone = isEnemy ? '#6a4a30' : '#9a9a92', dark = isEnemy ? '#3a2818' : '#5a5a56';
+    ctx.fillStyle = dark;                                    // 쌓이는 잔해 더미
+    ctx.beginPath(); ctx.ellipse(0, 3 * s, wdt * (0.35 + fall * 0.35), (6 + fall * 16) * s, 0, Math.PI, 0); ctx.fill();
+    ctx.fillStyle = stone;
+    for (let i = 0; i < 7; i++) {
+      const bx = (i - 3) * wdt * 0.13, bh = (5 + (i * 7) % 9) * s * fall;
+      ctx.beginPath(); ctx.moveTo(bx - 7 * s, 3 * s); ctx.lineTo(bx - 3 * s, 3 * s - bh); ctx.lineTo(bx + 6 * s, 3 * s - bh * 0.7); ctx.lineTo(bx + 8 * s, 3 * s); ctx.closePath(); ctx.fill();
+    }
+    if (t < 2.4) {                                            // 흙먼지 구름 (2초 남짓 피었다 가라앉는다)
+      const q = Math.min(1, t / 2.4);
+      for (let i = 0; i < 9; i++) {
+        const side = i % 2 ? 1 : -1, k = Math.min(1, t * (0.9 + (i % 3) * 0.25));
+        const px = side * (wdt * 0.15 + k * wdt * (0.35 + (i % 4) * 0.12)), py = -(8 + (i % 5) * 9) * s * k - q * 10 * s;
+        ctx.fillStyle = 'rgba(200,186,160,' + (0.5 * (1 - q)) + ')';
+        ctx.beginPath(); ctx.arc(px, py, (14 + k * 26 + (i % 3) * 6) * s, 0, 7); ctx.fill();
+      }
+      for (let i = 0; i < 12; i++) {                          // 돌조각: 위로 튀었다 떨어진다
+        const a = -Math.PI / 2 + (i - 5.5) * 0.22, v = (120 + (i * 37) % 90) * s, tt = Math.min(t, 1.3);
+        const px = Math.cos(a) * v * tt * 0.9, py = -hgt * 0.4 + Math.sin(a) * v * tt + 300 * s * tt * tt;
+        if (py > 0) continue;
+        ctx.save(); ctx.translate(px, py); ctx.rotate(t * (6 + i));
+        ctx.fillStyle = i % 3 ? stone : dark; ctx.fillRect(-3.5 * s, -2.5 * s, 7 * s, 5 * s); ctx.restore();
+      }
+    }
+  }
+
+  /* 5.14 본진 체력바 · 결계 글자 (주변광에 물들지 않게 따로) */
+  drawCastleBar(c, isEnemy) {
+    const ctx = this.ctx, x = this.screenX(c.x);
+    if (x < -240 || x > this.w + 240) return;
+    const y = this.groundY + 8, s = this.cs, hgt = 150 * s;
     // 본진 체력바
     const bw = 100 * s;
     ctx.fillStyle = 'rgba(0,0,0,.45)';
@@ -670,8 +860,9 @@ class Renderer {
     const age = f.age === undefined ? 9 : f.age;
     const spawnK = Math.min(1, age / 0.3);
     const pop = spawnK < 1 ? easeOutBack(spawnK) : 1;
-    // 승패가 갈리면 이긴 쪽이 제자리에서 뛴다
+    // 승패가 갈리면 이긴 쪽이 제자리에서 뛴다 · 5.14 진 쪽은 고개를 떨구고 어깨가 처진다
     const won = this.outcome && ((this.outcome === 'win') === (f.side === 'ally'));
+    const lost = !!this.outcome && !won && !f.boss;
     const hop = won ? Math.abs(Math.sin(this.clock * 7 + f.bob)) * 9 * this.cs : 0;
     // 넉백: 뒤로 튕기며 살짝 뜬다
     const kbK = f.kbTimer > 0 ? Math.min(1, f.kbTimer / 0.42) : 0;
@@ -834,6 +1025,10 @@ class Renderer {
       ctx.ellipse(-(6 + ph * 14) * s, -1.5 * s, (3 + ph * 6) * s * big, (1.6 + ph * 2) * s * big, 0, 0, 7);
       ctx.fill();
     }
+    if (kbK > 0 && f.flyT <= 0 && !vehicle && !this.crowded) {   // 5.14 넉백으로 밀려나며 발끝에 흙이 인다
+      ctx.fillStyle = 'rgba(225,212,188,' + (kbK * 0.42) + ')';
+      for (let i = 0; i < 2; i++) { ctx.beginPath(); ctx.ellipse((8 + i * 9 + (1 - kbK) * 10) * s, -(1.5 + i * 2.5) * s, (4 + (1 - kbK) * 6 - i) * s, (2 + (1 - kbK) * 2) * s, 0, 0, 7); ctx.fill(); }
+    }
     // Keep the ground shadow stable while the body strides, recoils and attacks.
     ctx.save();
     const stride = moving && !vehicle ? Math.abs(Math.sin(f.bob)) : 0;
@@ -844,10 +1039,10 @@ class Renderer {
     const sway = vehicle ? 0 : moving && heavy ? Math.sin(f.bob) * 0.05 : (moving ? Math.sin(f.bob) * 0.025 : 0);
     // 치는 순간 앞으로 숙였다가, 준비할 땐 뒤로 젖힌다
     const strike = atk * (style === 'heavy' ? 0.16 : style === 'thrust' ? 0.08 : style === 'shoot' ? -0.05 : 0.1);
-    ctx.translate(-recoil * 2.5 * s - wind * 2 * s, -stride * (heavy ? 1.2 : 2.4) * s);
+    ctx.translate(-recoil * 2.5 * s - wind * 2 * s, -stride * (heavy ? 1.2 : 2.4) * s + (lost ? 2.5 * s : 0));
     // 기절하면 휘청이고, 둔화되면 몸이 굳어 흔들림이 준다
     const dizzy = f.stunT > 0 ? Math.sin(clk * 9) * 0.09 : 0;
-    ctx.rotate(lean + sway + strike + dizzy - wind * 0.1 - recoil * 0.06 - kbK * 0.35 + (tired && !moving ? 0.07 : 0));
+    ctx.rotate(lean + sway + strike + dizzy - wind * 0.1 - recoil * 0.06 - kbK * 0.35 + (tired && !moving ? 0.07 : 0) + (lost ? 0.2 : 0));
     // 맞으면 잠깐 눌렸다가 돌아온다, 준비 동작은 살짝 움츠리고, 치는 순간은 늘어난다
     const squash = recoil * 0.07 + wind * 0.04;
     const stretch = atk > 0.35 && (style === 'thrust' || style === 'heavy') ? (atk - 0.35) * 0.09 : 0;
@@ -884,7 +1079,16 @@ class Renderer {
     ctx.restore();
 
     ctx.restore();
+    if (this._deferMarks) this._marks.push(f);     // 5.14 주변광 층에 몸을 그리는 동안 표식은 나중에 (빛에 물들지 않게)
+    else this.drawFighterMarks(f);
+  }
 
+  /* 5.14 머리 위 표식: 진화 불티 · 체력바 · 상태 · 보호막. 주변광에 물들지 않게 몸과 따로 그린다. */
+  drawFighterMarks(f) {
+    const ctx = this.ctx;
+    const x = this.screenX(f.x), s = this.cs * f.scale, y = this.rowY(f.row);
+    const wk = X3_WIDE[f.s.shape] || 1, top = (X3_TOP[f.s.shape] || 72) * s;
+    const clk = (this.clock || 0) + (f._seed || 0);
     // 3.5: 모습이 바뀐 진화 병종은 몸 둘레로 금빛 불티가 천천히 떠오른다 (절전·느린 기기에선 생략)
     if (f.s.bigEvo && this.fxq >= 0.5) {
       const col = f.s.accent || '#ffe28a';
@@ -1423,7 +1627,9 @@ class Renderer {
   drawFx(battle) {
     const ctx = this.ctx, cs = this.cs;
     this._hqOn = this.hqFx(); this._hqN = 0;
+    const only = this._fxOnlyCorpse, skipC = this._corpseInLayer;
     for (const e of battle.fx) {
+      if (only ? e.type !== 'corpse' : (skipC && e.type === 'corpse')) continue;   // 5.14 쓰러지는 몸은 주변광 층에서
       const p = e.t / e.life;
       const x = this.screenX(e.x);
       const y = this.rowY(e.row || 0) - 28 * cs;
@@ -3698,6 +3904,7 @@ class Renderer {
 
   renderFrame(battle, dt, fxDt) {
     this.trackFrame(dt);
+    this._frameDt = dt;
     this.outcome = battle.state === 'win' ? 'win' : (battle.state === 'play' ? null : 'lose');
     this._battle = battle;
     this.clock = (this.clock || 0) + dt;             // 전투가 끝나 시간이 멈춰도 도는 시계
@@ -3720,6 +3927,10 @@ class Renderer {
     const look = (battle.stage && battle.stage.look) || 'meadow';
     this.drawBackground(look);
     this.drawProps(look);
+    // 5.14 주변광: 요새 · 병사 · 쓰러지는 몸을 따로 한 장에 그려 전장 빛(밤 · 물속 · 용암 · 노을)에 물들인 뒤 붙인다.
+    // 예전엔 어느 전장이든 한낮처럼 하얗게 떠 보였다. 체력바 · 표식 · 연출은 물들이지 않는다.
+    const amb = this.ambientFor(look), layer = amb && this.unitLayer(ctx);
+    if (layer) { this.ctx = layer; this._deferMarks = true; this._marks.length = 0; this._castleBars.length = 0; this._torches.length = 0; }
     this.drawCastle(battle.allyCastle, false);
     this.drawCastle(battle.enemyCastle, true);
 
@@ -3745,9 +3956,35 @@ class Renderer {
     for (const f of all) this.drawFighter(f);
     MODEL.ink = ink;
     if (battle.burrowers) for (const b of battle.burrowers) this.drawBurrow(b);
+    if (layer) {
+      this._fxOnlyCorpse = true; this.drawFx(battle); this._fxOnlyCorpse = false;
+      layer.save();
+      layer.setTransform(1, 0, 0, 1, 0, 0);
+      layer.globalCompositeOperation = 'source-atop';   // 그린 곳만 물들인다
+      layer.globalAlpha = amb.a; layer.fillStyle = amb.c;
+      const W = layer.canvas.width, H = this._ulH;
+      layer.fillRect(0, 0, W, H);
+      layer.restore();
+      this.ctx = ctx; this._deferMarks = false;
+      ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(layer.canvas, 0, 0, W, H, 0, 0, W, H); ctx.restore();
+      if (amb.a > 0.16 && !this.crowded) {               // 횃불 둘레의 따뜻한 빛 (주변광이 짙을수록 또렷)
+        const T = this._torches, r = 48 * this.cs, t = this.clock || 0;
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        for (let i = 0; i < T.length; i += 2) {
+          const fl = 1 + Math.sin(t * 11 + T[i]) * 0.08, g = ctx.createRadialGradient(T[i], T[i + 1], 0, T[i], T[i + 1], r * fl);
+          g.addColorStop(0, 'rgba(255,170,70,' + (amb.a * 0.9) + ')'); g.addColorStop(1, 'rgba(255,140,40,0)');
+          ctx.fillStyle = g; ctx.fillRect(T[i] - r * 1.1, T[i + 1] - r * 1.1, r * 2.2, r * 2.2);
+        }
+        ctx.restore();
+      }
+      for (const c of this._castleBars) this.drawCastleBar(c, c === battle.enemyCastle);
+      for (const f of this._marks) this.drawFighterMarks(f);
+      this._corpseInLayer = true;
+    }
 
     this.drawShots(battle);
     this.drawFx(battle);
+    this._corpseInLayer = false;
     this.drawFxLights();                             // 5.2 고퀄: 연출이 땅 · 병사를 비춘다
     this.drawWeather(look);
     this.drawSandstorm(battle);
@@ -3760,6 +3997,15 @@ class Renderer {
       ctx.globalAlpha = 1;
     }
     ctx.restore();
+    // 5.14 위기: 성채가 30% 아래면 화면 가장자리가 붉게 맥박친다 (낮을수록 빠르게 · 맞으면 더 진하게)
+    const ac = battle.allyCastle;
+    if (battle.state === 'play' && ac.maxHp > 0 && ac.hp / ac.maxHp < 0.3 && !ac.dead) {
+      const k = 1 - ac.hp / ac.maxHp / 0.3, t = this.clock || 0;
+      const beat = 0.5 + 0.5 * Math.sin(t * (4 + k * 5));
+      ctx.globalAlpha = Math.min(0.9, (0.32 + k * 0.38) * (0.6 + beat * 0.4) + Math.min(0.3, (ac.hitFlash || 0) * 2));
+      ctx.drawImage(this.dangerVignette(), 0, 0, this.w, this.h);
+      ctx.globalAlpha = 1;
+    }
     this.drawMiniMap(battle);
     this.drawBossBar(battle);
     this.drawGlFx(battle, fxDt === undefined ? dt : fxDt, camBefore, shakeX, shakeY);
@@ -13463,6 +13709,18 @@ function tr(s) { return typeof t === 'function' ? t(s) : s; }
  *  전장 모습 (2.9). 전장 컨셉(STAGES[i].look)마다 하늘·산·땅 색, 배경 층, 소품, 날씨가 다르다.
  *  ridge: 'sharp' 뾰족한 산 · 'round' 둥근 언덕 · 'mesa' 탁상지 · 'dune' 모래 언덕
  * ======================================================================= */
+/* 5.14 전장 땅 재질 (땅 무늬 한 장을 무엇으로 그릴지). 없는 전장은 흙. */
+const GROUND_MAT = {
+  meadow: 'grass', wheat: 'grass', river: 'grass', forest: 'grass', graveyard: 'grass', hills: 'grass', darkforest: 'grass', swamp: 'grass',
+  blackriver: 'grass', skyisle: 'grass', jungle: 'grass', temple: 'grass', feywood: 'grass', moonglade: 'grass',
+  desert: 'sand', dunes: 'sand', oasis: 'sand', tombvalley: 'sand', goldtomb: 'sand', shore: 'sand', reef: 'sand', canyon: 'sand',
+  snow: 'snow', blizzard: 'snow',
+  fortress: 'rock', ruins: 'rock', cave: 'rock', stormspire: 'rock', lighthouse: 'rock', stormsea: 'rock', underworld: 'rock', mythic: 'rock',
+  volcano: 'ash', ashslope: 'ash', lavariver: 'ash', caldera: 'ash', lavajungle: 'ash',
+  sunken: 'seabed', abyss: 'seabed',
+  ballroom: 'none'
+};
+
 const FIELD_LOOKS = {
   meadow:    { sky0: '#8ec3e6', sky1: '#e6efd8', cloud: 'rgba(255,255,255,.85)', ridgeFar: '#86a7b6', ridge: '#5f8a5c', ridgeStyle: 'round',
                ground: '#7f9a4f', groundDark: '#5a7236', speck: '#6d8a42', prop: '#4d6a34', orb: '#fff3c4', orbGlow: 'rgba(255,250,220,.45)',
