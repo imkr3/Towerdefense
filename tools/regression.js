@@ -1909,8 +1909,9 @@ test('4.23: boss entry blast throws allies back; drill pushes no longer stagger-
   const near = b.makeAlly(U.spear, bx - 100), far = b.makeAlly(U.archer, bx - 600), tank = b.makeAlly(U.knight, bx - 150); b.allies.push(near, far, tank);
   const boss = b.spawnEnemy(STAGES[bi].bossId, bx);
   assert.ok(near.flyT > 0 && near.kbTimer > 0 && tank.flyT > 0, 'thrown'); assert.equal(far.flyT, 0, 'far untouched');
+  const step = near.flyV / 30;   // 비행은 프레임 단위라 마지막 한 프레임만큼 더 날 수 있다 (예전 여유 8px 로는 약 2% 확률로 CI 가 깨졌다)
   let k = 0; while (near.flyT > 0 && k++ < 60) b.step(b.allies, b.enemies, b.enemyCastle, 1 / 30, true);
-  assert.ok(near.x <= bx - 400 + 8 && near.x >= bx - 480 - 8, 'landed ' + near.x); assert.equal(near.hp, near.maxHp, 'no damage');
+  assert.ok(near.x <= bx - 400 + 8 && near.x >= bx - 480 - 8 - step, 'landed ' + near.x); assert.equal(near.hp, near.maxHp, 'no damage');
   // 밀치기(드릴 창병): 보스는 1초에 한 번만 밀리고 넉백(공격 끊김)은 없다
   const dr = b.makeAlly(U.spear, boss.x - 60); dr.ab = Object.assign({}, dr.ab, { push: 40 }); boss.ab = Object.assign({}, boss.ab, { dodge: 0 });
   boss.x = bx - 300; boss.kbTimer = 0; boss.shoveT = 0; b.time = 100;
