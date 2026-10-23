@@ -163,6 +163,7 @@ class Fighter {
     this.burnDps = 0;
     this.hasteT = 0;
     this.hasteMul = 1;
+    this.petrifyUntil = 0;                          // 5.15: 나중에 붙던 필드도 처음부터 (4.22 규칙)
     this.barrier = 0;
     this.barrierMax = 0;
     this.usedRevive = false;
@@ -833,8 +834,8 @@ class Battle {
     }
     for (const a of this.allies) {
       a.heal(a.maxHp * this.cmdHeal);
+      a.hasteMul = a.hasteT > 0 ? Math.min(a.hasteMul, COMMAND.hasteMul) : COMMAND.hasteMul;   // 5.15 위와 같이
       a.hasteT = Math.max(a.hasteT, COMMAND.hasteDur);
-      a.hasteMul = COMMAND.hasteMul;
       a.stunT = 0;
       a.slowT = 0;
       this.fx.push({ type: 'rally', x: a.x, row: a.row, t: 0.6, life: 0.6 });
@@ -1815,8 +1816,9 @@ class Battle {
       for (const m of mates) {
         if (m.dead || m === f) continue;
         if (Math.abs(m.x - f.x) > ab.radius) continue;
+        // 5.15: 아군은 더 센 가속(영웅 기술 등)이 남아 있으면 약한 북소리가 덮어쓰지 않는다
+        m.hasteMul = isAlly && m.hasteT > 0 ? Math.min(m.hasteMul, ab.haste.mul) : ab.haste.mul;
         m.hasteT = Math.max(m.hasteT, ab.haste.dur);
-        m.hasteMul = ab.haste.mul;
       }
       f.auraPulse = 0.5;
       this.fx.push({ type: 'aura', x: f.x, row: f.row, r: ab.radius,
@@ -2288,6 +2290,7 @@ class Battle {
       w.done = true;
       const g = this.spawnEnemy(w.id, Math.min(this.enemyCastle.x - 120, Math.max(this.allyCastle.x + 300, w.x)));
       g.hp = Math.round(g.maxHp * w.revive);
+      g.gold = 0;                                   // 5.15: 되살아난 쌍둥이는 처치 보상을 다시 주지 않는다 (무한 군자금)
       const nm = g.s.name, c = nm.charCodeAt(nm.length - 1);
       this.announce(nm + (c >= 0xac00 && c <= 0xd7a3 && (c - 0xac00) % 28 ? '이' : '가') + ' 되살아났다!', 2.2);   // 받침이 있으면 '이'
     }
@@ -2855,7 +2858,10 @@ class Battle {
       if (hit) this.hitOne(s.dmg, hit, s.src, s.crit);
       this.fx.push({ type: s.crit ? 'crit' : 'hit', x: hit ? hit.x : s.tx, row: hit ? (hit.row ?? s.y0) : s.y0, dir: s.dir, t: 0.22, life: 0.22, sty: 'shoot', color: s.color });
     }
-    if (this.shots.some(s => s.done)) this.shots = this.shots.filter(s => !s.done);
+    const shots = this.shots;                        // 5.15: 끝난 탄은 제자리에서 지운다
+    let w = 0;
+    for (let i = 0; i < shots.length; i++) if (!shots[i].done) shots[w++] = shots[i];
+    shots.length = w;
   }
 
   /* 5.9: 공격 예고(경고 원 · 돌진선 · 파멸 · 세금 · 업화)는 실제로 맞는 시각과 같이 가야 한다.
@@ -2867,12 +2873,15 @@ class Battle {
 
   updateFx(dt) {
     const play = this.state === 'play';
-    let gone = false;
-    for (const e of this.fx) {
+    // 5.15: 사라진 것은 제자리에서 당겨 지운다 (예전엔 거의 매 프레임 새 배열을 만들었다)
+    const fx = this.fx;
+    let w = 0;
+    for (let i = 0; i < fx.length; i++) {
+      const e = fx[i];
       if (!e.sim || !play) e.t -= dt;
-      if (e.t <= 0) gone = true;
+      if (e.t > 0) fx[w++] = e;
     }
-    if (gone) this.fx = this.fx.filter(e => e.t > 0);   // 사라진 게 있을 때만 새 배열
+    fx.length = w;
     if (this.fx.length > FX_LIMIT) {                    // 넘치면 오래된 장식부터 — 예고는 남긴다
       let cut = this.fx.length - FX_LIMIT;
       this.fx = this.fx.filter(e => e.sim || cut-- <= 0);

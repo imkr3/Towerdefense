@@ -16,11 +16,13 @@ const SaveStore = {
   },
   /* 슬롯 요약을 본다 (아무것도 고치지 않는다). 비었으면 null, 못 읽으면 {broken:true} */
   peek(n) {
-    try {
-      const raw = localStorage.getItem(this.keyOf(n)) || localStorage.getItem(this.keyOf(n) + '-backup');
-      if (!raw) return null;
-      return this.parse(raw);
-    } catch (e) { return { broken: true }; }
+    let main, backup;
+    try { main = localStorage.getItem(this.keyOf(n)); backup = localStorage.getItem(this.keyOf(n) + '-backup'); }
+    catch (e) { return { broken: true }; }
+    if (!main && !backup) return null;
+    // 5.15: 본 저장이 깨졌어도 백업으로 읽히면 그 슬롯은 불러올 때 저절로 되살아나므로 '못 읽음' 으로 보이지 않는다
+    for (const raw of [main, backup]) { if (!raw) continue; try { return this.parse(raw); } catch (e) { /* 다음 것 */ } }
+    return { broken: true };
   },
   blocked: false, recovered: false, error: '',
   validate(s) {

@@ -329,7 +329,7 @@ function conqRestCard(run) {
   const b = document.createElement('button'); b.type = 'button'; b.className = 'cq-offer r-rare';
   b.innerHTML = '<i>🎯</i><b>훈련</b><small>희귀 축복</small><em>희귀 축복 셋 중 하나를 고른다</em>';
   b.addEventListener('click', () => {
-    run.pending = { kind: 'bless', opts: conqBlessOffer(run, 3 + conqEffects(run).extraPick, CONQ_ODDS.rest) };
+    run.pending = { kind: 'bless', opts: conqBlessOffer(run, 3 + conqEffects(run).extraPick, CONQ_ODDS.rest), odds: CONQ_ODDS.rest };   // 5.15: 다시 굴려도 희귀
     SFX.ui(); conqLeaveRoom(run);
   });
   row.appendChild(a); row.appendChild(b);

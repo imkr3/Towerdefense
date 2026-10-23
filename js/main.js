@@ -2622,9 +2622,14 @@ function init() {
   BGM.setVolume(Settings.get('bgm'));
   BGM.play('title');
   // 모바일은 사용자 조작이 한 번 있어야 오디오가 열린다
-  const wake = () => { SFX.init(); SFX.resume(); BGM.resume(); BGM.prefetch(['map']); };
-  ['pointerdown', 'touchstart', 'keydown'].forEach(ev =>
-    window.addEventListener(ev, wake, { once: true, passive: true }));
+  // 5.15: 터치의 pointerdown · touchstart 는 브라우저가 '사용자 조작' 으로 쳐 주지 않을 수 있다 (iOS 사파리 등).
+  // 손을 뗄 때 · 누를 때까지 듣고, 오디오가 실제로 열린 뒤에야 듣기를 그만둔다.
+  const WAKE_EVS = ['pointerdown', 'touchstart', 'keydown', 'pointerup', 'touchend', 'click'];
+  const wake = () => {
+    SFX.init(); SFX.resume(); BGM.resume(); BGM.prefetch(['map']);
+    if (!SFX.ctx || SFX.ctx.state === 'running') WAKE_EVS.forEach(ev => window.removeEventListener(ev, wake, { passive: true }));
+  };
+  WAKE_EVS.forEach(ev => window.addEventListener(ev, wake, { passive: true }));
   titleAnim.cv = $('#title-bg');
   titleAnim.ctx = titleAnim.cv.getContext('2d');
   resizeTitle();

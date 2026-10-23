@@ -221,7 +221,7 @@ function renderFormationPool() {
   const list = unlockedUnits().filter(unitMatchesFilter).sort(order);
   // 3.8: 목록이 그대로면(넣고 빼기·고르기만 했으면) 다시 만들지 않고 표시만 고친다.
   // 예전엔 누를 때마다 80여 칸을 통째로 다시 만들어 폰에서 눈에 띄게 끊겼다.
-  const sig = fmFilter + '|' + fmSort + '|' + list.map(u => u.id + (save.evo[u.id] ? '+' : '') + (save.evo2 && save.evo2[u.id] ? '+' : '') + (save.evo3 && save.evo3[u.id] ? '+' : '')).join(',');
+  const sig = fmFilter + '|' + fmSort + '|' + list.map(u => u.id + ':' + (save.levels[u.id] || 1) + (save.evo[u.id] ? '+' : '') + (save.evo2 && save.evo2[u.id] ? '+' : '') + (save.evo3 && save.evo3[u.id] ? '+' : '')).join(',');
   if (box._sig === sig && box.children.length === list.length) {
     for (const el of box.children) {
       const id = el.dataset.unit, inTeam = save.loadout.includes(id);
