@@ -2337,6 +2337,31 @@ test('5.11: two harder challenges (three kings · phoenix nest) after the last s
   assert.ok(/\.trail\.event-mode \.endless-slot\{display:block;overflow-y:auto/.test(css), 'challenge cards scroll inside the panel');
 });
 
+test('5.15: three kings — the ward holds until all three kings fall; each fall calls the next king, early pressure calls them in order', () => {
+  const k = EV.EVENT_STAGES.findIndex(st => st.event && st.event.id === 'threekings');
+  const st = EV.EVENT_STAGES[k];
+  assert.deepEqual(st.kings.join(','), 'leviathan,skylord,magmalord');
+  const b = new Battle(STAGES.length + k, save(), st);
+  const live = () => b.enemies.filter(e => !e.dead && e.boss).map(e => e.kind).join(',');
+  // 첫 왕이 오기 전에 요새를 결계까지 깎으면 첫 왕(리바이어던)이 나온다 — 천공의 군주(bossId)가 아니라
+  b.update(1 / 30); b.enemyCastle.takeDamage(1e12); b.update(1 / 30);
+  assert.ok(b.enemyCastle.hp > 0, 'ward holds'); assert.equal(live(), 'leviathan');
+  const kill = id => { const e = b.enemies.find(x => !x.dead && x.kind === id); e.hp = 1; b.hitOne(1e9, e, null, false); b.update(1 / 30); };
+  kill('leviathan');
+  assert.ok(!b.bossDown && b.enemyCastle.floor > 0, 'one king down — ward still up');
+  b.enemyCastle.takeDamage(1e12); b.update(1 / 30);
+  assert.ok(b.enemyCastle.hp > 0 && b.state === 'play', 'cannot break the fortress after only the first king');
+  for (let i = 0; i < 30 && live() !== 'skylord'; i++) b.update(1 / 30);
+  assert.equal(live(), 'skylord', 'pressing the ward calls the next king at once');
+  b.enemyCastle.hp = b.enemyCastle.maxHp;              // 요새가 결계에 붙어 있으면 다음 왕이 바로 나온다 — 8초 기다림만 본다
+  const t0 = b.time; kill('skylord');
+  while (!live() && b.time - t0 < 9) b.update(1 / 30);
+  assert.equal(live(), 'magmalord'); assert.ok(b.time - t0 <= 8.2 && b.time - t0 >= 7.8, 'next king about 8s later: ' + (b.time - t0));
+  kill('magmalord');
+  assert.ok(b.bossDown && b.enemyCastle.floor === 0, 'all three down — the ward falls');
+  b.enemyCastle.takeDamage(1e12); b.update(1 / 30); assert.equal(b.state, 'win');
+});
+
 test('5.11: optimisation — the loop sleeps in menus, crowded fights drop resolution, the title backdrop is cached, cheap paint paths', () => {
   const main = fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8'), render = fs.readFileSync(path.join(__dirname, '../js/render.js'), 'utf8');
   assert.ok(/if \(!titleAnim\.on && !inBattle\) \{ loopOn = false; return; \}/.test(main) && /wakeLoop\(\);/.test(main), 'loop stops outside battle and title, wakes on show');

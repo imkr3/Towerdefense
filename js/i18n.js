@@ -93,9 +93,9 @@ const I18N_EN = {
   '하스타티': 'Hastati',
   // 5.11 도전 E11 · E12
   '세 왕의 귀환': 'Return of the Three Kings', '불사조의 둥지': 'Phoenix Nest',
-  '바다 · 하늘 · 불의 왕 셋 — 한 왕이 쓰러지면 다음 왕이 더 성난 채로 온다 · 각인: 봉인 · 사형 선고 · 돌진': 'Three kings of sea, sky and fire — when one falls the next comes angrier · marks: Seal · Death Sentence · Charge',
+  '바다 · 하늘 · 불의 왕 셋 — 셋을 다 쓰러뜨려야 결계가 걷힌다 · 한 왕이 쓰러지면 곧 다음 왕이 온다 · 각인: 봉인 · 사형 선고 · 돌진': 'Three kings of sea, sky and fire — all three must fall before the ward breaks · when one falls the next comes soon · marks: Seal · Death Sentence · Charge',
   '불꽃 날개를 펼친 불새 — 용암 비와 함께 내려앉는다 · 각인: 수호 토템 · 군자금 탈취 · 유성우 · 광폭': 'The firebird spreads its flaming wings and descends with a rain of lava · marks: Ward Totem · Tax · Meteor Shower · Frenzy',
-  '세 왕이 차례로 — 리바이어던 · 천공의 군주 · 용암 군주 · 비용 350 이상 아군은 4배 피해 · 봉인 — 값싼 병력으로 버티세요': 'Three kings in turn — Leviathan · Sky Lord · Magma Lord · allies costing 350+ take 4x damage · seals — hold with cheap troops',
+  '세 왕이 차례로 — 리바이어던 · 천공의 군주 · 용암 군주 · 셋을 다 쓰러뜨려야 요새가 무너집니다 · 비용 350 이상 아군은 4배 피해 · 봉인 — 값싼 병력으로 버티세요': 'Three kings in turn — Leviathan · Sky Lord · Magma Lord · the fort only falls once all three are down · allies costing 350+ take 4x damage · seals — hold with cheap troops',
   '15초마다 용암이 넷씩 솟습니다 · 중갑 · 저주 · 불사조의 각인 넷 — 중독 · 화상 · 파쇄로 갑옷을 뚫고 흩어져 버티세요': 'Lava erupts in four places every 15s · heavy armor · curse · four phoenix marks — break armor with poison, burns and breakers, and spread out',
   // 5.9 저장 · 백업 오류 · 정벌 단계 버튼 (영어 화면에 한글로 남던 것)
   '게임 저장 데이터가 아닙니다.': 'This is not a game save.', '진화 데이터 오류': 'Bad evolution data', '3진 데이터 오류': 'Bad 3rd-form data',
@@ -1377,6 +1377,7 @@ const I18N_EN = {
   '모든 적이 방어 60%(보스는 30%) — 아군의 공격 피해가 크게 줄어듭니다 (중독·화상은 그대로)': 'All foes have 60% armor (bosses 30%) — your hits deal far less (poison and burn unaffected)',
   '보스의 결계 · 보스를 쓰러뜨리세요': 'Boss ward · defeat the boss', '보스의 결계 · 보스를 쓰러뜨려야 요새가 무너집니다': 'Boss ward · the fort cannot fall while the boss lives',
   '보스가 요새에서 뛰쳐나온다!': 'The boss bursts out of the fort!',
+  '왕이 요새에서 뛰쳐나온다!': 'A king bursts out of the fort!',
   '💀 하드코어': '💀 Hardcore', '하드코어': 'Hardcore', '하드코어 돌파': 'Hardcore Cleared', '첫 돌파': 'First clear',
   '💀 하드코어 돌파 완료': '💀 Hardcore cleared',
   '기절 저항': 'Stun resist', '엄호 없음 · 원거리 병사 앞에 근접 병사를 세우세요': 'No cover · put melee troops in front of your ranged units', '기절 대신 둔화와 화력, 파쇄로': 'use slows, raw damage and breakers instead of stuns',
@@ -1615,6 +1616,7 @@ const I18N_EN_PATTERNS = [
   // 5.3 도전 '무스펠의 불꽃 거인' · '해와 달의 쌍왕'
   [/^무스펠의 불꽃 검 — 기절로 끊으세요!$/g, "Muspel's Flaming Sword — break it with a stun!"],
   [/^(.+) 쓰러짐 — (\d+)초 안에 (.+)도 쓰러뜨려야 한다!$/g, '$1 has fallen — fell $3 within $2s too!'],
+  [/^(.+) 쓰러짐 — 다음 왕이 온다!$/g, '$1 has fallen — the next king is coming!'],
   [/^(.+)[이가] 되살아났다!$/g, '$1 rose again!'],
   // 5.8 임무 갱신 · 모두 받기
   [/^다음 갱신까지 (\d+)시간 (\d+)분$/g, 'Next refresh in $1h $2m'], [/^보상 모두 받기 \((\d+)\)$/g, 'Claim all ($1)'],

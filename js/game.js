@@ -113,6 +113,7 @@ const STUN_GUARD_BOSS = 2.5;
 const LAVA_FROST_MUL = 1.25;  // 5.3 9막 용암 군단: 둔화된 동안 받는 피해 (서리에 약하다)
 const LAVA_BURN_MUL = 0.5;    // 5.3 용암 군단은 화상이 반만 듣는다
 const WARD_FLOOR = 0.05;     // 보스가 살아 있는 동안 적 요새는 이 아래로 무너지지 않는다
+const KING_NEXT_DELAY = 8;   // 5.15 세 왕: 한 왕이 쓰러지면 이만큼 뒤에 다음 왕 (원래 더 일찍 오기로 돼 있으면 그대로)
 const CHRONO_RATE = 0.6;     // 시간 주술사가 살아 있으면 카드 재사용 대기가 이 속도로 준다
 const BOSS_MUL_EXP = 0.5;    // 캠페인 보스가 받는 전장 배율의 지수
 const ENEMY_HEAL_GAP = 1.5;  // 적 하나가 다른 적의 치유를 받는 최소 간격
@@ -908,6 +909,8 @@ class Battle {
     if (this.bossWard) {
       this.enemyCastle.floor = this.bossDown ? 0 : this.enemyCastle.maxHp * WARD_FLOOR;
       if (!this.bossSpawned && this.wardUp()) this.callBoss();
+      // 5.15 세 왕: 왕이 하나도 없는데 요새를 결계까지 깎으면 다음 왕이 바로 나온다
+      else if (this.stage.kings && !this.bossDown && this.wardUp() && !this.enemies.some(e => !e.dead && e.boss)) this.callKing(0);
     }
     while (this.qi < this.queue.length && this.queue[this.qi].t <= this.time) {
       const entry = this.queue[this.qi];
@@ -1032,8 +1035,40 @@ class Battle {
     }
   }
 
+  /* 5.15 세 왕(stage.kings): 한 왕이 쓰러져도 남은 왕이 있으면 결계는 그대로 — 다음 왕을 곧 부른다 */
+  kingHold(f) {
+    const ks = this.stage.kings;
+    if (!ks || ks.indexOf(f.kind) < 0) return false;
+    const slain = this.kingsSlain || (this.kingsSlain = {});
+    slain[f.kind] = true;
+    if (ks.every(k => slain[k])) return false;                 // 셋 다 쓰러졌다 — 결계가 걷힌다
+    if (!this.enemies.some(e => e !== f && !e.dead && e.boss)) {
+      this.callKing(KING_NEXT_DELAY);
+      this.announce(f.s.name + ' 쓰러짐 — 다음 왕이 온다!', 2.4);
+    }
+    return true;
+  }
+  /* 아직 안 나온 다음 왕을 delay 초 뒤로 당긴다 (더 일찍 오기로 돼 있으면 그대로) */
+  callKing(delay) {
+    const ks = this.stage.kings, slain = this.kingsSlain || {};
+    let hit = null;
+    for (let j = this.qi; j < this.queue.length; j++) { const q = this.queue[j]; if (ks.indexOf(q.e) >= 0 && !slain[q.e] && (!hit || q.t < hit.t)) hit = q; }
+    if (!hit) return false;
+    if (hit.t <= this.time + delay) return true;
+    hit.t = this.time + delay;
+    const rest = this.queue.slice(this.qi).sort((a, b) => a.t - b.t);
+    this.queue.length = this.qi;
+    rest.forEach(q => this.queue.push(q));
+    return true;
+  }
+
   /* 보스를 앞당겨 부른다 (호위는 원래 오던 때에 온다) */
   callBoss() {
+    if (this.stage.kings) {                                     // 5.15 세 왕: 정해진 차례의 다음 왕 하나만
+      this.bossSpawned = true;
+      if (this.callKing(0)) { this.announce('왕이 요새에서 뛰쳐나온다!', 2.4); this.shake = Math.max(this.shake, 12); }
+      return;
+    }
     const id = this.stage.bossId;
     let hit = null;
     for (let j = this.qi; j < this.queue.length; j++) if (this.queue[j].e === id) { hit = this.queue[j]; break; }
@@ -1214,7 +1249,7 @@ class Battle {
           this.fx.push({ type: 'poof', x: f.x, row: f.row, t: 0.45, life: 0.45, color: f.s.accent, big: true });
         }
       }
-      if (f.boss && isEnemySide && !this.twinHold(f)) { this.bossDown = true; this.enemyCastle.floor = 0; }   // 결계가 걷힌다 (5.3 쌍왕은 둘 다 쓰러져야)
+      if (f.boss && isEnemySide && !this.twinHold(f) && !this.kingHold(f)) { this.bossDown = true; this.enemyCastle.floor = 0; }   // 결계가 걷힌다 (5.3 쌍왕은 둘 다 · 5.15 세 왕은 셋 다 쓰러져야)
       // 흡혼귀: 근처에서 쓰러진 아군의 넋을 삼킨다 (불려 나온 것은 넋이 없다)
       if (!isEnemySide && !f.summoned) this.feedSouls(f);
       // 쓰러지는 연출 + 먼지
