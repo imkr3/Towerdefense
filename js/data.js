@@ -2799,7 +2799,7 @@ EVENT_STAGES.push(
   { name: '세 왕의 귀환', bossId: 'skylord', bossRole: 'caster', boss: true, look: 'stormspire', music: 'stormeye', bossMusic: 'hc_boss',
     mods: ['giantslayer'], baseHp: 210000, money: 740, rate: 92, reward: 0, enemyMul: 12, bossMul: { hp: 2.4, atk: 1.35 },
     fury: { per30: 0.13, max: 1.6 }, len: 1700,
-    kings: ['leviathan', 'skylord', 'magmalord'],   // 5.15 이 셋을 차례로 다 쓰러뜨려야 결계가 걷힌다 (예전엔 첫 왕만 잡으면 요새를 부술 수 있었다)
+    kings: ['leviathan', 'skylord', 'magmalord'],   // 5.16 이 셋을 차례로 다 쓰러뜨려야 결계가 걷힌다 (예전엔 첫 왕만 잡으면 요새를 부술 수 있었다)
     event: { id: 'threekings', deck: ['spear','shield','javelin','catapult','sniper','frost','pyro','priest','musketeer','venom'],
              unlock: 90, reward: 80000, stones: 60, bossText: '바다 · 하늘 · 불의 왕 셋 — 셋을 다 쓰러뜨려야 결계가 걷힌다 · 한 왕이 쓰러지면 곧 다음 왕이 온다 · 각인: 봉인 · 사형 선고 · 돌진',
              mech: '세 왕이 차례로 — 리바이어던 · 천공의 군주 · 용암 군주 · 셋을 다 쓰러뜨려야 요새가 무너집니다 · 비용 350 이상 아군은 4배 피해 · 봉인 — 값싼 병력으로 버티세요' },
@@ -2826,7 +2826,7 @@ EVENT_STAGES.push(
 const EVENT_TOUGH = { eclipse: [0.715, 4.256], titan: [4.682, 2.569], fleet: [6.502, 2.515], rift: [3.776, 2.376], demonking: [2.243, 2.942],
                       train: [4.364, 1.492], masque: [5.23, 2.708], hourglass: [3.381, 1.314],
                       muspel: [7.4, 1], twins: [6.8, 1],   // 5.3 새 도전 — 가장 센 편성 1/3 로 맞췄다
-                      threekings: [3.15, 0.95], phoenixnest: [2.8, 1.25] };   // 5.11 — 가장 센 편성(새 캐릭터 편성 포함)이 열에 둘쯤 (5.15 세 왕은 셋을 다 넘어야 해 잡몹을 낮춰 다시 3/10 — 왕 체력은 기본보다 늘 크게 둔다)
+                      threekings: [3.15, 0.95], phoenixnest: [2.8, 1.25] };   // 5.11 — 가장 센 편성(새 캐릭터 편성 포함)이 열에 둘쯤 (5.16 세 왕은 셋을 다 넘어야 해 잡몹을 낮춰 다시 3/10 — 왕 체력은 기본보다 늘 크게 둔다)
 // 4.24: 버프 · 디버프를 몰아 넣은 편성(멀린 · 오딘 · 아서 · 라 · 제갈량 + 북 · 룬 현자 · 사제 · 무당)도 기준에 넣어 다시 맞췄다 — 적 배율이 오르면 보스 체력도 따라 오른다
 // 5.2: 오딘 4진 · 새 3진 다섯을 넣고 하드코어와 같이 다시 맞췄다
 const EVENT_BOSS_HP = 1.6;   // 4.23 도전 보스 체력을 따로 더 (보스가 생각보다 빨리 녹았다) — 잡몹 · 공격은 EVENT_TOUGH 로 맞춘다

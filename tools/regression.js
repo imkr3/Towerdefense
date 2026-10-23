@@ -2337,7 +2337,7 @@ test('5.11: two harder challenges (three kings · phoenix nest) after the last s
   assert.ok(/\.trail\.event-mode \.endless-slot\{display:block;overflow-y:auto/.test(css), 'challenge cards scroll inside the panel');
 });
 
-test('5.15: three kings — the ward holds until all three kings fall; each fall calls the next king, early pressure calls them in order', () => {
+test('5.16: three kings — the ward holds until all three kings fall; each fall calls the next king, early pressure calls them in order', () => {
   const k = EV.EVENT_STAGES.findIndex(st => st.event && st.event.id === 'threekings');
   const st = EV.EVENT_STAGES[k];
   assert.deepEqual(st.kings.join(','), 'leviathan,skylord,magmalord');
