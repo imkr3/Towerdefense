@@ -1501,7 +1501,8 @@ const I18N_EN = {
   // 업적
   '정벌자': 'Conqueror', '왕국 정벌을 끝까지 1회': 'Finish a Kingdom Conquest once', '피로 쓴 정벌기': 'Chronicle in Blood', '정벌 단계 5 넘기': 'Clear Conquest tier 5',
   '끝없는 정복': 'Endless Conquest', '정벌 단계 10 넘기': 'Clear Conquest tier 10',
-  // 효과 요약 '근접 공격': 'Melee atk', '근접 체력': 'Melee HP', '원거리 공격': 'Ranged atk', '영웅 공격': 'Hero atk', '값싼 병종': 'Cheap units',
+  // 효과 요약
+  '근접 공격': 'Melee atk', '근접 체력': 'Melee HP', '원거리 공격': 'Ranged atk', '영웅 공격': 'Hero atk', '값싼 병종': 'Cheap units',
   '수입': 'Income', '출진 대기': 'Cooldown', '적 체력': 'Foe HP', '적 공격': 'Foe atk', '보스 체력': 'Boss HP', '액티브 대기': 'Active cd', '왕명 대기': 'Command cd',
   '적 강도': 'Foe strength',
   // 5.3 9막 '불의 산맥' · 도전 둘
@@ -1614,7 +1615,7 @@ const I18N_EN_PATTERNS = [
   [/^(\d+)개 칸을 채웠습니다$/g, '$1 slots filled'],
   [/^추천 편성 (\d+)개 병종을 넣었습니다( \(없는 병종은 뺐습니다\))?$/g, (m, n, x) => 'Added ' + n + ' suggested units' + (x ? ' (units you lack were left out)' : '')],
   // 5.3 도전 '무스펠의 불꽃 거인' · '해와 달의 쌍왕'
-  [/^무스펠의 불꽃 검 — 기절로 끊으세요!$/g, "Muspel's Flaming Sword — break it with a stun!"],
+  [/^(.+) — 기절로 끊으세요!$/g, '$1 — break it with a stun!'],   // 5.12 이름은 먼저 번역되어 들어온다
   [/^(.+) 쓰러짐 — (\d+)초 안에 (.+)도 쓰러뜨려야 한다!$/g, '$1 has fallen — fell $3 within $2s too!'],
   [/^(.+) 쓰러짐 — 다음 왕이 온다!$/g, '$1 has fallen — the next king is coming!'],
   [/^(.+)[이가] 되살아났다!$/g, '$1 rose again!'],

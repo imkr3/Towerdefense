@@ -520,8 +520,9 @@ class Battle {
 
   canDeploy(id) {
     const u = this.stats(id);
-    return !!u && this.state === 'play' && this.roster.some(r => r.id === id) && !this.fieldFull() &&
-      this.cooldowns[id] <= 0 && this.money >= u.cost && !(this.sealed[id] > 0) &&
+    // 5.12 값싼 검사(재정비 · 군자금)를 먼저 — 병사를 세는 것은 그다음 (HUD 가 매 프레임 카드마다 부른다)
+    return !!u && this.state === 'play' && this.cooldowns[id] <= 0 && this.money >= u.cost && !(this.sealed[id] > 0) &&
+      this.roster.some(r => r.id === id) && !this.fieldFull() &&
       (!u.maxActive || this.activeCount(id) < u.maxActive);
   }
   // 4.2: HUD 가 매 프레임 카드마다 부른다 — 배열을 새로 만들지 않고 센다
@@ -1074,6 +1075,7 @@ class Battle {
     let hit = null;
     for (let j = this.qi; j < this.queue.length; j++) if (this.queue[j].e === id) { hit = this.queue[j]; break; }
     if (!hit) { this.bossSpawned = true; return; }
+    if (hit.t <= this.time) return;                // 이미 이번에 나온다
     hit.t = this.time;
     const rest = this.queue.slice(this.qi).sort((a, b) => a.t - b.t);
     this.queue.length = this.qi;
@@ -1227,7 +1229,9 @@ class Battle {
         if (b.poison) this.fx.push({ type: 'aura', x: f.x, row: f.row, r: b.radius, t: 0.8, life: 0.8, color: '#b06ae8' });
         else this.fx.push({ type: 'boom', x: f.x, r: b.radius, t: 0.35, life: 0.35 });
       }
-      if (isEnemySide && !f.exploded) {
+      // 5.12 쌍왕: 되살아난 쪽은 처치 보상 · 보스 처치를 다시 주지 않는다 (되살릴 때마다 또 받던 것)
+      const held = f.boss && isEnemySide && this.twinHold(f), repaid = !!f.twinRevived;
+      if (isEnemySide && !f.exploded && !repaid) {
         if (f.ab.flee) this.caught = (this.caught || 0) + 1;      // 3.7 잡은 황금 수레
         const got = Math.round((f.gold || 0) * KILL_GOLD_RATE * this.goldMul);
         this.coins += got;
@@ -1250,7 +1254,7 @@ class Battle {
           this.fx.push({ type: 'poof', x: f.x, row: f.row, t: 0.45, life: 0.45, color: f.s.accent, big: true });
         }
       }
-      if (f.boss && isEnemySide && !this.twinHold(f) && !this.kingHold(f)) { this.bossDown = true; this.enemyCastle.floor = 0; }   // 결계가 걷힌다 (5.3 쌍왕은 둘 다 · 5.16 세 왕은 셋 다 쓰러져야)
+      if (f.boss && isEnemySide && !held && !this.kingHold(f)) { this.bossDown = true; this.enemyCastle.floor = 0; }   // 결계가 걷힌다 (5.3 쌍왕은 둘 다 · 5.16 세 왕은 셋 다 쓰러져야)
       // 흡혼귀: 근처에서 쓰러진 아군의 넋을 삼킨다 (불려 나온 것은 넋이 없다)
       if (!isEnemySide && !f.summoned) this.feedSouls(f);
       // 쓰러지는 연출 + 먼지
@@ -1261,7 +1265,7 @@ class Battle {
       if (f.boss) {
         this.shake = Math.max(this.shake, 12);
         sfx('bossDie');
-        if (isEnemySide) this.bossKills = (this.bossKills || 0) + 1;
+        if (isEnemySide && !repaid) this.bossKills = (this.bossKills || 0) + 1;
       }
       else sfx('die');
     }
@@ -2279,7 +2283,7 @@ class Battle {
     const mate = this.enemies.find(e => !e.dead && e.kind === tw.partner);
     if (!mate) { this.twinWait = this.twinWait.filter(w => w.id !== tw.partner); return false; }   // 둘 다 쓰러졌다
     this.twinWait.push({ id: f.kind, t: tw.window || 10, x: f.x, revive: tw.revive || 0.6 });
-    mate.atk = Math.round(mate.atk * (tw.rage || 1.25));
+    mate.atk = Math.max(mate.atk, Math.round(mate.baseAtk * (tw.rage || 1.25)));   // 5.12 짝을 잃을 때마다 끝없이 불어나지 않게 (한 번만)
     this.announce(f.s.name + ' 쓰러짐 — ' + (tw.window || 10) + '초 안에 ' + mate.s.name + '도 쓰러뜨려야 한다!', 2.4);
     return true;
   }
@@ -2291,6 +2295,7 @@ class Battle {
       const g = this.spawnEnemy(w.id, Math.min(this.enemyCastle.x - 120, Math.max(this.allyCastle.x + 300, w.x)));
       g.hp = Math.round(g.maxHp * w.revive);
       g.gold = 0;                                   // 5.15: 되살아난 쌍둥이는 처치 보상을 다시 주지 않는다 (무한 군자금)
+      g.twinRevived = true;                         // 5.12 (다른 브랜치) 보스 처치 · 기록도 다시 세지 않는다
       const nm = g.s.name, c = nm.charCodeAt(nm.length - 1);
       this.announce(nm + (c >= 0xac00 && c <= 0xd7a3 && (c - 0xac00) % 28 ? '이' : '가') + ' 되살아났다!', 2.2);   // 받침이 있으면 '이'
     }

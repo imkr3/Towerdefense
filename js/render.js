@@ -2248,7 +2248,7 @@ class Renderer {
         if (e.bump > 0) { pop += e.bump * 2.5; e.bump = Math.max(0, e.bump - (this._frameDt || 0.016)); }   // 4.13 합쳐질 때 한 번 더 튄다
         const jx = e.crit && k < 0.3 ? Math.sin(k * 90) * 2 * cs : 0;
         ctx.globalAlpha = Math.min(1, p * 2.5);
-        ctx.font = 'bold ' + Math.round((e.crit ? 18 : 13) * cs * pop) + 'px sans-serif';
+        ctx.font = dmgFont(Math.round((e.crit ? 18 : 13) * cs * pop));
         ctx.textAlign = 'center';
         ctx.lineWidth = (e.crit ? 4 : 3) * cs;
         ctx.strokeStyle = e.crit ? 'rgba(90,30,0,.85)' : 'rgba(0,0,0,.65)';
@@ -3503,8 +3503,9 @@ class Renderer {
         if (land) this.glOnce(e, 'plasmablast', x, gy, col, 90 * sc, sc);
         ctx.globalCompositeOperation = 'lighter';
         const hy = gy - (1 - q) * 220 * sc - 30 * sc;
-        if (!land) { ctx.globalAlpha = 0.85; for (const dx of [-26, 0, 24]) { const g = ctx.createLinearGradient(0, hy, 0, hy + 70 * sc);
+        if (!land) { ctx.globalAlpha = 0.85; const g = ctx.createLinearGradient(0, hy, 0, hy + 70 * sc);   // 5.12 셋이 같은 그라디언트
           g.addColorStop(0, 'rgba(220,250,255,.9)'); g.addColorStop(1, 'rgba(90,200,255,0)'); ctx.fillStyle = g;
+          for (const dx of [-26, 0, 24]) {
           ctx.beginPath(); ctx.moveTo(x + (dx - 5) * sc, hy); ctx.lineTo(x + (dx + 5) * sc, hy); ctx.lineTo(x + dx * sc, hy + (50 + Math.sin(k * 60) * 10) * sc); ctx.closePath(); ctx.fill(); }
           ctx.globalAlpha = 0.3; ctx.fillStyle = col; ctx.fillRect(x - 40 * sc, hy - 30 * sc, 80 * sc, 30 * sc); }
         else { const r = (k - 0.45) / 0.55;
@@ -12611,6 +12612,9 @@ function sub(S, k, lw) {
  * - 팔다리는 굵기가 줄어들고(허벅지 > 정강이), 손과 장화가 있다 */
 const INK = 'rgba(12,16,24,.82)';
 /* 불투명한 면을 칠하면 잉크 테두리도 긋는다. 반투명 빛·그늘, 'lighter' 합성, 작은 장식은 건너뛴다. */
+/* 5.12 피해 숫자 글꼴 문자열을 크기마다 한 번만 만든다 (매 프레임 숫자마다 새로 이어 붙였다) */
+const DMG_FONTS = [];
+function dmgFont(px) { return DMG_FONTS[px] || (DMG_FONTS[px] = 'bold ' + px + 'px sans-serif'); }
 const _fill0 = CanvasRenderingContext2D.prototype.fill;
 const _stroke0 = CanvasRenderingContext2D.prototype.stroke;
 /* 굵고 불투명한 선(팔다리·무기 자루·바퀴)은 잉크를 한 겹 밑에 깐다 */

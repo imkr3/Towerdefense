@@ -191,6 +191,7 @@ class GLFx {
     canvas.addEventListener('webglcontextrestored', () => {
       this.ok = this._init();
       if (this.ok) this.gl.viewport(0, 0, this.cv.width, this.cv.height);
+      if (this.ok && this.onRestore) this.onRestore();   // 5.12 (다른 브랜치) 크기 · 연출 층을 다시 맞춘다
     });
   }
 

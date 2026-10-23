@@ -501,7 +501,7 @@ function conqResolveBattle(b) {
   return info;
 }
 function showConquestResult() {
-  const b = battle, info = conqResolveBattle(b) || { win: b.state === 'win' };
+  const b = battle, info = conqResolveBattle(b) || b._conqInfo || { win: b.state === 'win' };
   $('#result-title').textContent = info.done === 'win' ? '정벌 완료!' : info.win ? (info.boss ? '보스 격파' : '정벌 승리') : '정벌 실패';
   $('#result-stars').innerHTML = info.win ? starMarks(b.stars) : '';
   const lines = [];
