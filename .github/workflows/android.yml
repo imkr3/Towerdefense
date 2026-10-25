@@ -18,6 +18,7 @@ on:
       - 'android/**'
       - 'js/**'
       - 'css/**'
+      - '3d/**'
       - 'index.html'
       - 'package.json'
       - 'tools/**'
@@ -104,7 +105,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dist "$RUNNER_TEMP/web/stick-kingdom-war"
-          cp -r index.html sw.js manifest.json icon.svg css js "$RUNNER_TEMP/web/stick-kingdom-war/"
+          cp -r index.html sw.js manifest.json icon.svg css js 3d "$RUNNER_TEMP/web/stick-kingdom-war/"
           (cd "$RUNNER_TEMP/web" && zip -qr -X "$GITHUB_WORKSPACE/dist/stick-kingdom-war-$APP_VERSION-web.zip" stick-kingdom-war)
       - name: APK 내용 및 서명 검증
         env:
@@ -122,7 +123,7 @@ jobs:
             APK="android/app/build/outputs/apk/$BUILD/app-$BUILD.apk"
             "$SDK_TOOLS/apksigner" verify --print-certs "$APK" > "$RUNNER_TEMP/apk-cert.txt"
             "$SDK_TOOLS/aapt" dump badging "$APK" > "$RUNNER_TEMP/apk-badging.txt"
-            head -1 "$RUNNER_TEMP/apk-badging.txt" | grep -F "versionName='$APP_VERSION'" | grep -F "versionCode='51800'"
+            head -1 "$RUNNER_TEMP/apk-badging.txt" | grep -F "versionName='$APP_VERSION'" | grep -F "versionCode='51900'"
             if [ "$BUILD" = release ]; then
               EXPECTED=$(printf '%s' "$CERT_SHA256" | tr -d ':[:space:]' | tr '[:upper:]' '[:lower:]')
               ACTUAL=$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$RUNNER_TEMP/apk-cert.txt")

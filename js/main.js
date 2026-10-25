@@ -3,7 +3,7 @@
  * ======================================================================= */
 
 
-const APP_VERSION = '5.18.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
+const APP_VERSION = '5.19.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
 
 function defaultSave() {
   const lv = {};
@@ -3096,6 +3096,13 @@ function initSaveManager() {
   if (SaveStore.recovered) toast('이전 자동 백업으로 진행도를 복구했습니다.');
   $('#btn-save-manager').addEventListener('click', openSaveManager);
   $('#badge-slot').addEventListener('click', () => { SFX.ui(); renderSlots(); $('#modal-slots').classList.add('show'); });
+  // 5.19 3D 시험판: 같은 전투 엔진 · 같은 저장(읽기만)으로 3D 모델 전장을 열어 본다
+  $('#btn-set-3d').addEventListener('click', () => {
+    SFX.ui();
+    if (slotLocked()) { toast('전투 중에는 열 수 없습니다'); return; }
+    saveGame(save);
+    location.href = '3d/index.html';
+  });
   $('#btn-set-slots').addEventListener('click', () => { SFX.ui(); renderSlots(); $('#modal-settings').classList.remove('show'); $('#modal-slots').classList.add('show'); });   // 5.18 설정에서도
   $('#btn-export-save').addEventListener('click', () => {
     try {
