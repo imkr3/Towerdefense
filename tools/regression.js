@@ -2320,7 +2320,7 @@ test('5.9: back button — conquest goes to the map, battle opens the pause menu
   assert.ok(/if \(paused\) resumeFromTap\(\); else \{ setPaused\(true\);/.test(back), 'back in battle pauses first');
   assert.ok(/battle\.hard \? 'hard:' \+ battle\.stageIndex/.test(main) && /else if \(hk >= 0\) startBattle\(hk, true\)/.test(form), 'hardcore fix-deck keeps hardcore');
   assert.ok(/if \(!heroRoom\(u\.id\)\) return;[^\n]*\n\s+save\.loadout\.push\(u\.id\);/.test(main), 'training team button checks the hero cap');
-  assert.equal((main.match(/resetScreenState\(\);/g) || []).length, 2, 'reset and restore clear stale screen picks');
+  assert.ok((main.match(/resetScreenState\(\);/g) || []).length >= 2, 'reset and restore clear stale screen picks');   // 5.18 슬롯 바꾸기도 쓴다
   assert.ok(/if \(f\.kbTimer <= 0\) f\.flyT = 0;/.test(game), 'leftover flight time is cleared when knockback ends');
   assert.ok(/if \(isAlly && filled > 0\)/.test(game), 'enemy genie heals do not land in the ally meter');
   assert.ok(/cache: 'reload'/.test(sw), 'service worker fetches fresh files on update');
@@ -2384,6 +2384,15 @@ test('5.16: three kings — the ward holds until all three kings fall; each fall
   kill('magmalord');
   assert.ok(b.bossDown && b.enemyCastle.floor === 0, 'all three down — the ward falls');
   b.enemyCastle.takeDamage(1e12); b.update(1 / 30); assert.equal(b.state, 'win');
+});
+
+test('5.18: save slots switch in place (no page reload), from the save manager and settings too, never mid-battle', () => {
+  const main = fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8'), html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
+  const fn = main.slice(main.indexOf('function switchSlot('), main.indexOf('function backupText('));
+  assert.ok(!/location\.reload\(\)/.test(main.slice(main.indexOf('function renderSlotList('), main.indexOf('function backupText('))), 'no reload when switching');
+  assert.ok(/saveGame\(save\);[\s\S]*SaveStore\.useSlot\(n\)[\s\S]*save = loadGame\(\);[\s\S]*resetScreenState\(\);/.test(fn), 'saves, switches, loads, clears screen picks');
+  assert.ok(/if \(n === SaveStore\.slot \|\| slotLocked\(\)\) return false;/.test(fn), 'not while fighting');
+  assert.ok(html.includes('id="slot-list-save"') && html.includes('id="btn-set-slots"'), 'slot list in the save manager · button in settings');
 });
 
 test('5.11: optimisation — the loop sleeps in menus, crowded fights drop resolution, the title backdrop is cached, cheap paint paths', () => {

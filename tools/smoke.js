@@ -82,16 +82,17 @@ async function runSize(browser, size) {
   await page.waitForTimeout(100);
   await shot(page, 'slots-' + size.w);
   if (await page.$$eval('#slot-list .slot-row', e => e.length) !== 3) throw Error('Save slot list broken');
+  await page.evaluate(() => { window.__noReload = true; });
   await page.click('#slot-list .slot-row:nth-child(2)');
-  await Promise.all([page.waitForNavigation(), page.click('#confirm-yes')]);
+  await page.click('#confirm-yes');                      // 5.18: 다시 불러오지 않고 그 자리에서 바뀐다
   await page.waitForTimeout(200);
-  if (!await page.evaluate(() => SaveStore.slot === 2 && save.cleared === 0 && $('#badge-slot').textContent.includes('2'))) throw Error('Switching to an empty slot failed');
+  if (!await page.evaluate(() => window.__noReload && SaveStore.slot === 2 && save.cleared === 0 && $('#badge-slot').textContent.includes('2') && $('#scr-title').classList.contains('active'))) throw Error('Switching to an empty slot failed');
   await page.evaluate(() => { save.coins = 77; saveGame(save); });
-  await page.click('#badge-slot');
-  await page.click('#slot-list .slot-row:nth-child(1)');
-  await Promise.all([page.waitForNavigation(), page.click('#confirm-yes')]);
+  await page.click('#btn-save-manager');                 // 5.18: 저장 관리 창에서도 바로 바꾼다
+  await page.click('#slot-list-save .slot-row:nth-child(1)');
+  await page.click('#confirm-yes');
   await page.waitForTimeout(200);
-  if (!await page.evaluate(() => SaveStore.slot === 1 && save.cleared === 13 && save.coins === 60000 && SaveStore.peek(2).coins === 77)) throw Error('Slots are not independent');
+  if (!await page.evaluate(() => window.__noReload && SaveStore.slot === 1 && save.cleared === 13 && save.coins === 60000 && SaveStore.peek(2).coins === 77)) throw Error('Slots are not independent');
 
   // 3.11: 개발자 모드 — 문장을 7번 눌러야 열리고, 넣은 만큼 지급된 뒤 원래대로 되돌린다
   for (let i = 0; i < 6; i++) await page.click('#title-crest');

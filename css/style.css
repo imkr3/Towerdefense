@@ -1746,3 +1746,9 @@ body:has(#result.show) .toast{top:calc(6px + var(--st))}
   .settings-card .set-sec{margin-top:3px}
   .settings-card .set-btns{position:sticky;bottom:-10px;margin:0;padding:6px 0 4px;background:inherit}
 }
+/* 5.18 저장 관리 창 안의 슬롯 목록 · 전투 중엔 다른 슬롯이 흐리다 */
+.save-slots{margin:4px 0 10px}
+.save-slots-h{display:block;font-size:12px;letter-spacing:.04em;color:var(--au-l,#e8c65a);margin-bottom:4px}
+.save-slots .slot-list{margin:0}
+.save-slots .slot-row{min-height:38px;padding-top:6px;padding-bottom:6px}
+.slot-row.locked{opacity:.55}

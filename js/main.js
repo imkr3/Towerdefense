@@ -3,7 +3,7 @@
  * ======================================================================= */
 
 
-const APP_VERSION = '5.17.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
+const APP_VERSION = '5.18.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
 
 function defaultSave() {
   const lv = {};
@@ -2652,11 +2652,11 @@ function init() {
     setTimeout(() => toast('3진이 여섯 병종으로 정리됐습니다 · ' + rf.n + '종 금화 ' + rf.gold + ' 환불'), 900);
   }
   $('#btn-start').addEventListener('click', () => {
-    if (SaveStore.blocked) { $('#modal-save').classList.add('show'); return; }
+    if (SaveStore.blocked) { openSaveManager(); return; }
     show('scr-map');
   });
   $('#btn-continue').addEventListener('click', () => {
-    if (SaveStore.blocked) { $('#modal-save').classList.add('show'); return; }
+    if (SaveStore.blocked) { openSaveManager(); return; }
     if (save.cleared < STAGES.length) startBattle(save.cleared);
   });
   $('#btn-howto').addEventListener('click', () => $('#modal-howto').classList.add('show'));
@@ -3025,9 +3025,15 @@ function fmtPlayTime(sec) {
   const m = Math.floor((sec || 0) / 60);
   return m >= 60 ? Math.floor(m / 60) + '시간 ' + (m % 60) + '분' : m + '분';
 }
+/* 5.18 저장 관리 창은 늘 슬롯 목록을 새로 그려 연다 */
+function openSaveManager() { renderSlots(); $('#modal-save').classList.add('show'); }
+/* 5.18 슬롯 목록: 저장 슬롯 창과 저장 관리 창에 같이 그린다 */
 function renderSlots() {
-  const box = $('#slot-list');
+  for (const box of [$('#slot-list'), $('#slot-list-save')]) if (box) renderSlotList(box);
+}
+function renderSlotList(box) {
   box.innerHTML = '';
+  const fighting = slotLocked();
   for (let n = 1; n <= SaveStore.slotCount; n++) {
     const cur = n === SaveStore.slot;
     const s = cur ? save : SaveStore.peek(n);
@@ -3045,15 +3051,39 @@ function renderSlots() {
     }
     row.innerHTML = '<span class="sl-name">슬롯 ' + n + '</span>' + body + (cur ? '<span class="sl-tag">사용 중</span>' : '');
     if (!cur) row.addEventListener('click', () => {
+      if (slotLocked()) { toast('전투 중에는 슬롯을 바꿀 수 없습니다 — 전투를 마치거나 나간 뒤에'); return; }
       askConfirm('슬롯 ' + n + (s ? '' : ' 새로 시작'),
-        '지금 슬롯 ' + SaveStore.slot + '을 저장하고 슬롯 ' + n + '(으)로 바꿉니다.', () => {
-          saveGame(save);
-          SaveStore.useSlot(n);
-          location.reload();
-        });
+        '지금 슬롯 ' + SaveStore.slot + '을 저장하고 슬롯 ' + n + '(으)로 바꿉니다.', () => switchSlot(n));
     });
+    if (fighting && !cur) row.classList.add('locked');
     box.appendChild(row);
   }
+}
+/* 싸우는 중(전투 화면 · 판이 끝나지 않음)엔 슬롯을 바꾸지 않는다 — 그 판의 결과가 다른 슬롯에 들어간다 */
+function slotLocked() {
+  return !!(battle && battle.state === 'play' && $('#scr-battle').classList.contains('active'));
+}
+/* 5.18 다시 불러오지 않고 그 자리에서 슬롯을 바꾼다 (예전엔 페이지를 통째로 다시 열었다 — 앱에선 하얀 화면 뒤 처음부터) */
+function switchSlot(n) {
+  if (n === SaveStore.slot || slotLocked()) return false;
+  if (playAccum > 0) flushPlayTime();
+  saveGame(save);                                   // 막힌(깨진) 슬롯이면 SaveStore 가 덮어쓰지 않는다
+  if (!SaveStore.useSlot(n)) return false;
+  save = loadGame();
+  clearTimeout(resultTimer);
+  battle = null;
+  resetScreenState();
+  conqAsc = -1;
+  const notice = $('#save-warning');
+  notice.textContent = SaveStore.error; notice.hidden = !SaveStore.blocked;
+  refreshTitleBadges();
+  refreshConqTitle();
+  $$('.modal.show').forEach(m => m.classList.remove('show'));
+  $('#result').classList.remove('show');
+  show('scr-title');
+  if (SaveStore.blocked) openSaveManager();
+  toast(SaveStore.recovered ? '이전 자동 백업으로 진행도를 복구했습니다.' : '슬롯 ' + n + '(으)로 바꿨습니다');
+  return true;
 }
 
 function backupText() {
@@ -3064,8 +3094,9 @@ function initSaveManager() {
   const notice = $('#save-warning');
   notice.textContent = SaveStore.error; notice.hidden = !SaveStore.blocked;
   if (SaveStore.recovered) toast('이전 자동 백업으로 진행도를 복구했습니다.');
-  $('#btn-save-manager').addEventListener('click', () => $('#modal-save').classList.add('show'));
+  $('#btn-save-manager').addEventListener('click', openSaveManager);
   $('#badge-slot').addEventListener('click', () => { SFX.ui(); renderSlots(); $('#modal-slots').classList.add('show'); });
+  $('#btn-set-slots').addEventListener('click', () => { SFX.ui(); renderSlots(); $('#modal-settings').classList.remove('show'); $('#modal-slots').classList.add('show'); });   // 5.18 설정에서도
   $('#btn-export-save').addEventListener('click', () => {
     try {
       const raw = backupText();

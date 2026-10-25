@@ -316,6 +316,7 @@
     <p class="set-info" id="set-info"></p>
     <div class="confirm-btns set-btns">
       <button type="button" class="btn" id="btn-full">⛶ 전체화면</button>
+      <button type="button" class="btn" id="btn-set-slots">💾 저장 슬롯</button>
       <button type="button" class="btn" id="btn-set-howto">📜 교전 수칙</button>
       <button class="btn primary" data-close>닫기</button>
     </div>
@@ -358,12 +359,14 @@
 
 <div id="save-warning" hidden role="alert"></div>
 <div class="modal" id="modal-slots"><div class="modal-card">
-<h3>저장 슬롯</h3><p>슬롯마다 진행도·병종·골드가 따로 저장됩니다. 다른 슬롯을 고르면 그 슬롯으로 다시 시작합니다.</p>
+<h3>저장 슬롯</h3><p>슬롯마다 진행도·병종·골드가 따로 저장됩니다. 다른 슬롯을 고르면 지금 슬롯을 저장하고 바로 바뀝니다.</p>
 <div class="slot-list" id="slot-list"></div>
 <div class="confirm-btns"><button class="btn primary" data-close>닫기</button></div>
 </div></div>
 <div class="modal" id="modal-save"><div class="modal-card save-card">
-<h3>저장 관리</h3><p class="save-sub">백업 파일은 앱 밖에 보관됩니다. 앱을 삭제하기 전에 백업을 따로 저장해 주세요.</p>
+<h3>저장 관리</h3>
+<div class="save-slots"><b class="save-slots-h">💾 저장 슬롯 — 눌러서 바로 바꾸기</b><div class="slot-list" id="slot-list-save"></div></div>
+<p class="save-sub">백업 파일은 앱 밖에 보관됩니다. 앱을 삭제하기 전에 백업을 따로 저장해 주세요.</p>
 <div class="save-grid"><button class="btn" id="btn-export-save">📤 백업 내보내기</button><button class="btn" id="btn-import-save">📂 백업 파일 열기</button><button class="btn" id="btn-previous-save">↩ 이전 저장 복원</button></div>
 <input id="save-file" type="file" accept=".json,application/json" hidden>
 <textarea id="save-text" aria-label="백업 JSON" placeholder="백업 내용을 복사하거나 여기에 붙여 넣을 수 있습니다."></textarea>

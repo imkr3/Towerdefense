@@ -1293,7 +1293,9 @@ const I18N_EN = {
   '저장 슬롯': 'Save slots', '저장 슬롯 바꾸기': 'Switch save slot', '슬롯': 'Slot', '사용 중': 'In use',
   '비어 있음 · 새로 시작': 'Empty · start new', ' 새로 시작': ' · start new',
   '읽지 못한 저장 · 고르면 저장 관리에서 복원할 수 있습니다': 'Unreadable save · pick it and restore from Save management',
-  '슬롯마다 진행도·병종·골드가 따로 저장됩니다. 다른 슬롯을 고르면 그 슬롯으로 다시 시작합니다.': 'Each slot keeps its own progress, units and gold. Picking another slot restarts the game on that slot.',
+  '슬롯마다 진행도·병종·골드가 따로 저장됩니다. 다른 슬롯을 고르면 지금 슬롯을 저장하고 바로 바뀝니다.': 'Each slot keeps its own progress, units and gold. Picking another slot saves this one and switches right away.',
+  '💾 저장 슬롯 — 눌러서 바로 바꾸기': '💾 Save slots — tap to switch now', '💾 저장 슬롯': '💾 Save slots',
+  '전투 중에는 슬롯을 바꿀 수 없습니다 — 전투를 마치거나 나간 뒤에': "Can't switch slots mid-battle — finish or leave the battle first",
 
   /* ---------------- 3.0 새 전장 병종 ---------------- */
   '투창병': 'Javelineer', '투창': 'Javelin',
@@ -1703,6 +1705,7 @@ const I18N_EN_PATTERNS = [
   [/(\d+)전장을 돌파하면 열립니다\./g, 'Clear stage $1 to unlock.'],
   [/이벤트 (\d) \/ (\d) 돌파/g, 'Events $1 / $2 cleared'],
   [/지금 슬롯 (\d)을 저장하고 슬롯 (\d)\(으\)로 바꿉니다\./g, 'Saves slot $1 and switches to slot $2.'],
+  [/^슬롯 (\d)\(으\)로 바꿨습니다$/g, 'Switched to slot $1'],
   [/슬롯 (\d)의 (진행도와 소환한 병종이 모두 삭제됩니다)/g, 'Slot $1: $2'],
   [/(\d+)시간 (\d+)분/g, '$1h $2m'],
   [/(\d+)분$/g, '$1m'],                      // 5.9 저장 칸 목록의 ' · 12분'
