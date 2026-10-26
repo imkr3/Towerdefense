@@ -3,7 +3,7 @@
  * ======================================================================= */
 
 
-const APP_VERSION = '5.19.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
+const APP_VERSION = '5.20.0';     // 메인화면 아래 표시 (package.json 과 같게 — check-assets 가 확인한다)
 
 function defaultSave() {
   const lv = {};
@@ -1676,6 +1676,7 @@ function startBattle(index, hard) {
 function beginBattle() {
   clearTimeout(resultTimer);
   if (renderer) { renderer.syncGlSize(); renderer.resetFx(); }
+  if (R3D.on) R3D.api.prepare(battle);             // 5.20 편성 · 그 전장의 적을 미리 찍어 둔다
   playAccum = 0;
   $('#result').classList.remove('show');
   battle.speed = Settings.get('keepSpeed') ? Settings.get('speed') : 1;
@@ -2609,6 +2610,7 @@ function refreshTitleBadges() {
 
 function init() {
   renderer = new Renderer($('#cv'));
+  applyArt();
   // 필살 연출용 WebGL 레이어. 못 만들면 renderer 가 Canvas2D 연출로 되돌아간다.
   if (typeof GLFx !== 'undefined') {
     const glfx = new GLFx($('#cv-fx'));
@@ -2916,6 +2918,30 @@ function renderStats() {
   $('#stats-grid').innerHTML = rows.map(([k, v]) => '<div class="stat-cell"><b>' + v + '</b><span>' + k + '</span></div>').join('');
 }
 
+/* 5.20 3D 렌더 그림체 (시험): 켤 때만 three.js · 모델 · 스프라이트 굽기를 불러온다 (안 쓰면 한 바이트도 더 읽지 않는다) */
+let art3dLoading = null;
+function loadArt3d() {
+  if (art3dLoading) return art3dLoading;
+  const files = ['3d/vendor/three.min.js', '3d/models.js', '3d/sprite3d.js'];
+  art3dLoading = files.reduce((p, src) => p.then(() => new Promise((res, rej) => {
+    const sc = document.createElement('script'); sc.src = src; sc.onload = res; sc.onerror = () => rej(Error(src)); document.head.appendChild(sc);
+  })), Promise.resolve()).then(() => {
+    R3D.on = Settings.get('art') === 'r3d' && !!R3D.api;
+    if (R3D.on && battle) R3D.api.prepare(battle);
+    return true;
+  }).catch(() => {
+    art3dLoading = null;
+    Settings.set('art', 'stick'); refreshSettingsUI();
+    toast('3D 그림체를 불러오지 못했습니다');
+    return false;
+  });
+  return art3dLoading;
+}
+function applyArt() {
+  if (Settings.get('art') === 'r3d') { if (R3D.api) { R3D.on = true; if (battle) R3D.api.prepare(battle); } else loadArt3d(); }
+  else R3D.on = false;
+}
+
 function openSettings() {
   refreshSettingsUI();
   $('#modal-settings').classList.add('show');
@@ -2938,6 +2964,12 @@ function initSettings() {
     saveGame(save);
     // 글자는 화면 곳곳과 병종 자료에 박혀 있어서, 다시 여는 편이 확실하다
     location.reload();
+  }));
+  $$('#set-art button').forEach(b => b.addEventListener('click', () => {
+    Settings.set('art', b.dataset.v);
+    applyArt();
+    refreshSettingsUI();
+    SFX.ui();
   }));
   $$('#set-quality button').forEach(b => b.addEventListener('click', () => {
     Settings.set('quality', b.dataset.v);

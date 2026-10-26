@@ -24,6 +24,7 @@ const Settings = {
       vibrate: true,
       dmgNums: true,     // 피해 숫자
       shake: true,       // 화면 흔들림
+      art: 'stick',      // 5.20 그림체: 'stick' 막대 | 'r3d' 3D 렌더 (시험)
       quality: 'hq',     // 5.2: 'hq' 고퀄 | 'auto' 절전(예전 모습) | 'low' 최소   (예전 'high' 는 고퀄로)
       fxv: 52,
       keepSpeed: true,   // 전투 속도 기억
@@ -49,6 +50,7 @@ const Settings = {
       // 5.2: 고퀄 이펙트가 생겼다 — 예전 '자동 · 높음' 은 한 번 고퀄로 옮긴다 (그 뒤에 고른 '절전' 은 그대로 둔다)
       if (raw.fxv !== 52 && (d.quality === 'auto' || d.quality === 'high')) d.quality = 'hq';
       if (d.quality === 'high') d.quality = 'hq';
+      if (raw.art === 'stick' || raw.art === 'r3d') d.art = raw.art;
       if ([1, 2, 3, 5].indexOf(raw.speed) >= 0) d.speed = raw.speed;   // 5 는 5.4 개발자 모드 배속
     }
     this.d = d;

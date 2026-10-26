@@ -2425,4 +2425,16 @@ test('5.19: 3D preview — every unit and enemy assembles into a 3D model, anima
   assert.ok(/window\.saveGame = function \(\) \{ return true; \};/.test(g3) && /JSON\.parse\(JSON\.stringify\(SAVE\)\)/.test(g3), 'the preview never writes the real save');
 });
 
+test('5.20: 3D render art style — sprites baked from the 3D models replace the stick bodies, effects are shaded; loaded only when chosen', () => {
+  const render = fs.readFileSync(path.join(__dirname, '../js/render.js'), 'utf8'), main = fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8');
+  const spr = fs.readFileSync(path.join(__dirname, '../3d/sprite3d.js'), 'utf8'), html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
+  assert.ok(/const R3D = \{ on: false, api: null \};/.test(render), 'off by default');
+  assert.ok(/R3D\.api\.fighter\(ctx, f, s, moving, swingT, wind\)/.test(render) && /if \(!r3d\) drawBody\(/.test(render), 'falls back to the stick body until a sprite is baked');
+  assert.ok(/R3D\.on && R3D\.api\.fx\(this, ctx, e, x, y, p, cs\)/.test(render) && /R3D\.api\.shot\(/.test(render) && /R3D\.api\.body\(ctx, e\.st/.test(render) && /R3D\.api\.icon\(/.test(render));
+  assert.ok(/'3d\/vendor\/three\.min\.js', '3d\/models\.js', '3d\/sprite3d\.js'/.test(main) && !/<script src="3d\//.test(html), 'three.js is loaded on demand, never at start-up');
+  assert.ok(html.includes('id="set-art"') && /raw\.art === 'stick' \|\| raw\.art === 'r3d'/.test(fs.readFileSync(path.join(__dirname, '../js/settings.js'), 'utf8')));
+  assert.ok(/failed = true; R3D\.on = false;/.test(spr), 'a GPU failure falls back to the stick art');
+  for (const k of ['hit', 'boom', 'poof', 'aura', 'spawn', 'coin', 'dmg']) assert.ok(new RegExp('\\n  ' + k + '\\(rd, ctx, e, x, y, p, cs\\)').test(spr), k);
+});
+
 console.log(count + ' regression checks passed');

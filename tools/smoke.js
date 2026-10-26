@@ -520,6 +520,19 @@ async function runSize(browser, size) {
       if (!ok) failures.push('3D 시험판이 어긋난다 ' + JSON.stringify(Object.assign({}, r0, r)));
       else if (errs.length) failures.push('3D 시험판 오류 ' + errs.join(' | '));
       else console.log('  ✓ 5.19 3D 시험판 · 모델 ' + r0.models + '종 · 전투 · 도전 · 뒤로 가기');
+      // 5.20 본편 '그림체: 3D 렌더 (시험)' — 병사가 찍힌 스프라이트로 그려지고, 훈련소 아이콘도 바뀐다
+      await page.goto('file://' + path.join(__dirname, '..', 'index.html'));
+      await page.evaluate(() => localStorage.setItem('stick-kingdom-settings-v1', JSON.stringify({ art: 'r3d', lang: 'ko' })));
+      await page.reload(); await page.waitForTimeout(1500);
+      await page.evaluate(() => { save.tutorial = true; save.loadout = ['spear', 'archer', 'shield']; save.auto = true; startBattle(2); battle.speed = 3; });
+      await page.waitForTimeout(6000);
+      const r2 = await page.evaluate(() => {
+        const out = { on: R3D.on, baked: R3D.api ? R3D.api.size() : 0, failed: R3D.api ? R3D.api.failed() : true, allies: battle.allies.length };
+        return out;
+      });
+      if (!(r2.on && r2.baked >= 3 && !r2.failed && r2.allies > 0)) failures.push('3D 렌더 그림체가 어긋난다 ' + JSON.stringify(r2));
+      else if (errs.length) failures.push('3D 렌더 그림체 오류 ' + errs.join(' | '));
+      else console.log('  ✓ 5.20 그림체 3D 렌더 · 찍은 모델 ' + r2.baked + '종');
     }
     await gl.close();
   }

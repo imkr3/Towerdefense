@@ -1294,7 +1294,7 @@ const I18N_EN = {
   '비어 있음 · 새로 시작': 'Empty · start new', ' 새로 시작': ' · start new',
   '읽지 못한 저장 · 고르면 저장 관리에서 복원할 수 있습니다': 'Unreadable save · pick it and restore from Save management',
   '슬롯마다 진행도·병종·골드가 따로 저장됩니다. 다른 슬롯을 고르면 지금 슬롯을 저장하고 바로 바뀝니다.': 'Each slot keeps its own progress, units and gold. Picking another slot saves this one and switches right away.',
-  '💾 저장 슬롯 — 눌러서 바로 바꾸기': '💾 Save slots — tap to switch now', '💾 저장 슬롯': '💾 Save slots', '🧊 3D 시험판': '🧊 3D preview', '전투 중에는 열 수 없습니다': 'Not available during a battle',
+  '💾 저장 슬롯 — 눌러서 바로 바꾸기': '💾 Save slots — tap to switch now', '💾 저장 슬롯': '💾 Save slots', '🧊 3D 시험판': '🧊 3D preview', '그림체': 'Art style', '막대': 'Stick', '3D 렌더 (시험)': '3D render (beta)', '손으로 그린 막대 병사': 'Hand-drawn stick soldiers', '3D 모델을 찍은 병사 · 입체 이펙트 (시험)': 'Soldiers rendered from 3D models · shaded effects (beta)', '3D 그림체를 불러오지 못했습니다': 'Could not load the 3D art style', '전투 중에는 열 수 없습니다': 'Not available during a battle',
   '전투 중에는 슬롯을 바꿀 수 없습니다 — 전투를 마치거나 나간 뒤에': "Can't switch slots mid-battle — finish or leave the battle first",
 
   /* ---------------- 3.0 새 전장 병종 ---------------- */
