@@ -42,8 +42,14 @@ function sfx(name) {
   if (gap && _sfxAt[name] && now - _sfxAt[name] < gap) return;
   _sfxAt[name] = now;
   const fn = SFX[name];
-  if (fn) fn.call(SFX);
+  if (!fn) return;
+  // 5.21 소리는 판의 난수를 건드리지 않는다 — 온라인은 두 기기가 같은 난수로 판을 도는데,
+  // 효과음이 날지 말지는 기기 시계(간격)에 달려 있어 소리가 난수를 쓰면 두 판이 갈라진다
+  const r = Math.random;
+  Math.random = SYS_RANDOM;
+  try { fn.call(SFX); } finally { Math.random = r; }
 }
+const SYS_RANDOM = Math.random;
 
 /* 4.12 보스: 밀치기는 1/3 만 먹고, 근접 보스는 칠 적이 없으면 던진다 */
 const BOSS_PUSH_TAKEN = 0.35;
@@ -213,7 +219,10 @@ class Fighter {
     // 4.23 보스 등장 충격파로 날아가는 속도(0 이면 보통 넉백) · 보스가 밀치기에 다시 밀릴 수 있는 때
     this.flyV = 0; this.flyT = 0; this.shoveT = 0;
     this.frenzyT = 0; this.frenzyRate = 1; this.frenzySpeed = 1;   // 4.23 광폭 각인
+    this.pl = 0; this.pvp = false;      // 5.21 온라인: 누구의 병사인가 · 대전(PvP)에서 사람이 낸 병사인가
   }
+  /* 5.21 사람이 낸 병사인가 (혼자 할 땐 아군 = 사람, 대전에선 양쪽 다 사람) */
+  get pc() { return this.side === 'ally' || this.pvp; }
 
   /* 기절. 면역 중이거나 부동심이면 걸리지 않는다. 걸렸으면 true */
   stun(d) {
@@ -221,7 +230,7 @@ class Fighter {
     // 3.0.1: 몸이 무겁거나 정신이 굳은 적은 기절을 받지 않거나(stunImmune) 짧게 받는다(stunResist)
     if (this.ab.stunImmune) { this.resistFx = true; return false; }
     if (this.ab.stunResist) d *= 1 - this.ab.stunResist;
-    if (this.side === 'enemy') d *= STUN_DUR_MUL;
+    if (this.side === 'enemy' && !this.pvp) d *= STUN_DUR_MUL;
     if (this.boss) d *= 0.5;
     this.stunT = Math.max(this.stunT, d);
     this.stunImm = d + (this.boss ? STUN_GUARD_BOSS : STUN_GUARD);
@@ -466,6 +475,7 @@ class Battle {
     this.awakenN = (this.hard || this.event) ? this.roster.filter(u => u.evo2).length : 0;
     this.awakenMul = 1 + AWAKEN_TAX * this.awakenN;
     this.enemyMulBase *= this.awakenMul;
+    if (opts && opts.mp) this.initMp(opts.mp);
   }
 
   /* 해금된 병종 */
@@ -502,9 +512,9 @@ class Battle {
 
   /* 3.5: 전장 병력 상한. 오래 끄는 싸움(무한 전장 등)에서 병력이 100명 넘게 쌓여
    * 기기가 버거워했다. 직접 낸 병사 FIELD_CAP, 소환물까지 합쳐 FIELD_TOTAL_CAP. */
-  fieldCount() { let n = 0; for (const a of this.allies) if (!a.dead && !a.summoned) n++; return n; }
-  fieldFull() { return this.fieldCount() >= FIELD_CAP; }
-  roomForSummon() { return this.allies.length < FIELD_TOTAL_CAP; }
+  fieldCount() { let n = 0; for (const a of this.allies) if (!a.dead && !a.summoned && (!this.mp || a.pl === this.curPl)) n++; return n; }
+  fieldFull() { return this.fieldCount() >= (this.mp ? this.mp.cap : FIELD_CAP); }
+  roomForSummon() { return this.allies.length < (this.mp ? this.mp.totalCap : FIELD_TOTAL_CAP); }
   /* 4.2: 직접 낸 병사가 들어올 때 소환물까지 합쳐 FIELD_TOTAL_CAP 이면 가장 오래 선 소환물(해골·방벽 등)이
    * 연기로 자리를 비켜 준다. 전엔 소환물이 먼저 60까지 차오른 뒤 직접 낸 병사가 40까지 더 들어와
    * 77명까지 쌓였다(발열). 출진 자체는 막지 않는다. */
@@ -515,7 +525,7 @@ class Battle {
       alive++;
       if (a.summoned && (!oldest || a.age > oldest.age)) oldest = a;
     }
-    if (alive >= FIELD_TOTAL_CAP && oldest) { oldest.dead = true; oldest.vanish = true; }
+    if (alive >= (this.mp ? this.mp.totalCap : FIELD_TOTAL_CAP) && oldest) { oldest.dead = true; oldest.vanish = true; }
   }
 
   canDeploy(id) {
@@ -526,7 +536,7 @@ class Battle {
       (!u.maxActive || this.activeCount(id) < u.maxActive);
   }
   // 4.2: HUD 가 매 프레임 카드마다 부른다 — 배열을 새로 만들지 않고 센다
-  activeCount(id) { let n = 0; for (const a of this.allies) if (!a.dead && a.s.id === id) n++; return n; }
+  activeCount(id) { let n = 0; for (const a of this.allies) if (!a.dead && a.s.id === id && (!this.mp || a.pl === this.curPl)) n++; return n; }
 
   /* 3.12: 자동 출진이 낼 만한가. 제한 없는 값싼 병종은 예전 상한(stackCap)까지만 자동으로 낸다 —
    * 끝없이 사들이면 돈이 바닥나 비싼 주력을 영영 못 낸다. 손으로 누르면 공통 상한까지 얼마든지. */
@@ -534,9 +544,7 @@ class Battle {
     if (!this.canDeploy(id)) return false;
     const u = this.stats(id);
     if (!u.noStackCap) return true;
-    let n = 0;
-    for (const a of this.allies) if (!a.dead && a.s.id === id) n++;
-    return n < stackCap(u.cost);
+    return this.activeCount(id) < stackCap(u.cost);
   }
 
   /* owner 가 있으면 소환물이다. 소환한 병종 레벨의 절반만큼 자란다. */
@@ -557,6 +565,7 @@ class Battle {
       buff.atk *= (melee ? R.meleeAtk : R.rangedAtk) * (isHeroUnit(st) ? R.heroAtk : 1) * (cheap ? R.cheapAtk : 1);
     }
     const f = new Fighter(st, 'ally', x, buff);
+    if (this.mp) { f.pl = owner ? owner.pl : this.curPl; f.pvp = this.mp.pvp; }   // 5.21 소환물은 부른 사람의 것
     if (owner && owner.s) f.creditTo = owner.creditTo || owner.s.id;
     if (this.mods && this.mods.curse) f.healMul = CURSE_HEAL;
     return f;
@@ -565,7 +574,8 @@ class Battle {
   /* 3.15 전투 기록: 소환물(해골·분신·포탑)이 넣은 딜은 부른 병종의 몫으로 센다 */
   meterRow(f) {
     const id = f.creditTo || f.s.id;
-    return this.meter[id] || (this.meter[id] = { dmg: 0, taken: 0, n: 0 });
+    const meter = this.mp && f.pl !== this.curPl ? this.mp.ps[f.pl].meter : this.meter;   // 5.21 낸 사람의 기록으로
+    return meter[id] || (meter[id] = { dmg: 0, taken: 0, n: 0 });
   }
 
   deploy(id) {
@@ -728,7 +738,7 @@ class Battle {
 
   /* 왕의 명령: 전군 회복 + 가속 */
   heroCaster(id) {
-    return this.allies.find(f=>!f.dead && !f.summoned && f.s.id===id) || null;
+    return this.allies.find(f=>!f.dead && !f.summoned && f.s.id===id && (!this.mp || f.pl===this.curPl)) || null;
   }
   heroTarget(f) {
     // 5.9: HUD 가 매 프레임 여러 번 묻는다 — 거르고 정렬하지 않고 한 번 훑어 가장 가까운 적만 찾는다
@@ -799,7 +809,7 @@ class Battle {
       }
       // 5.2 세 가지 소원: 군자금도 하나의 소원
       if (a.gold) {
-        this.money = Math.min(this.walletMax, this.money + a.gold);
+        this.addMoney(f, a.gold);
         this.fx.push({ type: 'coin', x: f.x, row: f.row, v: a.gold, t: 0.9, life: 0.9 });
       }
       // 여의봉 강타: 분신이 곧바로 튀어나온다
@@ -858,6 +868,21 @@ class Battle {
     this.updateFx(dtRaw);
   }
 
+  /* 지갑 · 카드 · 필살 · 왕명 대기 (사람마다 따로 — 5.21 온라인 2인은 두 번 돈다) */
+  tickWalletA(dt) {
+    const ramp = 1 + Math.min(1.4, Math.max(0, (this.time - 60) / 180) * 1.4);
+    this.money = Math.min(this.walletMax, this.money + this.income * ramp * dt);
+    for(const id in this.heroCooldowns)this.heroCooldowns[id]=Math.max(0,this.heroCooldowns[id]-dt);
+    this.heroGlobalCd=Math.max(0,this.heroGlobalCd-dt);
+    if (this.cmdCd > 0) this.cmdCd = Math.max(0, this.cmdCd - dt);
+  }
+  tickWalletB(dt, cdStep) {
+    for (const k in this.cooldowns) {
+      if (this.cooldowns[k] > 0) this.cooldowns[k] = Math.max(0, this.cooldowns[k] - cdStep);
+    }
+    for (const k in this.sealed) if (this.sealed[k] > 0) this.sealed[k] = Math.max(0, this.sealed[k] - dt);
+  }
+
   tick(dt) {
     this.time += dt;
     this.tickSimFx(dt);
@@ -885,11 +910,7 @@ class Battle {
 
     // 전투가 길어지면 자금이 더 빨리 찬다. 적도 증원으로 계속 불어나므로
     // 이쪽 보급이 더 가파르게 올라야 교착이 풀린다.
-    const ramp = 1 + Math.min(1.4, Math.max(0, (this.time - 60) / 180) * 1.4);
-    this.money = Math.min(this.walletMax, this.money + this.income * ramp * dt);
-    for(const id in this.heroCooldowns)this.heroCooldowns[id]=Math.max(0,this.heroCooldowns[id]-dt);
-    this.heroGlobalCd=Math.max(0,this.heroGlobalCd-dt);
-    if (this.cmdCd > 0) this.cmdCd = Math.max(0, this.cmdCd - dt);
+    this.tickWalletA(dt);
     if (this.shake > 0) this.shake = Math.max(0, this.shake - dt * 26);
     if (this.flash > 0) this.flash = Math.max(0, this.flash - dt * 1.4);
     if (this.bossAlert > 0) this.bossAlert -= dt;
@@ -900,11 +921,7 @@ class Battle {
     // 시간 주술사가 하나라도 살아 있으면 카드가 느리게 찬다
     this.chronoOn = false;
     for (const e of this.enemies) if (!e.dead && e.ab.chrono) { this.chronoOn = true; break; }
-    const cdStep = dt * (this.chronoOn ? CHRONO_RATE : 1);
-    for (const k in this.cooldowns) {
-      if (this.cooldowns[k] > 0) this.cooldowns[k] = Math.max(0, this.cooldowns[k] - cdStep);
-    }
-    for (const k in this.sealed) if (this.sealed[k] > 0) this.sealed[k] = Math.max(0, this.sealed[k] - dt);
+    this.tickWalletB(dt, dt * (this.chronoOn ? CHRONO_RATE : 1));
 
     // 보스의 결계: 보스를 쓰러뜨릴 때까지 요새는 끝까지 무너지지 않는다.
     // 보스가 나오기 전에 요새를 결계까지 깎으면 보스가 먼저 뛰쳐나온다.
@@ -1013,7 +1030,7 @@ class Battle {
       else if (a.summoned && !a.ab.hold && front === -Infinity && !graced) a.exposed = true;
     }
     // 처음으로 원거리 셋 이상이 엄호 없이 서면 한 번 알려 준다
-    if (bare >= 3 && !this.coverWarned) { this.coverWarned = true; this.announce('엄호 없음 · 원거리 병사 앞에 근접 병사를 세우세요', 2.6); }
+    if (bare >= 3 && !this.coverWarned && !this.mp) { this.coverWarned = true; this.announce('엄호 없음 · 원거리 병사 앞에 근접 병사를 세우세요', 2.6); }
   }
 
   /* 3.2: 안개화·반사 결계 중인 보스 (없으면 null) */
@@ -1273,6 +1290,7 @@ class Battle {
 
   finish(result) {
     if (this.state !== 'play') return;
+    if (this.mp) { this.state = result; this.resultTime = 0; this.stars = 0; return; }   // 5.21 온라인: 저장은 화면 쪽에서
     this.state = result;
     this.resultTime = 0;
     this.stars = 0;
@@ -1671,7 +1689,7 @@ class Battle {
                  !(isAlly && f.s.ranged && this.allyFront > -Infinity && f.x >= this.allyFront + COVER_SLACK * 0.5)) {
         f.spin = 0;                                 // 걸으면 식는다
         f.moving = f.speedNow > 0;
-        f.x += f.dir * f.speedNow * dt * (isAlly ? 1 : this.rush || 1);
+        f.x += f.dir * f.speedNow * dt * (isAlly ? (this.mp && this.mp.pvp ? this.mp.ps[1 - this.curPl].rush || 1 : 1) : this.rush || 1);
         f.x = Math.max(60, Math.min(WORLD - 60, f.x));
         if (f.ab.charge) f.chargeDist += f.speedNow * dt;   // 달려온 만큼 창끝이 무거워진다
       }
@@ -1729,9 +1747,7 @@ class Battle {
     const ab = f.ab;
     if (!ab.heal && !ab.gold && !ab.summon && !ab.barrier && !ab.haste && !ab.cleanse &&
         !ab.rally && !ab.ward && !ab.pacify && !ab.wish) return;
-    if (ab.gold && isAlly) {
-      this.money = Math.min(this.walletMax, this.money + ab.gold * dt);
-    }
+    if (ab.gold && isAlly) this.addMoney(f, ab.gold * dt);
     f.abCd -= dt;
     if (f.abCd > 0) return;
     f.abCd = ab.interval || 3;
@@ -2610,6 +2626,8 @@ class Battle {
       return;
     }
     let pierce = false;
+    // 5.21 대전: 멀리서 쏘는 공성(사거리 300 넘게)은 사람의 병사에게 덜 든다 — 벽 뒤에서 쏘기만 하는 판이 되지 않게 (성채엔 그대로)
+    if (src && this.mp && this.mp.pvp && !target.isCastle && src.s.range > MP.pvp.longRange) dmg *= MP.pvp.longMul;
     // 매 조련사: 뒤에서 쏘는 적을 더 세게 친다
     if (src && src.ab.hunter && !target.isCastle && target.s.ranged) dmg *= src.ab.hunter;
     // 거울 마녀: 원거리 공격은 반쯤 막고 일부를 되쏜다
@@ -2632,8 +2650,9 @@ class Battle {
         !target.isCastle && target.side === 'ally' && ((target.s.base || target.s).cost || 0) >= HUNT_COST;
     if (hunted) { dmg *= HUNT_MUL; pierce = true; }
     // 3.9 선봉: 근접 영웅 곁의 아군은 적에게 덜 아프게 맞는다 (영웅 자신 포함)
-    if (!hunted && src && src.side === 'enemy' && !target.isCastle && target.side === 'ally' && this.vanguards && this.vanguards.length) {
-      for (const v of this.vanguards) {
+    const vgs = this.mp && this.mp.pvp && !target.isCastle && target.pl !== this.curPl ? this.mp.ps[target.pl].vanguards : this.vanguards;
+    if (!hunted && src && src.side !== target.side && !target.isCastle && target.pc && vgs && vgs.length) {
+      for (const v of vgs) {
         if (!v.dead && Math.abs(v.x - target.x) <= v.ab.vanguard.r) { dmg *= 1 - v.ab.vanguard.cut; break; }
       }
     }
@@ -2649,8 +2668,8 @@ class Battle {
     }
     const dealt = target.takeDamage(dmg, pierce) || 0;
     if (dealt > 0) {
-      if (src && src.side === 'ally' && src.s) this.meterRow(src).dmg += dealt;
-      if (target.side === 'ally' && !target.isCastle) this.meterRow(target).taken += dealt;
+      if (src && src.pc && src.s) this.meterRow(src).dmg += dealt;
+      if (!target.isCastle && target.pc) this.meterRow(target).taken += dealt;
     }
     if (mirror && dealt > 0 && !src.dead) {
       src.takeDamage(Math.min(120, dealt * mirror.reflect));
@@ -2703,7 +2722,7 @@ class Battle {
       target.slowT = Math.max(target.slowT, ab.slow);
       this.fx.push({ type: 'chill', x: target.x, row: target.row, t: 0.4, life: 0.4 });
     }
-    if ((ab.poison || ab.burn) && src.side === 'ally') target.dotBy = src.creditTo || src.s.id;
+    if ((ab.poison || ab.burn) && src.pc) target.dotBy = src.creditTo || src.s.id;
     if (ab.poison) {
       if (target.poisonT <= 0) target.poisonDps = 0;
       target.poisonT = Math.max(target.poisonT, ab.poison.dur);
@@ -2743,8 +2762,8 @@ class Battle {
       target.charmT = Math.max(target.charmT, ab.charm.dur);
       this.fx.push({ type: 'charm', x: target.x, row: target.row, t: 0.7, life: 0.7 });
     }
-    if (ab.bounty && src.side === 'ally' && Math.random() < ab.bounty.chance) {
-      this.money = Math.min(this.walletMax, this.money + ab.bounty.gold);
+    if (ab.bounty && src.pc && Math.random() < ab.bounty.chance) {
+      this.addMoney(src, ab.bounty.gold);
       this.fx.push({ type: 'coin', x: target.x, row: target.row, v: ab.bounty.gold, t: 0.8, life: 0.8 });
     }
     if (ab.execute) this.tryExecute(target, ab.execute);
@@ -2807,9 +2826,10 @@ class Battle {
   /* castleOk: 성채까지 튀김 피해를 줄지. 적이 아군 병사를 노린 범위 공격은 바로 뒤 성채까지
    * 번지지 않는다 (3.2.1: 갓 나온 병사를 노린 투석이 성채를 갉아 별 3개를 못 받던 것) */
   areaHit(dmg, cx, radius, foes, foeCastle, src, crit, castleOk = true) {
+    const k = this.mp && this.mp.pvp ? MP.pvp.areaMul : 1;    // 5.21 대전: 사람의 병사는 뭉쳐 서서 범위 공격이 너무 잘 든다
     for (const e of foes) {
       if (e.dead) continue;
-      if (Math.abs(e.x - cx) <= radius + e.radius) this.hitOne(dmg, e, src, crit);
+      if (Math.abs(e.x - cx) <= radius + e.radius) this.hitOne(dmg * k, e, src, crit);
     }
     if (castleOk && foeCastle && !foeCastle.dead && Math.abs(foeCastle.x - cx) <= radius + foeCastle.radius) {
       foeCastle.takeDamage(dmg);
@@ -2837,8 +2857,9 @@ class Battle {
     return hits;
   }
 
-  updateShots(dt) {
+  updateShots(dt, only) {
     for (const s of this.shots) {
+      if (only && s.side !== only) continue;
       s.t += dt;
       if (s.t < s.dur) continue;
       s.done = true;
@@ -3043,4 +3064,210 @@ class Battle {
     if (this.enemies.length) return (front + back) / 2;
     return front;
   }
+
+  /* ======================================================================
+   * 5.21 온라인 2인
+   *  협동(coop): 두 사람이 같은 편(왼쪽)에서 함께 막는다. 군자금 · 카드 · 필살 · 왕명 대기는 사람마다 따로.
+   *  대전(pvp) : 두 번째 사람이 오른쪽 요새의 주인. 그 사람이 움직이는 동안엔 전장을 좌우로 뒤집어(mirror)
+   *              그 사람도 왼쪽 아군의 규칙 그대로 싸운다 — 병종의 능력 · 엄호 · 선봉 · 소환이 양쪽에 똑같이 든다.
+   *  두 기기는 같은 씨앗 · 같은 입력으로 같은 판을 돌린다 (js/online.js 가 입력을 주고받는다).
+   * ====================================================================== */
+  /* 사람마다 따로 갖는 것 (지갑 · 카드 · 기록 · 엄호 셈) */
+  takeWallet() { const o = {}; for (const k of MP_WALLET) o[k] = this[k]; return o; }
+  putWallet(o) { for (const k of MP_WALLET) this[k] = o[k]; }
+  setupWallet(save) {
+    const up = save.upgrades || {};
+    this.save = save;
+    this.buff = { hp: 1 + 0.08 * (up.vitality || 0), atk: 1 + 0.06 * (up.power || 0) };
+    this.levels = save.levels || {};
+    this.walletMax = 900 + 260 * (up.wallet || 0);
+    this.income = this.stage.rate * (1 + 0.12 * (up.income || 0));
+    this.cdMul = Math.max(0.4, 1 - 0.03 * (up.logistics || 0));
+    this.goldMul = 1 + 0.08 * (up.spoils || 0);
+    this.money = Math.min(this.walletMax, this.stage.money + 60 * (up.treasury || 0));
+    const cmdLv = up.command || 0;
+    this.cmdMax = Math.max(25, COMMAND.baseCooldown - COMMAND.cooldownPerLv * cmdLv);
+    this.cmdCd = this.cmdMax;
+    this.cmdHeal = COMMAND.healRatio + COMMAND.healPerLv * cmdLv;
+    this.cmdUses = 0;
+    this.heroCooldowns = {}; this.heroGlobalCd = 0; this.cooldowns = {}; this.sealed = {};
+    this._stats = null; this.meter = {}; this.kills = 0; this.coins = 0;
+    this.vanguards = []; this.lineFront = -Infinity; this.allyFront = -Infinity; this.bareT = 0; this.rush = 1; this.coverWarned = false;
+    this.roster = this.battleUnits();
+    this.roster.forEach(u => { this.cooldowns[u.id] = 0; if (u.active) this.heroCooldowns[u.id] = 20; });
+  }
+  initMp(mp) {
+    const pvp = mp.mode === 'pvp';
+    this.mp = { mode: mp.mode, pvp: pvp, coop: !pvp, ps: [null, null], cap: pvp ? MP.pvp.cap : MP.coop.cap, totalCap: pvp ? MP.pvp.total : MP.coop.total, turn: 0 };
+    this.curPl = 0;
+    this.bossWard = this.bossWard && !pvp;
+    if (pvp) {
+      // 대전 표준: 성채 · 지갑 · 왕명이 두 사람 똑같다 (강화 · 레벨은 mpSave 가 맞춘다)
+      for (const c of [this.allyCastle, this.enemyCastle]) { c.maxHp = c.hp = MP.pvp.castle; c.floor = 0; }
+    } else {
+      // 협동: 군대가 둘이니 적이 더 단단하고 요새도 두껍다
+      this.enemyMulBase *= MP.coop.enemyMul;
+      this.enemyCastle.maxHp = this.enemyCastle.hp = Math.round(this.enemyCastle.maxHp * MP.coop.fortMul);
+      this.allyCastle.maxHp = this.allyCastle.hp = Math.round(this.allyCastle.maxHp * MP.coop.castleMul);
+    }
+    const p0 = this.takeWallet();
+    this.setupWallet(mp.save2);
+    this.mp.ps[1] = this.takeWallet();
+    this.putWallet(p0);
+    this.vanguards = []; this.lineFront = -Infinity; this.allyFront = -Infinity; this.bareT = 0; this.rush = 1; this.coverWarned = false;
+    if (pvp) for (const k of [0, 1]) {
+      const w = k === 0 ? this : this.mp.ps[1];
+      w.walletMax = MP.pvp.wallet; w.money = MP.pvp.money; w.income = MP.pvp.rate;
+      w.cmdMax = w.cmdCd = COMMAND.baseCooldown * MP.pvp.cmdMul; w.cmdHeal = COMMAND.healRatio;
+    }
+  }
+  /* 그 사람의 입장에서 fn 을 돌린다 (대전의 두 번째 사람은 전장을 뒤집어서) */
+  inFrame(pl, fn) {
+    if (!this.mp || pl === this.curPl) return fn();
+    const prev = this.curPl;
+    this.mp.ps[prev] = this.takeWallet(); this.putWallet(this.mp.ps[pl]); this.curPl = pl;
+    if (this.mp.pvp) this.mirror();
+    try { return fn(); }
+    finally {
+      if (this.mp.pvp) this.mirror();
+      this.mp.ps[pl] = this.takeWallet(); this.putWallet(this.mp.ps[prev]); this.curPl = prev;
+    }
+  }
+  /* 화면 · 버튼용: 그 사람의 입장에서 보되, 뒤집었다 되돌리며 생기는 소수점 끝자리 차이도 남기지 않는다
+   * (두 기기의 판이 끝자리까지 같아야 한다 — 그리기만 하는 쪽이 판을 건드리면 안 된다) */
+  viewFrame(pl, fn) {
+    if (!this.mp || pl === this.curPl || !this.mp.pvp) return this.inFrame(pl, fn);
+    const keep = [];
+    const put = o => { keep.push(o, o.x, o.x2, o.tx); };
+    for (const f of this.allies) put(f);
+    for (const f of this.enemies) put(f);
+    for (const o of this.shots) put(o);
+    for (const o of this.fx) put(o);
+    for (const o of this.pending) put(o);
+    put(this.allyCastle); put(this.enemyCastle);
+    try { return this.inFrame(pl, fn); }
+    finally { for (let i = 0; i < keep.length; i += 4) { const o = keep[i]; o.x = keep[i + 1]; if (keep[i + 2] !== undefined) o.x2 = keep[i + 2]; if (keep[i + 3] !== undefined) o.tx = keep[i + 3]; } }
+  }
+  /* 전장을 좌우로 뒤집는다: 자리 · 방향 · 편 · 목록 · 성채 */
+  mirror() {
+    const W = WORLD, other = sd => sd === 'ally' ? 'enemy' : sd === 'enemy' ? 'ally' : sd;
+    for (const L of [this.allies, this.enemies]) for (const f of L) { f.x = W - f.x; f.dir = -f.dir; f.side = other(f.side); }
+    const a = this.allies; this.allies = this.enemies; this.enemies = a;
+    const c = this.allyCastle; this.allyCastle = this.enemyCastle; this.enemyCastle = c;
+    for (const k of [this.allyCastle, this.enemyCastle]) { k.x = W - k.x; k.side = other(k.side); }
+    for (const o of this.shots) { o.x = W - o.x; o.tx = W - o.tx; if (o.dir) o.dir = -o.dir; o.side = other(o.side); }
+    for (const o of this.fx) { if (typeof o.x === 'number') o.x = W - o.x; if (typeof o.x2 === 'number') o.x2 = W - o.x2; if (o.dir) o.dir = -o.dir; }
+    for (const o of this.pending) { if (typeof o.x === 'number') o.x = W - o.x; o.side = other(o.side); }
+  }
+  /* 낸 사람의 지갑 */
+  addMoney(f, v) {
+    if (this.mp && this.mp.pvp) v *= MP.pvp.unitGold;          // 대전: 병종이 버는 금화는 눈덩이가 되기 쉬워 줄인다
+    const w = this.mp && f.pl !== this.curPl ? this.mp.ps[f.pl] : this;
+    w.money = Math.min(w.walletMax, w.money + v);
+  }
+  walletOf(pl) { return !this.mp || pl === this.curPl ? this : this.mp.ps[pl]; }
+
+  /* 사람의 손: 출진 · 필살 · 왕명 · 항복 */
+  mpAct(pl, a) {
+    if (this.state !== 'play' || !a) return false;
+    if (a.k === 'q') { this.finish(this.mp.pvp && pl === 1 ? 'win' : 'lose'); this.mp.quit = pl; return true; }
+    return !!this.inFrame(pl, () => a.k === 'd' ? this.deploy(a.id) : a.k === 'h' ? this.useHeroActive(a.id) : a.k === 'c' ? this.useCommand() : false);
+  }
+  /* 한 틱 (온라인은 늘 1/30 초씩, 이펙트까지 같은 걸음으로) */
+  mpStep(dt) {
+    if (this.state === 'play') { if (this.mp.pvp) this.tickPvp(dt); else this.tickCoop(dt); }
+    this.updateFx(dt);
+    this.mp.turn++;
+  }
+  tickCoop(dt) {
+    this.tick(dt);
+    if (this.state === 'play') this.inFrame(1, () => { this.tickWalletA(dt); this.tickWalletB(dt, dt * (this.chronoOn ? CHRONO_RATE : 1)); });
+  }
+  tickPvp(dt) {
+    this.time += dt;
+    this.tickSimFx(dt);
+    // 먼저 움직이는 쪽이 유리하지 않게 틱마다 순서를 바꾼다
+    const order = this.mp.turn % 2 ? [1, 0] : [0, 1];
+    for (const pl of order) this.inFrame(pl, () => { this.tickWalletA(dt); this.tickWalletB(dt, dt); });
+    if (this.shake > 0) this.shake = Math.max(0, this.shake - dt * 26);
+    if (this.flash > 0) this.flash = Math.max(0, this.flash - dt * 1.4);
+    if (this.patternT > 0) this.patternT -= dt;
+    this.updatePending(dt);
+    coolCastle(this.allyCastle, dt);
+    coolCastle(this.enemyCastle, dt);
+    // 장기전: 일정 시간이 지나면 두 성채가 똑같이 무너져 간다 (끝없이 버티기만 하는 판을 끝낸다)
+    if (this.time > MP.pvp.overtime) {
+      if (!this.overtimeSaid) { this.overtimeSaid = true; this.announce('장기전 · 두 성채가 무너지기 시작합니다', 2.6); }
+      for (const c of [this.allyCastle, this.enemyCastle]) if (!c.dead) { c.hp -= c.maxHp * MP.pvp.decay * dt; if (c.hp <= 0) { c.hp = 0; c.dead = true; } }
+    }
+    for (const pl of order) this.inFrame(pl, () => { this.updateCover(dt); this.step(this.allies, this.enemies, this.enemyCastle, dt, true); });
+    for (const pl of order) this.inFrame(pl, () => { this.castleArchers(dt); this.updateShots(dt, 'ally'); });
+    while (this.hasUnreaped()) for (const pl of order) this.inFrame(pl, () => this.reap(this.enemies, this.allies, this.allyCastle, true));
+    if (anyDead(this.enemies)) this.enemies = this.enemies.filter(e => !e.dead);
+    if (anyDead(this.allies)) this.allies = this.allies.filter(a => !a.dead);
+    const a = this.allyCastle.dead, e = this.enemyCastle.dead;
+    if (a || e) { this.shake = 16; this.finish(a && e ? 'draw' : e ? 'win' : 'lose'); }
+  }
+  /* 대전: 성채 궁수가 성채 가까이 온 적 병사를 쏜다 — 밀린 쪽이 집 앞에서 버틸 수 있게 */
+  castleArchers(dt) {
+    const c = this.allyCastle, T = MP.pvp.tower;
+    if (c.dead || (c.towerCd = (c.towerCd || 0) - dt) > 0) return;
+    let best = null, bd = T.range;
+    for (const e of this.enemies) { if (e.dead) continue; const d = e.x - c.x; if (d >= 0 && d < bd) { bd = d; best = e; } }
+    if (!best) { c.towerCd = 0.2; return; }
+    c.towerCd = T.every;
+    this.shots.push({ x: c.x + 30, y0: best.row, tx: best.x, side: c.side, t: 0, dur: Math.max(0.15, bd / 900), color: '#ffe08a',
+                      dmg: T.dmg, crit: false, src: null, toCastle: false, area: false, dir: 1 });
+  }
+  /* 두 기기의 판이 같은지 견줄 지문 */
+  mpHash() {
+    let h = 2166136261 >>> 0;
+    const mix = v => { h = Math.imul(h ^ (v | 0), 16777619) >>> 0; };
+    mix(Math.round(this.time * 30)); mix(Math.round(this.allyCastle.hp)); mix(Math.round(this.enemyCastle.hp));
+    mix(Math.round(this.money)); mix(Math.round(this.mp.ps[1 - this.curPl].money));
+    for (const L of [this.allies, this.enemies]) { mix(L.length); for (const f of L) { mix(Math.round(f.x * 4)); mix(Math.round(f.hp)); mix(f.row); } }
+    mix(this.shots.length);
+    return h;
+  }
+}
+
+/* 5.21 온라인 2인 규칙 */
+const MP = {
+  pvp: { castle: 6000, money: 250, rate: 30, wallet: 1500, level: 20, len: 1500, cap: 30, total: 44, overtime: 300, decay: 0.008, cmdMul: 1.25,
+         areaMul: 0.6, tower: { every: 0.8, range: 360, dmg: 90 }, unitGold: 0.35,
+         longRange: 300, longMul: 0.6 },
+  coop: { cap: 25, total: 70, enemyMul: 1.7, fortMul: 1.5, castleMul: 1.25 }
+};
+const MP_WALLET = ['save', 'buff', 'levels', 'walletMax', 'income', 'cdMul', 'goldMul', 'money', 'cmdMax', 'cmdCd', 'cmdHeal', 'cmdUses',
+  'heroCooldowns', 'heroGlobalCd', 'cooldowns', 'sealed', '_stats', 'meter', 'kills', 'coins', 'roster',
+  'vanguards', 'lineFront', 'allyFront', 'bareT', 'rush', 'coverWarned'];
+/* 대전 전장 (땅 모습만 고른다) */
+function pvpStage(look) {
+  return { name: '대전', pvp: true, baseHp: MP.pvp.castle, money: MP.pvp.money, rate: MP.pvp.rate, waves: [], reward: 0, len: MP.pvp.len, look: look || 'meadow', noWard: true };
+}
+/* 상대가 보낸 편성 정보로 전투용 저장을 만든다. 대전은 레벨 · 강화를 표준으로 맞춘다 (진화 형태는 그 사람이 가진 대로) */
+function mpSave(info, pvp) {
+  info = info || {};
+  const s = { cleared: Math.max(0, Math.min(STAGES.length, info.cleared | 0)), coins: 0, upgrades: {}, stars: {}, owned: {}, levels: {},
+              evo: {}, evo2: {}, evo3: {}, devUnits: {}, loadout: [] };
+  const deck = [...new Set(Array.isArray(info.loadout) ? info.loadout : [])].filter(id => typeof id === 'string' && UNIT_BY_ID[id]).slice(0, LOADOUT_MAX);
+  s.loadout = deck;
+  const lv = info.levels || {}, e1 = info.evo || {}, e2 = info.evo2 || {}, e3 = info.evo3 || {};
+  for (const id of deck) {
+    const u = UNIT_BY_ID[id];
+    if (u.gacha) s.owned[id] = true; else s.devUnits[id] = true;      // 그 사람의 기기에서 열려 있던 병종
+    s.levels[id] = pvp ? MP.pvp.level : Math.max(1, Math.min(30, Math.floor(+lv[id]) || 1));
+    if (EVOLUTIONS[id] && typeof e1[id] === 'boolean') {
+      s.evo[id] = e1[id];
+      if (EVOLUTIONS2[id] && typeof e2[id] === 'boolean') {
+        s.evo2[id] = e2[id];
+        if (EVOLUTIONS3[id] && typeof e3[id] === 'boolean') s.evo3[id] = e3[id];
+      }
+    }
+  }
+  if (!pvp && info.upgrades && typeof info.upgrades === 'object') for (const k in info.upgrades) {
+    const v = Math.floor(+info.upgrades[k]);
+    if (/^[a-z]+$/.test(k) && v >= 0 && v <= 40) s.upgrades[k] = v;
+  }
+  return s;
 }

@@ -2,7 +2,7 @@
 const CACHE = 'stick-kingdom-v98';
 const ASSETS = [
   './', './index.html', './css/style.css',
-  './js/settings.js', './js/audio.js', './js/music.js', './js/data.js', './js/i18n.js', './js/gl-fx.js', './js/save-store.js', './js/game.js', './js/render.js', './js/main.js', './js/formation.js', './js/conquest.js',
+  './js/settings.js', './js/audio.js', './js/music.js', './js/data.js', './js/i18n.js', './js/gl-fx.js', './js/save-store.js', './js/game.js', './js/render.js', './js/main.js', './js/formation.js', './js/conquest.js', './js/online.js',
   './manifest.json', './icon.svg'
 ];
 self.addEventListener('install', e => {

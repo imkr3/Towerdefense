@@ -1675,6 +1675,8 @@ function startBattle(index, hard) {
 
 function beginBattle() {
   clearTimeout(resultTimer);
+  $('#scr-battle').classList.remove('online');
+  $('#btn-tomap').textContent = '진군도로';
   if (renderer) { renderer.syncGlSize(); renderer.resetFx(); }
   playAccum = 0;
   $('#result').classList.remove('show');
@@ -1707,6 +1709,31 @@ function beginBattle() {
   lastTs = 0;
 }
 
+/* 5.21 온라인 2인: 판은 online.js 가 만들고, 여기선 전투 화면만 연다 */
+function beginOnlineBattle(b, cfg, role, peerName) {
+  clearTimeout(resultTimer);
+  if (renderer) { renderer.syncGlSize(); renderer.resetFx(); }
+  playAccum = 0;
+  $('#result').classList.remove('show');
+  b.speed = 1;
+  $('#scr-battle').classList.toggle('hardcore', cfg.mode === 'pvp');
+  $('#scr-battle').classList.add('online');
+  $('#battle-stage').textContent = cfg.mode === 'pvp' ? '⚔ 대전 · vs ' + peerName : '🤝 협동 · ' + (cfg.stage + 1) + '. ' + b.stage.name;
+  bossMusic = false; bossMusicT = 0;
+  BGM.play(cfg.mode === 'pvp' ? 'boss' : stageMusic(b.stage, false));
+  setPaused(false);
+  autoTimer = 0;
+  refreshAutoBtn();
+  b.viewFrame(role, buildCards);
+  show('scr-battle');
+  renderer.fitZoom();
+  b.viewFrame(role, () => { renderer.cam = renderer.camTarget = renderer.clampCam(ALLY_SPAWN_X + 200); });
+  renderer.dragUntil = 0;
+  lastTs = 0;
+}
+/* 온라인이면 내 자리(대전의 오른쪽 사람은 뒤집은 판)에서 본다 */
+function inView(fn) { return battle && battle.online ? battle.viewFrame(battle.online.role, fn) : fn(); }
+
 function buildCards() {
   const box = $('#cards');
   box.innerHTML = '';
@@ -1719,7 +1746,7 @@ function buildCards() {
     b.setAttribute('aria-label', u.name + ' 출진, 비용 ' + u.cost);
     b.innerHTML =
       '<canvas class="c-ico"></canvas>' +
-      '<div class="c-lv">Lv' + (save.levels[u.id] || 1) + '</div>' +
+      '<div class="c-lv">Lv' + (battle.mp && battle.mp.pvp ? MP.pvp.level : (save.levels[u.id] || 1)) + '</div>' +
       '<div class="c-name">' + (u.short || u.name) + '</div>' +
       '<div class="c-role">' + u.role + '</div>' +
       '<div class="c-cost">' + u.cost + '</div>' +
@@ -1741,6 +1768,7 @@ function buildCards() {
 /* 카드 누르기. 전설·신화가 이미 전장에 서 있으면 출진 대신 액티브를 쓴다. */
 function onCardTap(u) {
   if (!canBattleInput()) return;
+  if (battle.online) { inView(() => onlineCardTap(u)); return; }
   if (u.active && battle.heroCaster(u.id)) {
     if (castActive(u)) {
       toast(u.name + ' · ' + u.active.name);
@@ -1763,6 +1791,28 @@ function onCardTap(u) {
 }
 
 let cardEls = [];
+/* 5.21 온라인: 바로 내지 않고 입력으로 보낸다 (두 기기에 같은 턴에 들어간다) */
+function onlineCardTap(u) {
+  const O = battle.online;
+  if (u.active && battle.heroCaster(u.id)) {
+    if (O.pending('h', u.id)) return;
+    if (battle.canHeroActive(u.id)) { O.input({ k: 'h', id: u.id }); SFX.command(); buzz(25); toast(u.name + ' · ' + u.active.name); return; }
+    const cd = Math.ceil(Math.max(battle.heroCooldowns[u.id] || 0, battle.heroGlobalCd));
+    toast(cd > 0 ? u.active.name + ' · ' + cd + '초 남음' : u.active.name + ' · 대상 없음');
+    return;
+  }
+  if (O.pending('d', u.id)) return;
+  if (battle.cooldowns[u.id] > 0) { toast('재사용 대기 중입니다'); return; }
+  if (battle.money < u.cost) { toast('군자금이 부족합니다'); return; }
+  if (!battle.canDeploy(u.id)) {
+    if (battle.fieldFull()) toast('전장 병력 가득 · ' + battle.mp.cap + '명까지');
+    else if (u.maxActive) toast(u.name + ' · 동시 출진 ' + u.maxActive + '명까지');
+    else toast('지금은 출진할 수 없습니다');
+    return;
+  }
+  O.input({ k: 'd', id: u.id });
+  buzz(8);
+}
 
 let paused = false;
 let autoTimer = 0;
@@ -1798,6 +1848,7 @@ function renderPauseMenu() {
 
 /* 지금 전투를 처음부터 (결과 화면 '다시 도전' · 멈춤 메뉴 '처음부터') */
 function retryBattle() {
+  if (battle && battle.online) { Online.backToRoom(); return; }    // 5.21 온라인: 대기실로
   flushPlayTime();                 // 5.9: '처음부터' 해도 지금까지 싸운 시간은 기록에 남긴다
   if (battle && battle.endless) startEndless();
   else if (battle && battle.event) startEvent(battle.eventIndex);
@@ -1831,6 +1882,15 @@ function autoDeploy(dt) {
   autoTimer -= dt;
   if (autoTimer > 0) return;
   autoTimer = 0.35;
+  if (battle.online) {                            // 5.21 온라인: 자동도 입력으로
+    inView(() => {
+      const O = battle.online;
+      const ready = battle.roster.filter(u => battle.autoWants(u.id) && !O.pending('d', u.id)).sort((a, b) => b.cost - a.cost);
+      if (ready.length) O.input({ k: 'd', id: ready[0].id });
+      if (Settings.get('autoActive')) for (const u of battle.roster) if (u.active && battle.autoActiveOk(u.id) && !O.pending('h', u.id)) O.input({ k: 'h', id: u.id });
+    });
+    return;
+  }
   const ready = battle.roster
     .filter(u => battle.autoWants(u.id))
     .sort((a, b) => b.cost - a.cost);
@@ -1841,13 +1901,19 @@ function autoDeploy(dt) {
 
 /* 필살 한 번 쓰기 (카드·필살 모두·자동이 함께 쓴다) */
 function castActive(u) {
+  if (battle.online) {
+    return inView(() => {
+      if (battle.online.pending('h', u.id) || !battle.canHeroActive(u.id)) return false;
+      battle.online.input({ k: 'h', id: u.id }); SFX.command(); buzz(25); return true;
+    });
+  }
   if (!battle.useHeroActive(u.id)) return false;
   SFX.command();
   buzz(25);
   return true;
 }
 /* 3.14: 준비된 필살을 한꺼번에 */
-function readyActives() { return battle.roster.filter(u => u.active && battle.canHeroActive(u.id)); }
+function readyActives() { return inView(() => battle.roster.filter(u => u.active && battle.canHeroActive(u.id))); }
 function castAllActives() {
   if (!canBattleInput()) return;
   const list = readyActives();
@@ -1867,13 +1933,14 @@ function hudClass(el, c, on) { const key = '_c' + c; on = !!on; if (el[key] !== 
 const pct1 = v => (Math.round(v * 10) / 10) + '%';
 function updateHud() {
   const money = Math.floor(battle.money);
-  hudText(hudEl('#kill-count'), battle.kills);
-  // 증원이 돌기 시작하면 남은 적을 셀 수 없다
-  hudText(hudEl('#foe-left'), (battle.endless || battle.reinforcing()) ? '∞' : battle.foesLeft());
+  const mp = battle.mp, cap = mp ? mp.cap : FIELD_CAP;
+  hudText(hudEl('#kill-count'), mp && mp.coop ? battle.walletOf(0).kills : battle.kills);
+  // 증원이 돌기 시작하면 남은 적을 셀 수 없다 (5.21 대전은 상대 병력)
+  hudText(hudEl('#foe-left'), mp && mp.pvp ? battle.enemies.length : (battle.endless || battle.reinforcing()) ? '∞' : battle.foesLeft());
   // 3.12: 전장 병력 (모든 병종이 함께 쓰는 상한)
   const troops = battle.fieldCount();
-  hudText(hudEl('#troop-count'), troops + '/' + FIELD_CAP);
-  hudClass(hudEl('.troop-chip'), 'full', troops >= FIELD_CAP);
+  hudText(hudEl('#troop-count'), troops + '/' + cap);
+  hudClass(hudEl('.troop-chip'), 'full', troops >= cap);
   const cmdBtn = hudEl('#btn-command');
   const ready = battle.canCommand();
   const cmdOff = !canBattleInput() || !ready;
@@ -1892,7 +1959,8 @@ function updateHud() {
     : (battle.wardUp() ? '보스의 결계 · 보스를 쓰러뜨려야 요새가 무너집니다'
       : (battle.reinforcing() ? '적 증원 중' : ''));
   const full = battle.state === 'play' && battle.fieldFull();
-  const msg = full ? (preview ? preview + ' · ' : '') + '병력 가득 · 전장엔 ' + FIELD_CAP + '명까지' : preview;
+  const pre = battle.online ? battle.online.status() : preview;
+  const msg = full ? (pre ? pre + ' · ' : '') + '병력 가득 · 전장엔 ' + cap + '명까지' : pre;
   const wp = hudEl('#wave-preview');
   hudText(wp, msg);
   if (wp.hidden !== !msg) wp.hidden = !msg;
@@ -2117,6 +2185,34 @@ function showResult() {
   $('#result').classList.add('show');
 }
 
+/* 5.21 온라인 결과 (보상은 online.js 가 이미 넣었다) */
+function showOnlineResult(r, cfg, peerName) {
+  const b = battle;
+  flushPlayTime();
+  if (BGM.vol > 0) BGM.sting(r.res === 'win' ? 'victory' : 'defeat'); else BGM.stop(0.6);
+  inView(() => renderMeter(b));
+  const T = { win: '승 리', lose: '패 배', draw: '무승부', gone: '상대가 나갔습니다', lost: '연결이 끊겼습니다' };
+  $('#result-title').textContent = T[r.res] || '끝';
+  $('#result-stars').innerHTML = '';
+  const t = Math.round(b.time), lines = [];
+  lines.push((cfg.mode === 'pvp' ? '⚔ 대전 · vs ' : '🤝 협동 · 함께 ') + peerName + ' · ' + Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'));
+  inView(() => {
+    lines.push('내 성채 ' + Math.max(0, Math.round(b.allyCastle.hp / b.allyCastle.maxHp * 100)) + '% · ' + (cfg.mode === 'pvp' ? '상대 요새 ' : '적 요새 ') +
+               Math.max(0, Math.round(b.enemyCastle.hp / b.enemyCastle.maxHp * 100)) + '%');
+    lines.push('처치 ' + (b.mp.coop ? b.walletOf(0).kills : b.kills));
+  });
+  if (r.coins) lines.push('획득 골드 💰 ' + r.coins);
+  if (cfg.mode === 'pvp') lines.push('대전 전적 ' + (save.stats.pvpWins || 0) + '승 / ' + (save.stats.pvpGames || 0) + '판');
+  else lines.push('협동 전적 ' + (save.stats.coopWins || 0) + '승 / ' + (save.stats.coopGames || 0) + '판');
+  if (r.res === 'lost') lines.push('💡 인터넷 연결을 확인하세요. 같은 방 코드로 다시 만날 수 있습니다.');
+  setResultLines(lines);
+  $('#btn-retry').textContent = Online.peer && Online.net ? '대기실로' : '나가기';
+  $('#btn-tomap').textContent = '나가기';
+  $('#btn-retry').style.display = ''; $('#btn-tomap').style.display = Online.peer && Online.net ? '' : 'none';
+  $('#btn-next').style.display = 'none'; $('#btn-fix').style.display = 'none'; $('#btn-conq').style.display = 'none';
+  $('#result').classList.add('show');
+}
+
 function showEventResult() {
   $('#btn-retry').textContent = '다시 도전';
   const win = battle.state === 'win', ev = battle.event;
@@ -2198,7 +2294,7 @@ function loop(ts) {
   requestAnimationFrame(loop);
   if (!lastTs) lastTs = ts;
   const modal = inBattle && openModals.length > 0;
-  const idle = inBattle && (paused || modal || battle.state !== 'play');
+  const idle = inBattle && (battle.online ? battle.state !== 'play' : (paused || modal || battle.state !== 'play'));
   const minMs = Math.max(FRAME_MIN_MS[Settings.get('quality')] || 14,
                          titleAnim.on ? TITLE_FRAME_MS : (idle ? (inBattle && battle.state !== 'play' && resultEl.classList.contains('show') ? OVER_FRAME_MS : IDLE_FRAME_MS) : (renderer && renderer.crowded ? CROWD_FRAME_MS : 0)));
   if (ts - lastTs < minMs) return;
@@ -2210,15 +2306,22 @@ function loop(ts) {
   if (!inBattle) return;
 
   const before = battle.state;
-  if (!paused && !modal) {
+  if (battle.online) {                            // 5.21 온라인: 멈춤 · 창과 상관없이 두 기기가 같은 걸음으로
+    battle.online.frame(dt);
+    if (battle.online) autoDeploy(dt);
+    if (battle.state === 'play') playAccum += dt;
+  }
+  else if (!paused && !modal) {
     autoDeploy(dt * battle.speed);
     battle.update(dt);
     if (battle.state === 'play') playAccum += dt;
   }
   else battle.updateFx(dt * 0.4);
   renderer.idle = idle;           // 일부러 늦춘 프레임은 품질 판단에 넣지 않는다
-  renderer.render(battle, dt, (paused || modal) ? dt * 0.4 : dt);
-  updateHud();
+  inView(() => {
+    renderer.render(battle, dt, battle.online ? dt : (paused || modal) ? dt * 0.4 : dt);
+    updateHud();
+  });
   // 보스가 서면 곡을 바꾼다. 매 프레임 적을 훑을 필요는 없다.
   // 4.16 무한 전장: 새 보스가 올 때마다 그 보스의 곡으로, 보스가 다 쓰러지고 4초 뒤엔 무한 전장 곡으로 돌아간다.
   if (battle.endless) {
@@ -2239,7 +2342,7 @@ function loop(ts) {
     const boss = battle.aliveBoss();
     if (boss) { bossMusic = true; BGM.play(bossTrack(battle.stage, boss.kind, battle.hard)); }
   }
-  if (before === 'play' && battle.state !== 'play') {
+  if (before === 'play' && battle.state !== 'play' && !battle.online) {
     // 승리는 팡파르, 패배는 애가. 음악을 꺼 두었으면 효과음이 대신한다.
     if (BGM.vol > 0) BGM.sting(battle.state === 'win' || (battle.endless && battle.newRecord) ? 'victory' : 'defeat');
     else BGM.stop(0.6);
@@ -2724,6 +2827,14 @@ function init() {
   });
 
   $('#btn-quit').addEventListener('click', () => {
+    if (battle && battle.online) {               // 5.21 온라인: 싸우는 중이면 항복, 끝났으면 나가기
+      if (battle.state === 'play' && Online.state === 'battle') {
+        askConfirm('항복', battle.mp.pvp ? '항복하면 이 판은 집니다. 항복할까요?' : '항복하면 둘 다 이 판을 집니다. 항복할까요?', () => Online.input({ k: 'q' }));
+        return;
+      }
+      Online.leave(); show('scr-title');
+      return;
+    }
     if (battle && battle.conquest) {       // 5.0 정벌: 싸우다 나가면 진 것, 끝난 뒤엔 정벌 지도로
       if (battle.state === 'play') { conqQuitBattle(); return; }
       conqResolveBattle(battle); flushPlayTime(); saveGame(save); show('scr-conquest');
@@ -2739,6 +2850,7 @@ function init() {
     show('scr-map');
   });
   $('#btn-speed').addEventListener('click', () => {
+    if (battle && battle.online) { toast('온라인은 1배속입니다'); return; }
     const seq = save.devFast ? [1, 2, 3, 5] : [1, 2, 3];   // 5.4 개발자 모드 ×5
     battle.speed = seq[(seq.indexOf(battle.speed) + 1) % seq.length];
     $('#btn-speed').textContent = '▶▶ ' + battle.speed + 'x';
@@ -2748,6 +2860,7 @@ function init() {
   });
   $('#btn-pause').addEventListener('click', () => {
     if ($('.modal.show') || !battle || battle.state !== 'play') return;
+    if (battle.online) { toast('온라인은 멈출 수 없습니다'); return; }
     setPaused(!paused);
     if (!paused) toast('재개');          // 5.9: 멈출 땐 멈춤 메뉴가 뜨므로 알림이 그 위를 가리지 않게
     SFX.ui();
@@ -2772,12 +2885,19 @@ function init() {
   $('#btn-all-act').addEventListener('click', castAllActives);
   $('#btn-command').addEventListener('click', () => {
     if (!canBattleInput()) return;
+    if (battle.online) {
+      const ok = inView(() => battle.canCommand());
+      if (!ok) { toast('왕의 명령이 아직 준비되지 않았습니다'); return; }
+      if (!battle.online.pending('c')) battle.online.input({ k: 'c' });
+      return;
+    }
     if (!battle.canCommand()) { toast('왕의 명령이 아직 준비되지 않았습니다'); return; }
     battle.useCommand();
   });
   initSettings();
   initFormation();
   initConquest();
+  if (typeof initOnline === 'function') initOnline();
   $('#btn-retry').addEventListener('click', retryBattle);
   $('#btn-next').addEventListener('click', () => {
     $('#btn-retry').textContent = '다시 도전';
@@ -2793,6 +2913,7 @@ function init() {
   });
   $('#btn-tomap').addEventListener('click', () => {
     $('#btn-retry').textContent = '다시 도전';
+    if (battle && battle.online) { Online.leave(); show('scr-title'); return; }
     show('scr-map');
   });
 
@@ -2989,6 +3110,7 @@ window.__androidBack = function () {
   if (active.id === 'scr-battle') {
     // 5.9: 싸우는 중이면 바로 '포기' 창 대신 멈춤 메뉴를 연다 (한 번 더 누르면 다시 시작)
     if (battle && battle.state === 'play' && !$('#result').classList.contains('show')) {
+      if (battle.online) { $('#btn-quit').click(); return true; }
       if (paused) resumeFromTap(); else { setPaused(true); SFX.ui(); }
       return true;
     }
@@ -3002,7 +3124,7 @@ window.__androidBack = function () {
 };
 
 window.__androidPause = function () {
-  if (battle && battle.state === 'play') setPaused(true);
+  if (battle && battle.state === 'play' && !battle.online) setPaused(true);
   saveGame(save);
 };
 

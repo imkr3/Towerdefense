@@ -35,6 +35,7 @@
       <button class="btn big" id="btn-start">출 진</button>
       <button class="btn conq-btn" id="btn-conquest" hidden><span class="cont-k">⚔ 왕국 정벌</span><span class="cont-v" id="conquest-state"></span></button>
       <button class="btn continue-btn" id="btn-continue" hidden><span class="cont-k">▶ 이어하기</span><span class="cont-v" id="continue-stage"></span></button>
+      <button class="btn online-btn" id="btn-online"><span class="cont-k">🌐 온라인 2인</span><span class="cont-v">대전 · 협동</span></button>
       <div class="title-grid">
         <button class="btn ghost" id="btn-howto"><span class="tg-i">📜</span>교전 수칙</button>
         <button class="btn ghost" id="btn-settings"><span class="tg-i">⚙</span>설정</button>
@@ -379,6 +380,28 @@
 <div class="stats-grid" id="stats-grid"></div>
 <div class="confirm-btns"><button class="btn primary" data-close>닫기</button></div>
 </div></div>
+<!-- 5.21 온라인 2인: 방을 열거나 코드로 들어간다 -->
+<div class="modal" id="modal-online"><div class="modal-card online-card">
+<h3>🌐 온라인 2인</h3>
+<div id="mp-home">
+  <label class="mp-row"><span>내 이름</span><input id="mp-name" maxlength="12" autocomplete="off" spellcheck="false"></label>
+  <div class="seg mp-mode" id="mp-mode" role="group" aria-label="방식"><button type="button" data-v="pvp">⚔ 대전</button><button type="button" data-v="coop">🤝 2인 협동</button></div>
+  <label class="mp-row" id="mp-stage-row"><span>전장</span><select id="mp-stage"></select></label>
+  <p class="mp-rule" id="mp-rule"></p>
+  <div class="confirm-btns"><button type="button" class="btn primary" id="mp-host">방 만들기</button></div>
+  <div class="mp-join"><input id="mp-code" maxlength="5" placeholder="방 코드" autocomplete="off" autocapitalize="characters" spellcheck="false"><button type="button" class="btn" id="mp-join">들어가기</button></div>
+  <p class="mp-note">지금 편성 그대로 나갑니다 · 인터넷이 필요합니다 (공개 중계 서버에서 방 코드로 만납니다)</p>
+  <div class="confirm-btns"><button type="button" class="btn ghost" data-close>닫기</button></div>
+</div>
+<div id="mp-room" hidden>
+  <div class="mp-code-big"><span>방 코드</span><b id="mp-code-show"></b><button type="button" class="btn small" id="mp-copy">복사</button></div>
+  <p class="mp-status" id="mp-status"></p>
+  <div class="mp-players" id="mp-players"></div>
+  <div class="seg mp-mode" id="mp-room-mode" role="group" aria-label="방식"><button type="button" data-v="pvp">⚔ 대전</button><button type="button" data-v="coop">🤝 협동</button></div>
+  <p class="mp-rule" id="mp-room-rule"></p>
+  <div class="confirm-btns"><button type="button" class="btn ghost" id="mp-leave">나가기</button><button type="button" class="btn primary" id="mp-start" hidden>시작</button></div>
+</div>
+</div></div>
 <!-- 3.10 개발자 모드: 타이틀의 ⚔ 문장을 빠르게 7번 누르면 열린다 -->
 <div class="modal" id="modal-dev"><div class="modal-card dev-card">
 <h3>🛠 개발자 모드</h3>
@@ -437,5 +460,6 @@
 <script src="js/main.js"></script>
 <script src="js/formation.js"></script>
 <script src="js/conquest.js"></script>
+<script src="js/online.js"></script>
 </body>
 </html>
