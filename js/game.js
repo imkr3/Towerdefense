@@ -3233,7 +3233,7 @@ class Battle {
 
 /* 5.21 온라인 2인 규칙 */
 const MP = {
-  pvp: { castle: 6000, money: 250, rate: 30, wallet: 1500, level: 20, len: 1500, cap: 30, total: 44, overtime: 300, decay: 0.008, cmdMul: 1.25,
+  pvp: { castle: 6000, money: 250, rate: 30, wallet: 1500, level: 25, len: 1500, cap: 30, total: 44, overtime: 300, decay: 0.008, cmdMul: 1.25,
          areaMul: 0.6, tower: { every: 0.8, range: 360, dmg: 90 }, unitGold: 0.35,
          longRange: 300, longMul: 0.6 },
   coop: { cap: 25, total: 70, enemyMul: 1.7, fortMul: 1.5, castleMul: 1.25 }

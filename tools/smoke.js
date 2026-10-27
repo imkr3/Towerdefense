@@ -482,6 +482,50 @@ async function runSize(browser, size) {
     else console.log('  ✓ 5.0 정벌 · 출발 · 유물 · 전투 · 축복 · 상점 · 포기 · 정산');
     await page.close();
   }
+  // 5.21 온라인 2인: 창 · 방식 전환 · 중계 없이 오른쪽 사람으로 대전 한 판 (상대 입력은 직접 넣는다) · 카드는 입력으로 · 항복 · 결과
+  {
+    const page = await browser.newPage({ viewport: { width: 844, height: 390 } });
+    const errs = []; page.on('pageerror', e => errs.push(e.message));
+    await page.goto('file://' + path.join(__dirname, '..', 'index.html'));
+    await page.evaluate(() => localStorage.setItem('stick-kingdom-save-v1', JSON.stringify({ cleared: 40, coins: 0, tutorial: true, loadout: ['spear', 'archer', 'knight', 'shield'] })));
+    await page.reload(); await page.waitForTimeout(300);
+    const r1 = await page.evaluate(() => {
+      const out = {}; titleAnim.on = false;
+      $('#btn-online').click(); out.modal = $('#modal-online').classList.contains('show');
+      $('#mp-mode button[data-v="coop"]').click(); out.stageRow = !$('#mp-stage-row').hidden && $$('#mp-stage option').length === save.cleared + 1;
+      $('#mp-mode button[data-v="pvp"]').click(); out.stageHidden = $('#mp-stage-row').hidden;
+      out.rule = $('#mp-rule').textContent.includes('레벨은 모두 ' + MP.pvp.level);
+      Online.net = { send() {}, close() {} }; Online.role = 1; Online.state = 'room'; Online.peer = mpInfo(save, '방장');
+      Online.begin({ mode: 'pvp', seed: 7, look: 'meadow', p: [mpInfo(save, '방장'), mpInfo(save, '나')] });
+      out.battle = !!(battle && battle.online === Online) && $('#scr-battle').classList.contains('active') && $('#scr-battle').classList.contains('online');
+      for (let s = 0; s < 600; s += 40) Online.lock.receive({ t: 'in', s: s, a: Array(40).fill([]) });
+      battle.walletOf(1).money = 900;
+      $('#cards .card[data-id="knight"]').click();
+      out.queued = Online.pending('d', 'knight') && battle.allies.length + battle.enemies.length === 0;
+      return out;
+    });
+    await page.waitForTimeout(1600);
+    const r2 = await page.evaluate(() => {
+      const out = {};
+      out.ran = battle.time > 0.8;
+      out.mine = battle.enemies.some(f => f.s.id === 'knight' && f.pl === 1);          // 판 좌표로는 오른쪽 편 (enemies)
+      out.view = battle.viewFrame(1, () => battle.allies.some(f => f.s.id === 'knight' && f.x < battle.enemyCastle.x / 2));   // 내 화면에선 왼쪽 아군
+      $('#btn-quit').click(); $('#modal-confirm .btn.primary, #confirm-yes').click();
+      return out;
+    });
+    await page.waitForTimeout(1800);
+    const r3 = await page.evaluate(() => ({ over: Online.state === 'over', res: $('#result').classList.contains('show') && $('#result-title').textContent === '패 배',
+      lobby: $('#btn-retry').textContent === '대기실로', games: save.stats.pvpGames === 1 && save.stats.pvpWins === 0 }));
+    await page.evaluate(() => $('#btn-tomap').click());
+    await page.waitForTimeout(300);
+    const r4 = await page.evaluate(() => ({ left: Online.state === 'idle' && !Online.net && !(battle && battle.online && $('#scr-battle').classList.contains('active')) }));
+    const r = Object.assign(r1, r2, r3, r4);
+    const bad = Object.keys(r).filter(k => r[k] !== true);
+    if (bad.length) failures.push('온라인 흐름이 어긋난다 ' + JSON.stringify(bad.map(k => k + '=' + r[k])));
+    else if (errs.length) failures.push('온라인 화면 오류 ' + errs.join(' | '));
+    else console.log('  ✓ 5.21 온라인 · 창 · 방식 · 대전 (뒤집힌 화면) · 카드 입력 · 항복 · 결과 · 나가기');
+    await page.close();
+  }
   await browser.close();
   console.log('  ' + '-'.repeat(58));
   if (failures.length) {

@@ -15,7 +15,7 @@ function defaultSave() {
     stars: {}, totalKills: 0, sound: true,
     owned: {}, stones: 3, pity: 0, mythPity: 0, season: 'olympus', pulls: 0, tutorial: false,
     endlessBest: 0, achv: {}, daily: null, auto: false, evo: {}, evo2: {}, evo3: {}, hard: {}, events: {}, expeditions: {}, expRuns: 0,
-    stats: { battles: 0, wins: 0, bossKills: 0, trains: 0, playSec: 0 }
+    stats: { battles: 0, wins: 0, bossKills: 0, trains: 0, playSec: 0, pvpGames: 0, pvpWins: 0, coopGames: 0, coopWins: 0 }
   };
 }
 
@@ -118,7 +118,7 @@ function normalizeSave(raw) {
     if (!s.achv || typeof s.achv !== 'object') s.achv = {};
     if (typeof s.endlessBest !== 'number') s.endlessBest = 0;
     if (typeof s.auto !== 'boolean') s.auto = false;
-    s.stats = Object.assign({ battles: 0, wins: 0, bossKills: 0, trains: 0, playSec: 0 },
+    s.stats = Object.assign({ battles: 0, wins: 0, bossKills: 0, trains: 0, playSec: 0, pvpGames: 0, pvpWins: 0, coopGames: 0, coopWins: 0 },
                             s.stats || {});
     // 3.10: 숫자 칸이 깨져 있으면(NaN·문자열·음수) 골드·소환석이 'NaN' 으로 번지고 뽑기·상점이 막혔다
     const count = (v, dflt) => { v = Number(v); return Number.isFinite(v) && v >= 0 ? Math.floor(v) : dflt; };
@@ -3032,7 +3032,8 @@ function renderStats() {
     ['하드코어 돌파', Object.keys(save.hard || {}).length + ' / ' + STAGES.length], ['도전 돌파', Object.keys(save.events || {}).length + ' / ' + EVENT_STAGES.length],
     ['무한 전장 최고', (save.endlessBest || 0) + '웨이브'], ['처치한 적', fmtNum(save.totalKills || 0)], ['쓰러뜨린 보스', fmtNum(st.bossKills || 0)],
     ['소환', fmtNum(save.pulls || 0) + '회'], ['소환 영웅', owned + ' / ' + gachaN], ['3진 · 4진', e2 + ' · ' + e3],
-    ['업적', achvN + ' / ' + ACHIEVEMENTS.length], ['정벌 (최고 층 · 정벌)', (cq.best || 0) + '층 · ' + (cq.wins || 0) + '승'], ['금화 원정', fmtNum(save.expRuns || 0) + '회']
+    ['업적', achvN + ' / ' + ACHIEVEMENTS.length], ['정벌 (최고 층 · 정벌)', (cq.best || 0) + '층 · ' + (cq.wins || 0) + '승'], ['금화 원정', fmtNum(save.expRuns || 0) + '회'],
+    ['온라인 대전', (st.pvpWins || 0) + '승 / ' + (st.pvpGames || 0) + '판'], ['온라인 협동', (st.coopWins || 0) + '승 / ' + (st.coopGames || 0) + '판']   // 5.21
   ];
   $('#stats-grid').innerHTML = rows.map(([k, v]) => '<div class="stat-cell"><b>' + v + '</b><span>' + k + '</span></div>').join('');
 }

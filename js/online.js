@@ -387,7 +387,7 @@ class MpNet {
  * ------------------------------------------------------------------- */
 const MP_CODE_ABC = 'ACDEFHJKLMNPRTUVWXY3479';     // 헷갈리는 글자(0 O 1 I B 8 S 5 G 6 2 Z Q)는 뺐다
 const MP_LOOKS = ['meadow', 'wheat', 'river', 'forest', 'hills', 'desert', 'snow', 'fortress', 'canyon', 'shore'];
-const MP_PVP_REWARD = { win: 200, lose: 60, draw: 100 };
+const MP_PVP_REWARD = { win: 200, lose: 60, draw: 100, minTime: 60 };   // 1분 안에 끝난 판은 금화 없음
 
 /* 내 편성 · 진행 (상대에게 보낸다) */
 function mpInfo(s, name) {
@@ -412,7 +412,7 @@ const Online = {
   name() {
     let n = '';
     try { n = localStorage.getItem('stick-kingdom-mp-name') || ''; } catch (e) { /* 없음 */ }
-    return n || ('기사' + (100 + Math.floor(Math.random() * 900)));
+    return n || (t('기사') + (100 + Math.floor(Math.random() * 900)));
   },
   setName(n) { try { localStorage.setItem('stick-kingdom-mp-name', String(n).slice(0, 12)); } catch (e) { /* 저장 못 함 */ } },
   me() { return mpInfo(save, $('#mp-name').value.trim() || this.name()); },
@@ -605,8 +605,11 @@ const Online = {
     if (pvp && me === 1 && (res === 'win' || res === 'lose')) res = res === 'win' ? 'lose' : 'win';
     let coins = 0;
     if (res === 'gone' && pvp && b.time > 20) res = 'win';            // 대전 중 상대가 나가면 이긴 것으로
-    if (pvp) coins = res === 'win' ? MP_PVP_REWARD.win : res === 'lose' ? MP_PVP_REWARD.lose : res === 'draw' ? MP_PVP_REWARD.draw : 0;
-    else if (res === 'win') coins = b.stage.reward + b.walletOf(0).coins;
+    if (pvp) {
+      coins = res === 'win' ? MP_PVP_REWARD.win : res === 'lose' ? MP_PVP_REWARD.lose : res === 'draw' ? MP_PVP_REWARD.draw : 0;
+      if (b.time < MP_PVP_REWARD.minTime) coins = 0;                // 바로 항복해 주고받는 판으로 금화를 쌓지 못하게
+    // 협동: 전장은 왼쪽 사람 자리에서 돌아 처치 금화가 0번 지갑에 함께 쌓인다 — 둘 다 그만큼 받는다
+    } else if (res === 'win') coins = b.stage.reward + b.walletOf(0).coins;
     else if (res === 'lose') coins = Math.floor(b.walletOf(0).coins / 2);
     if (!this.rewarded) {
       this.rewarded = true;

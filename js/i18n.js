@@ -1582,6 +1582,26 @@ const I18N_EN = {
   '분화! 붉게 갈라진 땅을 조심하세요': "Eruption! Watch the ground cracking red",
   '무스펠의 불길이 전장을 덮었다': "The flames of Muspel swept the field",
   '끊었다! 불꽃이 꺼지고 거인이 비틀거린다': "Broken! The flame dies and the giant staggers",
+  // 5.21 온라인 2인 (대전 · 협동)
+  '🌐 온라인 2인': '🌐 Online 2P', '대전 · 협동': 'Versus · Co-op', '내 이름': 'My name', '방식': 'Mode',
+  '⚔ 대전': '⚔ Versus', '🤝 2인 협동': '🤝 2P Co-op', '🤝 협동': '🤝 Co-op', '방 만들기': 'Create room', '들어가기': 'Join',
+  '지금 편성 그대로 나갑니다 · 인터넷이 필요합니다 (공개 중계 서버에서 방 코드로 만납니다)': 'You play with your current squad · needs internet (you meet by room code through public relay servers)',
+  '방 코드': 'Room code', '복사': 'Copy', '시작': 'Start', '나가기': 'Leave', '대기실로': 'To lobby', '대기실': 'Lobby', '항복': 'Surrender',
+  '대전': 'Versus', '협동': 'Co-op', '상대': 'Opponent', '방장': 'Host', '손님': 'Guest', '왼쪽 · 방장': 'Left · Host', '오른쪽': 'Right',
+  '빈 자리': 'Empty seat', '영웅 없음': 'No heroes', '무승부': 'DRAW', '끝': 'OVER',
+  '상대가 나갔습니다': 'Your opponent left', '연결이 끊겼습니다': 'Connection lost', '내 성채': 'My castle', '상대 요새': 'Rival fort',
+  '💡 인터넷 연결을 확인하세요. 같은 방 코드로 다시 만날 수 있습니다.': '💡 Check your internet connection. You can meet again with the same room code.',
+  '항복하면 이 판은 집니다. 항복할까요?': 'Surrendering loses this match. Surrender?',
+  '항복하면 둘 다 이 판을 집니다. 항복할까요?': 'Surrendering loses this match for both of you. Surrender?',
+  '온라인은 1배속입니다': 'Online matches run at 1× speed', '온라인은 멈출 수 없습니다': "Online matches can't be paused",
+  '방 코드 다섯 글자를 넣어 주세요': 'Enter the 5-letter room code',
+  '방을 찾지 못했습니다. 코드를 확인하거나 방을 연 쪽이 기다리고 있는지 보세요.': 'Room not found. Check the code, or make sure the host is still waiting.',
+  '편성에 병종이 없습니다': 'Your squad is empty', '방에 들어왔습니다': 'Joined the room', '들어갈 수 없습니다': "Couldn't join",
+  '이미 두 사람이 있는 방입니다': 'That room already has two players', '판을 열지 못했습니다': "Couldn't start the match",
+  '판을 다시 맞췄습니다': 'Match resynced', '장기전 · 두 성채가 무너지기 시작합니다': 'Overtime · both castles begin to crumble',
+  '상대를 기다리는 중 · 방 코드를 알려 주세요': 'Waiting for a player · share the room code', '방을 찾는 중…': 'Looking for the room…',
+  '준비 완료 · 시작을 누르세요': 'Ready · press Start', '방을 연 쪽이 시작하길 기다리는 중': 'Waiting for the host to start',
+  '(연결 중)': '(connecting)', '온라인 대전': 'Online versus', '온라인 협동': 'Online co-op',
 };
 
 /* 목록 문단처럼 굵은 글씨가 섞인 덩어리는 통째로 바꾼다 */
@@ -1608,6 +1628,22 @@ const I18N_EN_HTML = {
 
 /* 숫자가 붙은 말. 구절 치환보다 먼저 한다. */
 const I18N_EN_PATTERNS = [
+  // 5.21 온라인 2인: 이름 · 숫자가 붙는 문구 (이름은 그대로 둔다)
+  [/^(.+) 님이 들어왔습니다$/g, '$1 joined'], [/^(.+) 님이 나갔습니다$/g, '$1 left'],
+  [/^🌐 (.+) 님을 기다리는 중… (\d+)초$/g, '🌐 Waiting for $1… $2s'],
+  [/^🌐 대전 · vs /g, '🌐 Versus · vs '], [/^🌐 협동 · 함께 /g, '🌐 Co-op · with '], [/ · 중계 끊김$/g, ' · relay lost'],
+  [/^⚔ 대전 · vs /g, '⚔ Versus · vs '], [/^🤝 협동 · 함께 /g, '🤝 Co-op · with '], [/^🤝 협동 · /g, '🤝 Co-op · '],
+  [/ · 중계 (\d+)\/(\d+)/g, ' · relays $1/$2'],
+  [/^판을 열지 못했습니다: /g, "Couldn't start the match: "],
+  [/^판이 달라 함께할 수 없습니다 \(방: ([^ ]+) · 나: ([^)]*)\)\. 같은 버전으로 맞춰 주세요\.$/g, "Different game versions, so you can't play together (room: $1 · you: $2). Update to the same version."],
+  [/^(\d+)승 \/ (\d+)판$/g, '$1W / $2 games'],
+  [/^방 코드 (\w+) 를 복사했습니다$/g, 'Copied room code $1'], [/^방 코드: (\w+)$/g, 'Room code: $1'],
+  [/ · 병종 (\d+)$/g, ' · $1 units'],
+  [/^(대전|협동) 전적 (\d+)승 \/ (\d+)판$/g, (m, k, w, g) => (k === '대전' ? 'Versus' : 'Co-op') + ' record ' + w + 'W / ' + g + ' games'],
+  [/^⚔ 대전: 왼쪽이 나, 오른쪽이 상대 요새\. 레벨은 모두 (\d+) · 강화는 빼고 겨룹니다 \(진화 형태는 내가 가진 대로\)\. 성채 궁수 · 범위\/공성 피해 감소 · (\d+)분 뒤엔 두 성채가 함께 무너집니다\.$/g,
+   "⚔ Versus: you on the left, the rival fort on the right. Every unit is Lv $1 and upgrades are off (evolved forms count as you own them). Castle archers · less area/siege damage · after $2 min both castles crumble together."],
+  [/^🤝 협동: 둘이 같은 성채를 지킵니다\. 군자금 · 카드 · 왕명은 따로\. 적이 ×([\d.]+) 단단하고 요새가 ×([\d.]+) 두껍습니다\. 내 레벨 · 강화 그대로\.( 전장: (\d+)\. (.*))?$/g,
+   (m, e, f, x, n, name) => "🤝 Co-op: you both defend one castle. War funds, cards and the King's Command are separate. Foes are ×" + e + ' tougher and the fort ×' + f + ' sturdier. Your own levels and upgrades apply.' + (x ? ' Stage: ' + n + '. ' + t(name) : '')],
   // 5.9 영어 화면에 남던 한글
   [/^전장 (\d+)개 돌파 · 골드 (\d+) · 소환석 (\d+)\. 이 데이터로 교체할까요\? 현재 저장은 자동 백업에 남깁니다\.$/g,
    '$1 stages cleared · Gold $2 · Summon Stones $3. Replace with this data? Your current save stays in the auto-backup.'],

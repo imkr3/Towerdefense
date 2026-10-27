@@ -11,7 +11,7 @@
     "smoke": "node tools/smoke.js",
     "test": "npm run lint && npm run assets && npm run regression && npm run balance",
     "serve": "python3 -m http.server 8000",
-    "regression": "node tools/regression.js && node tools/save-regression.js"
+    "regression": "node tools/regression.js && node tools/save-regression.js && node tools/online-regression.js"
   },
   "devDependencies": {
     "playwright": "^1.63.0"

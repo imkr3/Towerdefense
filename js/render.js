@@ -928,8 +928,13 @@ class Renderer {
       ctx.scale(pop, pop);
     }
     const ga = ctx.globalAlpha;                            // 5.15: 오라 · 상태 표시가 나타나는 중 투명도를 1 로 되돌리지 않게
-    ctx.strokeStyle = f.side === 'ally' ? '#9cdef0' : '#efab91';
-    ctx.lineWidth = 1.2 * s;
+    const mate = this.mpMine >= 0 && f.side === 'ally' && f.pl !== this.mpMine;   // 5.21 협동: 함께하는 사람의 병사는 연둣빛 고리
+    if (this.pvpView) {                                    // 5.21 대전: 양쪽 다 사람 병종이라 발밑을 편 색으로 칠해 가른다
+      ctx.fillStyle = f.side === 'ally' ? 'rgba(80,170,255,.42)' : 'rgba(255,80,64,.42)';
+      ctx.beginPath(); ctx.ellipse(0, 2, 22 * s * wk, 6 * s, 0, 0, 7); ctx.fill();
+    }
+    ctx.strokeStyle = mate ? '#b4f07a' : this.pvpView ? (f.side === 'ally' ? '#7cc6ff' : '#ff6a55') : f.side === 'ally' ? '#9cdef0' : '#efab91';
+    ctx.lineWidth = (mate || this.pvpView ? 2.2 : 1.2) * s;
     ctx.beginPath(); ctx.ellipse(0, 2, 20 * s * wk, 5 * s, 0, 0, 7); ctx.stroke();
     ctx.fillStyle = 'rgba(0,0,0,.22)';
     ctx.beginPath(); ctx.ellipse(0, 1, 17 * s * wk, 4.5 * s, 0, 0, 7); ctx.fill();
@@ -1144,7 +1149,7 @@ class Renderer {
     }
 
     const bw = 32 * s;
-    if (f.hp < f.maxHp) {
+    if (f.hp < f.maxHp || this.pvpView) {                  // 5.21 대전은 체력바를 늘 띄워 어느 편인지 보인다
       ctx.fillStyle = 'rgba(0,0,0,.45)';
       rectPath(ctx, x - bw / 2, y - top, bw, 5 * s); ctx.fill();
       ctx.fillStyle = f.side === 'ally' ? '#4fa3e0' : '#c0392b';
@@ -2254,7 +2259,7 @@ class Renderer {
         ctx.strokeStyle = e.crit ? 'rgba(90,30,0,.85)' : 'rgba(0,0,0,.65)';
         const label = e.crit ? e.v + '!' : e.v;
         ctx.strokeText(label, x + jx, y - rise);
-        ctx.fillStyle = e.crit ? '#ffd166' : (e.ally ? '#ff9c8a' : '#f4ecd8');
+        ctx.fillStyle = e.crit ? '#ffd166' : ((e.tgt ? e.tgt.side === 'ally' : e.ally) ? '#ff9c8a' : '#f4ecd8');   // 5.21 대전의 오른쪽 사람에겐 뒤집힌 편으로
         ctx.fillText(label, x + jx, y - rise);
         ctx.textAlign = 'left';
         ctx.globalAlpha = 1;
@@ -3961,6 +3966,8 @@ class Renderer {
     const shakeOn = typeof Settings === 'undefined' || Settings.get('shake');
     const sh = (reduced || !shakeOn) ? 0 : (battle.shake || 0);
     this.sceneTime = battle.time;
+    this.mpMine = battle.mp && !battle.mp.pvp ? battle.curPl : -1;
+    this.pvpView = !!(battle.mp && battle.mp.pvp);
     let shakeX = 0, shakeY = 0;
     ctx.save();
     if (sh > 0.2) {
