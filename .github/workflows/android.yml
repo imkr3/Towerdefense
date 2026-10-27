@@ -18,7 +18,6 @@ on:
       - 'android/**'
       - 'js/**'
       - 'css/**'
-      - '3d/**'
       - 'index.html'
       - 'package.json'
       - 'tools/**'
@@ -105,7 +104,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dist "$RUNNER_TEMP/web/stick-kingdom-war"
-          cp -r index.html sw.js manifest.json icon.svg css js 3d "$RUNNER_TEMP/web/stick-kingdom-war/"
+          cp -r index.html sw.js manifest.json icon.svg css js "$RUNNER_TEMP/web/stick-kingdom-war/"
           (cd "$RUNNER_TEMP/web" && zip -qr -X "$GITHUB_WORKSPACE/dist/stick-kingdom-war-$APP_VERSION-web.zip" stick-kingdom-war)
       - name: APK 내용 및 서명 검증
         env:

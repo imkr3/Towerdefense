@@ -10,7 +10,6 @@ on:
     paths:
       - 'js/**'
       - 'css/**'
-      - '3d/**'
       - 'index.html'
       - 'sw.js'
       - 'manifest.json'
@@ -56,7 +55,7 @@ jobs:
       - name: 게임 파일만 모으기
         run: |
           mkdir -p _site
-          cp -r index.html sw.js manifest.json icon.svg css js 3d _site/
+          cp -r index.html sw.js manifest.json icon.svg css js _site/
           touch _site/.nojekyll
 
       - uses: actions/configure-pages@v5

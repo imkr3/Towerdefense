@@ -11,7 +11,6 @@ for build in (sys.argv[1:] or ['debug', 'release']):
     with ZipFile(apk) as z:
         sources = [root / name for name in ('index.html', 'manifest.json', 'icon.svg')]
         sources += list((root / 'js').rglob('*.js')) + list((root / 'css').rglob('*.css'))
-        sources += [p for p in (root / '3d').rglob('*') if p.is_file()]      # 5.19 3D 시험판
         for src in sources:
             embedded = 'assets/www/' + src.relative_to(root).as_posix()
             assert z.read(embedded) == src.read_bytes(), f'{build}: stale/missing {embedded}'

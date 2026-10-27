@@ -9,9 +9,6 @@ const CROWD_NO_SHADOW = 24;      // 화면에 이보다 많이 서 있으면(자
 const RES_LOW_CAP = 1.25, RES_LOW_MS = 44;   // 5.11 적응 해상도: 빽빽한데(30fps 목표) 프레임 간격이 44ms 를 넘기면 1.25배로
 const CROWD_ON = 26, CROWD_OFF = 20;   // 3.12: 자동 품질의 '빽빽함' (잉크 테두리 끄기 · 30fps)
 function byRowX(a, b) { return (a.row - b.row) || (a.x - b.x); }
-/* 5.20 3D 렌더 그림체 (시험): 설정에서 켜면 3d/sprite3d.js 가 api 를 채운다 — 병사는 3D 모델을 찍은 스프라이트, 이펙트는 입체 음영 */
-const R3D = { on: false, api: null };
-const SHOT_SHAPES_2D = { javelin: 1, velites: 1, falconer: 1, axethrower: 1, siegebow: 1, scorpio: 1, zhugeliang: 1, spiderdemon: 1, snakecharmer: 1, diaochan: 1, alchemist: 1 };   // 저마다 모양이 있는 투사체는 그대로
 
 class Renderer {
   constructor(canvas) {
@@ -1099,14 +1096,13 @@ class Renderer {
     // 4.11 홀림불: 가까이 다가가기 전엔 흐릿하다 (멀리서 쏠 수 없다는 표시)
     const veiled = f.veilT > 0 || (f.ab.glamour && !f.unveiled);
     if (veiled) ctx.globalAlpha *= (f.veilT > 0 ? 0.32 : 0.4) + Math.sin(clk * 6) * 0.06;
-    const r3d = R3D.on && R3D.api.fighter(ctx, f, s, moving, swingT, wind);
-    if (!r3d) drawBody(ctx, f.s, s, false, f.kbTimer > 0, f.bob, moving, atk, wind, won);
+    drawBody(ctx, f.s, s, false, f.kbTimer > 0, f.bob, moving, atk, wind, won);
     if (veiled) ctx.globalAlpha = ga;
     MODEL.blink = false; MODEL.angry = false;
     if (f.petrifyUntil > this.sceneTime && f.stunT > 0) {   // 5.2 석화의 여제에게 굳은 적: 잿빛 돌로 바래고 금이 간다
       const a0 = ctx.globalAlpha;
       ctx.globalAlpha = a0 * 0.62;
-      if (!(r3d && R3D.api.flash(ctx, f, s, false, -1, 0, 0.5))) drawBody(ctx, f.s, s, true, false, f.bob, false, 0, 0, false);
+      drawBody(ctx, f.s, s, true, false, f.bob, false, 0, 0, false);
       ctx.globalAlpha = a0 * 0.75; ctx.strokeStyle = '#4a4a46'; ctx.lineWidth = 1.1 * s;
       ctx.beginPath(); ctx.moveTo(-4 * s, -52 * s); ctx.lineTo(1 * s, -44 * s); ctx.lineTo(-2 * s, -36 * s); ctx.lineTo(3 * s, -26 * s);
       ctx.moveTo(1 * s, -44 * s); ctx.lineTo(6 * s, -40 * s); ctx.moveTo(-2 * s, -36 * s); ctx.lineTo(-7 * s, -31 * s); ctx.stroke();
@@ -1116,7 +1112,7 @@ class Renderer {
     if (f.hitFlash > 0 && !this.crowded) {
       const a0 = ctx.globalAlpha;
       ctx.globalAlpha = a0 * Math.min(0.5, f.hitFlash * 3.2);
-      if (!(r3d && R3D.api.flash(ctx, f, s, moving, swingT, wind, 1.6))) drawBody(ctx, f.s, s, true, f.kbTimer > 0, f.bob, moving, atk, wind, won);
+      drawBody(ctx, f.s, s, true, f.kbTimer > 0, f.bob, moving, atk, wind, won);
       ctx.globalAlpha = a0;
     }
     ctx.restore();
@@ -1526,7 +1522,6 @@ class Renderer {
       const shape = s.src && s.src.s && s.src.s.shape;
       const shot = s.missile ? 'missile' : s.src && s.src.s && s.src.s.shot;   // 4.1 3진: 투사체도 바뀐다 · 4.18 미사일
       if (shot && this.drawShot3(ctx, cs, shot, s, p)) { /* 그렸다 */ }
-      else if (R3D.on && !(shape && SHOT_SHAPES_2D[shape]) && R3D.api.shot(ctx, cs, s, p, magic, this.clock || 0)) { /* 5.20 입체 투사체 */ }
       else if (s.bossThrow) {                  // 4.12 근접 보스가 던진 기운 덩어리: 어두운 돌 · 보스 색 불꽃 테
         ctx.rotate(this.clock * 9);
         ctx.fillStyle = s.color; ctx.globalAlpha = 0.35; ctx.beginPath(); ctx.arc(0, 0, 13 * cs, 0, 7); ctx.fill(); ctx.globalAlpha = 1;
@@ -1681,7 +1676,6 @@ class Renderer {
       // 5.15: 제자리에서 끝나는 작은 연출(맞음 · 쓰러짐 · 피해 숫자 등)은 화면 밖이면 그리지 않는다
       if (FX_LOCAL[e.type]) { const m = 140 * cs * (e.scale || 1); if (x < -m || x > this.w + m) continue; }
       const y = this.rowY(e.row || 0) - 28 * cs;
-      if (R3D.on && R3D.api.fx(this, ctx, e, x, y, p, cs)) { ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; continue; }
       if(e.type==='mythic') {
         const k=1-p, radius=Math.min(e.r*this.zoom,260*cs), ground=this.rowY(e.row);
         // WebGL 이 살아 있으면 같은 자리에 파티클 폭발을 한 번 얹는다
@@ -2204,7 +2198,7 @@ class Renderer {
         ctx.translate(x - e.dir * fallT * 10 * sc, this.rowY(e.row) + sink * 6 * sc);
         ctx.scale(e.dir, 1);
         ctx.rotate(-ang);
-        if (!(R3D.on && R3D.api.body(ctx, e.st, sc, false))) drawBody(ctx, e.st, sc, false, true, 0, false, 0);
+        drawBody(ctx, e.st, sc, false, true, 0, false, 0);
         if (k > 0.38 && k < 0.7 && !this.crowded) {     // 4.13 땅에 닿는 순간 흙먼지가 양옆으로 퍼진다
           const d = (k - 0.38) / 0.32;
           ctx.save(); ctx.rotate(ang); ctx.scale(e.dir, 1);
@@ -2214,7 +2208,7 @@ class Renderer {
         }
         if (k < 0.12) {                                 // 쓰러지는 순간 하얗게 번쩍
           ctx.globalAlpha = (1 - k / 0.12) * 0.7;
-          if (!(R3D.on && R3D.api.body(ctx, e.st, sc, true))) drawBody(ctx, e.st, sc, true, true, 0, false, 0);
+          drawBody(ctx, e.st, sc, true, true, 0, false, 0);
         }
         ctx.restore();
         if (e.hero && k < 0.5) {                        // 3.5: 영웅이 쓰러지면 빛이 흩어진다
@@ -3959,7 +3953,6 @@ class Renderer {
     this._battle = battle;
     this.clock = (this.clock || 0) + dt;             // 전투가 끝나 시간이 멈춰도 도는 시계
     this.showDmg = typeof Settings === 'undefined' || Settings.get('dmgNums');
-    if (R3D.on) R3D.api.tick();
     const camBefore = this.cam;
     this.follow(battle, dt);
     const ctx = this.ctx;
@@ -13743,13 +13736,8 @@ function drawUnitIcon(canvas, stats, size) {
 function paintUnitIcon(canvas, stats, px) {
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   if (canvas.width !== px * dpr || canvas.height !== px * dpr) { canvas.width = px * dpr; canvas.height = px * dpr; }
-  const key = [stats.id || '', stats.name, stats.shape, stats.body, stats.accent, stats.tunic, stats.evo ? 1 : 0, px, dpr, R3D.on ? '3d' : ''].join('|');
+  const key = [stats.id || '', stats.name, stats.shape, stats.body, stats.accent, stats.tunic, stats.evo ? 1 : 0, px, dpr].join('|');
   let img = _iconCache.get(key);
-  if (!img && R3D.on) {                                // 5.20 3D 렌더 그림체: 찍어 둔 모델로 (아직이면 막대로 두고 찍히면 다시 칠한다)
-    const c3 = document.createElement('canvas'); c3.width = px * dpr; c3.height = px * dpr;
-    const g3 = c3.getContext('2d'); g3.setTransform(dpr, 0, 0, dpr, 0, 0);
-    if (R3D.api.icon(g3, stats, px, () => { if (canvas.isConnected) paintUnitIcon(canvas, stats, px); })) { img = c3; _iconCache.set(key, img); }
-  }
   if (!img) {
     img = document.createElement('canvas');
     img.width = px * dpr; img.height = px * dpr;
@@ -13767,7 +13755,7 @@ function paintUnitIcon(canvas, stats, px) {
     c.restore();
     MODEL.depth = depth; MODEL.ink = ink;
     if (_iconCache.size > 600) _iconCache.clear();
-    if (!R3D.on) _iconCache.set(key, img);
+    _iconCache.set(key, img);
   }
   const ctx = canvas.getContext('2d');
   if (canvas._painted) ctx.clearRect(0, 0, canvas.width, canvas.height);   // 새 캔버스는 이미 비어 있다

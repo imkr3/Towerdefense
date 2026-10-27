@@ -483,59 +483,6 @@ async function runSize(browser, size) {
     await page.close();
   }
   await browser.close();
-  // 5.19 3D 시험판: 모델 290여 종이 모두 만들어지고, 본편 엔진으로 전투 · 도전이 돈다 (WebGL 을 못 켜는 곳에선 건너뛴다)
-  {
-    const gl = await chromium.launch(Object.assign(exe ? { executablePath: exe } : {}, { args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] }));
-    const page = await gl.newPage({ viewport: { width: 960, height: 540 } });
-    const errs = [];
-    page.on('pageerror', e => errs.push(e.message));
-    await page.goto('file://' + path.join(__dirname, '..', '3d', 'index.html'));
-    await page.waitForTimeout(1500);
-    const r0 = await page.evaluate(() => {
-      const boot = document.querySelector('#boot');
-      if (!window.__g3d) return { nogl: !!boot && /WebGL/.test(boot.textContent), boot: boot && boot.textContent };
-      const g = window.__g3d, out = { want: UNITS.length + Object.keys(ENEMIES).length };
-      g.show('gallery');
-      out.bad = [];
-      for (let i = 0; i < g.gal.list.length; i++) { try { g.galShow(i); } catch (e) { out.bad.push(g.gal.list[i].name + ': ' + e.message); } }
-      out.models = g.gal.list.length;
-      g.OPT.all = true; g.OPT.auto = true;
-      g.start({ kind: 'campaign', index: 9 });
-      g.battle.speed = 3;
-      out.deck = g.battle.roster.length;
-      return out;
-    });
-    if (r0.nogl) console.log('  - 3D 시험판: 이 브라우저는 WebGL 을 못 켜서 건너뜀');
-    else if (!r0.want) failures.push('3D 시험판을 열지 못했다 ' + (r0.boot || '') + ' ' + errs.join(' | '));
-    else {
-      await page.waitForTimeout(5000);
-      const r = await page.evaluate(() => {
-        const g = window.__g3d, out = { live: g.live.size, allies: g.battle.allies.length, time: g.battle.time > 3, cards: document.querySelectorAll('#cards .card').length };
-        window.__androidBack(); out.back = document.querySelector('#stages').classList.contains('active') && !g.battle;
-        g.start({ kind: 'event', index: 0 }); out.event = !!g.battle && g.battle.event !== null;
-        return out;
-      });
-      await page.waitForTimeout(1500);
-      const ok = r0.models === r0.want && !r0.bad.length && r0.deck >= 8 && r.live > 0 && r.allies > 0 && r.time && r.cards === r0.deck && r.back && r.event;
-      if (!ok) failures.push('3D 시험판이 어긋난다 ' + JSON.stringify(Object.assign({}, r0, r)));
-      else if (errs.length) failures.push('3D 시험판 오류 ' + errs.join(' | '));
-      else console.log('  ✓ 5.19 3D 시험판 · 모델 ' + r0.models + '종 · 전투 · 도전 · 뒤로 가기');
-      // 5.20 본편 '그림체: 3D 렌더 (시험)' — 병사가 찍힌 스프라이트로 그려지고, 훈련소 아이콘도 바뀐다
-      await page.goto('file://' + path.join(__dirname, '..', 'index.html'));
-      await page.evaluate(() => localStorage.setItem('stick-kingdom-settings-v1', JSON.stringify({ art: 'r3d', lang: 'ko' })));
-      await page.reload(); await page.waitForTimeout(1500);
-      await page.evaluate(() => { save.tutorial = true; save.loadout = ['spear', 'archer', 'shield']; save.auto = true; startBattle(2); battle.speed = 3; });
-      await page.waitForTimeout(6000);
-      const r2 = await page.evaluate(() => {
-        const out = { on: R3D.on, baked: R3D.api ? R3D.api.size() : 0, failed: R3D.api ? R3D.api.failed() : true, allies: battle.allies.length };
-        return out;
-      });
-      if (!(r2.on && r2.baked >= 3 && !r2.failed && r2.allies > 0)) failures.push('3D 렌더 그림체가 어긋난다 ' + JSON.stringify(r2));
-      else if (errs.length) failures.push('3D 렌더 그림체 오류 ' + errs.join(' | '));
-      else console.log('  ✓ 5.20 그림체 3D 렌더 · 찍은 모델 ' + r2.baked + '종');
-    }
-    await gl.close();
-  }
   console.log('  ' + '-'.repeat(58));
   if (failures.length) {
     console.error('\n실패 ' + failures.length + '건');

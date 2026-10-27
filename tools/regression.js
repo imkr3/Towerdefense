@@ -2403,38 +2403,4 @@ test('5.11: optimisation — the loop sleeps in menus, crowded fights drop resol
   assert.ok(/if \(!this\._depth && \(this\._noInk \|\| this\._skipInk\)\) return _stroke0/.test(render) && /_shadeCache = new Map\(\)/.test(render));
 });
 
-test('5.19: 3D preview — every unit and enemy assembles into a 3D model, animates, and is shipped with the app', () => {
-  const g = vm.createContext({ console: { log() {}, warn() {}, error: console.error }, Math, JSON, Float32Array, Uint16Array, Uint32Array, Uint8Array });
-  g.window = g; g.globalThis = g;
-  for (const f of ['3d/vendor/three.min.js', '3d/models.js']) vm.runInContext(fs.readFileSync(path.join(__dirname, '..', f), 'utf8'), g);
-  const M3 = g.M3, all = UNITS.map(u => [u, 'ally']).concat(Object.keys(E).map(k => [E[k], 'enemy']));
-  assert.ok(all.length > 280);
-  for (const [st, side] of all) {
-    const m = M3.build(st, side);
-    let meshes = 0; m.wrap.traverse(o => { if (o.isMesh) meshes++; });
-    assert.ok(meshes >= 2 && m.h > 10 && m.mats.length, st.shape + ' builds');
-    for (const s of [{ time: 1, phase: 1, moving: true }, { time: 2, wind: 0.6 }, { time: 2.1, atk: 0.5, flash: 0.1 }, { time: 3, kb: 1, stun: true }, { time: 4, dead: 1, fade: 0.3 }]) M3.animate(m, s);
-    M3.dispose(m);
-  }
-  const src = fs.readFileSync(path.join(__dirname, '../3d/models.js'), 'utf8');
-  assert.ok(!/\.add\(mesh\([^;]*\)\)\.(rotation|position|scale)/.test(src), 'add() returns the parent — never chain a transform onto it');
-  const gradle = fs.readFileSync(path.join(__dirname, '../android/app/build.gradle'), 'utf8'), main = fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8');
-  assert.ok(/include 'css\/\*\*', 'js\/\*\*', '3d\/\*\*'/.test(gradle), 'APK carries the 3D files');
-  assert.ok(/location\.href = '3d\/index\.html'/.test(main) && fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8').includes('id="btn-set-3d"'), 'settings opens the 3D preview');
-  const g3 = fs.readFileSync(path.join(__dirname, '../3d/game3d.js'), 'utf8');
-  assert.ok(/window\.saveGame = function \(\) \{ return true; \};/.test(g3) && /JSON\.parse\(JSON\.stringify\(SAVE\)\)/.test(g3), 'the preview never writes the real save');
-});
-
-test('5.20: 3D render art style — sprites baked from the 3D models replace the stick bodies, effects are shaded; loaded only when chosen', () => {
-  const render = fs.readFileSync(path.join(__dirname, '../js/render.js'), 'utf8'), main = fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8');
-  const spr = fs.readFileSync(path.join(__dirname, '../3d/sprite3d.js'), 'utf8'), html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
-  assert.ok(/const R3D = \{ on: false, api: null \};/.test(render), 'off by default');
-  assert.ok(/R3D\.api\.fighter\(ctx, f, s, moving, swingT, wind\)/.test(render) && /if \(!r3d\) drawBody\(/.test(render), 'falls back to the stick body until a sprite is baked');
-  assert.ok(/R3D\.on && R3D\.api\.fx\(this, ctx, e, x, y, p, cs\)/.test(render) && /R3D\.api\.shot\(/.test(render) && /R3D\.api\.body\(ctx, e\.st/.test(render) && /R3D\.api\.icon\(/.test(render));
-  assert.ok(/'3d\/vendor\/three\.min\.js', '3d\/models\.js', '3d\/sprite3d\.js'/.test(main) && !/<script src="3d\//.test(html), 'three.js is loaded on demand, never at start-up');
-  assert.ok(html.includes('id="set-art"') && /raw\.art === 'stick' \|\| raw\.art === 'r3d'/.test(fs.readFileSync(path.join(__dirname, '../js/settings.js'), 'utf8')));
-  assert.ok(/failed = true; R3D\.on = false;/.test(spr), 'a GPU failure falls back to the stick art');
-  for (const k of ['hit', 'boom', 'poof', 'aura', 'spawn', 'coin', 'dmg']) assert.ok(new RegExp('\\n  ' + k + '\\(rd, ctx, e, x, y, p, cs\\)').test(spr), k);
-});
-
 console.log(count + ' regression checks passed');
