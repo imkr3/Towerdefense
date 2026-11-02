@@ -936,8 +936,11 @@ class Renderer {
     ctx.strokeStyle = mate ? '#b4f07a' : this.pvpView ? (f.side === 'ally' ? '#7cc6ff' : '#ff6a55') : f.side === 'ally' ? '#9cdef0' : '#efab91';
     ctx.lineWidth = (mate || this.pvpView ? 2.2 : 1.2) * s;
     ctx.beginPath(); ctx.ellipse(0, 2, 20 * s * wk, 5 * s, 0, 0, 7); ctx.stroke();
-    ctx.fillStyle = 'rgba(0,0,0,.22)';
-    ctx.beginPath(); ctx.ellipse(0, 1, 17 * s * wk, 4.5 * s, 0, 0, 7); ctx.fill();
+    if (!this.pvpView) {                                   // 5.22 대전은 편 색 원판이 그림자 노릇을 한다
+      ctx.fillStyle = 'rgba(0,0,0,.22)';
+      ctx.beginPath(); ctx.ellipse(0, 1, 17 * s * wk, 4.5 * s, 0, 0, 7); ctx.fill();
+    }
+    const busy = this.crowded;                             // 5.22 빽빽할 땐 발밑 장식을 줄인다 (바깥 고리 · 도는 별 · 발자국 먼지)
     if (f.s.rarity === 'UR' || f.s.rarity === 'SSR' || f.s.rarity === 'SR') {      // 상위 등급 발밑 오라
         // 신화가 전설보다 흐리게 빛나면 안 된다
         const glow = f.s.rarity === 'UR' ? 0.62
@@ -948,17 +951,19 @@ class Renderer {
         ctx.beginPath();
         ctx.ellipse(0, 1, 24 * s * pulse, 6.5 * s * pulse, 0, 0, 7);
         ctx.fill();
-        ctx.globalAlpha = ga * (glow * 0.55);
-        ctx.strokeStyle = f.s.accent;
-        ctx.lineWidth = 1.6 * s;
-        ctx.beginPath();
-        ctx.ellipse(0, 1, 30 * s * pulse, 8 * s * pulse, 0, 0, 7);
-        ctx.stroke();
+        if (!busy) {
+          ctx.globalAlpha = ga * (glow * 0.55);
+          ctx.strokeStyle = f.s.accent;
+          ctx.lineWidth = 1.6 * s;
+          ctx.beginPath();
+          ctx.ellipse(0, 1, 30 * s * pulse, 8 * s * pulse, 0, 0, 7);
+          ctx.stroke();
+        }
         ctx.globalAlpha = ga;
     }
     if (f.s.evo) {                                         // 진화한 병사: 발밑 금빛 문양 (4.1 3진은 청록 + 도는 별 셋)
       const pulse = 0.85 + Math.sin(f.bob * 1.8) * 0.15;
-      if (f.s.evo2) {
+      if (f.s.evo2 && !busy) {
         ctx.fillStyle = f.s.evo3 ? '#ffd76a' : '#7ff0ff'; ctx.globalAlpha = ga * 0.75;
         for (let i = 0; i < 3; i++) { const a = clk * 1.6 + i * 2.094, x = Math.cos(a) * 30 * s * wk, y = 1 + Math.sin(a) * 8 * s;
           ctx.beginPath(); ctx.moveTo(x, y - 3 * s); ctx.lineTo(x + 2 * s, y); ctx.lineTo(x, y + 3 * s); ctx.lineTo(x - 2 * s, y); ctx.closePath(); ctx.fill(); }
@@ -967,8 +972,7 @@ class Renderer {
       ctx.strokeStyle = f.s.evo3 ? '#e0b0ff' : f.s.evo2 ? '#7ff0ff' : '#f6d365';
       ctx.lineWidth = 1.8 * s;
       ctx.beginPath(); ctx.ellipse(0, 1, 26 * s * wk, 7 * s, 0, 0, 7); ctx.stroke();
-      ctx.globalAlpha = ga * (0.3 * pulse);
-      ctx.beginPath(); ctx.ellipse(0, 1, 33 * s * pulse * wk, 9 * s * pulse, 0, 0, 7); ctx.stroke();
+      if (!busy) { ctx.globalAlpha = ga * (0.3 * pulse); ctx.beginPath(); ctx.ellipse(0, 1, 33 * s * pulse * wk, 9 * s * pulse, 0, 0, 7); ctx.stroke(); }
       ctx.globalAlpha = ga;
     }
     if (f.veilT > 0) {                                     // 안개화: 붉은 안개가 소용돌이친다
@@ -1061,7 +1065,7 @@ class Renderer {
       }
       ctx.globalAlpha = ga;
     }
-    if (moving && !vehicle) {                              // 발자국 먼지: 발이 닿을 때마다 뒤로 퍼진다 (탈것은 스스로 먼지를 낸다)
+    if (moving && !vehicle && !busy) {                     // 발자국 먼지: 발이 닿을 때마다 뒤로 퍼진다 (탈것은 스스로 먼지를 낸다)
       const ph = ((f.bob / Math.PI) % 1 + 1) % 1;
       const big = f.scale >= 1.3 || f.boss ? 1.8 : (f.s.speed > 70 ? 1.2 : 0.8);
       ctx.fillStyle = 'rgba(235,225,205,' + ((1 - ph) * 0.3 * Math.min(1, big)) + ')';

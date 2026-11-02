@@ -1731,7 +1731,7 @@ test('4.15: hardcore hits harder', () => {
 
 test('4.17: upgrading keeps the detail pane where it was; chapter tabs scroll instead of squeezing', () => {
   const main = fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8'), css = fs.readFileSync(path.join(__dirname, '../css/style.css'), 'utf8');
-  assert.ok(/pane\.scrollTop = same \? keep : 0/.test(main), 'same unit: keep scroll');
+  assert.ok(/const want = same \? keep : 0;\s*if \(scrollMemo\(pane\) !== want\) pane\.scrollTop = want;/.test(main), 'same unit: keep scroll (5.22: only written when it changes)');
   assert.ok(/\.chapter-tab\{flex:0 0 auto;min-width:max-content;white-space:nowrap/.test(css), 'tabs keep their width');
   assert.ok(main.indexOf('tabs.scrollLeft') >= 0, 'selected tab scrolled into view');
 });

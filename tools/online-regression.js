@@ -139,18 +139,38 @@ test('5.21: rewards — versus pays by result (none for a match settled inside a
   assert.equal(r.res, 'win'); assert.equal(r.coins, vm.runInContext('STAGES[14].reward', ctx) + 40, 'co-op win: the stage reward and the team\'s kill gold');
 });
 
+test('5.22: quitting mid-match counts as a played match with no gold; the lobby notices a vanished partner; backing out of the lobby leaves the room', () => {
+  const ctx = device().ctx;
+  const r = vm.runInContext(`(() => {
+    save = { coins: 0, stats: {} }; saveGame = () => {}; $ = () => ({ classList: { contains: () => false } }); setTimeout = () => 0; clearInterval = () => {}; show = () => {}; Online.render = () => {};
+    const b = mpMakeBattle(${JSON.stringify(cfgOf('pvp'))}); b.time = 200;
+    battle = b; b.online = Online; Online.cfg = { mode: 'pvp' }; Online.role = 1; Online.state = 'battle'; Online.rewarded = false; Online.peer = null;
+    Online.net = { send() {}, close() {} }; Online.lock = { ended: false };
+    Online.leave();
+    return { res: Online.result.res, coins: save.coins, games: save.stats.pvpGames, wins: save.stats.pvpWins || 0, st: Online.state };
+  })()`, ctx);
+  assert.equal(r.res, 'left'); assert.equal(r.coins, 0); assert.equal(r.games, 1); assert.equal(r.wins, 0); assert.equal(r.st, 'idle');
+  const online = read('js/online.js'), main = read('js/main.js'), css = read('css/style.css');
+  assert.ok(/keepAlive\(\)[\s\S]*send\(\{ t: 'ping' \}\)[\s\S]*MP_ROOM_TIMEOUT\) this\.peerLeft\(\)/.test(online), 'room keep-alive drops a silent partner');
+  assert.ok(/if \(from && from === this\.peerSid\) this\.peerSeen = performance\.now\(\)/.test(online), 'any message from the partner counts as alive');
+  assert.ok(/open\.id === 'modal-online' && Online\.state !== 'idle'\) \{ Online\.leave\(\)/.test(main), 'back / Esc on the lobby leaves the room');
+  assert.ok(/battle && !battle\.online && battle\.state === 'play'[\s\S]{0,80}this\.leave\(\); return;/.test(online), "a 'go' never drags you out of a solo battle");
+  assert.ok(/Online\.state !== 'idle'\) Online\.leave\(\);[^\n]*\n\s*save = loadGame\(\);/.test(main), 'switching save slots leaves the room');
+  assert.ok(/\.f-tile\{content-visibility:auto/.test(css), 'formation tiles off screen are skipped');
+});
+
 test('5.21: only well-formed actions are accepted from the wire', () => {
   assert.ok(G.mpValidAct({ k: 'd', id: 'spear' })); assert.ok(G.mpValidAct({ k: 'c' })); assert.ok(G.mpValidAct({ k: 'q' }));
   for (const bad of [null, 5, {}, { k: 'x' }, { k: 'd' }, { k: 'h', id: 7 }, { k: 'd', id: 'x'.repeat(80) }]) assert.ok(!G.mpValidAct(bad), JSON.stringify(bad));
 });
 
 /* 두 기기를 이어 돌린다: 늦고 잃어버리는 중계 */
-function link(mode, loss, secs, snapAt) {
+function link(mode, loss, secs, snapAt, dropAB) {
   const A = device(), B = device(), cfg = cfgOf(mode);
   const bA = A.mpMakeBattle(copy(cfg)), bB = B.mpMakeBattle(copy(cfg));
   let rnd = 11; const R = () => (rnd = (rnd * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
   const wire = []; let now = 0;
-  const send = to => m => { if (R() < loss) return; wire.push({ at: now + 0.04 + R() * 0.3, to, m: copy(m) }); };
+  const send = to => m => { if (R() < loss) return; if (dropAB && to === 1 && now >= dropAB[0] && now < dropAB[1]) return; wire.push({ at: now + 0.04 + R() * 0.3, to, m: copy(m) }); };
   const LA = new A.MpLock(bA, 0, cfg.seed, send(1)), LB = new B.MpLock(bB, 1, cfg.seed, send(0));
   let desync = 0; LA.onDesync = LB.onDesync = () => desync++;
   const ptr = [0, 0];
@@ -163,13 +183,15 @@ function link(mode, loss, secs, snapAt) {
       ptr[pl] = (ptr[pl] + t + 1) % R2.length; L.input({ k: 'd', id: u.id }); break;
     }
   });
-  let frames = 0, snapped = false;
+  let frames = 0, snapped = false, bEnd = -1, aEnd = -1;
   while ((LA.b.state === 'play' || LB.b.state === 'play') && now < secs) {
     const dt = 1 / 60 + (R() < 0.05 ? 0.07 : 0);
     now += dt; frames++;
     for (let i = wire.length - 1; i >= 0; i--) if (wire[i].at <= now) { const w = wire.splice(i, 1)[0]; (w.to ? LB : LA).receive(w.m); }
     if (frames % 12 === 0) { ai(LA, 0); ai(LB, 1); }
     LA.frame(dt); LB.frame(dt);
+    if (aEnd < 0 && LA.b.state !== 'play') aEnd = now;
+    if (bEnd < 0 && LB.b.state !== 'play') bEnd = now;
     if (snapAt && !snapped && LA.turn >= snapAt && LB.turn >= LA.turn) {
       // B 의 판을 일부러 틀어 놓고, A 의 사진(글)으로 갈아 끼운다
       LB.b.allyCastle.hp -= 123;
@@ -185,7 +207,7 @@ function link(mode, loss, secs, snapAt) {
     for (let i = wire.length - 1; i >= 0; i--) if (wire[i].at <= now) { const w = wire.splice(i, 1)[0]; (w.to ? LB : LA).receive(w.m); }
     if (LA.turn < LB.turn) LA.frame(1 / 60); else LB.frame(1 / 60);
   }
-  return { LA, LB, desync, snapped };
+  return { LA, LB, desync, snapped, aEnd, bEnd };
 }
 
 test('5.21: two devices in lockstep over a lossy relay stay identical (versus, 20% loss)', () => {
@@ -194,6 +216,17 @@ test('5.21: two devices in lockstep over a lossy relay stay identical (versus, 2
   assert.equal(LA.turn, LB.turn); assert.equal(desync, 0);
   assert.equal(LA.b.mpHash(), LB.b.mpHash());
   assert.ok(LA.b.allies.length + LA.b.enemies.length > 0, 'both sides fought');
+});
+
+test('5.22: when the last packets before the end are lost, the other device still reaches the same end (no false \'connection lost\')', () => {
+  const first = link('pvp', 0.1, 900);
+  assert.ok(first.aEnd > 0, 'the match ends');
+  // 같은 판을 다시 돌리며 끝나기 0.8초 전부터 끝난 뒤 0.3초까지 A → B 로 가는 것을 모두 잃는다
+  const { LA, LB, aEnd, bEnd } = link('pvp', 0.1, first.aEnd + 30, 0, [first.aEnd - 0.8, first.aEnd + 0.3]);
+  assert.ok(aEnd > 0, 'A ended');
+  assert.notEqual(LB.b.state, 'play', 'B reached the end too');
+  assert.equal(LA.b.state, LB.b.state); assert.equal(LA.b.mpHash(), LB.b.mpHash());
+  assert.ok(bEnd - aEnd < 10, 'within the 10 s tail: ' + (bEnd - aEnd).toFixed(1) + 's');
 });
 
 test('5.21: two devices in lockstep stay identical in co-op too', () => {

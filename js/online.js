@@ -88,7 +88,13 @@ class MpLock {
   }
   /* 화면 한 프레임: 쌓인 시간만큼 턴을 돈다 (뒤처졌으면 몇 턴씩 따라잡는다) */
   frame(dt) {
-    if (this.ended) return;
+    if (this.ended) {
+      // 5.22 판이 끝난 뒤에도 10초 동안 0.5초마다 내 마지막 입력을 다시 보낸다
+      // (끝 무렵 것을 잃으면 상대는 끝 턴까지 못 가고 20초 뒤 '연결 끊김' 으로 끝났다)
+      this.tailT = (this.tailT || 0) + dt;
+      if (this.tailT < 10 && (this.tailResend = (this.tailResend || 0) - dt) <= 0) { this.tailResend = 0.5; this.closeMine(true); }
+      return;
+    }
     this.heard += dt;
     this.acc = Math.min(this.acc + dt, MP_TURN * 12);
     let n = 0, waited = false;
@@ -388,6 +394,7 @@ class MpNet {
 const MP_CODE_ABC = 'ACDEFHJKLMNPRTUVWXY3479';     // 헷갈리는 글자(0 O 1 I B 8 S 5 G 6 2 Z Q)는 뺐다
 const MP_LOOKS = ['meadow', 'wheat', 'river', 'forest', 'hills', 'desert', 'snow', 'fortress', 'canyon', 'shore'];
 const MP_PVP_REWARD = { win: 200, lose: 60, draw: 100, minTime: 60 };   // 1분 안에 끝난 판은 금화 없음
+const MP_ROOM_PING = 4000, MP_ROOM_TIMEOUT = 15000;   // 5.22 대기실: 4초마다 안부, 15초 소식이 없으면 나간 것으로
 
 /* 내 편성 · 진행 (상대에게 보낸다) */
 function mpInfo(s, name) {
@@ -431,6 +438,7 @@ const Online = {
     this.code = Array.from({ length: 5 }, () => MP_CODE_ABC[Math.floor(Math.random() * MP_CODE_ABC.length)]).join('');
     this.state = 'wait'; this.peer = null; this.err = '';
     this.net = new MpNet(this.code, 'h', 'g', (m, from) => this.onMsg(m, from), n => { this.links = n; this.render(); });
+    this.keepAlive();
     this.render();
   },
   /* 방 들어가기 */
@@ -442,6 +450,7 @@ const Online = {
     this.close(true);
     this.role = 1; this.code = code; this.state = 'join'; this.peer = null; this.err = '';
     this.net = new MpNet(code, 'g', 'h', (m, from) => this.onMsg(m, from), n => { this.links = n; this.render(); });
+    this.keepAlive();
     let tries = 0;
     clearInterval(this.helloT);
     this.helloT = setInterval(() => {
@@ -458,11 +467,22 @@ const Online = {
   fail(msg) { this.err = msg; this.close(true); this.state = 'idle'; this.render(); toast(msg, 3000); },
   /* 연결을 닫는다 (quiet: 상대에게 알리지 않음) */
   close(quiet) {
-    clearInterval(this.helloT);
+    clearInterval(this.helloT); clearInterval(this.keepT);
     if (this.net) { if (!quiet) this.net.send({ t: 'bye' }); const n = this.net; setTimeout(() => n.close(), 300); }
     this.net = null; this.lock = null; this.peer = null; this.peerSid = null;
   },
+  /* 5.22 대기실에서 상대 앱이 그냥 꺼지면 '나갔다' 는 말이 오지 않는다 — 안부를 주고받아 알아챈다
+   * (예전엔 방장이 없는 손님을 붙든 채 다른 사람을 '꽉 찬 방' 으로 돌려보냈다) */
+  keepAlive() {
+    clearInterval(this.keepT);
+    this.keepT = setInterval(() => {
+      if (!this.net || (this.state !== 'room' && this.state !== 'over')) return;
+      this.net.send({ t: 'ping' });
+      if (this.peer && performance.now() - (this.peerSeen || 0) > MP_ROOM_TIMEOUT) this.peerLeft();
+    }, MP_ROOM_PING);
+  },
   leave() {
+    if (this.state === 'battle') this.endBattle('left');     // 5.22 싸우다 나가면 진 판으로 센다 (나가서 패배를 피하지 못하게)
     const inBattle = this.state === 'battle' || this.state === 'over';
     this.close(false);
     this.state = 'idle';
@@ -475,6 +495,7 @@ const Online = {
 
   onMsg(m, from) {
     const t = m.t;
+    if (from && from === this.peerSid) this.peerSeen = performance.now();
     if (this.role === 0) {
       if (t === 'hello') {
         if (m.v !== APP_VERSION) { this.net.send({ t: 'bad', why: '판이 달라 함께할 수 없습니다 (방: ' + APP_VERSION + ' · 나: ' + String(m.v).slice(0, 12) + '). 같은 버전으로 맞춰 주세요.' }); return; }
@@ -482,7 +503,7 @@ const Online = {
         const info = mpCleanInfo(m.me);
         if (!info) return;
         const fresh = !this.peer;
-        this.peer = info; this.peerSid = from;
+        this.peer = info; this.peerSid = from; this.peerSeen = performance.now();
         if (this.state === 'wait') this.state = 'room';
         this.net.send({ t: 'welcome', me: this.me(), room: this.cfgFor() });
         if (fresh) { toast(info.name + ' 님이 들어왔습니다'); SFX.ui(); }
@@ -494,7 +515,7 @@ const Online = {
       if (t === 'welcome' && (this.state === 'join' || this.state === 'room')) {
         const info = mpCleanInfo(m.me);
         if (!info) return;
-        this.peer = info; this.peerSid = from;
+        this.peer = info; this.peerSid = from; this.peerSeen = performance.now();
         if (m.room) { this.mode = m.room.mode === 'coop' ? 'coop' : 'pvp'; this.stage = Math.max(0, Math.min(STAGES.length - 1, m.room.stage | 0)); }
         if (this.state === 'join') { this.state = 'room'; clearInterval(this.helloT); toast('방에 들어왔습니다'); SFX.ui(); }
         this.render();
@@ -503,7 +524,11 @@ const Online = {
       if (t === 'room' && this.state === 'room' && m.room) { this.mode = m.room.mode === 'coop' ? 'coop' : 'pvp'; this.stage = Math.max(0, Math.min(STAGES.length - 1, m.room.stage | 0)); this.render(); return; }
       if (t === 'bad') { this.fail(String(m.why || '들어갈 수 없습니다').slice(0, 200)); return; }
       if (t === 'full') { this.fail('이미 두 사람이 있는 방입니다'); return; }
-      if (t === 'go' && m.cfg && (this.state === 'room' || this.state === 'over')) { this.begin(m.cfg); return; }
+      if (t === 'go' && m.cfg && (this.state === 'room' || this.state === 'over')) {
+        // 혼자 하는 판을 싸우는 중이면 끌고 가지 않는다 (방에서 나간다)
+        if (battle && !battle.online && battle.state === 'play' && $('#scr-battle').classList.contains('active')) { this.leave(); return; }
+        this.begin(m.cfg); return;
+      }
       if (t === 'bye' && from === this.peerSid) { this.peerLeft(); return; }
       if (t === 'snap' && this.lock) { this.snapPart(m); return; }
     }
@@ -552,6 +577,7 @@ const Online = {
   /* 화면 한 프레임 */
   frame(dt) {
     const L = this.lock;
+    if (L && this.state === 'over') { L.frame(dt); return; }   // 끝난 뒤: 상대가 끝까지 오도록 마지막 입력만 다시 보낸다
     if (!L || this.state !== 'battle') return;
     L.frame(dt);
     if (L.b !== battle) { battle = L.b; battle.online = this; }
@@ -599,9 +625,10 @@ const Online = {
   endBattle(kind) {
     if (this.state !== 'battle') return;
     this.state = 'over';
+    if (this.lock) this.lock.ended = true;                        // 끊김 · 나감으로 끝났어도 판은 더 돌지 않는다
     const b = battle, pvp = this.cfg.mode === 'pvp', me = this.role;
     // 결과는 왼쪽(0번) 기준이다. 대전의 오른쪽 사람에겐 뒤집어 읽는다
-    let res = kind === 'gone' || kind === 'lost' ? kind : b.state;
+    let res = kind === 'gone' || kind === 'lost' || kind === 'left' ? kind : b.state;
     if (pvp && me === 1 && (res === 'win' || res === 'lose')) res = res === 'win' ? 'lose' : 'win';
     let coins = 0;
     if (res === 'gone' && pvp && b.time > 20) res = 'win';            // 대전 중 상대가 나가면 이긴 것으로

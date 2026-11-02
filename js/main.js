@@ -1103,8 +1103,9 @@ function refreshTraining(id) {
 /* 상세 카드: 고른 병종(또는 적) 하나의 훈련 · 진화 · 편성 카드 */
 let detailShown = null, detailKeep = null;
 function detailScroll() {
+  // 5.22 scrollTop 을 바로 읽지 않고 스크롤할 때 적어 둔 값을 쓴다 (화면을 막 연 뒤 읽으면 280칸 배치를 한 번 더 계산했다)
   const pane = $('#unit-detail'), outer = pane && pane.closest('.screen');
-  return pane ? { pane: pane.scrollTop, outer: outer ? outer.scrollTop : 0 } : null;
+  return pane ? { pane: scrollMemo(pane), outer: outer ? scrollMemo(outer) : 0 } : null;
 }
 function showTrainingDetail() {
   const pane = $('#unit-detail');
@@ -1119,7 +1120,13 @@ function showTrainingDetail() {
   $$('#units-list .unit-tile').forEach(el => el.classList.toggle('sel', el.dataset.unit === trainSel));
   if (!trainSel) { pane.innerHTML = '<p class="ud-empty">병종을 고르면 훈련 · 진화 정보가 여기 나옵니다</p>'; return; }
   const card = trainSel.indexOf('foe:') === 0 ? buildFoeCard(trainSel.slice(4)) : (UNIT_BY_ID[trainSel] ? buildUnitCard(UNIT_BY_ID[trainSel]) : null);
-  if (card) { pane.appendChild(card); pane.scrollTop = same ? keep : 0; if (same && outer) outer.scrollTop = keepOuter; }
+  if (card) {
+    pane.appendChild(card);
+    // 5.22 이미 그 자리면 건드리지 않는다 (scrollTop 을 쓰면 그 자리에서 배치를 다시 계산한다)
+    const want = same ? keep : 0;
+    if (scrollMemo(pane) !== want) pane.scrollTop = want;
+    if (same && outer && scrollMemo(outer) !== keepOuter) outer.scrollTop = keepOuter;
+  }
 }
 
 function renderTrainingSort() {
@@ -3102,6 +3109,7 @@ window.__androidBack = function () {
   if (open) {
     if (open.id === 'modal-tutorial') $('#btn-tutorial-close').click();
     else if (open.id === 'modal-confirm') $('#confirm-no').click();
+    else if (open.id === 'modal-online' && Online.state !== 'idle') { Online.leave(); open.classList.remove('show'); }   // 5.22 대기실을 닫으면 방에서도 나간다 (붙은 채 남아 다른 판을 하다 '시작' 에 끌려가던 것)
     else open.classList.remove('show');
     return true;
   }
@@ -3192,6 +3200,7 @@ function switchSlot(n) {
   if (playAccum > 0) flushPlayTime();
   saveGame(save);                                   // 막힌(깨진) 슬롯이면 SaveStore 가 덮어쓰지 않는다
   if (!SaveStore.useSlot(n)) return false;
+  if (typeof Online !== 'undefined' && Online.state !== 'idle') Online.leave();   // 5.22 온라인 방은 그 슬롯의 편성으로 들어간 것이다
   save = loadGame();
   clearTimeout(resultTimer);
   battle = null;
