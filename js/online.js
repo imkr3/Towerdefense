@@ -394,7 +394,8 @@ class MpNet {
 const MP_CODE_ABC = 'ACDEFHJKLMNPRTUVWXY3479';     // 헷갈리는 글자(0 O 1 I B 8 S 5 G 6 2 Z Q)는 뺐다
 const MP_LOOKS = ['meadow', 'wheat', 'river', 'forest', 'hills', 'desert', 'snow', 'fortress', 'canyon', 'shore'];
 const MP_PVP_REWARD = { win: 200, lose: 60, draw: 100, minTime: 60 };   // 1분 안에 끝난 판은 금화 없음
-const MP_ROOM_PING = 4000, MP_ROOM_TIMEOUT = 15000;   // 5.22 대기실: 4초마다 안부, 15초 소식이 없으면 나간 것으로
+const MP_ROOM_PING = 4000, MP_ROOM_TIMEOUT = 15000;
+const MP_NO_RELAY_MS = 10000;                         // 5.23 중계에 이만큼 닿지 못하면 대기실에 알린다   // 5.22 대기실: 4초마다 안부, 15초 소식이 없으면 나간 것으로
 
 /* 내 편성 · 진행 (상대에게 보낸다) */
 function mpInfo(s, name) {
@@ -438,6 +439,7 @@ const Online = {
     this.code = Array.from({ length: 5 }, () => MP_CODE_ABC[Math.floor(Math.random() * MP_CODE_ABC.length)]).join('');
     this.state = 'wait'; this.peer = null; this.err = '';
     this.net = new MpNet(this.code, 'h', 'g', (m, from) => this.onMsg(m, from), n => { this.links = n; this.render(); });
+    this.links = 0; this.netAt = performance.now();
     this.keepAlive();
     this.render();
   },
@@ -450,12 +452,18 @@ const Online = {
     this.close(true);
     this.role = 1; this.code = code; this.state = 'join'; this.peer = null; this.err = '';
     this.net = new MpNet(code, 'g', 'h', (m, from) => this.onMsg(m, from), n => { this.links = n; this.render(); });
+    this.links = 0; this.netAt = performance.now();
     this.keepAlive();
     let tries = 0;
     clearInterval(this.helloT);
     this.helloT = setInterval(() => {
       if (this.state !== 'join') { clearInterval(this.helloT); return; }
-      if (++tries > 25) { clearInterval(this.helloT); this.fail('방을 찾지 못했습니다. 코드를 확인하거나 방을 연 쪽이 기다리고 있는지 보세요.'); return; }
+      if (++tries > 25) {
+        clearInterval(this.helloT);
+        // 5.23 중계에 한 번도 닿지 못했으면 '방이 없다' 가 아니라 연결 문제다
+        this.fail(this.links ? '방을 찾지 못했습니다. 코드를 확인하거나 방을 연 쪽이 기다리고 있는지 보세요.' : '중계 서버에 연결하지 못했습니다. 인터넷 연결을 확인하고 다시 해 보세요.');
+        return;
+      }
       this.net.send({ t: 'hello', v: APP_VERSION, me: this.me() });
     }, 1200);
     this.render();
@@ -476,6 +484,7 @@ const Online = {
   keepAlive() {
     clearInterval(this.keepT);
     this.keepT = setInterval(() => {
+      if (this.net && !this.links) this.render();         // 5.23 중계에 못 닿은 채 오래면 대기실 글이 바뀐다
       if (!this.net || (this.state !== 'room' && this.state !== 'over')) return;
       this.net.send({ t: 'ping' });
       if (this.peer && performance.now() - (this.peerSeen || 0) > MP_ROOM_TIMEOUT) this.peerLeft();
@@ -680,7 +689,8 @@ const Online = {
       : this.state === 'join' ? '방을 찾는 중…'
       : this.state === 'over' ? '대기실'
       : this.role === 0 ? '준비 완료 · 시작을 누르세요' : '방을 연 쪽이 시작하길 기다리는 중';
-    $('#mp-status').textContent = st + ' · 중계 ' + live + '/' + nb + (live ? '' : ' (연결 중)');
+    const stuck = !live && performance.now() - (this.netAt || 0) > MP_NO_RELAY_MS;   // 5.23
+    $('#mp-status').textContent = stuck ? '⚠ 중계 서버에 닿지 않습니다 · 인터넷 연결을 확인하세요' : st + ' · 중계 ' + live + '/' + nb + (live ? '' : ' (연결 중)');
     const me = this.me(), card = (p, tag) => {
       if (!p) return '<div class="mp-pl empty"><b>빈 자리</b><span>' + tag + '</span></div>';
       const heroes = p.loadout.filter(id => isHeroUnit(UNIT_BY_ID[id])).map(id => UNIT_BY_ID[id].name);

@@ -1770,6 +1770,22 @@ function buildCards() {
     box.appendChild(b);
   });
   cardEls = $$('#cards .card');
+  requestAnimationFrame(fitCardNames);   // 번역이 붙은 다음에 잰다
+}
+/* 5.23 카드 이름이 칸보다 길면 (영어 'Spearman' · 좁은 폰) 그 이름만 글자를 줄인다 — 전투를 열 때 한 번 */
+function fitCardNames() {
+  for (const el of $$('#cards .card .c-name')) {
+    el.style.fontSize = el.style.transform = el.style.textOverflow = el.style.overflow = '';
+    const room = el.clientWidth - 2;                        // 이름 칸 폭에서 여유를 둔다 (식는 중엔 테두리로 1px 좁아진다)
+    if (room <= 0) continue;
+    let size = parseFloat(getComputedStyle(el).fontSize) || 10;
+    for (let i = 0; i < 6 && el.scrollWidth > room && size > 6.5; i++) { size -= 0.5; el.style.fontSize = size + 'px'; }
+    // 그래도 길면 '…' 로 자르지 않고 가로로 살짝 눌러 담는다 ('Shieldman')
+    if (el.scrollWidth > room) {
+      el.style.textOverflow = 'clip'; el.style.overflow = 'visible'; el.style.transformOrigin = 'center';
+      el.style.transform = 'scaleX(' + (room / el.scrollWidth).toFixed(3) + ')';
+    }
+  }
 }
 
 /* 카드 누르기. 전설·신화가 이미 전장에 서 있으면 출진 대신 액티브를 쓴다. */
@@ -2665,23 +2681,36 @@ function drawTitle(dt) {
 
   ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(L.front, 0, 0); ctx.restore();
 
-  // 부대
+  // 부대 — 5.23 병사 14명은 따로 한 장에 초당 10번만 다시 그려 붙인다 (천천히 흔들려 티가 안 나고, 타이틀 한 프레임이 절반 아래로)
   if (!A.cast) A.cast = titleCast();
-  const cx = w / 2;
-  const sc = Math.max(0.55, Math.min(1.0, h / 560));
-  A.cast.forEach(c => {
-    const push = Math.sin(t * 0.7 + c.ph) * 7;
-    const x = cx + (c.base + push * c.dir) * sc * 1.25;
-    if (x < -60 || x > w + 60) return;
-    const swing = 0.5 + 0.5 * Math.sin(t * c.rate * 3 + c.ph);
-    ctx.save();
-    ctx.translate(x, groundY + 4);
-    ctx.scale(c.dir, 1);
-    ctx.fillStyle = 'rgba(0,0,0,.28)';
-    ctx.beginPath(); ctx.ellipse(0, 0, 16 * sc * c.sc, 4 * sc, 0, 0, 7); ctx.fill();
-    drawBody(ctx, c.st, sc * c.sc, false, false, t * 3 + c.ph, false, swing);
-    ctx.restore();
-  });
+  let lay = A.castCv;
+  if (!lay || lay.width !== A.cv.width || lay.height !== A.cv.height) {
+    lay = A.castCv = document.createElement('canvas');
+    lay.width = A.cv.width; lay.height = A.cv.height;
+    A.castCtx = lay.getContext('2d'); A.castAt = 0;
+  }
+  if ((A.castAt -= dt) <= 0) {
+    A.castAt = 0.1;
+    const c2 = A.castCtx;
+    c2.setTransform(1, 0, 0, 1, 0, 0); c2.clearRect(0, 0, lay.width, lay.height);
+    c2.setTransform(ctx.getTransform());
+    const cx = w / 2;
+    const sc = Math.max(0.55, Math.min(1.0, h / 560));
+    A.cast.forEach(c => {
+      const push = Math.sin(t * 0.7 + c.ph) * 7;
+      const x = cx + (c.base + push * c.dir) * sc * 1.25;
+      if (x < -60 || x > w + 60) return;
+      const swing = 0.5 + 0.5 * Math.sin(t * c.rate * 3 + c.ph);
+      c2.save();
+      c2.translate(x, groundY + 4);
+      c2.scale(c.dir, 1);
+      c2.fillStyle = 'rgba(0,0,0,.28)';
+      c2.beginPath(); c2.ellipse(0, 0, 16 * sc * c.sc, 4 * sc, 0, 0, 7); c2.fill();
+      drawBody(c2, c.st, sc * c.sc, false, false, t * 3 + c.ph, false, swing);
+      c2.restore();
+    });
+  }
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(lay, 0, 0); ctx.restore();
 
   // 불티
   ctx.fillStyle = 'rgba(255,200,120,.75)';

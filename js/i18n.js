@@ -1601,7 +1601,8 @@ const I18N_EN = {
   '판을 다시 맞췄습니다': 'Match resynced', '장기전 · 두 성채가 무너지기 시작합니다': 'Overtime · both castles begin to crumble',
   '상대를 기다리는 중 · 방 코드를 알려 주세요': 'Waiting for a player · share the room code', '방을 찾는 중…': 'Looking for the room…',
   '준비 완료 · 시작을 누르세요': 'Ready · press Start', '방을 연 쪽이 시작하길 기다리는 중': 'Waiting for the host to start',
-  '(연결 중)': '(connecting)', '온라인 대전': 'Online versus', '온라인 협동': 'Online co-op',
+  '(연결 중)': '(connecting)', '중계 서버에 연결하지 못했습니다. 인터넷 연결을 확인하고 다시 해 보세요.': "Couldn't reach the relay servers. Check your internet connection and try again.",
+  '⚠ 중계 서버에 닿지 않습니다 · 인터넷 연결을 확인하세요': "⚠ Can't reach the relay servers · check your internet connection", '온라인 대전': 'Online versus', '온라인 협동': 'Online co-op',
 };
 
 /* 목록 문단처럼 굵은 글씨가 섞인 덩어리는 통째로 바꾼다 */

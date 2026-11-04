@@ -2403,4 +2403,13 @@ test('5.11: optimisation — the loop sleeps in menus, crowded fights drop resol
   assert.ok(/if \(!this\._depth && \(this\._noInk \|\| this\._skipInk\)\) return _stroke0/.test(render) && /_shadeCache = new Map\(\)/.test(render));
 });
 
+test('5.23: small screens — sticky buttons hide what scrolls under them, the version sits clear of the title panel, long card names fit, the title cast is redrawn 10×/s', () => {
+  const main = fs.readFileSync(path.join(__dirname, '../js/main.js'), 'utf8'), css = fs.readFileSync(path.join(__dirname, '../css/style.css'), 'utf8');
+  assert.ok(/\.result-btns\{background:linear-gradient\(180deg,#14243400,#142434 5px\)\}/.test(css), 'result buttons: opaque backdrop');
+  assert.ok(/\.sd-btns\{background:linear-gradient\(180deg,#15253700,#152537 10px\)\}/.test(css), 'stage detail buttons: opaque backdrop');
+  assert.ok(/\.ver\{right:auto;text-align:left/.test(css), 'version line on the left');
+  assert.ok(/requestAnimationFrame\(fitCardNames\)/.test(main) && /function fitCardNames\(\)[\s\S]{0,900}scaleX\(/.test(main), 'card names shrink, then squeeze, instead of "Spear…"');
+  assert.ok(/A\.castAt = 0\.1;/.test(main) && /drawBody\(c2, c\.st/.test(main) && /ctx\.drawImage\(lay, 0, 0\)/.test(main), 'title cast on its own layer');
+});
+
 console.log(count + ' regression checks passed');

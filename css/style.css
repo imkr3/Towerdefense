@@ -1788,3 +1788,10 @@ body:has(#result.show) .toast{top:calc(6px + var(--st))}
   .mp-row{margin:4px 0}.mp-row input,.mp-row select{padding:6px 10px}.mp-mode{margin:6px 0}.mp-rule{margin:4px 0;font-size:11px;line-height:1.4}
   .mp-players{margin:6px 0}.mp-pl{padding:6px 10px}.mp-note{margin-top:6px}.mp-actions{margin-top:6px}
   .online-card .confirm-btns .btn{padding:7px 10px}}
+
+/* ===================== 5.23 작은 화면 다듬기 ===================== */
+/* 결과 · 전장 상세의 아래 붙은 단추: 뒤 판이 비쳐 '0 0% · 출진 4' 같은 글자가 단추 사이 · 위로 보이던 것 — 짧게 흐려진 뒤 불투명하게 */
+.result-btns{background:linear-gradient(180deg,#14243400,#142434 5px)}
+.sd-btns{background:linear-gradient(180deg,#15253700,#152537 10px)}
+/* 타이틀 아래 버전 줄: 가운데 두면 오른쪽 단추 판 밑에 깔려 버전이 가려졌다 — 왼쪽 아래로 */
+.ver{right:auto;text-align:left;padding-left:calc(18px + var(--sl,0px))}

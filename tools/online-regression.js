@@ -139,6 +139,19 @@ test('5.21: rewards — versus pays by result (none for a match settled inside a
   assert.equal(r.res, 'win'); assert.equal(r.coins, vm.runInContext('STAGES[14].reward', ctx) + 40, 'co-op win: the stage reward and the team\'s kill gold');
 });
 
+test('5.23: when no relay can be reached the lobby says so (not "connecting" forever) and a failed join blames the connection, not the room code — in both languages', () => {
+  const online = read('js/online.js');
+  assert.ok(/const stuck = !live && performance\.now\(\) - \(this\.netAt \|\| 0\) > MP_NO_RELAY_MS/.test(online), 'lobby notices no relay');
+  assert.ok(/if \(this\.net && !this\.links\) this\.render\(\)/.test(online), 'and refreshes while waiting');
+  assert.ok(/this\.fail\(this\.links \? '방을 찾지 못했습니다[^']*' : '중계 서버에 연결하지 못했습니다[^']*'\)/.test(online), 'join failure says which');
+  const store = { 'stick-kingdom-settings-v1': JSON.stringify({ lang: 'en' }) };
+  const ctx = vm.createContext({ console, Math, JSON, saveGame() {}, localStorage: { getItem: k => store[k] || null, setItem() {} }, navigator: { language: 'en' }, document: { body: null, addEventListener() {} }, window: {} });
+  for (const f of ['settings', 'data', 'game', 'i18n']) vm.runInContext(read('js/' + f + '.js') + (f === 'settings' ? ';this.Settings=Settings;' : ''), ctx);
+  for (const s of ['중계 서버에 연결하지 못했습니다. 인터넷 연결을 확인하고 다시 해 보세요.', '⚠ 중계 서버에 닿지 않습니다 · 인터넷 연결을 확인하세요']) {
+    const r = vm.runInContext('t(' + JSON.stringify(s) + ')', ctx); assert.ok(!/[가-힣]/.test(r), s + ' → ' + r);
+  }
+});
+
 test('5.22: quitting mid-match counts as a played match with no gold; the lobby notices a vanished partner; backing out of the lobby leaves the room', () => {
   const ctx = device().ctx;
   const r = vm.runInContext(`(() => {
